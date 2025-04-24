@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
@@ -20,6 +22,12 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import VerifiedEmail from "./pages/auth/VerifiedEmail";
 import Dashboard from "./pages/Dashboard";
 import Deposit from "./pages/Deposit";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminLayout from "./components/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +48,13 @@ const App = () => (
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
+              </Route>
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+                <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
+                <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
+                <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
+                <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
               </Route>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

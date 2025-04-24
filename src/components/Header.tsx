@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import CartDropdown from "@/components/CartDropdown";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShieldCheck } from "lucide-react";
 
 const Header = () => {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -109,6 +110,14 @@ const Header = () => {
           
           {user ? (
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin" className="flex items-center gap-1">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
@@ -169,11 +178,20 @@ const Header = () => {
               </Link>
             </Button>
             {user && (
-              <Button variant="ghost" className="w-full justify-start" asChild>
-                <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                  Dashboard
-                </Link>
-              </Button>
+              <>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                    Dashboard
+                  </Link>
+                </Button>
+                {isAdmin && (
+                  <Button variant="ghost" className="w-full justify-start" asChild>
+                    <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                      Admin Panel
+                    </Link>
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
