@@ -8,6 +8,11 @@ import { ShoppingCart, Package, Shield, Clock, AlertTriangle, ChevronRight } fro
 import { useToast } from "@/hooks/use-toast";
 import ProductCard from "@/components/ProductCard";
 import { useEffect } from "react";
+import { useCart } from "@/contexts/CartContext";
+
+interface ProductFeatures {
+  features: string[];
+}
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -17,6 +22,7 @@ const ProductDetail = () => {
     product?.id || ""
   );
   const { toast } = useToast();
+  const { addItem } = useCart();
 
   // Scroll to top when navigating between product pages
   useEffect(() => {
@@ -24,10 +30,14 @@ const ProductDetail = () => {
   }, [slug]);
 
   const handleAddToCart = () => {
-    toast({
-      title: "Added to cart",
-      description: `${product?.name} has been added to your cart`,
-    });
+    if (product) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: product.sale_price || product.price,
+        image: product.image_url || '',
+      });
+    }
   };
 
   if (isLoading) {
@@ -68,7 +78,23 @@ const ProductDetail = () => {
   const isOutOfStock = product.stock_quantity === 0;
   const isLowStock = product.stock_quantity <= 5 && product.stock_quantity > 0;
 
-  const features = product.features?.features || [];
+  // Safely parse features data
+  let featuresList: string[] = [];
+  if (product.features) {
+    try {
+      // If features is a string, parse it, otherwise use it directly
+      const featuresData = typeof product.features === 'string' 
+        ? JSON.parse(product.features) 
+        : product.features;
+        
+      // Check if features is an object with a features property
+      if (featuresData && featuresData.features && Array.isArray(featuresData.features)) {
+        featuresList = featuresData.features;
+      }
+    } catch (e) {
+      console.error("Error parsing product features:", e);
+    }
+  }
 
   return (
     <div className="container py-8">
@@ -145,11 +171,11 @@ const ProductDetail = () => {
           </p>
 
           {/* Features */}
-          {features && features.length > 0 && (
+          {featuresList.length > 0 && (
             <div className="mb-6">
               <h3 className="font-medium mb-2">Key Features:</h3>
               <ul className="space-y-2">
-                {features.map((feature, index) => (
+                {featuresList.map((feature, index) => (
                   <li key={index} className="flex items-center">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2"></div>
                     <span>{feature}</span>
