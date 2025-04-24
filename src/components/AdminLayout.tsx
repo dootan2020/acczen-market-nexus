@@ -13,7 +13,9 @@ import {
   Menu,
   X,
   LogOut,
-  Home
+  Home,
+  Wallet,
+  Settings
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -48,6 +50,16 @@ const AdminLayout = () => {
       name: 'Users', 
       href: '/admin/users', 
       icon: <Users className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Deposits', 
+      href: '/admin/deposits', 
+      icon: <Wallet className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Integrations', 
+      href: '/admin/integrations', 
+      icon: <Settings className="h-5 w-5" /> 
     },
   ];
 

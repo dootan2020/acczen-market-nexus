@@ -22,11 +22,13 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import VerifiedEmail from "./pages/auth/VerifiedEmail";
 import Dashboard from "./pages/Dashboard";
 import Deposit from "./pages/Deposit";
+import DepositSuccess from "./pages/DepositSuccess";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDeposits from "./pages/admin/AdminDeposits";
 import ProductIntegration from "./pages/admin/ProductIntegration";
 import AdminLayout from "./components/AdminLayout";
 
@@ -48,6 +50,7 @@ const App = () => (
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
+                <Route path="/deposit/success" element={<ProtectedRoute><DepositSuccess /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route element={<AdminLayout />}>
@@ -56,6 +59,7 @@ const App = () => (
                 <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
                 <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
                 <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+                <Route path="/admin/deposits" element={<AdminProtectedRoute><AdminDeposits /></AdminProtectedRoute>} />
                 <Route path="/admin/integrations" element={<AdminProtectedRoute><ProductIntegration /></AdminProtectedRoute>} />
               </Route>
               <Route path="/login" element={<Login />} />
