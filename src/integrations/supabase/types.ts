@@ -149,12 +149,15 @@ export type Database = {
       }
       products: {
         Row: {
+          api_order_id: string | null
           category_id: string
           created_at: string
           description: string
           features: Json | null
           id: string
           image_url: string | null
+          kiosk_token: string | null
+          metadata: Json | null
           name: string
           price: number
           sale_price: number | null
@@ -164,12 +167,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_order_id?: string | null
           category_id: string
           created_at?: string
           description: string
           features?: Json | null
           id?: string
           image_url?: string | null
+          kiosk_token?: string | null
+          metadata?: Json | null
           name: string
           price: number
           sale_price?: number | null
@@ -179,12 +185,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_order_id?: string | null
           category_id?: string
           created_at?: string
           description?: string
           features?: Json | null
           id?: string
           image_url?: string | null
+          kiosk_token?: string | null
+          metadata?: Json | null
           name?: string
           price?: number
           sale_price?: number | null
@@ -239,6 +248,78 @@ export type Database = {
         }
         Relationships: []
       }
+      taphoammo_mock_orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          kiosk_token: string
+          order_id: string
+          product_keys: Json | null
+          promotion: string | null
+          quantity: number
+          status: string
+          updated_at: string | null
+          user_token: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kiosk_token: string
+          order_id: string
+          product_keys?: Json | null
+          promotion?: string | null
+          quantity: number
+          status?: string
+          updated_at?: string | null
+          user_token: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kiosk_token?: string
+          order_id?: string
+          product_keys?: Json | null
+          promotion?: string | null
+          quantity?: number
+          status?: string
+          updated_at?: string | null
+          user_token?: string
+        }
+        Relationships: []
+      }
+      taphoammo_mock_products: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          kiosk_token: string
+          name: string
+          price: number
+          stock_quantity: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          kiosk_token: string
+          name: string
+          price: number
+          stock_quantity?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          kiosk_token?: string
+          name?: string
+          price?: number
+          stock_quantity?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -274,6 +355,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_random_order_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
