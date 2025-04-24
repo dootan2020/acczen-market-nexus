@@ -50,6 +50,7 @@ export type Database = {
           paypal_payer_email: string | null
           paypal_payer_id: string | null
           status: string
+          transaction_hash: string | null
           updated_at: string
           user_id: string
         }
@@ -63,6 +64,7 @@ export type Database = {
           paypal_payer_email?: string | null
           paypal_payer_id?: string | null
           status?: string
+          transaction_hash?: string | null
           updated_at?: string
           user_id: string
         }
@@ -76,6 +78,7 @@ export type Database = {
           paypal_payer_email?: string | null
           paypal_payer_id?: string | null
           status?: string
+          transaction_hash?: string | null
           updated_at?: string
           user_id?: string
         }
