@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +18,8 @@ import Register from "./pages/auth/Register";
 import ResetPassword from "./pages/auth/ResetPassword";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import VerifiedEmail from "./pages/auth/VerifiedEmail";
+import Dashboard from "./pages/Dashboard";
+import Deposit from "./pages/Deposit";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:slug" element={<ProductDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route path="/login" element={<Login />} />

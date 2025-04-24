@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Track scroll position for header styling
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -39,13 +37,11 @@ const Header = () => {
       )}
     >
       <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <span className="text-xl font-bold text-primary">AccZen</span>
           <span className="text-xl font-medium">.net</span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-8">
           <NavigationMenu>
             <NavigationMenuList>
@@ -108,7 +104,6 @@ const Header = () => {
           </NavigationMenu>
         </div>
 
-        {/* Right side buttons */}
         <div className="flex items-center gap-2">
           <CartDropdown />
           
@@ -116,6 +111,9 @@ const Header = () => {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/deposit">Deposit</Link>
               </Button>
               <Button variant="outline" size="sm" onClick={() => signOut()}>
                 Logout
@@ -132,7 +130,6 @@ const Header = () => {
             </div>
           )}
 
-          {/* Mobile menu toggle */}
           <Button
             variant="outline"
             size="icon"
@@ -148,7 +145,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t">
           <div className="container py-4 space-y-2">
@@ -186,7 +182,6 @@ const Header = () => {
   );
 };
 
-// Helper component for navigation menu items
 const ListItem = ({
   className,
   title,
