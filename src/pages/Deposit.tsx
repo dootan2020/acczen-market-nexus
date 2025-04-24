@@ -14,9 +14,9 @@ const DepositPage = () => {
   const [amount, setAmount] = useState<number | string>('');
   const [customAmount, setCustomAmount] = useState('');
 
-  // PayPal configuration
+  // PayPal configuration - fixed by changing "client-id" to "clientId"
   const paypalConfig = {
-    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
     currency: "USD",
     intent: "capture"
   };
@@ -82,6 +82,7 @@ const DepositPage = () => {
                         return actions.order.create({
                           purchase_units: [{
                             amount: {
+                              currency_code: "USD", // Added currency_code
                               value: amount.toString()
                             }
                           }]
@@ -139,6 +140,7 @@ const DepositPage = () => {
                       return actions.order.create({
                         purchase_units: [{
                           amount: {
+                            currency_code: "USD", // Added currency_code
                             value: amount.toString()
                           }
                         }]
