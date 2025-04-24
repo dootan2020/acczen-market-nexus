@@ -4,12 +4,14 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   id: string;
   name: string;
   image: string;
   price: number;
+  salePrice?: number; // Added the optional salePrice prop
   category: string;
   stock: number;
   featured?: boolean;
@@ -20,10 +22,22 @@ const ProductCard = ({
   name,
   image,
   price,
+  salePrice,
   category,
   stock,
   featured,
 }: ProductCardProps) => {
+  const { addItem } = useCart();
+
+  const handleAddToCart = () => {
+    addItem({
+      id,
+      name,
+      price: salePrice || price,
+      image,
+    });
+  };
+
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${featured ? 'border-primary/20 bg-primary/5' : ''}`}>
       <Link to={`/product/${id}`} className="block">
@@ -54,7 +68,14 @@ const ProductCard = ({
           <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors mb-2">{name}</h3>
         </Link>
         <div className="flex justify-between items-center">
-          <span className="text-lg font-bold text-primary">${price.toFixed(2)}</span>
+          <div>
+            <span className="text-lg font-bold text-primary">${(salePrice || price).toFixed(2)}</span>
+            {salePrice && (
+              <span className="text-sm text-muted-foreground line-through ml-2">
+                ${price.toFixed(2)}
+              </span>
+            )}
+          </div>
           <span className="text-sm text-muted-foreground">
             {stock > 10 ? 'In Stock' : stock > 0 ? `${stock} available` : 'Out of stock'}
           </span>
@@ -64,6 +85,7 @@ const ProductCard = ({
         <Button 
           className="w-full gap-2" 
           disabled={stock === 0}
+          onClick={handleAddToCart}
         >
           <ShoppingCart className="h-4 w-4" />
           Add to Cart
