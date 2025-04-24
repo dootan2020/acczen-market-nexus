@@ -46,6 +46,9 @@ export type Database = {
           id: string
           payment_id: string | null
           payment_method: string
+          paypal_order_id: string | null
+          paypal_payer_email: string | null
+          paypal_payer_id: string | null
           status: string
           updated_at: string
           user_id: string
@@ -56,6 +59,9 @@ export type Database = {
           id?: string
           payment_id?: string | null
           payment_method: string
+          paypal_order_id?: string | null
+          paypal_payer_email?: string | null
+          paypal_payer_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -66,6 +72,9 @@ export type Database = {
           id?: string
           payment_id?: string | null
           payment_method?: string
+          paypal_order_id?: string | null
+          paypal_payer_email?: string | null
+          paypal_payer_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
