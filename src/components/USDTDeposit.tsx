@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import QRCode from 'qrcode.react';
+import { QRCode } from 'qrcode.react';  // Changed from default import to named import
 
 interface USDTDepositProps {
   onSubmit?: () => void;
