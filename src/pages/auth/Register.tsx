@@ -22,7 +22,7 @@ const Register = () => {
     if (password !== confirmPassword) {
       toast("Passwords don't match", {
         description: "Please check your password and try again.",
-        variant: "destructive",
+        style: { background: 'red', color: 'white' },
       });
       return;
     }
