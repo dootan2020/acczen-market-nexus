@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import PurchasedProducts from '@/components/dashboard/PurchasedProducts';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -215,9 +216,10 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold mb-4">User Dashboard</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 mb-4">
+        <TabsList className="grid w-full grid-cols-6 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="products">My Products</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="deposits">Deposits</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -229,6 +231,10 @@ const Dashboard = () => {
         
         <TabsContent value="orders">
           {renderOrderHistory()}
+        </TabsContent>
+
+        <TabsContent value="products">
+          <PurchasedProducts />
         </TabsContent>
         
         <TabsContent value="transactions">

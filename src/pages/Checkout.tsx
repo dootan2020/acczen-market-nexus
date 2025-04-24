@@ -1,14 +1,16 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, AlertTriangle, ShoppingCart, Trash2, CreditCard } from 'lucide-react';
+import { Check, AlertTriangle, ShoppingCart, Trash2, CreditCard, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { usePurchaseTaphoammo } from '@/hooks/usePurchaseTaphoammo';
 
 const Checkout = () => {
   const { cart, removeItem, updateQuantity, clearCart } = useCart();
@@ -16,6 +18,14 @@ const Checkout = () => {
   const [userBalance, setUserBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [purchaseResult, setPurchaseResult] = useState<{
+    orderId?: string;
+    productKeys?: string[];
+    apiProduct?: boolean;
+  } | null>(null);
+  
+  const { purchase, isProcessing: isTaphoammoProcessing } = usePurchaseTaphoammo();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,24 +86,62 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // This would be replaced with a call to your Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('purchase-product', {
-        body: { 
-          items: cart.items.map(item => ({ 
-            id: item.id, 
-            quantity: item.quantity 
-          })),
-        }
+      // Check if this is a taphoammo API product
+      const hasApiProduct = cart.items.some(item => {
+        const productInfo = JSON.parse(localStorage.getItem(`product_${item.id}`) || '{}');
+        return productInfo.kioskToken;
       });
 
-      if (error) throw error;
+      if (hasApiProduct && cart.items.length === 1) {
+        // Handle API product purchase
+        const item = cart.items[0];
+        const productInfo = JSON.parse(localStorage.getItem(`product_${item.id}`) || '{}');
+        
+        const result = await purchase({
+          kioskToken: productInfo.kioskToken,
+          quantity: item.quantity,
+        });
 
-      if (data.success) {
-        toast.success('Purchase successful!');
-        clearCart();
-        navigate('/dashboard');
+        if (result.success) {
+          toast.success('Purchase successful!');
+          setPurchaseResult({
+            orderId: result.orderId,
+            productKeys: result.productKeys,
+            apiProduct: true
+          });
+          setShowSuccessDialog(true);
+          clearCart();
+          // Update user balance after successful purchase
+          setUserBalance(prev => prev - cart.totalPrice);
+        } else {
+          toast.error(result.error || 'Failed to process your purchase');
+        }
       } else {
-        toast.error(data.message || 'Failed to process your purchase');
+        // Handle regular product purchase
+        const { data, error } = await supabase.functions.invoke('purchase-product', {
+          body: { 
+            items: cart.items.map(item => ({ 
+              id: item.id, 
+              quantity: item.quantity 
+            })),
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.success) {
+          toast.success('Purchase successful!');
+          setPurchaseResult({
+            orderId: data.orderId,
+            apiProduct: false
+          });
+          setShowSuccessDialog(true);
+          clearCart();
+          // Update user balance
+          setUserBalance(prev => prev - cart.totalPrice);
+        } else {
+          toast.error(data.message || 'Failed to process your purchase');
+        }
       }
     } catch (error) {
       console.error('Purchase error:', error);
@@ -136,53 +184,65 @@ const Checkout = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cart.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center">
-                          <img 
-                            src={item.image || 'https://placehold.co/100x100?text=No+Image'} 
-                            alt={item.name}
-                            className="h-12 w-12 object-cover rounded mr-3"
-                          />
-                          {item.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center">
+                  {cart.items.map((item) => {
+                    const productInfo = JSON.parse(localStorage.getItem(`product_${item.id}`) || '{}');
+                    const isApiProduct = !!productInfo.kioskToken;
+                    
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <img 
+                              src={item.image || 'https://placehold.co/100x100?text=No+Image'} 
+                              alt={item.name}
+                              className="h-12 w-12 object-cover rounded mr-3"
+                            />
+                            <div>
+                              {item.name}
+                              {isApiProduct && (
+                                <Badge variant="outline" className="ml-2 bg-blue-50">
+                                  API Product
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleQuantityChange(item.id, -1, item.quantity)}
+                            >
+                              -
+                            </Button>
+                            <span className="mx-2">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleQuantityChange(item.id, 1, item.quantity)}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">${(item.price * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleQuantityChange(item.id, -1, item.quantity)}
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            -
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                          <span className="mx-2">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleQuantityChange(item.id, 1, item.quantity)}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">${(item.price * item.quantity).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -234,12 +294,12 @@ const Checkout = () => {
                 <Button 
                   className="w-full mt-4" 
                   size="lg"
-                  disabled={isProcessing || hasInsufficientBalance || cart.items.length === 0}
+                  disabled={isProcessing || isTaphoammoProcessing || hasInsufficientBalance || cart.items.length === 0}
                   onClick={handleCheckout}
                 >
-                  {isProcessing ? (
+                  {isProcessing || isTaphoammoProcessing ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent mr-2"></div>
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
                       Processing...
                     </>
                   ) : (
@@ -274,6 +334,56 @@ const Checkout = () => {
           </div>
         </div>
       )}
+
+      {/* Purchase Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              Purchase Complete
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="mb-4">Your purchase has been processed successfully.</p>
+            
+            {purchaseResult?.apiProduct && purchaseResult.productKeys?.length ? (
+              <div className="bg-muted p-4 rounded-md">
+                <h3 className="font-medium mb-2">Product Keys</h3>
+                <div className="space-y-2">
+                  {purchaseResult.productKeys.map((key, index) => (
+                    <div key={index} className="bg-background p-2 rounded font-mono text-sm">
+                      {key}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p>You can view your purchased products on your dashboard.</p>
+            )}
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              className="sm:w-full"
+              onClick={() => setShowSuccessDialog(false)}
+            >
+              Close
+            </Button>
+            <Button 
+              className="sm:w-full"
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate('/dashboard');
+              }}
+            >
+              Go to Dashboard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

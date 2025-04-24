@@ -11,10 +11,11 @@ interface ProductCardProps {
   name: string;
   image: string;
   price: number;
-  salePrice?: number; // Added the optional salePrice prop
+  salePrice?: number; 
   category: string;
   stock: number;
   featured?: boolean;
+  kioskToken?: string;
 }
 
 const ProductCard = ({
@@ -26,16 +27,28 @@ const ProductCard = ({
   category,
   stock,
   featured,
+  kioskToken,
 }: ProductCardProps) => {
   const { addItem } = useCart();
 
   const handleAddToCart = () => {
-    addItem({
+    const item = {
       id,
       name,
       price: salePrice || price,
       image,
-    });
+    };
+
+    addItem(item);
+
+    // If this is an API product, store the kioskToken in localStorage
+    if (kioskToken) {
+      localStorage.setItem(`product_${id}`, JSON.stringify({
+        kioskToken,
+        name,
+        price: salePrice || price,
+      }));
+    }
   };
 
   return (
@@ -50,6 +63,7 @@ const ProductCard = ({
           <div className="absolute top-2 left-2 flex gap-2">
             <Badge className="bg-secondary hover:bg-secondary/80">{category}</Badge>
             {featured && <Badge variant="default">Featured</Badge>}
+            {kioskToken && <Badge variant="outline" className="bg-blue-100 text-blue-800">API</Badge>}
           </div>
           {stock <= 5 && stock > 0 && (
             <Badge variant="outline" className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm">

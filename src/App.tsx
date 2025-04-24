@@ -27,6 +27,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
+import ProductIntegration from "./pages/admin/ProductIntegration";
 import AdminLayout from "./components/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
                 <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
                 <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+                <Route path="/admin/integrations" element={<AdminProtectedRoute><ProductIntegration /></AdminProtectedRoute>} />
               </Route>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
