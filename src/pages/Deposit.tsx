@@ -33,7 +33,7 @@ const DepositPage = () => {
       // Update user balance
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ balance: user.balance + depositAmount })
+        .update({ balance: (user.balance || 0) + depositAmount })
         .eq('id', user.id);
 
       if (updateError) throw updateError;

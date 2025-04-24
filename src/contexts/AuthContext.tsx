@@ -5,9 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Add this interface for the extended user data that includes profile info
+interface ExtendedUser extends User {
+  balance?: number;
+}
+
 interface AuthContextType {
   session: Session | null;
-  user: User | null;
+  user: ExtendedUser | null;
   isAdmin: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -20,7 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -30,8 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      checkUserRole(session?.user?.id);
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
     });
 
     // Listen for auth changes
@@ -39,12 +48,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      checkUserRole(session?.user?.id);
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserProfile = async (authUser: User) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, balance')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error) throw error;
+      
+      const extendedUser: ExtendedUser = {
+        ...authUser,
+        balance: data.balance
+      };
+      
+      setUser(extendedUser);
+      setIsAdmin(data.role === 'admin');
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setUser(authUser);
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const checkUserRole = async (userId: string | undefined) => {
     if (!userId) {
