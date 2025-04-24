@@ -44,6 +44,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          metadata: Json | null
           payment_id: string | null
           payment_method: string
           paypal_order_id: string | null
@@ -58,6 +59,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          metadata?: Json | null
           payment_id?: string | null
           payment_method: string
           paypal_order_id?: string | null
@@ -72,6 +74,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          metadata?: Json | null
           payment_id?: string | null
           payment_method?: string
           paypal_order_id?: string | null
@@ -81,6 +84,36 @@ export type Database = {
           transaction_hash?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      email_logs: {
+        Row: {
+          created_at: string
+          email_type: string
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          sent_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_type: string
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          sent_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_type?: string
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          sent_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
