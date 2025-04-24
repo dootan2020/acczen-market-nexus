@@ -61,6 +61,10 @@ interface Deposit {
   paypal_order_id?: string;
   paypal_payer_id?: string;
   paypal_payer_email?: string;
+  profiles?: {
+    email?: string;
+    username?: string;
+  };
 }
 
 interface User {
@@ -86,7 +90,7 @@ const AdminDeposits = () => {
         .from('deposits')
         .select(`
           *,
-          profiles:profiles(email, username)
+          profiles(email, username)
         `)
         .order('created_at', { ascending: false });
 
@@ -129,11 +133,11 @@ const AdminDeposits = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update user balance
+      // Update user balance using a direct SQL function call
       const { error: balanceError } = await supabase.rpc(
         'update_user_balance',
         { user_id: deposit.user_id, amount: deposit.amount }
-      );
+      ).single();
 
       if (balanceError) throw balanceError;
 

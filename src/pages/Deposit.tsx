@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import USDTDeposit from '@/components/USDTDeposit';
 import PayPalDeposit from '@/components/PayPalDeposit';
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DepositPage = () => {
@@ -19,7 +19,7 @@ const DepositPage = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <Alert className="mb-4">
-            <InfoCircle className="h-4 w-4" />
+            <Info className="h-4 w-4" />
             <AlertTitle>Payment Information</AlertTitle>
             <AlertDescription>
               Deposits are typically processed instantly for PayPal and may take up to 30 minutes for cryptocurrency transactions.

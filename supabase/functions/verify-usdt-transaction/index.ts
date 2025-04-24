@@ -1,185 +1,170 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import TronWeb from 'https://esm.sh/tronweb@5.3.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-// Create a TronWeb instance
-// @ts-ignore - TronWeb is imported dynamically in Deno
-import TronWeb from 'https://esm.sh/tronweb@5.3.2'
-
-interface VerifyRequest {
-  txid: string;
-  expected_amount: number;
-  user_id: string;
-  deposit_id: string;
-  wallet_address: string;
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Get environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const tronApiKey = Deno.env.get('TRON_API_KEY') || '';
-    const tronNode = Deno.env.get('TRON_NODE_URL') || 'https://api.trongrid.io';
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Initialize Supabase client with the service role key
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Parse request body
-    const { txid, expected_amount, user_id, deposit_id, wallet_address } = await req.json() as VerifyRequest;
-
+    // Get request body
+    const { txid, expected_amount, user_id, deposit_id, wallet_address } = await req.json();
+    
     if (!txid || !expected_amount || !user_id || !deposit_id || !wallet_address) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Missing required parameters' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log(`Verifying USDT transaction: ${txid} for user: ${user_id}, amount: ${expected_amount}`);
-
-    // Initialize TronWeb
+    // Setup TronWeb
     const tronWeb = new TronWeb({
-      fullHost: tronNode,
-      headers: { "TRON-PRO-API-KEY": tronApiKey }
+      fullHost: 'https://api.trongrid.io',
     });
-
-    // Get transaction details from the blockchain
-    const txInfo = await tronWeb.trx.getTransaction(txid);
     
-    if (!txInfo) {
-      console.log(`Transaction not found: ${txid}`);
+    // Get transaction info from the Tron network
+    let transaction;
+    try {
+      transaction = await tronWeb.trx.getTransaction(txid);
+      
+      if (!transaction) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Transaction not found' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        );
+      }
+      
+      // Check if transaction is confirmed
+      if (transaction.ret[0].contractRet !== 'SUCCESS') {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Transaction was not successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+    } catch (error) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Transaction not found on the blockchain' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Failed to fetch transaction details', error: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
-
-    // For USDT (TRC20) transactions, we need to decode the contract data
-    if (!txInfo.ret || txInfo.ret.length === 0 || txInfo.ret[0].contractRet !== 'SUCCESS') {
-      console.log(`Transaction was not successful: ${txid}`);
-      return new Response(
-        JSON.stringify({ success: false, message: 'Transaction was not successful' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // For TRC20 tokens like USDT, we need to get the transaction info
-    const txDetails = await tronWeb.trx.getTransactionInfo(txid);
     
-    // Check if transaction exists and has been confirmed
-    if (!txDetails || !txDetails.blockNumber) {
-      console.log(`Transaction not confirmed yet: ${txid}`);
-      return new Response(
-        JSON.stringify({ success: false, message: 'Transaction not confirmed yet' }),
-        { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get contract data to verify details
-    const contract = txInfo.raw_data.contract[0];
-    if (contract.type !== "TriggerSmartContract") {
-      console.log(`Invalid transaction type: ${contract.type}`);
-      return new Response(
-        JSON.stringify({ success: false, message: 'Not a TRC20 token transfer' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verify contract call parameters - would need to decode parameters for exact verification
-    // This is a simplified verification - in production, decode the parameters properly
+    // Get transaction info from the Tron network using the explorer API for USDT details
+    const response = await fetch(`https://apilist.tronscan.org/api/transaction-info?hash=${txid}`);
+    const txData = await response.json();
     
-    // For now, we'll check if the transaction is confirmed
-    console.log(`Transaction ${txid} is confirmed with block number ${txDetails.blockNumber}`);
-
-    // Update the deposit status in the database
-    const { data: depositData, error: depositError } = await supabase
+    if (!txData.contractData || !txData.trc20TransferInfo) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Not a valid USDT TRC20 transaction' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // Find the USDT transfer in the transaction
+    const usdtTransfer = txData.trc20TransferInfo.find((transfer: any) => 
+      transfer.symbol === 'USDT' && 
+      transfer.to_address === wallet_address
+    );
+    
+    if (!usdtTransfer) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'No USDT transfer to the specified wallet found in this transaction' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // Check amount (USDT has 6 decimals on Tron)
+    const amount = parseFloat(usdtTransfer.amount_str) / 1000000;
+    
+    if (Math.abs(amount - expected_amount) > 0.01) { // Allow for small rounding differences
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `Amount mismatch. Expected ${expected_amount} USDT but got ${amount} USDT` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // Update the deposit record to completed
+    const { data: deposit, error: updateError } = await supabaseClient
       .from('deposits')
       .update({ 
         status: 'completed',
         updated_at: new Date().toISOString()
       })
       .eq('id', deposit_id)
-      .eq('user_id', user_id)
-      .eq('transaction_hash', txid)
       .select()
       .single();
-
-    if (depositError || !depositData) {
-      console.error('Error updating deposit:', depositError);
+      
+    if (updateError) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Error updating deposit record' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Failed to update deposit', error: updateError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
-
+    
     // Create a transaction record
-    const { data: transactionData, error: transactionError } = await supabase
+    const { data: transaction_record, error: transactionError } = await supabaseClient
       .from('transactions')
       .insert({
         user_id,
-        amount: depositData.amount,
+        amount: expected_amount,
         type: 'deposit',
         reference_id: deposit_id,
         description: 'USDT deposit'
       })
       .select()
       .single();
-
+      
     if (transactionError) {
-      console.error('Error creating transaction record:', transactionError);
       return new Response(
-        JSON.stringify({ success: false, message: 'Error creating transaction record' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Failed to create transaction record', error: transactionError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
-
-    // Update user balance
-    const { error: balanceError } = await supabase.rpc(
+    
+    // Update user balance using RPC function
+    const { data: balance_update, error: balanceError } = await supabaseClient.rpc(
       'update_user_balance',
-      { user_id, amount: depositData.amount }
+      { user_id, amount: expected_amount }
     );
-
+    
     if (balanceError) {
-      console.error('Error updating user balance:', balanceError);
       return new Response(
-        JSON.stringify({ success: false, message: 'Error updating user balance' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: 'Failed to update user balance', error: balanceError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
-
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Transaction verified and deposit processed',
+      JSON.stringify({ 
+        success: true, 
+        message: 'Transaction verified and deposit processed successfully',
         data: {
-          deposit: depositData,
-          transaction: transactionData
+          deposit,
+          transaction: transaction_record
         }
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
-    console.error('Error processing transaction verification:', error);
     return new Response(
-      JSON.stringify({ success: false, message: `Error: ${error.message}` }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, message: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
