@@ -64,7 +64,7 @@ interface Deposit {
   profiles?: {
     email?: string;
     username?: string;
-  };
+  } | null;
 }
 
 interface User {
@@ -86,16 +86,37 @@ const AdminDeposits = () => {
   const { data: deposits, isLoading, error } = useQuery({
     queryKey: ['admin-deposits'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, let's get all deposits
+      const { data: depositsData, error: depositsError } = await supabase
         .from('deposits')
-        .select(`
-          *,
-          profiles(email, username)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (depositsError) throw depositsError;
+      
+      // Then fetch profiles data separately
+      const userIds = [...new Set(depositsData.map((d: any) => d.user_id))];
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, username')
+        .in('id', userIds);
+        
+      if (profilesError) throw profilesError;
+      
+      // Create a map of profiles by id for quick lookup
+      const profilesMap = profilesData?.reduce((acc: any, profile: any) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+      
+      // Combine the data
+      const combinedData = depositsData.map((deposit: any) => ({
+        ...deposit,
+        profiles: profilesMap[deposit.user_id] || null
+      }));
+      
+      return combinedData;
     }
   });
 
@@ -133,11 +154,12 @@ const AdminDeposits = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update user balance using a direct SQL function call
+      // Update user balance using a direct database function call
+      // Since 'update_user_balance' is not in types, use a raw RPC call
       const { error: balanceError } = await supabase.rpc(
         'update_user_balance',
         { user_id: deposit.user_id, amount: deposit.amount }
-      ).single();
+      );
 
       if (balanceError) throw balanceError;
 
@@ -188,7 +210,7 @@ const AdminDeposits = () => {
   });
 
   // Filter deposits based on filters
-  const filteredDeposits = deposits?.filter(deposit => {
+  const filteredDeposits = deposits?.filter((deposit: Deposit) => {
     // Status filter
     if (statusFilter !== "all" && deposit.status !== statusFilter) {
       return false;
@@ -248,7 +270,7 @@ const AdminDeposits = () => {
     // Create CSV content
     const headers = "ID,User,Amount,Payment Method,Status,Date,Transaction Hash\n";
     
-    const csvContent = filteredDeposits.reduce((acc, deposit) => {
+    const csvContent = filteredDeposits.reduce((acc: string, deposit: Deposit) => {
       const user = deposit.profiles?.email || deposit.user_id;
       const row = [
         deposit.id,
@@ -415,7 +437,7 @@ const AdminDeposits = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredDeposits?.map(deposit => (
+                  filteredDeposits?.map((deposit: Deposit) => (
                     <TableRow key={deposit.id}>
                       <TableCell className="font-mono text-xs">
                         {deposit.id.split('-')[0]}...
