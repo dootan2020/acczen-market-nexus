@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { QRCode } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface USDTDepositProps {
   onSubmit?: () => void;
@@ -82,7 +83,7 @@ const USDTDeposit = ({ onSubmit }: USDTDepositProps) => {
               {walletAddress}
             </div>
             <div className="mt-4 flex justify-center">
-              <QRCode value={walletAddress} size={128} />
+              <QRCodeSVG value={walletAddress} size={128} />
             </div>
           </div>
 
