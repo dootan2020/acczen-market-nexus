@@ -6,18 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
 import { Package } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Register = () => {
-  const { toast } = useToast();
+  const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       toast({
@@ -27,18 +27,9 @@ const Register = () => {
       });
       return;
     }
-
     setIsLoading(true);
-
-    // Mock registration process
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      toast({
-        title: "Registration Notification",
-        description: "This is a demo registration. In production, this would connect to Supabase authentication.",
-      });
-    }, 1500);
+    await signUp(email, password, { full_name: fullName });
+    setIsLoading(false);
   };
 
   return (
@@ -60,21 +51,21 @@ const Register = () => {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input 
-                  id="username" 
-                  placeholder="Your username" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="name@example.com" 
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -82,10 +73,10 @@ const Register = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••" 
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -93,10 +84,10 @@ const Register = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input 
-                  id="confirm-password" 
-                  type="password" 
-                  placeholder="••••••••" 
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -122,7 +113,7 @@ const Register = () => {
               </Button>
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <Link to="/auth/login" className="text-primary hover:underline">
+                <Link to="/login" className="text-primary hover:underline">
                   Login
                 </Link>
               </div>

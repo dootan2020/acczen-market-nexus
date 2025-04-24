@@ -8,16 +8,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const Login = () => {
-  const [isLoading, setIsLoading] = useState(false);
+const ResetPassword = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn(email, password);
+    await resetPassword(email);
     setIsLoading(false);
   };
 
@@ -32,9 +31,9 @@ const Login = () => {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
-              Enter your email and password to access your account
+              Enter your email address and we'll send you a link to reset your password.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -50,31 +49,15 @@ const Login = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link to="/reset-password" className="text-xs text-primary hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Sending reset link..." : "Send reset link"}
               </Button>
               <div className="text-center text-sm">
-                Don't have an account?{" "}
-                <Link to="/register" className="text-primary hover:underline">
-                  Sign up
+                Remember your password?{" "}
+                <Link to="/login" className="text-primary hover:underline">
+                  Login
                 </Link>
               </div>
             </CardFooter>
@@ -85,4 +68,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ResetPassword;
