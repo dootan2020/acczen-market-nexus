@@ -1,129 +1,220 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Package, LogIn, Menu, X } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import CartDropdown from "@/components/CartDropdown";
+import { Menu, X } from "lucide-react";
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Track scroll position for header styling
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full transition-all duration-200",
+        isScrolled
+          ? "bg-background/95 backdrop-blur-md border-b shadow-sm"
+          : "bg-background"
+      )}
+    >
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-            <Package className="h-6 w-6 text-primary" />
-            <span>AccZen<span className="text-secondary">.net</span></span>
-          </Link>
-        </div>
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold text-primary">AccZen</span>
+          <span className="text-xl font-medium">.net</span>
+        </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/products" className="text-sm font-medium hover:text-primary transition-colors">
-            Products
-          </Link>
-          <Link to="/categories" className="text-sm font-medium hover:text-primary transition-colors">
-            Categories
-          </Link>
-          <Link to="/how-it-works" className="text-sm font-medium hover:text-primary transition-colors">
-            How It Works
-          </Link>
-          <Link to="/support" className="text-sm font-medium hover:text-primary transition-colors">
-            Support
-          </Link>
-        </nav>
-
-        {/* Auth & Cart Buttons */}
-        <div className="hidden md:flex items-center gap-2">
-          <Link to="/auth/login">
-            <Button variant="outline" size="sm" className="gap-2">
-              <LogIn className="h-4 w-4" />
-              Login
-            </Button>
-          </Link>
-          <Link to="/auth/register">
-            <Button size="sm" className="gap-2">
-              Sign Up
-            </Button>
-          </Link>
-          <Link to="/cart" className="relative ml-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-                0
-              </span>
-            </Button>
-          </Link>
+        <div className="hidden md:flex items-center space-x-8">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link to="/">
+                  <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    Home
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          to="/products"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-primary/50 to-primary p-6 no-underline outline-none focus:shadow-md"
+                        >
+                          <div className="mt-4 mb-2 text-lg font-medium text-white">
+                            Browse All Products
+                          </div>
+                          <p className="text-sm leading-tight text-white/90">
+                            Explore our full catalog of digital products with instant delivery
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem to="/products?category=email-accounts" title="Email Accounts">
+                      Professional email accounts from various providers
+                    </ListItem>
+                    <ListItem to="/products?category=social-accounts" title="Social Accounts">
+                      Verified social media accounts for your business
+                    </ListItem>
+                    <ListItem to="/products?category=software-keys" title="Software Keys">
+                      License keys for popular software at great prices
+                    </ListItem>
+                    <ListItem to="/products?category=digital-services" title="Digital Services">
+                      Professional digital marketing services
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/about">
+                  <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    About
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/contact">
+                  <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    Contact
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button 
-          className="md:hidden" 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Right side buttons */}
+        <div className="flex items-center gap-2">
+          <CartDropdown />
+          
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/register">Register</Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Mobile menu toggle */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t border-border/40">
-          <div className="container py-4 flex flex-col gap-4 animate-fade-in">
-            <Link 
-              to="/products" 
-              className="px-2 py-2 text-sm font-medium hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Products
-            </Link>
-            <Link 
-              to="/categories" 
-              className="px-2 py-2 text-sm font-medium hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Categories
-            </Link>
-            <Link 
-              to="/how-it-works" 
-              className="px-2 py-2 text-sm font-medium hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              How It Works
-            </Link>
-            <Link 
-              to="/support" 
-              className="px-2 py-2 text-sm font-medium hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Support
-            </Link>
-            <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-              <Link to="/auth/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Login
-                </Button>
+      {/* Mobile menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t">
+          <div className="container py-4 space-y-2">
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
+                Home
               </Link>
-              <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full justify-start">
-                  Sign Up
-                </Button>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/products" onClick={() => setIsMobileMenuOpen(false)}>
+                Products
               </Link>
-              <Link to="/cart" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  Cart
-                  <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-                    0
-                  </span>
-                </Button>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>
+                About
               </Link>
-            </div>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>
+                Contact
+              </Link>
+            </Button>
+            {user && (
+              <Button variant="ghost" className="w-full justify-start" asChild>
+                <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                  Dashboard
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       )}
     </header>
+  );
+};
+
+// Helper component for navigation menu items
+const ListItem = ({
+  className,
+  title,
+  to,
+  children,
+}: {
+  className?: string;
+  title: string;
+  to: string;
+  children: React.ReactNode;
+}) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <Link
+          to={to}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </Link>
+      </NavigationMenuLink>
+    </li>
   );
 };
 

@@ -26,29 +26,31 @@ const ProductCard = ({
 }: ProductCardProps) => {
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${featured ? 'border-primary/20 bg-primary/5' : ''}`}>
-      <div className="relative">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-48 object-cover"
-        />
-        <div className="absolute top-2 left-2 flex gap-2">
-          <Badge className="bg-secondary hover:bg-secondary/80">{category}</Badge>
-          {featured && <Badge variant="default">Featured</Badge>}
-        </div>
-        {stock <= 5 && stock > 0 && (
-          <Badge variant="outline" className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm">
-            Only {stock} left
-          </Badge>
-        )}
-        {stock === 0 && (
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-            <Badge variant="destructive" className="text-lg py-1 px-3">Out of Stock</Badge>
+      <Link to={`/product/${id}`} className="block">
+        <div className="relative">
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-48 object-cover"
+          />
+          <div className="absolute top-2 left-2 flex gap-2">
+            <Badge className="bg-secondary hover:bg-secondary/80">{category}</Badge>
+            {featured && <Badge variant="default">Featured</Badge>}
           </div>
-        )}
-      </div>
+          {stock <= 5 && stock > 0 && (
+            <Badge variant="outline" className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm">
+              Only {stock} left
+            </Badge>
+          )}
+          {stock === 0 && (
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
+              <Badge variant="destructive" className="text-lg py-1 px-3">Out of Stock</Badge>
+            </div>
+          )}
+        </div>
+      </Link>
       <CardContent className="p-4">
-        <Link to={`/products/${id}`}>
+        <Link to={`/product/${id}`}>
           <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors mb-2">{name}</h3>
         </Link>
         <div className="flex justify-between items-center">
