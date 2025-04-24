@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -48,7 +47,6 @@ const ProductIntegration = () => {
   const queryClient = useQueryClient();
   const { getStock } = useTaphoammoAPI();
 
-  // Fetch taphoammo products
   const { 
     data: mockProducts, 
     isLoading: loadingMockProducts,
@@ -66,7 +64,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Fetch platform products
   const { 
     data: products, 
     isLoading: loadingProducts 
@@ -83,7 +80,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Fetch taphoammo orders
   const {
     data: orderItems,
     isLoading: loadingOrders,
@@ -108,7 +104,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Link product mutation
   const linkProductMutation = useMutation({
     mutationFn: async ({ productId, kioskToken }: { productId: string, kioskToken: string }) => {
       const { error } = await supabase
@@ -129,7 +124,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Unlink product mutation
   const unlinkProductMutation = useMutation({
     mutationFn: async (productId: string) => {
       const { error } = await supabase
@@ -150,13 +144,11 @@ const ProductIntegration = () => {
     }
   });
 
-  // Update stock mutation
   const updateStockMutation = useMutation({
     mutationFn: async ({ kioskToken }: { kioskToken: string }) => {
       try {
         const product = await getStock(kioskToken, 'admin');
         
-        // Update mock product
         const { error: mockError } = await supabase
           .from('taphoammo_mock_products')
           .update({
@@ -167,7 +159,6 @@ const ProductIntegration = () => {
         
         if (mockError) throw new Error(mockError.message);
         
-        // Update any linked products
         const { data: linkedProducts } = await supabase
           .from('products')
           .select('id')
@@ -201,7 +192,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Sync all products mutation
   const syncAllMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('sync-taphoammo');
@@ -223,7 +213,6 @@ const ProductIntegration = () => {
     }
   });
 
-  // Filter mock products
   const filteredMockProducts = mockProducts?.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
     (filterKiosk === "" || product.kiosk_token.includes(filterKiosk))
@@ -259,9 +248,9 @@ const ProductIntegration = () => {
             </div>
             <Button 
               onClick={() => syncAllMutation.mutate()} 
-              disabled={syncAllMutation.isLoading}
+              disabled={syncAllMutation.isPending}
             >
-              {syncAllMutation.isLoading ? (
+              {syncAllMutation.isPending ? (
                 <>
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                   Syncing...
@@ -359,9 +348,9 @@ const ProductIntegration = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => updateStockMutation.mutate({ kioskToken: mockProduct.kiosk_token })}
-                              disabled={updateStockMutation.isLoading}
+                              disabled={updateStockMutation.isPending}
                             >
-                              {updateStockMutation.isLoading ? (
+                              {updateStockMutation.isPending ? (
                                 <Loader className="h-3 w-3 animate-spin" />
                               ) : (
                                 <RefreshCw className="h-3 w-3 mr-2" />

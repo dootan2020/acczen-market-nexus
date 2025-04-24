@@ -14,6 +14,7 @@ interface TaphoammoOrderResponse {
   order_id?: string;
   message?: string;
   product_keys?: string[];
+  status?: string;  // Added the status property
 }
 
 export const useTaphoammoAPI = () => {
