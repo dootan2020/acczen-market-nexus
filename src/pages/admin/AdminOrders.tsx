@@ -80,8 +80,16 @@ const AdminOrders = () => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data as OrderWithProfile[];
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+      
+      // Handle the case where the relation might not be found
+      return (data || []).map(order => ({
+        ...order,
+        profiles: order.profiles || { id: '', email: 'Unknown User', username: '' }
+      })) as OrderWithProfile[];
     }
   });
 
