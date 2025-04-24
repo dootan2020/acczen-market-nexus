@@ -15,7 +15,8 @@ import {
   LogOut,
   Home,
   Wallet,
-  Settings
+  Settings,
+  BarChart
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -57,6 +58,11 @@ const AdminLayout = () => {
       icon: <Wallet className="h-5 w-5" /> 
     },
     { 
+      name: 'Reports', 
+      href: '/admin/reports', 
+      icon: <BarChart className="h-5 w-5" /> 
+    },
+    { 
       name: 'Integrations', 
       href: '/admin/integrations', 
       icon: <Settings className="h-5 w-5" /> 
@@ -84,7 +90,7 @@ const AdminLayout = () => {
       )}>
         <div className="flex h-16 items-center justify-center border-b px-4">
           <Link to="/admin" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <span>AccZen Admin</span>
+            <span>Digital Deals Hub</span>
           </Link>
         </div>
         

@@ -2,118 +2,50 @@
 project_id = "epwggtbgdtaxietedjcn"
 
 [api]
+enabled = true
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
 
 [db]
 port = 54322
-shadow_port = 54320
 major_version = 15
 
+[realtime]
+enabled = true
+
 [studio]
+enabled = true
 port = 54323
+api_url = "http://localhost"
 
 [inbucket]
+enabled = true
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
-file_size_limit = "50MiB"
+enabled = true
 
 [auth]
+enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
-enable_signup = true
 
 [auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = false
+enabled = true
 
-[auth.external.apple]
+[auth.sms]
+enabled = true
+
+[analytics]
 enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
+port = 54327
+vector_port = 54328
+backend = "postgres"
 
-[auth.external.github]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.gitlab]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.facebook]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.discord]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.twitter]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.twitch]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.spotify]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.slack]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.azure]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.bitbucket]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.linkedin]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
+# Configure the edge functions
 [functions]
-[functions.verify-usdt-transaction]
-verify_jwt = true
+enabled = true
+port = 54325
+
+# Configure the PayPal webhook to be public
+[functions.verify-paypal-webhook]
+verify_jwt = false
