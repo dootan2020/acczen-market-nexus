@@ -39,9 +39,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Plus, MoreVertical, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, MoreVertical, Search, Edit, Trash2, Eye, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useProducts';
+
+// Define product status type based on the database enum
+type ProductStatus = 'active' | 'inactive' | 'out_of_stock';
 
 interface ProductFormData {
   name: string;
@@ -52,7 +55,7 @@ interface ProductFormData {
   image_url: string;
   slug: string;
   category_id: string;
-  status: string;
+  status: ProductStatus;
 }
 
 const AdminProducts = () => {
@@ -219,7 +222,7 @@ const AdminProducts = () => {
       image_url: product.image_url || '',
       slug: product.slug,
       category_id: product.category_id,
-      status: product.status,
+      status: product.status as ProductStatus,
     });
     setIsProductDialogOpen(true);
   };
@@ -485,15 +488,15 @@ const AdminProducts = () => {
                   <Select 
                     name="status" 
                     value={formData.status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as ProductStatus }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

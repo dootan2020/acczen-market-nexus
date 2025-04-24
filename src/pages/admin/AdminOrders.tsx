@@ -40,6 +40,9 @@ import { Search, MoreVertical, Eye, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+// Define order status type based on the database enum
+type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'refunded';
+
 const AdminOrders = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +50,7 @@ const AdminOrders = () => {
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isUpdateStatusDialogOpen, setIsUpdateStatusDialogOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('pending');
 
   // Fetch orders
   const { data: orders, isLoading } = useQuery({
@@ -88,7 +91,7 @@ const AdminOrders = () => {
 
   // Update order status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+    mutationFn: async ({ id, status }: { id: string, status: OrderStatus }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status })
@@ -123,7 +126,7 @@ const AdminOrders = () => {
   // Handle update status dialog
   const handleUpdateStatusDialog = (order: any) => {
     setCurrentOrder(order);
-    setSelectedStatus(order.status);
+    setSelectedStatus(order.status as OrderStatus);
     setIsUpdateStatusDialogOpen(true);
   };
 
@@ -172,7 +175,7 @@ const AdminOrders = () => {
             <SelectItem value="">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
             <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
@@ -209,7 +212,7 @@ const AdminOrders = () => {
                         <TableCell>
                           <Badge variant={
                             order.status === 'completed' ? 'default' :
-                            order.status === 'failed' ? 'destructive' :
+                            order.status === 'cancelled' ? 'destructive' :
                             order.status === 'refunded' ? 'secondary' : 'outline'
                           }>
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -282,7 +285,7 @@ const AdminOrders = () => {
                   <p className="text-sm text-muted-foreground mb-1">Status</p>
                   <Badge variant={
                     currentOrder?.status === 'completed' ? 'default' :
-                    currentOrder?.status === 'failed' ? 'destructive' :
+                    currentOrder?.status === 'cancelled' ? 'destructive' :
                     currentOrder?.status === 'refunded' ? 'secondary' : 'outline'
                   }>
                     {currentOrder?.status.charAt(0).toUpperCase() + currentOrder?.status.slice(1)}
@@ -370,7 +373,7 @@ const AdminOrders = () => {
           <div className="py-4">
             <Select
               value={selectedStatus}
-              onValueChange={setSelectedStatus}
+              onValueChange={(value) => setSelectedStatus(value as OrderStatus)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -378,7 +381,7 @@ const AdminOrders = () => {
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
                 <SelectItem value="refunded">Refunded</SelectItem>
               </SelectContent>
             </Select>

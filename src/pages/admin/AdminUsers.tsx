@@ -37,10 +37,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Search, MoreVertical, UserCog, Wallet, Shield } from 'lucide-react';
+import { Search, MoreVertical, Shield, Wallet } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Define user role type based on the database enum
+type UserRole = 'user' | 'admin';
+// Define transaction type based on the database enum 
+type TransactionType = 'purchase' | 'deposit' | 'refund';
 
 const AdminUsers = () => {
   const queryClient = useQueryClient();
@@ -49,7 +54,7 @@ const AdminUsers = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
   const [isAdjustBalanceDialogOpen, setIsAdjustBalanceDialogOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [balanceAmount, setBalanceAmount] = useState<string>('');
   const [balanceAction, setBalanceAction] = useState<'add' | 'subtract'>('add');
 
@@ -69,7 +74,7 @@ const AdminUsers = () => {
 
   // Update user role mutation
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string, role: string }) => {
+    mutationFn: async ({ id, role }: { id: string, role: UserRole }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ role })
@@ -121,12 +126,14 @@ const AdminUsers = () => {
       if (updateError) throw updateError;
       
       // Add a transaction record
+      const transactionType: TransactionType = action === 'add' ? 'deposit' : 'refund';
+      
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: id,
           amount: amount,
-          type: action === 'add' ? 'deposit' : 'withdrawal',
+          type: transactionType,
           description: `Admin ${action === 'add' ? 'added' : 'subtracted'} funds`,
         });
       
@@ -155,7 +162,7 @@ const AdminUsers = () => {
   // Handle edit role dialog
   const handleEditRoleDialog = (user: any) => {
     setCurrentUser(user);
-    setSelectedRole(user.role);
+    setSelectedRole(user.role as UserRole);
     setIsEditRoleDialogOpen(true);
   };
 
@@ -339,7 +346,7 @@ const AdminUsers = () => {
           <div className="py-4">
             <Select
               value={selectedRole}
-              onValueChange={setSelectedRole}
+              onValueChange={(value) => setSelectedRole(value as UserRole)}
             >
               <SelectTrigger>
                 <SelectValue />
