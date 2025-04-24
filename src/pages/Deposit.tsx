@@ -80,6 +80,7 @@ const DepositPage = () => {
                       style={{ layout: 'vertical', color: 'blue', shape: 'rect' }}
                       createOrder={(data, actions) => {
                         return actions.order.create({
+                          intent: "CAPTURE",
                           purchase_units: [{
                             amount: {
                               currency_code: "USD", // Added currency_code
@@ -138,6 +139,7 @@ const DepositPage = () => {
                     createOrder={(data, actions) => {
                       const amount = parseFloat(customAmount);
                       return actions.order.create({
+                        intent: "CAPTURE",
                         purchase_units: [{
                           amount: {
                             currency_code: "USD", // Added currency_code
