@@ -39,15 +39,31 @@ import {
 import { Search, MoreVertical, Eye, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Database } from '@/integrations/supabase/types';
 
 // Define order status type based on the database enum
-type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'refunded';
+type OrderStatus = Database['public']['Enums']['order_status'];
+
+// Define a type for the order with profiles
+interface OrderWithProfile {
+  id: string;
+  user_id: string;
+  status: OrderStatus;
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    id: string;
+    email: string;
+    username: string;
+  } | null;
+}
 
 const AdminOrders = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [currentOrder, setCurrentOrder] = useState<OrderWithProfile | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isUpdateStatusDialogOpen, setIsUpdateStatusDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('pending');
@@ -65,7 +81,7 @@ const AdminOrders = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as OrderWithProfile[];
     }
   });
 
@@ -118,15 +134,15 @@ const AdminOrders = () => {
   });
 
   // Handle view order
-  const handleViewOrder = (order: any) => {
+  const handleViewOrder = (order: OrderWithProfile) => {
     setCurrentOrder(order);
     setIsViewDialogOpen(true);
   };
 
   // Handle update status dialog
-  const handleUpdateStatusDialog = (order: any) => {
+  const handleUpdateStatusDialog = (order: OrderWithProfile) => {
     setCurrentOrder(order);
-    setSelectedStatus(order.status as OrderStatus);
+    setSelectedStatus(order.status);
     setIsUpdateStatusDialogOpen(true);
   };
 
@@ -353,7 +369,7 @@ const AdminOrders = () => {
             </DialogClose>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
-              handleUpdateStatusDialog(currentOrder);
+              handleUpdateStatusDialog(currentOrder as OrderWithProfile);
             }}>
               Update Status
             </Button>
