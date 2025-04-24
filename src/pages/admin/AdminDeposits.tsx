@@ -154,11 +154,13 @@ const AdminDeposits = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update user balance using a direct database function call
-      // Since 'update_user_balance' is not in types, use a raw RPC call
+      // Since we now have permission to call update_user_balance, we can use it directly
       const { error: balanceError } = await supabase.rpc(
         'update_user_balance',
-        { user_id: deposit.user_id, amount: deposit.amount }
+        {
+          user_id: deposit.user_id,
+          amount: deposit.amount
+        }
       );
 
       if (balanceError) throw balanceError;

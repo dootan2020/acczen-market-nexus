@@ -375,6 +375,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      update_user_balance: {
+        Args: { user_id: string; amount: number }
+        Returns: undefined
+      }
     }
     Enums: {
       order_status: "pending" | "completed" | "cancelled" | "refunded"
