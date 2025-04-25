@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -10,6 +11,7 @@ import { ReportFilters } from "@/components/admin/reports/ReportFilters";
 import { ReportOverview } from "@/components/admin/reports/ReportOverview";
 import { DepositsReport } from "@/components/admin/reports/DepositsReport";
 import { OrdersReport } from "@/components/admin/reports/OrdersReport";
+import { BestSellingProducts } from "@/components/admin/reports/BestSellingProducts";
 import { FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -164,10 +166,11 @@ const AdminReports = () => {
       )}
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full md:w-auto grid-cols-3">
+        <TabsList className="grid w-full md:w-auto grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="deposits">Deposits</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -191,6 +194,10 @@ const AdminReports = () => {
             ordersChartData={ordersChartData}
             isLoading={isLoading}
           />
+        </TabsContent>
+        
+        <TabsContent value="products">
+          <BestSellingProducts dateRange={dateRange} />
         </TabsContent>
       </Tabs>
       

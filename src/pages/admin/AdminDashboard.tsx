@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   AreaChart,
   Area,
@@ -13,143 +14,131 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
-import { supabase } from "@/integrations/supabase/client";
-import {
-  DollarSign,
-  Users,
-  ShoppingCart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calendar
+import { 
+  DollarSign, 
+  Users, 
+  ShoppingCart, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Calendar, 
+  Wallet, 
+  AlertTriangle
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useDashboardStats, TimeRange } from '@/hooks/useDashboardStats';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
-  const [timeRange, setTimeRange] = useState('7days');
+  const { data: stats, isLoading, error, timeRange, setTimeRange } = useDashboardStats();
   
-  // Fetch dashboard stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['admin-dashboard-stats', timeRange],
+  // Fetch low stock products
+  const { data: lowStockProducts } = useQuery({
+    queryKey: ['low-stock-products'],
     queryFn: async () => {
-      // Get users count
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-      
-      // Get total revenue
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount, created_at');
-      
-      // Calculate revenue
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      
-      // Get orders count
-      const ordersCount = orders?.length || 0;
-      
-      // Get recent orders
-      const { data: recentOrders } = await supabase
-        .from('orders')
-        .select(`
-          id, 
-          total_amount,
-          status,
-          created_at,
-          profiles (id, email, username)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      // Generate sales data for the chart
-      const salesData = generateSalesData(orders || [], timeRange);
-      
-      return {
-        usersCount: usersCount || 0,
-        totalRevenue,
-        ordersCount,
-        recentOrders: recentOrders || [],
-        salesData
-      };
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, stock_quantity')
+        .lt('stock_quantity', 5)
+        .gt('stock_quantity', 0)
+        .order('stock_quantity', { ascending: true });
+        
+      if (error) throw error;
+      return data;
     }
   });
   
-  // Generate sales data for the chart based on time range
-  const generateSalesData = (orders: any[], range: string) => {
-    const now = new Date();
-    let daysCount: number;
-    let format: string;
-    
-    if (range === '7days') {
-      daysCount = 7;
-      format = 'day';
-    } else if (range === '30days') {
-      daysCount = 30;
-      format = 'day';
-    } else if (range === '12months') {
-      daysCount = 12;
-      format = 'month';
-    } else {
-      daysCount = 7;
-      format = 'day';
+  // Fetch recent API errors
+  const { data: apiErrors } = useQuery({
+    queryKey: ['recent-api-errors'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_logs')
+        .select('*')
+        .eq('status', 'error')
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (error) throw error;
+      return data;
     }
-    
-    const data = [];
-    
-    if (format === 'day') {
-      for (let i = daysCount - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(now.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        
-        // Filter orders for this day
-        const dayOrders = orders.filter(order => {
-          const orderDate = new Date(order.created_at).toISOString().split('T')[0];
-          return orderDate === dateStr;
-        });
-        
-        // Calculate revenue for the day
-        const revenue = dayOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
-        
-        data.push({
-          name: `${date.getMonth() + 1}/${date.getDate()}`,
-          revenue: revenue.toFixed(2),
-          orders: dayOrders.length
-        });
-      }
-    } else {
-      // Monthly format
-      for (let i = daysCount - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(now.getMonth() - i);
-        const monthStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        
-        // Filter orders for this month
-        const monthOrders = orders.filter(order => {
-          const orderDate = new Date(order.created_at);
-          const orderMonthStr = `${orderDate.getFullYear()}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}`;
-          return orderMonthStr === monthStr;
-        });
-        
-        // Calculate revenue for the month
-        const revenue = monthOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
-        
-        data.push({
-          name: date.toLocaleString('default', { month: 'short' }),
-          revenue: revenue.toFixed(2),
-          orders: monthOrders.length
-        });
-      }
-    }
-    
-    return data;
+  });
+  
+  // Colors for charts
+  const COLORS = ['#2ECC71', '#3498DB', '#F1C40F', '#E74C3C'];
+  
+  // Format number with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('en-US');
   };
   
-  if (statsLoading) {
+  // Format currency
+  const formatCurrency = (num: number) => {
+    return `$${num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+  };
+  
+  const renderPercentChange = (value: number) => {
+    if (value > 0) {
+      return (
+        <span className="text-green-500 inline-flex items-center">
+          <ArrowUpRight className="mr-1 h-4 w-4" />
+          {value.toFixed(1)}%
+        </span>
+      );
+    } else if (value < 0) {
+      return (
+        <span className="text-red-500 inline-flex items-center">
+          <ArrowDownRight className="mr-1 h-4 w-4" />
+          {Math.abs(value).toFixed(1)}%
+        </span>
+      );
+    }
+    return <span>0%</span>;
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-20" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="mb-6">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[350px] w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Error loading dashboard data</AlertTitle>
+          <AlertDescription>
+            {(error as Error).message}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -158,7 +147,8 @@ const AdminDashboard = () => {
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-6">
+      {/* Main Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4 mb-6">
         {/* Revenue Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -166,13 +156,10 @@ const AdminDashboard = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.orderStats.revenue || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-500 inline-flex items-center">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                12% 
-              </span>
-              {' '} from last month
+              {renderPercentChange(stats?.percentChanges.revenue || 0)}
+              {' '} from previous period
             </p>
           </CardContent>
         </Card>
@@ -184,13 +171,12 @@ const AdminDashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.usersCount}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.userStats.total || 0)}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 inline-flex items-center">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                4% 
+                +{formatNumber(stats?.userStats.new || 0)}
               </span>
-              {' '} from last month
+              {' '} new this period
             </p>
           </CardContent>
         </Card>
@@ -202,29 +188,69 @@ const AdminDashboard = () => {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.ordersCount}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.orderStats.total || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-red-500 inline-flex items-center">
-                <ArrowDownRight className="mr-1 h-4 w-4" />
-                2% 
-              </span>
-              {' '} from last month
+              {renderPercentChange(stats?.percentChanges.orderCount || 0)}
+              {' '} from previous period
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* Deposits Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.depositStats.amount || 0)}</div>
+            <p className="text-xs text-muted-foreground">
+              {renderPercentChange(stats?.percentChanges.depositAmount || 0)}
+              {' '} from previous period
             </p>
           </CardContent>
         </Card>
       </div>
       
-      <Tabs defaultValue="7days" value={timeRange} onValueChange={setTimeRange} className="mb-6">
+      {/* Alerts section */}
+      {(lowStockProducts?.length || apiErrors?.length) ? (
+        <div className="space-y-4 mb-6">
+          {lowStockProducts?.length ? (
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Low stock products</AlertTitle>
+              <AlertDescription>
+                {lowStockProducts.length} product(s) are running low on inventory.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          
+          {apiErrors?.length ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>API Issues Detected</AlertTitle>
+              <AlertDescription>
+                There have been {apiErrors.length} API errors recently. Check the API monitoring page.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      ) : null}
+      
+      {/* Revenue Chart Section */}
+      <Tabs defaultValue={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Sales Overview</h2>
           <TabsList>
+            <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="7days">7 Days</TabsTrigger>
             <TabsTrigger value="30days">30 Days</TabsTrigger>
             <TabsTrigger value="12months">12 Months</TabsTrigger>
           </TabsList>
         </div>
         
-        <TabsContent value="7days" className="space-y-4">
+        {/* Chart tabs content */}
+        <TabsContent value={timeRange} className="space-y-4">
           <Card>
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={350}>
@@ -241,60 +267,15 @@ const AdminDashboard = () => {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="revenue" stroke="#2ECC71" fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="30days" className="space-y-4">
-          {/* Same chart but with 30days data */}
-          <Card>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={350}>
-                <AreaChart
-                  data={stats?.salesData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2ECC71" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#2ECC71" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="revenue" stroke="#2ECC71" fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="12months" className="space-y-4">
-          {/* Same chart but with 12months data */}
-          <Card>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={350}>
-                <AreaChart
-                  data={stats?.salesData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2ECC71" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#2ECC71" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="revenue" stroke="#2ECC71" fillOpacity={1} fill="url(#colorRevenue)" />
+                  <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    name="Revenue"
+                    stroke="#2ECC71" 
+                    fillOpacity={1} 
+                    fill="url(#colorRevenue)" 
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -302,18 +283,114 @@ const AdminDashboard = () => {
         </TabsContent>
       </Tabs>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Recent Orders */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Orders vs Deposits Chart */}
         <Card>
+          <CardHeader>
+            <CardTitle>Orders vs Deposits</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  ...(stats?.ordersData || []).slice(-7).map(item => ({
+                    name: item.name,
+                    Orders: item.value
+                  })),
+                  ...(stats?.depositsData || []).slice(-7).map(item => ({
+                    name: item.name,
+                    Deposits: item.value
+                  }))
+                ].reduce((acc, curr) => {
+                  const existingItem = acc.find(item => item.name === curr.name);
+                  if (existingItem) {
+                    return acc.map(item => 
+                      item.name === curr.name 
+                        ? { ...item, ...curr } 
+                        : item
+                    );
+                  }
+                  return [...acc, curr];
+                }, [] as any[])
+                .sort((a, b) => a.name.localeCompare(b.name))
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value) => [`$${value}`, undefined]} 
+                />
+                <Legend />
+                <Bar 
+                  dataKey="Orders" 
+                  fill="#3498DB" 
+                  name="Orders" 
+                />
+                <Bar 
+                  dataKey="Deposits" 
+                  fill="#2ECC71" 
+                  name="Deposits" 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        {/* Payment Methods Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Methods</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'PayPal', value: stats?.depositStats.paypal || 0 },
+                    { name: 'USDT', value: stats?.depositStats.usdt || 0 }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                  nameKey="name"
+                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {[0, 1].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="grid grid-cols-2 gap-4 w-full mt-2">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">PayPal</p>
+                <p className="text-lg font-medium">{formatCurrency(stats?.depositStats.paypal || 0)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">USDT</p>
+                <p className="text-lg font-medium">{formatCurrency(stats?.depositStats.usdt || 0)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Recent Orders */}
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg font-medium">Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats?.recentOrders.length === 0 ? (
+              {stats?.recentOrders?.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">No recent orders</p>
               ) : (
-                stats?.recentOrders.map((order: any) => (
+                stats?.recentOrders?.map((order: any) => (
                   <div key={order.id} className="flex items-center justify-between border-b pb-2">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">{order.profiles?.username || order.profiles?.email}</p>
@@ -339,29 +416,51 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Sales by Category */}
+        {/* Order Status */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Sales by Category</CardTitle>
+            <CardTitle className="text-lg font-medium">Order Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={[
-                  { name: 'Email Accounts', value: 4000 },
-                  { name: 'Social Accounts', value: 3000 },
-                  { name: 'Software Keys', value: 2000 },
-                  { name: 'Digital Services', value: 2780 },
-                ]}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Completed', value: stats?.orderStats.completed || 0 },
+                    { name: 'Pending', value: stats?.orderStats.pending || 0 }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  <Cell fill="#2ECC71" />
+                  <Cell fill="#F1C40F" />
+                </Pie>
                 <Tooltip />
-                <Bar dataKey="value" fill="#3498DB" />
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
+            
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <span className="h-3 w-3 rounded-full bg-green-500 mr-2"></span>
+                <span className="text-sm text-muted-foreground mr-auto">Completed</span>
+                <span className="font-medium">{formatNumber(stats?.orderStats.completed || 0)}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></span>
+                <span className="text-sm text-muted-foreground mr-auto">Pending</span>
+                <span className="font-medium">{formatNumber(stats?.orderStats.pending || 0)}</span>
+              </div>
+              <div className="border-t pt-2 mt-2">
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground mr-auto">Total</span>
+                  <span className="font-medium">{formatNumber(stats?.orderStats.total || 0)}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
