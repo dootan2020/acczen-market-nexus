@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,8 @@ import { Label } from '@/components/ui/label';
 import { Plus, MoreVertical, Search, Edit, Trash2, Eye, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useProducts';
+import { useSubcategories } from '@/hooks/useSubcategories';
+import SubcategorySelector from '@/components/SubcategorySelector';
 
 // Define product status type based on the database enum
 type ProductStatus = 'active' | 'inactive' | 'out_of_stock';
@@ -55,6 +57,7 @@ interface ProductFormData {
   image_url: string;
   slug: string;
   category_id: string;
+  subcategory_id: string;
   status: ProductStatus;
 }
 
@@ -74,6 +77,7 @@ const AdminProducts = () => {
     image_url: '',
     slug: '',
     category_id: '',
+    subcategory_id: '',
     status: 'active',
   });
 
@@ -83,7 +87,11 @@ const AdminProducts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('*, category:category_id(id, name)')
+        .select(`
+          *,
+          category:categories(*),
+          subcategory:subcategories(*)
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -105,21 +113,24 @@ const AdminProducts = () => {
           .replace(/\s+/g, '-');
       }
 
+      const productData = {
+        name: data.name,
+        description: data.description,
+        price: Number(data.price),
+        sale_price: data.sale_price ? Number(data.sale_price) : null,
+        stock_quantity: Number(data.stock_quantity),
+        image_url: data.image_url,
+        slug: data.slug,
+        category_id: data.category_id,
+        subcategory_id: data.subcategory_id || null,
+        status: data.status,
+      };
+
       if (isEditing && currentProduct) {
         // Update existing product
         const { error } = await supabase
           .from('products')
-          .update({
-            name: data.name,
-            description: data.description,
-            price: Number(data.price),
-            sale_price: data.sale_price ? Number(data.sale_price) : null,
-            stock_quantity: Number(data.stock_quantity),
-            image_url: data.image_url,
-            slug: data.slug,
-            category_id: data.category_id,
-            status: data.status,
-          })
+          .update(productData)
           .eq('id', currentProduct.id);
         
         if (error) throw error;
@@ -128,17 +139,7 @@ const AdminProducts = () => {
         // Create new product
         const { error } = await supabase
           .from('products')
-          .insert({
-            name: data.name,
-            description: data.description,
-            price: Number(data.price),
-            sale_price: data.sale_price ? Number(data.sale_price) : null,
-            stock_quantity: Number(data.stock_quantity),
-            image_url: data.image_url,
-            slug: data.slug,
-            category_id: data.category_id,
-            status: data.status,
-          });
+          .insert([productData]);
         
         if (error) throw error;
         return { success: true, action: 'created' };
@@ -204,6 +205,7 @@ const AdminProducts = () => {
       image_url: '',
       slug: '',
       category_id: categories?.[0]?.id || '',
+      subcategory_id: '',
       status: 'active',
     });
     setIsProductDialogOpen(true);
@@ -222,6 +224,7 @@ const AdminProducts = () => {
       image_url: product.image_url || '',
       slug: product.slug,
       category_id: product.category_id,
+      subcategory_id: product.subcategory_id || '',
       status: product.status as ProductStatus,
     });
     setIsProductDialogOpen(true);
@@ -237,6 +240,14 @@ const AdminProducts = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setFormData(prev => ({ ...prev, category_id: value, subcategory_id: '' }));
+  };
+
+  const handleSubcategoryChange = (value: string) => {
+    setFormData(prev => ({ ...prev, subcategory_id: value }));
   };
 
   // Handle form submission
@@ -287,6 +298,7 @@ const AdminProducts = () => {
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Subcategory</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Price</TableHead>
                     <TableHead className="text-right">Stock</TableHead>
@@ -317,6 +329,7 @@ const AdminProducts = () => {
                           </div>
                         </TableCell>
                         <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
+                        <TableCell>{product.subcategory?.name || '-'}</TableCell>
                         <TableCell>
                           <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
                             {product.status}
@@ -362,7 +375,7 @@ const AdminProducts = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
+                      <TableCell colSpan={7} className="text-center py-6">
                         No products found
                       </TableCell>
                     </TableRow>
@@ -469,7 +482,7 @@ const AdminProducts = () => {
                   <Select 
                     name="category_id" 
                     value={formData.category_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
+                    onValueChange={handleCategoryChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a category" />
@@ -500,6 +513,18 @@ const AdminProducts = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="subcategory_id">Subcategory</Label>
+                <SubcategorySelector 
+                  categoryId={formData.category_id}
+                  value={formData.subcategory_id}
+                  onValueChange={handleSubcategoryChange}
+                />
+                {!formData.category_id && (
+                  <p className="text-sm text-muted-foreground">Select a category first</p>
+                )}
               </div>
               
               <div className="space-y-2">

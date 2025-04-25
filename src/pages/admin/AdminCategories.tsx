@@ -31,8 +31,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, MoreVertical, Search, Edit, Trash2, FolderTree } from 'lucide-react';
+import { Plus, MoreVertical, Search, Edit, Trash2, FolderTree, ListTree } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubcategories } from '@/hooks/useSubcategories';
+import SubcategoriesTable from '@/components/admin/subcategories/SubcategoriesTable';
+import { Badge } from '@/components/ui/badge';
 
 interface CategoryFormData {
   name: string;
@@ -54,6 +58,8 @@ const AdminCategories = () => {
     image_url: '',
     slug: '',
   });
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('categories');
 
   // Fetch categories
   const { data: categories, isLoading } = useQuery({
@@ -188,6 +194,12 @@ const AdminCategories = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  // Handle manage subcategories
+  const handleManageSubcategories = (category: any) => {
+    setSelectedCategoryId(category.id);
+    setActiveTab('subcategories');
+  };
+
   // Handle form input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -207,6 +219,12 @@ const AdminCategories = () => {
     category.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Get subcategory counts
+  const getSubcategoryCounts = (categoryId: string) => {
+    const { data: subcategories } = useSubcategories(categoryId);
+    return subcategories?.length || 0;
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -217,99 +235,140 @@ const AdminCategories = () => {
         </Button>
       </div>
       
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input 
-            className="pl-10" 
-            placeholder="Search categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-      
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+          {selectedCategoryId && (
+            <TabsTrigger value="subcategories">
+              Subcategories for {categories?.find(c => c.id === selectedCategoryId)?.name}
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="categories">
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input 
+                className="pl-10" 
+                placeholder="Search categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCategories?.length ? (
-                    filteredCategories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            {category.image_url ? (
-                              <img 
-                                src={category.image_url} 
-                                alt={category.name} 
-                                className="h-10 w-10 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                                <FolderTree className="h-5 w-5 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="font-medium">{category.name}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{category.slug}</TableCell>
-                        <TableCell>
-                          <div className="truncate max-w-[300px]">
-                            {category.description || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditCategory(category)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleDeleteCategory(category)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+          </div>
+          
+          <Card>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Slug</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Subcategories</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-6">
-                        No categories found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCategories?.length ? (
+                        filteredCategories.map((category) => (
+                          <TableRow key={category.id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-3">
+                                {category.image_url ? (
+                                  <img 
+                                    src={category.image_url} 
+                                    alt={category.name} 
+                                    className="h-10 w-10 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                                    <FolderTree className="h-5 w-5 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="font-medium">{category.name}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{category.slug}</TableCell>
+                            <TableCell>
+                              <div className="truncate max-w-[300px]">
+                                {category.description || '-'}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-sm">
+                                {getSubcategoryCounts(category.id)} subcategories
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleManageSubcategories(category)}>
+                                    <ListTree className="h-4 w-4 mr-2" />
+                                    Manage Subcategories
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEditCategory(category)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => handleDeleteCategory(category)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6">
+                            No categories found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="subcategories">
+          {selectedCategoryId && categories && (
+            <div className="mb-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setActiveTab('categories')}
+              >
+                ← Back to Categories
+              </Button>
+              
+              <SubcategoriesTable 
+                categoryId={selectedCategoryId} 
+                categoryName={categories.find(c => c.id === selectedCategoryId)?.name || ''}
+              />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
       
       {/* Category Dialog (Add/Edit) */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
