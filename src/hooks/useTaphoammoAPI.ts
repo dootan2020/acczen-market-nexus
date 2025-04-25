@@ -2,9 +2,13 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ApiLogInsert } from '@/types/api-logs';
-import { taphoammoProxy } from '@/api/taphoammoProxy';
-import { ProxyType } from '@/utils/corsProxy';
+import type { ApiLogInsert } from '@/types/api-logs';
+
+// Define ProxyType enum here to replace the missing import
+enum ProxyType {
+  DIRECT = 'direct',
+  CORSPROXY_IO = 'corsproxy.io'
+}
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -96,17 +100,22 @@ export const useTaphoammoAPI = () => {
     }
   };
 
+  // This function replaces the taphoammoProxy function that was in the deleted file
   const callTaphoammoAPI = async (endpoint: string, params: any, proxyType: ProxyType) => {
-    console.log(`[TaphoaMMO API] Calling ${endpoint}:`, params);
-    
     try {
-      const data = await taphoammoProxy({
-        endpoint: endpoint.replace('/', '') as any,
-        params,
-        proxyType
+      // Call our new taphoammo-api edge function
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: {
+          ...params,
+          endpoint: endpoint.replace('/', '')
+        }
       });
       
-      // Fix: Compare string with string, not with boolean
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Compare string with string, not with boolean
       if (data.success === "false") {
         throw new Error(data.message || 'API request failed');
       }
@@ -190,11 +199,10 @@ export const useTaphoammoAPI = () => {
 
     try {
       const data = await withRetry(async () => {
-        const response = await taphoammoProxy({
-          endpoint: 'getProducts',
-          params: { kioskToken, userToken },
-          proxyType
-        });
+        const response = await callTaphoammoAPI('getProducts', { 
+          kioskToken, 
+          userToken 
+        }, proxyType);
         
         if (!validateResponse(response)) {
           throw new Error('Invalid response format');

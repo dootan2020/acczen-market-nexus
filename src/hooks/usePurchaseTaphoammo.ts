@@ -1,10 +1,19 @@
 
 import { useState } from 'react';
-import { useTaphoammoAPI } from './useTaphoammoAPI';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
-import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
+
+// ProxyType enum to match what we're using in our new implementation
+enum ProxyType {
+  DIRECT = 'direct',
+  CORSPROXY_IO = 'corsproxy.io'
+}
+
+// Helper function to get current proxy setting
+const getStoredProxy = (): ProxyType => {
+  return ProxyType.DIRECT; // Default to direct
+};
 
 export const usePurchaseTaphoammo = (kioskToken: string) => {
   const [loading, setLoading] = useState(false);
@@ -12,8 +21,6 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
   const [success, setSuccess] = useState(false);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const { user } = useAuth();
-  
-  const { buyProducts } = useTaphoammoAPI();
   
   const purchaseProduct = async (quantity = 1) => {
     if (!user?.id) {
@@ -27,7 +34,7 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
     setOrderDetails(null);
     
     try {
-      // Get the proxy type from localStorage
+      // Get the proxy type
       const proxyType = getStoredProxy();
       
       // Step 1: Check balance
@@ -171,7 +178,7 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
     purchaseProduct,
     validatePurchase,
     checkStockAvailability,
-    isProcessing: loading, // Adding this to match what Checkout.tsx expects
+    isProcessing: loading,
     loading,
     error,
     success,
