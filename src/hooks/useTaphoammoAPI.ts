@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -105,7 +106,8 @@ export const useTaphoammoAPI = () => {
         proxyType
       });
       
-      if (data.success === false) {
+      // Fix: Compare string with string, not with boolean
+      if (data.success === "false") {
         throw new Error(data.message || 'API request failed');
       }
       
@@ -211,6 +213,7 @@ export const useTaphoammoAPI = () => {
     }
   };
 
+  // Fix: Ensure getStock returns a TaphoammoProduct by converting string values to numbers
   const getStock = async (
     kioskToken: string, 
     userToken: string,
@@ -232,7 +235,14 @@ export const useTaphoammoAPI = () => {
 
       console.log('API connection successful, received stock data:', data);
       setLoading(false);
-      return data;
+      
+      // Convert string values to proper types for TaphoammoProduct
+      return {
+        kiosk_token: kioskToken,
+        name: data.name || '',
+        stock_quantity: data.stock ? parseInt(data.stock) : 0,
+        price: data.price ? parseFloat(data.price) : 0
+      };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error in getStock:', errorMsg);

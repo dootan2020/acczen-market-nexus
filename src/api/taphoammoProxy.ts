@@ -24,6 +24,7 @@ interface TaphoammoResponse {
 const parseProxyResponse = (data: any, proxyType: ProxyType): TaphoammoResponse => {
   if (proxyType === 'allorigins') {
     try {
+      // AllOrigins wraps the response in a contents field
       return JSON.parse(data.contents);
     } catch (e) {
       throw new Error(`Failed to parse AllOrigins response: ${e.message}`);

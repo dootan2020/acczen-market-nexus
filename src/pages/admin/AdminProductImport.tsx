@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -92,7 +93,7 @@ const AdminProductImport = () => {
     toast.info('Testing with sample tokens...');
     
     try {
-      const result = await handleTestConnection('allorigins');
+      const result = await testConnection(sampleTokens.kioskToken, sampleTokens.userToken, 'allorigins');
       if (result.success) {
         handleFetchProducts('allorigins');
       }
@@ -117,11 +118,18 @@ const AdminProductImport = () => {
         const response = await getProducts(kioskToken, userToken, proxy);
         
         if (response.products && Array.isArray(response.products)) {
-          const productsWithMeta = response.products.map((product: TaphoammoProduct) => ({
-            ...product,
+          // Convert string values to appropriate types
+          const productsWithMeta = response.products.map((product: any) => ({
+            id: product.id,
+            kiosk_token: kioskToken,
+            name: product.name,
+            stock_quantity: parseInt(product.stock_quantity),
+            price: parseFloat(product.price),
+            rating: product.rating ? parseFloat(product.rating) : 0,
+            sales_count: product.sales_count ? parseInt(product.sales_count) : 0,
             selected: false,
             markup_percentage: markupPercentage,
-            final_price: calculateFinalPrice(Number(product.price), markupPercentage)
+            final_price: calculateFinalPrice(parseFloat(product.price), markupPercentage)
           }));
           
           setProducts(productsWithMeta);
@@ -307,7 +315,7 @@ const AdminProductImport = () => {
                 onUserTokenChange={setUserToken}
                 onKioskTokenChange={setKioskToken}
                 onSubmit={handleFetchProducts}
-                onTestConnection={handleTestConnection}
+                onTestConnection={testConnection}
                 loading={loading}
                 error={apiError || error}
               />
