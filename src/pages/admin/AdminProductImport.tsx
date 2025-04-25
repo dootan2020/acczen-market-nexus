@@ -8,6 +8,9 @@ import { ProductImportForm } from '@/components/admin/import/ProductImportForm';
 import { ProductImportFilters } from '@/components/admin/import/ProductImportFilters';
 import { ProductImportTable } from '@/components/admin/import/ProductImportTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertCircle, ArrowRight, Check, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export type TaphoammoProduct = {
   id: string;
@@ -21,6 +24,7 @@ export type TaphoammoProduct = {
   selected?: boolean;
   markup_percentage?: number;
   category?: string;
+  final_price?: number;
 };
 
 export type ImportFilters = {
@@ -35,6 +39,7 @@ const AdminProductImport = () => {
   const [kioskToken, setKioskToken] = useState<string>('');
   const [products, setProducts] = useState<TaphoammoProduct[]>([]);
   const [markupPercentage, setMarkupPercentage] = useState<number>(10);
+  const [activeTab, setActiveTab] = useState<string>('fetch');
   const [filters, setFilters] = useState<ImportFilters>({
     category: '',
     minRating: 0,
@@ -64,10 +69,19 @@ const AdminProductImport = () => {
     }
     
     try {
-      toast.info("Fetching products from TaphoaMMO...");
+      toast.info("Connecting to TaphoaMMO API...");
       
       // First, check if we can fetch product info with the provided tokens
       const stockInfo = await getStock(kioskToken, userToken);
+      
+      if (!stockInfo) {
+        toast.error("Failed to fetch product information");
+        return;
+      }
+      
+      toast.success("API connection successful", {
+        description: `Connected to ${stockInfo.name || "product"}`
+      });
       
       // If successful, call our Edge Function to fetch full product details
       const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
@@ -82,14 +96,16 @@ const AdminProductImport = () => {
       }
       
       if (data && Array.isArray(data.products)) {
-        // Add selected and markup fields to each product
+        // Add selected, markup and final price fields to each product
         const productsWithMeta = data.products.map((product: TaphoammoProduct) => ({
           ...product,
           selected: false,
-          markup_percentage: markupPercentage
+          markup_percentage: markupPercentage,
+          final_price: calculateFinalPrice(product.price, markupPercentage)
         }));
         
         setProducts(productsWithMeta);
+        setActiveTab('preview');
         toast.success(`Found ${productsWithMeta.length} products`);
       } else {
         toast.warning("No products found");
@@ -103,6 +119,10 @@ const AdminProductImport = () => {
     }
   };
   
+  const calculateFinalPrice = (price: number, markup: number): number => {
+    return price * (1 + (markup / 100));
+  };
+  
   const handleFilterChange = (newFilters: Partial<ImportFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
@@ -110,11 +130,12 @@ const AdminProductImport = () => {
   const handleMarkupChange = (value: number) => {
     setMarkupPercentage(value);
     
-    // Apply the new markup to all selected products
+    // Apply the new markup to all products
     setProducts(prevProducts => 
       prevProducts.map(product => ({
         ...product,
-        markup_percentage: value
+        markup_percentage: value,
+        final_price: calculateFinalPrice(product.price, value)
       }))
     );
   };
@@ -122,7 +143,10 @@ const AdminProductImport = () => {
   const handleSelectProduct = (productId: string, selected: boolean) => {
     setProducts(prevProducts => 
       prevProducts.map(product => 
-        product.id === productId ? { ...product, selected } : product
+        product.id === productId ? { 
+          ...product, 
+          selected 
+        } : product
       )
     );
   };
@@ -162,6 +186,11 @@ const AdminProductImport = () => {
         prevProducts.filter(product => !product.selected)
       );
       
+      // If no products left, go back to fetch tab
+      if (selectedProducts.length === products.length) {
+        setActiveTab('fetch');
+      }
+      
     } catch (error) {
       console.error("Error importing products:", error);
       toast.error("Import failed", {
@@ -173,10 +202,19 @@ const AdminProductImport = () => {
   const handleProductMarkupChange = (productId: string, markup: number) => {
     setProducts(prevProducts => 
       prevProducts.map(product => 
-        product.id === productId ? { ...product, markup_percentage: markup } : product
+        product.id === productId ? { 
+          ...product, 
+          markup_percentage: markup,
+          final_price: calculateFinalPrice(product.price, markup)
+        } : product
       )
     );
   };
+  
+  const selectedCount = products.filter(p => p.selected).length;
+  const selectedTotalValue = products
+    .filter(p => p.selected)
+    .reduce((sum, p) => sum + (p.final_price || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -187,26 +225,37 @@ const AdminProductImport = () => {
         </p>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>API Credentials</CardTitle>
-          <CardDescription>Enter your TaphoaMMO API credentials</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProductImportForm 
-            userToken={userToken}
-            kioskToken={kioskToken}
-            onUserTokenChange={setUserToken}
-            onKioskTokenChange={setKioskToken}
-            onSubmit={handleFetchProducts}
-            loading={loading}
-          />
-        </CardContent>
-      </Card>
-      
-      {products.length > 0 && (
-        <>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="fetch">1. Fetch Products</TabsTrigger>
+          <TabsTrigger 
+            value="preview" 
+            disabled={products.length === 0}
+          >
+            2. Preview & Import
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="fetch">
           <Card>
+            <CardHeader>
+              <CardTitle>API Credentials</CardTitle>
+              <CardDescription>Enter your TaphoaMMO API credentials</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProductImportForm 
+                userToken={userToken}
+                kioskToken={kioskToken}
+                onUserTokenChange={setUserToken}
+                onKioskTokenChange={setKioskToken}
+                onSubmit={handleFetchProducts}
+                loading={loading}
+                error={error}
+              />
+            </CardContent>
+          </Card>
+          
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle>Filters & Options</CardTitle>
               <CardDescription>Filter products and set markup</CardDescription>
@@ -222,12 +271,53 @@ const AdminProductImport = () => {
             </CardContent>
           </Card>
           
+          <Alert className="mt-6">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Connection Information</AlertTitle>
+            <AlertDescription>
+              Your API credentials will be securely handled by our server-side Edge Function.
+              No sensitive information will be exposed to the client.
+            </AlertDescription>
+          </Alert>
+        </TabsContent>
+        
+        <TabsContent value="preview">
+          {selectedCount > 0 && (
+            <Alert className="mb-6" variant="default">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center">
+                  <Info className="h-4 w-4 mr-2" />
+                  <span>
+                    <strong>{selectedCount}</strong> products selected 
+                    (Total value: <strong>${selectedTotalValue.toFixed(2)}</strong>)
+                  </span>
+                </div>
+                <Button 
+                  onClick={handleImportSelectedProducts}
+                  size="sm"
+                  className="ml-4"
+                >
+                  Import Selected <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </Alert>
+          )}
+          
           <Card>
-            <CardHeader>
-              <CardTitle>Products</CardTitle>
-              <CardDescription>
-                Select products to import into your store
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Product Preview</CardTitle>
+                <CardDescription>
+                  Select products to import into your store
+                </CardDescription>
+              </div>
+              <Button 
+                onClick={() => setActiveTab('fetch')} 
+                variant="outline" 
+                size="sm"
+              >
+                Back to Filters
+              </Button>
             </CardHeader>
             <CardContent>
               <ProductImportTable 
@@ -239,19 +329,8 @@ const AdminProductImport = () => {
               />
             </CardContent>
           </Card>
-        </>
-      )}
-      
-      {error && (
-        <Card className="bg-destructive/10 border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{error}</p>
-          </CardContent>
-        </Card>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

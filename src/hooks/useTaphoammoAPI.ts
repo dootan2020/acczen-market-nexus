@@ -69,6 +69,23 @@ export const useTaphoammoAPI = () => {
     }
   };
 
+  // Call the TaphoaMMO API through our Edge Function
+  const callTaphoammoAPI = async (endpoint: string, params: any) => {
+    const { data, error } = await supabase.functions.invoke('sync-taphoammo-api', {
+      body: JSON.stringify({
+        endpoint,
+        params
+      })
+    });
+
+    if (error) throw new Error(error.message);
+    if (data.success === 'false' || data.success === false) {
+      throw new Error(data.message || 'API request failed');
+    }
+    
+    return data;
+  };
+
   const buyProducts = async (
     kioskToken: string, 
     userToken: string, 
@@ -82,19 +99,12 @@ export const useTaphoammoAPI = () => {
     try {
       const startTime = performance.now();
       const data = await withRetry(async () => {
-        const { data, error } = await supabase.functions.invoke('mock-taphoammo', {
-          body: JSON.stringify({
-            kioskToken,
-            userToken,
-            quantity,
-            promotion
-          })
+        return await callTaphoammoAPI('/buyProducts', {
+          kioskToken,
+          userToken,
+          quantity,
+          promotion
         });
-
-        if (error) throw new Error(error.message);
-        if (data.success === 'false') throw new Error(data.message || 'API request failed');
-        
-        return data;
       });
 
       await logApiCall({
@@ -129,23 +139,6 @@ export const useTaphoammoAPI = () => {
       
       setError(errorMsg);
       setLoading(false);
-      
-      // Log the error to API monitoring
-      try {
-        await supabase.from('api_logs').insert({
-          api: 'taphoammo',
-          endpoint: 'buy',
-          status: 'error',
-          details: {
-            error: errorMsg,
-            kioskToken,
-            quantity
-          }
-        });
-      } catch (logError) {
-        console.error('Failed to log API error:', logError);
-      }
-      
       throw err;
     }
   };
@@ -160,17 +153,10 @@ export const useTaphoammoAPI = () => {
 
     try {
       const data = await withRetry(async () => {
-        const { data, error } = await supabase.functions.invoke('mock-taphoammo', {
-          body: JSON.stringify({
-            orderId,
-            userToken
-          })
+        return await callTaphoammoAPI('/getProducts', {
+          orderId,
+          userToken
         });
-
-        if (error) throw new Error(error.message);
-        if (data.success === 'false') throw new Error(data.message || 'API request failed');
-        
-        return data;
       });
 
       setLoading(false);
@@ -179,22 +165,6 @@ export const useTaphoammoAPI = () => {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       setLoading(false);
-      
-      // Log the error to API monitoring
-      try {
-        await supabase.from('api_logs').insert({
-          api: 'taphoammo',
-          endpoint: 'get-products',
-          status: 'error',
-          details: {
-            error: errorMsg,
-            orderId
-          }
-        });
-      } catch (logError) {
-        console.error('Failed to log API error:', logError);
-      }
-      
       throw err;
     }
   };
@@ -209,17 +179,10 @@ export const useTaphoammoAPI = () => {
 
     try {
       const data = await withRetry(async () => {
-        const { data, error } = await supabase.functions.invoke('mock-taphoammo', {
-          body: JSON.stringify({
-            kioskToken,
-            userToken
-          })
+        return await callTaphoammoAPI('/getStock', {
+          kioskToken,
+          userToken
         });
-
-        if (error) throw new Error(error.message);
-        if (data.success === 'false') throw new Error(data.message || 'API request failed');
-        
-        return data;
       });
 
       setLoading(false);
@@ -228,22 +191,6 @@ export const useTaphoammoAPI = () => {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       setLoading(false);
-      
-      // Log the error to API monitoring
-      try {
-        await supabase.from('api_logs').insert({
-          api: 'taphoammo',
-          endpoint: 'get-stock',
-          status: 'error',
-          details: {
-            error: errorMsg,
-            kioskToken
-          }
-        });
-      } catch (logError) {
-        console.error('Failed to log API error:', logError);
-      }
-      
       throw err;
     }
   };
