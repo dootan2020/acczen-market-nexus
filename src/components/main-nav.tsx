@@ -18,7 +18,7 @@ export function MainNav({
   ...props
 }: React.HTMLAttributes<HTMLElement>) {
   return (
-    <NavigationMenu className={cn("flex-1", className)} {...props}>
+    <NavigationMenu className={cn("flex-1", className)}>
       <NavigationMenuList>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
