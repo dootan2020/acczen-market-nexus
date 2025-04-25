@@ -1,3 +1,4 @@
+
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import Index from "./pages/Index";
@@ -5,7 +6,7 @@ import Layout from "./components/Layout";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Dashboard from "./pages/Dashboard";
-import DashboardLayout from "./components/dashboard/DashboardLayout";
+import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";

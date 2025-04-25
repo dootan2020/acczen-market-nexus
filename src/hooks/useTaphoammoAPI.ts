@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Database } from '@/types/supabase';
+import { ApiLogInsert } from '@/types/api-logs';
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -56,7 +56,7 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  const logApiCall = async (logData: Database['public']['Tables']['api_logs']['Insert']) => {
+  const logApiCall = async (logData: ApiLogInsert) => {
     try {
       const { error } = await supabase
         .from('api_logs')
@@ -111,6 +111,7 @@ export const useTaphoammoAPI = () => {
       setLoading(false);
       return data;
     } catch (err) {
+      const startTime = performance.now();
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       
       await logApiCall({

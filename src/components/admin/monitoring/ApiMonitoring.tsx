@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { ApiLogEntry } from '@/types/supabase';
+import { ApiLogEntry } from '@/types/api-logs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -15,16 +15,6 @@ import {
   ChartTooltipContent
 } from '@/components/ui/chart';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
-
-interface ApiLogEntry {
-  id: string;
-  api: string;
-  endpoint: string;
-  status: string;
-  response_time: number;
-  details: any;
-  created_at: string;
-}
 
 interface ApiStats {
   total: number;
