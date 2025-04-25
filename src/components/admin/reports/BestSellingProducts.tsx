@@ -12,12 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DateRange } from "react-day-picker";
 
 interface BestSellingProductsProps {
-  dateRange: {
-    from: Date;
-    to: Date;
-  } | undefined;
+  dateRange: DateRange | undefined;
 }
 
 interface ProductSales {
@@ -95,7 +93,7 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
       const productSales = Array.from(productSalesMap.values());
       return productSales.sort((a, b) => b.revenue - a.revenue);
     },
-    enabled: !!dateRange?.from && !!dateRange?.to
+    enabled: !!dateRange?.from // Only require from date to be present
   });
 
   return (
