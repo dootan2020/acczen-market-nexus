@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,7 +16,8 @@ import {
   Wallet,
   Settings,
   BarChart,
-  ActivitySquare
+  ActivitySquare,
+  Download
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,11 @@ const AdminLayout = () => {
       name: 'Products', 
       href: '/admin/products', 
       icon: <Package className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Import Products', 
+      href: '/admin/import-products', 
+      icon: <Download className="h-5 w-5" /> 
     },
     { 
       name: 'Categories', 
@@ -83,31 +88,26 @@ const AdminLayout = () => {
     },
   ];
 
-  // Generate breadcrumbs based on current route
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     
     if (pathSegments.length === 0) return null;
     
-    // Only show breadcrumbs for admin routes
     if (pathSegments[0] !== 'admin') return null;
 
     const breadcrumbs = [];
     let currentPath = '';
     
-    // Add Home breadcrumb
     breadcrumbs.push({
       name: 'Admin',
       path: '/admin',
       isCurrentPage: pathSegments.length === 1
     });
     
-    // Add additional breadcrumbs based on path segments
     for (let i = 1; i < pathSegments.length; i++) {
       currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
       const navItem = navItems.find(item => item.href === currentPath);
       
-      // Only add if we have a matching navItem
       if (navItem) {
         breadcrumbs.push({
           name: navItem.name,
@@ -124,7 +124,6 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Mobile sidebar toggle */}
       <div className="lg:hidden fixed top-4 left-4 z-40">
         <Button
           variant="outline"
@@ -136,7 +135,6 @@ const AdminLayout = () => {
         </Button>
       </div>
       
-      {/* Sidebar */}
       <div className={cn(
         "fixed inset-y-0 left-0 z-30 w-64 transform bg-background shadow-lg transition-transform duration-200 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -184,14 +182,12 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* Main content */}
       <div className={cn(
         "flex flex-1 flex-col lg:pl-64",
         sidebarOpen ? "lg:ml-0" : ""
       )}>
         <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b">
           <div className="flex h-14 items-center justify-between px-4">
-            {/* Breadcrumbs */}
             {breadcrumbs && (
               <Breadcrumb className="hidden md:flex">
                 <BreadcrumbList>
@@ -213,7 +209,6 @@ const AdminLayout = () => {
               </Breadcrumb>
             )}
             
-            {/* Admin info */}
             <div className="ml-auto flex items-center gap-2 md:gap-4">
               <div className="hidden md:block text-sm">
                 <p className="font-medium">Admin: {userDisplayName}</p>
