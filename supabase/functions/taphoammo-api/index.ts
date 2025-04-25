@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // TaphoaMMO API base URL
-const API_BASE_URL = "https://taphoammo.net/api/doreamon/admin";
+const API_BASE_URL = "https://taphoammo.net/api";
 
 serve(async (req) => {
   // Handle CORS preflight requests
