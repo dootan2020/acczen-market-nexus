@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { Moon, Sun, CircleHalf } from "lucide-react"
+import { Moon, Sun, CircleHelp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -27,7 +27,7 @@ export function ModeToggle() {
             "absolute h-[1.2rem] w-[1.2rem] transition-all",
             theme === "dark" ? "scale-100 rotate-0" : "scale-0 rotate-90"
           )} />
-          <CircleHalf className={cn(
+          <CircleHelp className={cn(
             "absolute h-[1.2rem] w-[1.2rem] transition-all",
             theme === "system" ? "scale-100 rotate-0" : "scale-0 rotate-90"
           )} />
@@ -53,7 +53,7 @@ export function ModeToggle() {
           onClick={() => setTheme("system")}
           className={theme === "system" ? "bg-accent" : ""}
         >
-          <CircleHalf className="mr-2 h-4 w-4" />
+          <CircleHelp className="mr-2 h-4 w-4" />
           <span>Hệ thống</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
