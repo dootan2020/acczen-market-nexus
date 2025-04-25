@@ -1,7 +1,6 @@
 
 import * as React from "react"
-import { Link } from "react-router-dom"
-
+import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
   NavigationMenu,
@@ -17,55 +16,70 @@ export function MainNav({
   className,
   ...props
 }: React.HTMLAttributes<HTMLElement>) {
+  const location = useLocation();
+  
+  // Check if the current path includes the given path
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+  
   return (
-    <NavigationMenu className={cn("flex-1", className)}>
+    <NavigationMenu className={cn("hidden md:flex justify-center", className)}>
       <NavigationMenuList>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link to="/" className={navigationMenuTriggerStyle()}>
-              Home
+            <Link 
+              to="/" 
+              className={cn(navigationMenuTriggerStyle(), isActive('/') ? "bg-accent/50" : "")}
+            >
+              Trang chủ
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         
         <NavigationMenuItem>
-          <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+          <NavigationMenuTrigger className={isActive('/products') ? "bg-accent/50" : ""}>
+            Sản phẩm
+          </NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-[500px] overflow-hidden rounded-md bg-popover p-2 shadow-lg">
               <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2">
                 <div className="bg-primary/10 p-3 rounded-md">
                   <Link 
-                    to="/products" 
+                    to="/products?category=email" 
                     className="block select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <div className="text-sm font-medium leading-none mb-1">Email Accounts</div>
-                    <p className="text-xs text-muted-foreground">Professional email accounts from various providers</p>
+                    <div className="text-sm font-medium leading-none mb-1">Tài khoản Email</div>
+                    <p className="text-xs text-muted-foreground">Tài khoản email chuyên nghiệp từ nhiều nhà cung cấp</p>
                   </Link>
                 </div>
                 
                 <div className="bg-primary/10 p-3 rounded-md">
                   <Link 
-                    to="/products" 
+                    to="/products?category=social" 
                     className="block select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <div className="text-sm font-medium leading-none mb-1">Social Accounts</div>
-                    <p className="text-xs text-muted-foreground">Verified social media accounts for your business</p>
+                    <div className="text-sm font-medium leading-none mb-1">Tài khoản Mạng xã hội</div>
+                    <p className="text-xs text-muted-foreground">Tài khoản mạng xã hội đã xác minh cho doanh nghiệp</p>
                   </Link>
                 </div>
                 
                 <div className="bg-primary/10 p-3 rounded-md">
                   <Link 
-                    to="/products" 
+                    to="/products?category=software" 
                     className="block select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <div className="text-sm font-medium leading-none mb-1">Software Keys</div>
-                    <p className="text-xs text-muted-foreground">License keys for popular software at great prices</p>
+                    <div className="text-sm font-medium leading-none mb-1">Phần mềm & Key bản quyền</div>
+                    <p className="text-xs text-muted-foreground">Key bản quyền cho phần mềm phổ biến với giá tốt</p>
                   </Link>
                 </div>
                 
                 <div className="bg-primary/10 p-3 rounded-md">
                   <Link 
-                    to="/products" 
+                    to="/products?category=digital" 
                     className="block select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <div className="text-sm font-medium leading-none mb-1">Digital Services</div>
-                    <p className="text-xs text-muted-foreground">Professional digital marketing services</p>
+                    <div className="text-sm font-medium leading-none mb-1">Dịch vụ số</div>
+                    <p className="text-xs text-muted-foreground">Dịch vụ marketing số chuyên nghiệp</p>
                   </Link>
                 </div>
                 
@@ -73,8 +87,7 @@ export function MainNav({
                   <Link 
                     to="/products" 
                     className="flex items-center justify-center gap-2 select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                    <div className="text-sm font-medium leading-none">Browse All Products</div>
-                    <p className="text-xs text-muted-foreground">Explore our full catalog of digital products with instant delivery</p>
+                    <div className="text-sm font-medium leading-none">Xem tất cả sản phẩm</div>
                   </Link>
                 </div>
               </div>
@@ -84,16 +97,22 @@ export function MainNav({
         
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link to="/about" className={navigationMenuTriggerStyle()}>
-              About
+            <Link 
+              to="/help" 
+              className={cn(navigationMenuTriggerStyle(), isActive('/help') ? "bg-accent/50" : "")}
+            >
+              Hỗ trợ
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link to="/contact" className={navigationMenuTriggerStyle()}>
-              Contact
+            <Link 
+              to="/contact" 
+              className={cn(navigationMenuTriggerStyle(), isActive('/contact') ? "bg-accent/50" : "")}
+            >
+              Liên hệ
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
