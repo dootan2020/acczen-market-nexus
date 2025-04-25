@@ -1,13 +1,3 @@
-export interface ApiLogEntry {
-  id: string;
-  api: string;
-  endpoint: string;
-  status: string;
-  response_time?: number;
-  details: any;
-  created_at: string;
-}
-
 export type Json =
   | string
   | number
@@ -20,9 +10,29 @@ export interface Database {
   public: {
     Tables: {
       api_logs: {
-        Row: ApiLogEntry;
-        Insert: Omit<ApiLogEntry, 'id' | 'created_at'>;
-        Update: Partial<Omit<ApiLogEntry, 'id' | 'created_at'>>;
+        Row: {
+          id: string;
+          api: string;
+          endpoint: string;
+          status: string;
+          response_time?: number;
+          details: any;
+          created_at: string;
+        };
+        Insert: {
+          api: string;
+          endpoint: string;
+          status: string;
+          response_time?: number;
+          details?: any;
+        };
+        Update: {
+          api?: string;
+          endpoint?: string;
+          status?: string;
+          response_time?: number;
+          details?: any;
+        };
       }
       categories: {
         Row: {
@@ -358,44 +368,9 @@ export interface Database {
   }
 }
 
-export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (Database["public"]["Tables"] & { row: any })
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName]["Row"]
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions]["Row"]
-    : never
-
-export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName]["Insert"]
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions]["Insert"]
-    : never
-
-export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName]["Update"]
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions]["Update"]
-    : never
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+export type TableInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
+export type TableUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -403,7 +378,7 @@ export type Enums<
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-    : never = never
+    : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
