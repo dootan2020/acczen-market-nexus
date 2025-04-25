@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, ArrowRight, Check, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 export type TaphoammoProduct = {
   id: string;
@@ -49,7 +49,6 @@ const AdminProductImport = () => {
   
   const { getStock, loading, error } = useTaphoammoAPI();
   
-  // Fetch categories for filter dropdown
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -71,7 +70,6 @@ const AdminProductImport = () => {
     try {
       toast.info("Connecting to TaphoaMMO API...");
       
-      // First, check if we can fetch product info with the provided tokens
       const stockInfo = await getStock(kioskToken, userToken);
       
       if (!stockInfo) {
@@ -83,7 +81,6 @@ const AdminProductImport = () => {
         description: `Connected to ${stockInfo.name || "product"}`
       });
       
-      // If successful, call our Edge Function to fetch full product details
       const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
         body: JSON.stringify({ kioskToken, userToken, filters })
       });
@@ -96,7 +93,6 @@ const AdminProductImport = () => {
       }
       
       if (data && Array.isArray(data.products)) {
-        // Add selected, markup and final price fields to each product
         const productsWithMeta = data.products.map((product: TaphoammoProduct) => ({
           ...product,
           selected: false,
@@ -130,7 +126,6 @@ const AdminProductImport = () => {
   const handleMarkupChange = (value: number) => {
     setMarkupPercentage(value);
     
-    // Apply the new markup to all products
     setProducts(prevProducts => 
       prevProducts.map(product => ({
         ...product,
@@ -181,12 +176,10 @@ const AdminProductImport = () => {
       
       toast.success(`Successfully imported ${data.imported} products`);
       
-      // Remove imported products from the list
       setProducts(prevProducts => 
         prevProducts.filter(product => !product.selected)
       );
       
-      // If no products left, go back to fetch tab
       if (selectedProducts.length === products.length) {
         setActiveTab('fetch');
       }
