@@ -4,6 +4,7 @@ import { useTaphoammoAPI } from './useTaphoammoAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { getStoredProxy } from '@/utils/corsProxy';
 
 interface PurchaseOptions {
   kioskToken: string;
@@ -140,7 +141,9 @@ export const usePurchaseTaphoammo = () => {
     }
 
     try {
-      const response = await getProducts(orderIdToCheck, user.id);
+      // Fix: Add the required proxyType argument
+      const proxyType = getStoredProxy();
+      const response = await getProducts(orderIdToCheck, user.id, proxyType);
       
       if (response.product_keys && response.product_keys.length > 0) {
         setProductKeys(response.product_keys);

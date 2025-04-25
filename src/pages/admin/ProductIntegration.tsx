@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTaphoammoAPI } from "@/hooks/useTaphoammoAPI";
+import { getStoredProxy } from "@/utils/corsProxy";
 
 interface Product {
   id: string;
@@ -147,7 +148,8 @@ const ProductIntegration = () => {
   const updateStockMutation = useMutation({
     mutationFn: async ({ kioskToken }: { kioskToken: string }) => {
       try {
-        const product = await getStock(kioskToken, 'admin');
+        const proxyType = getStoredProxy();
+        const product = await getStock(kioskToken, 'admin', proxyType);
         
         const { error: mockError } = await supabase
           .from('taphoammo_mock_products')

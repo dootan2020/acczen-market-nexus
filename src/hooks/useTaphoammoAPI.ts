@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -91,12 +92,13 @@ export const useTaphoammoAPI = () => {
     }
   };
 
+  // Fix: Moved optional parameter 'promotion' before the required parameter 'proxyType'
   const buyProducts = async (
     kioskToken: string, 
     userToken: string, 
-    quantity: number, 
-    promotion?: string,
-    proxyType: ProxyType
+    quantity: number,
+    proxyType: ProxyType,
+    promotion?: string
   ): Promise<TaphoammoOrderResponse> => {
     setLoading(true);
     setError(null);
