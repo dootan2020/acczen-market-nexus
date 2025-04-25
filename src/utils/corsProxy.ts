@@ -1,7 +1,7 @@
 
-export type ProxyType = 'default' | 'alternate' | 'admin';
+export type ProxyType = 'direct' | 'corsproxy.io' | 'admin';
 
 export const getStoredProxy = (): ProxyType => {
-  // Default to 'default' proxy if no stored value
-  return 'default';
+  // Default to 'direct' proxy if no stored value
+  return 'direct';
 };

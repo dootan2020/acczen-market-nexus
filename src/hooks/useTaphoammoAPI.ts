@@ -1,14 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ApiLogInsert } from '@/types/api-logs';
-
-// Define ProxyType enum here to replace the missing import
-enum ProxyType {
-  DIRECT = 'direct',
-  CORSPROXY_IO = 'corsproxy.io'
-}
+import { ProxyType } from '@/utils/corsProxy';
 
 interface TaphoammoProduct {
   kiosk_token: string;
