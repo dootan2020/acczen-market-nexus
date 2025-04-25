@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -6,11 +7,13 @@ import { useTaphoammoAPI } from '@/hooks/useTaphoammoAPI';
 import { ProductImportForm } from '@/components/admin/import/ProductImportForm';
 import { ProductImportFilters } from '@/components/admin/import/ProductImportFilters';
 import { ProductImportTable } from '@/components/admin/import/ProductImportTable';
+import { ProductImportCard } from '@/components/admin/import/ProductImportCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, ArrowRight, Check, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { taphoammoProxy } from '@/api/taphoammoProxy';
 
 export type TaphoammoProduct = {
   id: string;
@@ -115,9 +118,12 @@ const AdminProductImport = () => {
       });
       
       try {
-        const response = await callTaphoammoAPI('getProducts', {
-          kioskToken,
-          userToken
+        const response = await taphoammoProxy({
+          endpoint: 'getProducts',
+          params: {
+            kioskToken,
+            userToken
+          }
         });
         
         if (response.products && Array.isArray(response.products)) {
