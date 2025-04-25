@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { ApiLogEntry } from '@/types/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -35,12 +35,12 @@ interface ApiStats {
 }
 
 export function ApiMonitoring() {
-  const [timeRange, setTimeRange] = React.useState<number>(7); // Default to 7 days
+  const [timeRange, setTimeRange] = React.useState<number>(7);
   
   const { data: apiLogs, isLoading, refetch } = useQuery({
     queryKey: ['api-logs', timeRange],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: logs, error } = await supabase
         .from('api_logs')
         .select('*')
         .eq('api', 'taphoammo')
@@ -49,11 +49,10 @@ export function ApiMonitoring() {
         .limit(100);
       
       if (error) throw error;
-      return data as ApiLogEntry[];
+      return logs as ApiLogEntry[];
     }
   });
   
-  // Calculate API stats
   const apiStats = React.useMemo(() => {
     if (!apiLogs || apiLogs.length === 0) {
       return {
@@ -73,7 +72,6 @@ export function ApiMonitoring() {
       avgResponseTime: 0
     };
     
-    // Calculate average response time from logs that have it
     const logsWithResponseTime = apiLogs.filter(log => log.response_time);
     if (logsWithResponseTime.length > 0) {
       stats.avgResponseTime = logsWithResponseTime.reduce(
@@ -81,7 +79,6 @@ export function ApiMonitoring() {
       ) / logsWithResponseTime.length;
     }
     
-    // Find last successful sync
     const lastSyncLog = apiLogs.find(log => 
       log.endpoint === 'sync-all' && log.status === 'success'
     );
@@ -92,7 +89,6 @@ export function ApiMonitoring() {
     return stats;
   }, [apiLogs]);
   
-  // Prepare chart data
   const chartData = React.useMemo(() => {
     if (!apiLogs) return [];
     
@@ -120,7 +116,6 @@ export function ApiMonitoring() {
     });
   }, [apiLogs, timeRange]);
   
-  // Function to get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':

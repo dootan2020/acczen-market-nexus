@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Database } from '@/types/supabase';
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -56,6 +56,18 @@ export const useTaphoammoAPI = () => {
     }
   };
 
+  const logApiCall = async (logData: Database['public']['Tables']['api_logs']['Insert']) => {
+    try {
+      const { error } = await supabase
+        .from('api_logs')
+        .insert(logData);
+        
+      if (error) console.error('Failed to log API call:', error);
+    } catch (e) {
+      console.error('Error logging API call:', e);
+    }
+  };
+
   const buyProducts = async (
     kioskToken: string, 
     userToken: string, 
@@ -67,7 +79,7 @@ export const useTaphoammoAPI = () => {
     setRetry(0);
 
     try {
-      // Use retry logic
+      const startTime = performance.now();
       const data = await withRetry(async () => {
         const { data, error } = await supabase.functions.invoke('mock-taphoammo', {
           body: JSON.stringify({
@@ -84,10 +96,35 @@ export const useTaphoammoAPI = () => {
         return data;
       });
 
+      await logApiCall({
+        api: 'taphoammo',
+        endpoint: 'buy',
+        status: 'success',
+        response_time: performance.now() - startTime,
+        details: {
+          kioskToken,
+          quantity,
+          orderId: data.order_id
+        }
+      });
+
       setLoading(false);
       return data;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      
+      await logApiCall({
+        api: 'taphoammo',
+        endpoint: 'buy',
+        status: 'error',
+        response_time: performance.now() - startTime,
+        details: {
+          error: errorMsg,
+          kioskToken,
+          quantity
+        }
+      });
+      
       setError(errorMsg);
       setLoading(false);
       

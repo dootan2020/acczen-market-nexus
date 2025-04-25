@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_logs: {
+        Row: {
+          api: string
+          created_at: string
+          details: Json | null
+          endpoint: string
+          id: string
+          response_time: number | null
+          status: string
+        }
+        Insert: {
+          api: string
+          created_at?: string
+          details?: Json | null
+          endpoint: string
+          id?: string
+          response_time?: number | null
+          status: string
+        }
+        Update: {
+          api?: string
+          created_at?: string
+          details?: Json | null
+          endpoint?: string
+          id?: string
+          response_time?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string

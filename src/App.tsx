@@ -1,4 +1,3 @@
-
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import Index from "./pages/Index";
@@ -20,7 +19,7 @@ import AdminDeposits from "./pages/admin/AdminDeposits";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import ProductIntegration from "./pages/admin/ProductIntegration";
-import ApiMonitoring from "./pages/admin/ApiMonitoring"; // Add this import
+import ApiMonitoring from "./pages/admin/ApiMonitoring";
 import NotFound from "./pages/NotFound";
 import Deposit from "./pages/Deposit";
 import DepositSuccess from "./pages/DepositSuccess";
@@ -78,7 +77,7 @@ function App() {
           <Route path="deposits" element={<AdminDeposits />} />
           <Route path="reports" element={<AdminReports />} />
           <Route path="integrations" element={<ProductIntegration />} />
-          <Route path="api-monitoring" element={<ApiMonitoring />} /> {/* Add new route */}
+          <Route path="api-monitoring" element={<ApiMonitoring />} />
           <Route path="api-docs" element={<ApiDocumentation />} />
         </Route>
 
