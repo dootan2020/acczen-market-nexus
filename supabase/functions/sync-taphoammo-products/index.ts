@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -132,7 +131,8 @@ serve(async (req) => {
 
     // Apply filters if provided
     if (filters) {
-      if (filters.category && filters.category !== '') {
+      if (filters.category && filters.category !== 'all') {
+        // Apply category filter logic
         products = products.filter(product => product.category === filters.category);
       }
       

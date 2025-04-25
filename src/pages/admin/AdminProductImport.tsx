@@ -41,7 +41,7 @@ const AdminProductImport = () => {
   const [markupPercentage, setMarkupPercentage] = useState<number>(10);
   const [activeTab, setActiveTab] = useState<string>('fetch');
   const [filters, setFilters] = useState<ImportFilters>({
-    category: '',
+    category: 'all',
     minRating: 0,
     minStock: 0,
     maxPrice: 100000,
