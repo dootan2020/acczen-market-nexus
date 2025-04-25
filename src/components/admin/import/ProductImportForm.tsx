@@ -195,19 +195,15 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
                   </FormControl>
                   <SelectContent>
                     {PROXY_OPTIONS.map((proxy) => (
-                      <Tooltip key={proxy.value}>
-                        <TooltipTrigger asChild>
-                          <SelectItem value={proxy.value}>
-                            {proxy.label}
-                          </SelectItem>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{proxy.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <SelectItem key={proxy.value} value={proxy.value}>
+                        {proxy.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FormDescription>
+                  {PROXY_OPTIONS.find(p => p.value === field.value)?.description || 'Select a proxy service to handle CORS issues'}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
