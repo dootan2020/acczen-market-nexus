@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -28,7 +29,7 @@ export type TaphoammoProduct = {
 };
 
 export type ImportFilters = {
-  category: string;
+  category: string;  // Ensure default 'all'
   minRating: number;
   minStock: number;
   maxPrice: number;
@@ -41,7 +42,7 @@ const AdminProductImport = () => {
   const [markupPercentage, setMarkupPercentage] = useState<number>(10);
   const [activeTab, setActiveTab] = useState<string>('fetch');
   const [filters, setFilters] = useState<ImportFilters>({
-    category: 'all',
+    category: 'all',  // Explicit default
     minRating: 0,
     minStock: 0,
     maxPrice: 100000,
