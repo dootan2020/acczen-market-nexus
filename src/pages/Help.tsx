@@ -16,7 +16,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import Layout from "@/components/Layout";
+import { Layout } from "@/components/Layout";
 import { Mail, Phone, MessageCircle, FileText, HelpCircle, CreditCard } from "lucide-react";
 
 const Help = () => {

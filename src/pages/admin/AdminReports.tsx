@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -71,6 +72,9 @@ const AdminReports = () => {
     // Export to file
     const fileName = `financial-report-${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);
+    
+    // Show toast
+    // toast({ title: "PDF Exported", description: `Report saved as ${fileName}` });
   };
   
   // Export to CSV function
@@ -90,14 +94,7 @@ const AdminReports = () => {
     }));
     
     // Combine data by date
-    const combinedData: Array<{
-      date: string;
-      depositsAmount: number;
-      depositsCount: number;
-      ordersAmount?: number;
-      ordersCount?: number;
-    }> = [...depositsData];
-
+    const combinedData = [...depositsData];
     ordersData.forEach(orderDay => {
       const existingDay = combinedData.find(d => d.date === orderDay.date);
       if (existingDay) {
@@ -122,6 +119,9 @@ const AdminReports = () => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const fileName = `financial-data-${new Date().toISOString().slice(0, 10)}.csv`;
     saveAs(blob, fileName);
+    
+    // Show toast
+    // toast({ title: "CSV Exported", description: `Data saved as ${fileName}` });
   };
 
   return (
