@@ -15,7 +15,7 @@ const PayPalDeposit = () => {
 
   // PayPal configuration
   const paypalConfig = {
-    "client-id": "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
+    clientId: "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
     currency: "USD",
     intent: "capture"
   };
