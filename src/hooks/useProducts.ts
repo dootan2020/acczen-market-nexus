@@ -10,7 +10,8 @@ export function useProducts() {
         .from("products")
         .select(`
           *,
-          category:categories(*)
+          category:categories(*),
+          subcategory:subcategories(*)
         `)
         .eq("status", "active")
         .order("created_at", { ascending: false });

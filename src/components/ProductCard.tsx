@@ -1,11 +1,4 @@
 
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
-
 interface ProductCardProps {
   id: string;
   name: string;
@@ -13,6 +6,7 @@ interface ProductCardProps {
   price: number;
   salePrice?: number; 
   category: string;
+  subcategory?: string;
   stock: number;
   featured?: boolean;
   kioskToken?: string;
@@ -25,6 +19,7 @@ const ProductCard = ({
   price,
   salePrice,
   category,
+  subcategory,
   stock,
   featured,
   kioskToken,
@@ -60,8 +55,13 @@ const ProductCard = ({
             alt={name}
             className="w-full h-48 object-cover"
           />
-          <div className="absolute top-2 left-2 flex gap-2">
+          <div className="absolute top-2 left-2 flex gap-2 flex-wrap max-w-[calc(100%-1rem)]">
             <Badge className="bg-secondary hover:bg-secondary/80">{category}</Badge>
+            {subcategory && (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
+                {subcategory}
+              </Badge>
+            )}
             {featured && <Badge variant="default">Featured</Badge>}
             {kioskToken && <Badge variant="outline" className="bg-blue-100 text-blue-800">API</Badge>}
           </div>
