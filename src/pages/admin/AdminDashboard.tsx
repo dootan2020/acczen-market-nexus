@@ -313,6 +313,7 @@ const AdminDashboard = () => {
                   return [...acc, curr];
                 }, [] as any[])
                 .sort((a, b) => a.name.localeCompare(b.name))
+              }
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
