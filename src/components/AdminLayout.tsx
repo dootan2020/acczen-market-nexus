@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -201,8 +201,8 @@ const AdminLayout = () => {
                         {crumb.isCurrentPage ? (
                           <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
                         ) : (
-                          <BreadcrumbLink as={Link} to={crumb.path}>
-                            {crumb.name}
+                          <BreadcrumbLink href={crumb.path} className="cursor-pointer" asChild>
+                            <Link to={crumb.path}>{crumb.name}</Link>
                           </BreadcrumbLink>
                         )}
                       </BreadcrumbItem>
