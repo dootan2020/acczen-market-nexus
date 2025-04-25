@@ -1,6 +1,6 @@
 
 import { Routes, Route, useLocation } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Toaster } from "./components/ui/sonner";
 import Index from "./pages/Index";
 import Layout from "./components/Layout";
 import Products from "./pages/Products";
@@ -10,7 +10,7 @@ import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminGuard from "./components/AdminGuard";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -34,8 +34,6 @@ import Help from "./pages/Help";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
-  const location = useLocation();
-
   return (
     <AuthProvider>
       <Routes>
@@ -66,9 +64,9 @@ function App() {
         <Route
           path="/admin"
           element={
-            <AdminProtectedRoute>
+            <AdminGuard>
               <AdminLayout />
-            </AdminProtectedRoute>
+            </AdminGuard>
           }
         >
           <Route index element={<AdminDashboard />} />
@@ -90,7 +88,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="bottom-right" richColors closeButton />
       <UIToaster />
     </AuthProvider>
   );

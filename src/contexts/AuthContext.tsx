@@ -3,20 +3,29 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string, remember?: boolean) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error?: string }>;
-  signOut: () => Promise<void>;
+  signOut: (force?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   updatePassword: (password: string) => Promise<{ error?: string }>;
   updateUserEmail: (email: string) => Promise<{ error?: string }>;
+  refreshSession: () => Promise<void>;
   balance: number;
+  userDisplayName: string;
+  lastActive: Date | null;
+  inactiveWarningShown: boolean;
+  setInactiveWarningShown: (shown: boolean) => void;
 };
+
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const WARNING_BEFORE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes before timeout
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,6 +36,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [balance, setBalance] = useState<number>(0);
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
+  const [userDisplayName, setUserDisplayName] = useState<string>("");
+  const [lastActive, setLastActive] = useState<Date | null>(null);
+  const [inactiveWarningShown, setInactiveWarningShown] = useState<boolean>(false);
+  const navigate = useNavigate();
+
+  // Update last active timestamp on user activity
+  useEffect(() => {
+    const updateLastActive = () => {
+      setLastActive(new Date());
+      setInactiveWarningShown(false);
+    };
+
+    // Listen to user activity events
+    window.addEventListener('mousemove', updateLastActive);
+    window.addEventListener('keypress', updateLastActive);
+    window.addEventListener('click', updateLastActive);
+    window.addEventListener('touchstart', updateLastActive);
+
+    // Set initial active time
+    updateLastActive();
+
+    return () => {
+      window.removeEventListener('mousemove', updateLastActive);
+      window.removeEventListener('keypress', updateLastActive);
+      window.removeEventListener('click', updateLastActive);
+      window.removeEventListener('touchstart', updateLastActive);
+    };
+  }, []);
+
+  // Check for session timeout
+  useEffect(() => {
+    if (!session || !lastActive) return;
+
+    const checkSessionTimeout = setInterval(() => {
+      const now = new Date();
+      const inactiveTime = now.getTime() - lastActive.getTime();
+
+      // Show warning before session expires
+      if (inactiveTime > SESSION_TIMEOUT_MS - WARNING_BEFORE_TIMEOUT_MS && !inactiveWarningShown) {
+        toast.warning("Phiên làm việc sắp hết hạn", {
+          description: "Bạn sẽ bị đăng xuất trong 5 phút nếu không hoạt động",
+          action: {
+            label: "Tiếp tục",
+            onClick: () => setLastActive(new Date()),
+          },
+          duration: 0, // Don't auto-dismiss
+        });
+        setInactiveWarningShown(true);
+      }
+
+      // Auto logout on session timeout
+      if (inactiveTime > SESSION_TIMEOUT_MS) {
+        toast.info("Phiên làm việc đã hết hạn", {
+          description: "Bạn đã được đăng xuất tự động vì không hoạt động"
+        });
+        signOut(true);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkSessionTimeout);
+  }, [session, lastActive, inactiveWarningShown]);
 
   useEffect(() => {
     const setupSessionListener = async () => {
@@ -46,13 +116,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 description: "Chào mừng bạn trở lại!"
               });
             } else if (event === 'SIGNED_OUT') {
-              toast.success("Đăng xuất thành công");
+              toast.success("Đăng xuất thành công", {
+                description: "Hẹn gặp lại bạn sau!"
+              });
+            } else if (event === 'TOKEN_REFRESHED') {
+              console.log("Token refreshed successfully");
             }
           }
           
           if (!currentSession?.user) {
             setIsAdmin(false);
             setBalance(0);
+            setUserDisplayName("");
           }
         }
       );
@@ -88,7 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     setupSessionListener();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -97,20 +172,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log("Kiểm tra thông tin người dùng:", user.id);
           const { data, error } = await supabase
             .from('profiles')
-            .select('role, balance')
+            .select('role, balance, full_name')
             .eq('id', user.id)
             .single();
 
           if (error) {
-            console.error('Lỗi khi kiểm tra trạng thái admin:', error);
+            console.error('Lỗi khi kiểm tra thông tin người dùng:', error);
             throw error;
           }
 
           console.log("Thông tin profile:", data);
           setIsAdmin(data?.role === 'admin');
           setBalance(data?.balance || 0);
+          
+          // Set user display name in priority order: full_name from profile, user metadata, email
+          const displayName = data?.full_name || 
+            user.user_metadata?.full_name || 
+            user.email?.split('@')[0] || 
+            'Người dùng';
+          setUserDisplayName(displayName);
+          
         } catch (error) {
-          console.error('Lỗi khi kiểm tra trạng thái admin:', error);
+          console.error('Lỗi khi kiểm tra thông tin người dùng:', error);
           setIsAdmin(false);
         }
       }
@@ -119,20 +202,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAdminStatus();
   }, [user]);
 
-  const signIn = async (email: string, password: string) => {
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Lỗi khi làm mới phiên đăng nhập:", error);
+        return;
+      }
+      console.log("Đã làm mới phiên đăng nhập thành công");
+    } catch (error) {
+      console.error("Lỗi nghiêm trọng khi làm mới phiên đăng nhập:", error);
+    }
+  };
+
+  const signIn = async (email: string, password: string, remember: boolean = true) => {
     try {
       console.log("Bắt đầu quá trình đăng nhập cho:", email);
+      
+      // Set up session persistence based on remember me option
+      const options = {
+        auth: {
+          persistSession: remember,
+        }
+      };
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      });
+      }, options);
 
       if (error) {
         console.error('Lỗi đăng nhập:', error);
-        return { error: error.message };
+        
+        // Provide specific error messages for different error types
+        if (error.message.includes("Invalid login credentials")) {
+          return { error: "Email hoặc mật khẩu không chính xác" };
+        } else if (error.message.includes("Email not confirmed")) {
+          return { error: "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư của bạn" };
+        } else {
+          return { error: error.message };
+        }
       }
       
       console.log("Đăng nhập thành công:", data.user?.email);
+      setLastActive(new Date()); // Reset inactivity timer on login
       return {};
     } catch (error: any) {
       console.error('Lỗi nghiêm trọng khi đăng nhập:', error);
@@ -155,7 +268,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Lỗi đăng ký:', error);
-        return { error: error.message };
+        
+        // Provide specific error messages for different error types
+        if (error.message.includes("already registered")) {
+          return { error: "Email này đã được đăng ký" };
+        } else if (error.message.includes("password")) {
+          return { error: "Mật khẩu không đủ mạnh. Vui lòng sử dụng ít nhất 8 ký tự bao gồm chữ cái, số và ký tự đặc biệt" };
+        } else {
+          return { error: error.message };
+        }
       }
       
       console.log("Đăng ký thành công, trạng thái email:", data.user?.email_confirmed_at ? "Đã xác nhận" : "Chưa xác nhận");
@@ -166,7 +287,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (force: boolean = false) => {
+    if (!force) {
+      // Confirm before logout unless force is true
+      const willLogout = window.confirm("Bạn có chắc chắn muốn đăng xuất không?");
+      if (!willLogout) return;
+    }
+    
     try {
       console.log("Đang đăng xuất...");
       const { error } = await supabase.auth.signOut();
@@ -177,7 +304,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       } else {
         console.log("Đăng xuất thành công");
-        toast.success("Đăng xuất thành công");
+        
+        // Clear any stored states related to the user session
+        localStorage.removeItem('previousPath');
+        
+        // No need to manually show toast here as it's handled by onAuthStateChange
+        navigate('/');
       }
     } catch (error) {
       console.error('Lỗi nghiêm trọng khi đăng xuất:', error);
@@ -255,7 +387,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     resetPassword,
     updatePassword,
     updateUserEmail,
+    refreshSession,
     balance,
+    userDisplayName,
+    lastActive,
+    inactiveWarningShown,
+    setInactiveWarningShown,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
