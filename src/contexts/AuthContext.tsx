@@ -1,10 +1,8 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Define types for our context
 type AuthContextType = {
   session: Session | null;
   user: User | null;
@@ -19,10 +17,8 @@ type AuthContextType = {
   balance: number;
 };
 
-// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -31,18 +27,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [balance, setBalance] = useState<number>(0);
 
   useEffect(() => {
-    // Set up the session listener
     const setupSessionListener = async () => {
       console.log("Khởi tạo listener phiên đăng nhập...");
       
-      // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, currentSession) => {
+        async (event, currentSession) => {
           console.log("Auth state change:", event, currentSession?.user?.email || "No user");
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // If user is logged out, reset admin status
+          if (event === 'SIGNED_IN') {
+            toast.success("Đăng nhập thành công", {
+              description: "Chào mừng bạn trở lại!"
+            });
+          } else if (event === 'SIGNED_OUT') {
+            toast.success("Đăng xuất thành công");
+          }
+          
           if (!currentSession?.user) {
             setIsAdmin(false);
             setBalance(0);
@@ -50,7 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       );
 
-      // THEN check for existing session
       try {
         console.log("Kiểm tra phiên đăng nhập hiện tại...");
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
@@ -72,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
 
-      // Cleanup function
       return () => {
         console.log("Hủy đăng ký listener phiên đăng nhập");
         subscription.unsubscribe();
@@ -82,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setupSessionListener();
   }, []);
 
-  // Check if the user is an admin when the user changes
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
@@ -112,7 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAdminStatus();
   }, [user]);
 
-  // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
       console.log("Bắt đầu quá trình đăng nhập cho:", email);
@@ -134,7 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Sign up function
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
       console.log("Bắt đầu quá trình đăng ký cho:", email);
@@ -161,7 +157,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Sign out function
   const signOut = async () => {
     try {
       console.log("Đang đăng xuất...");
@@ -180,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Reset password function
   const resetPassword = async (email: string) => {
     try {
       console.log("Đặt lại mật khẩu cho:", email);
@@ -201,7 +195,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Update password function
   const updatePassword = async (password: string) => {
     try {
       console.log("Đang cập nhật mật khẩu...");
@@ -222,7 +215,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Update email function
   const updateUserEmail = async (email: string) => {
     try {
       console.log("Đang cập nhật email thành:", email);
@@ -260,7 +252,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

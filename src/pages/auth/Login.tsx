@@ -5,20 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, AlertCircle } from "lucide-react";
+import { Package, AlertCircle, Loader } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   // Reset error message when inputs change
   useEffect(() => {
@@ -58,11 +63,7 @@ const Login = () => {
           description: result.error
         });
       } else {
-        // Đăng nhập thành công
-        console.log("Đăng nhập thành công, redirect đến trang chủ");
-        toast.success("Đăng nhập thành công", {
-          description: "Chào mừng bạn trở lại!"
-        });
+        // Đăng nhập thành công, toast sẽ được hiển thị bởi AuthContext
         navigate("/");
       }
     } catch (error) {
@@ -74,36 +75,6 @@ const Login = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const testSupabaseConnection = async () => {
-    setTestingConnection(true);
-    try {
-      console.log("Kiểm tra kết nối Supabase...");
-      console.log("URL Supabase:", import.meta.env.VITE_SUPABASE_URL); // Use environment variable instead
-      
-      // Thử kết nối đơn giản để kiểm tra
-      const { data, error } = await supabase.from('profiles').select('count').limit(1);
-      
-      if (error) {
-        console.error("Lỗi kết nối:", error);
-        toast.error("Không thể kết nối với Supabase", {
-          description: error.message
-        });
-      } else {
-        console.log("Kết nối thành công:", data);
-        toast.success("Kết nối Supabase thành công", {
-          description: "API kết nối đang hoạt động bình thường"
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi kiểm tra kết nối:", error);
-      toast.error("Lỗi kết nối", {
-        description: error instanceof Error ? error.message : "Không thể kết nối với server"
-      });
-    } finally {
-      setTestingConnection(false);
     }
   };
 
@@ -164,19 +135,15 @@ const Login = () => {
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+                {isLoading ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Đang đăng nhập...
+                  </>
+                ) : (
+                  "Đăng nhập"
+                )}
               </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full"
-                onClick={testSupabaseConnection}
-                disabled={testingConnection}
-              >
-                {testingConnection ? "Đang kiểm tra..." : "Kiểm tra kết nối Supabase"}
-              </Button>
-              
               <div className="text-center text-sm">
                 Chưa có tài khoản?{" "}
                 <Link to="/register" className="text-primary hover:underline">
