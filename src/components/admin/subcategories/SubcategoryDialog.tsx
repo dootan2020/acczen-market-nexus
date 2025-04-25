@@ -103,13 +103,19 @@ export default function SubcategoryDialog({
     if (isEditing && subcategory) {
       updateSubcategory.mutate({
         id: subcategory.id,
+        name: data.name,
+        slug: data.slug,
         category_id: categoryId,
-        ...data,
+        description: data.description,
+        image_url: data.image_url,
       });
     } else {
       createSubcategory.mutate({
+        name: data.name,
+        slug: data.slug,
         category_id: categoryId,
-        ...data,
+        description: data.description,
+        image_url: data.image_url,
       });
     }
 
