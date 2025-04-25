@@ -1,24 +1,56 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error("Lỗi đăng nhập", {
+        description: "Vui lòng nhập email và mật khẩu"
+      });
+      return;
+    }
+    
     setIsLoading(true);
-    await signIn(email, password);
-    setIsLoading(false);
+    
+    try {
+      const result = await signIn(email, password);
+      
+      if (result?.error) {
+        console.error("Login error:", result.error);
+        toast.error("Lỗi đăng nhập", {
+          description: "Email hoặc mật khẩu không chính xác"
+        });
+      } else {
+        // Đăng nhập thành công
+        toast.success("Đăng nhập thành công", {
+          description: "Chào mừng bạn trở lại!"
+        });
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Lỗi đăng nhập", {
+        description: error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,9 +64,9 @@ const Login = () => {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
+            <CardTitle>Đăng nhập tài khoản</CardTitle>
             <CardDescription>
-              Enter your email and password to access your account
+              Nhập email và mật khẩu để truy cập vào tài khoản của bạn
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -48,13 +80,14 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Mật khẩu</Label>
                   <Link to="/reset-password" className="text-xs text-primary hover:underline">
-                    Forgot password?
+                    Quên mật khẩu?
                   </Link>
                 </div>
                 <Input
@@ -64,17 +97,18 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
               <div className="text-center text-sm">
-                Don't have an account?{" "}
+                Chưa có tài khoản?{" "}
                 <Link to="/register" className="text-primary hover:underline">
-                  Sign up
+                  Đăng ký
                 </Link>
               </div>
             </CardFooter>
