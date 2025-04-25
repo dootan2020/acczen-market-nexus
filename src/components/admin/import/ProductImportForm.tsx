@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +8,14 @@ import { ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { PROXY_OPTIONS, ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
+import { PROXY_OPTIONS, ProxyType, getStoredProxy, setStoredProxy, getStoredTokens, setStoredTokens } from '@/utils/corsProxy';
 
 interface ApiCredentials {
   userToken: string;
   kioskToken: string;
   proxyType: ProxyType;
   rememberProxy: boolean;
+  rememberTokens: boolean;
 }
 
 interface ProductImportFormProps {
@@ -45,13 +46,16 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
   } | null>(null);
   
   const [testingConnection, setTestingConnection] = React.useState(false);
+  
+  const storedTokens = React.useMemo(() => getStoredTokens(), []);
 
   const form = useForm<ApiCredentials>({
     defaultValues: {
-      userToken,
-      kioskToken,
+      userToken: userToken || storedTokens.userToken,
+      kioskToken: kioskToken || storedTokens.kioskToken,
       proxyType: getStoredProxy(),
-      rememberProxy: false
+      rememberProxy: false,
+      rememberTokens: false
     }
   });
 
@@ -61,6 +65,10 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
     
     if (data.rememberProxy) {
       setStoredProxy(data.proxyType);
+    }
+    
+    if (data.rememberTokens) {
+      setStoredTokens(data.userToken, data.kioskToken);
     }
     
     onSubmit(data.proxyType);
@@ -209,26 +217,49 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="rememberProxy"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-start space-x-2 pt-6">
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-0.5">
-                  <FormLabel>Remember this proxy</FormLabel>
-                  <FormDescription>
-                    Save your proxy preference for future sessions
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="rememberProxy"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-start space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-0.5">
+                    <FormLabel>Remember this proxy</FormLabel>
+                    <FormDescription>
+                      Save your proxy preference for future sessions
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="rememberTokens"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-start space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-0.5">
+                    <FormLabel>Remember my tokens</FormLabel>
+                    <FormDescription>
+                      Save your API tokens for future use (stored locally)
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
         
         <div className="flex flex-col md:flex-row gap-2">
@@ -258,8 +289,9 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
             <li>Enter both the User Token and Kiosk Token from your TaphoaMMO account</li>
             <li>The User Token is your account's API key found in Account Settings</li>
             <li>The Kiosk Token is specific to each product you want to import</li>
+            <li>Select a CORS proxy server to handle cross-origin requests</li>
             <li>You can test the connection before fetching products</li>
-            <li>If you encounter errors, verify your tokens and try again</li>
+            <li>If one proxy doesn't work, try another from the dropdown</li>
           </ul>
         </div>
       </form>

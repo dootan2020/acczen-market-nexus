@@ -92,7 +92,6 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  // Fix: Moved optional parameter 'promotion' before the required parameter 'proxyType'
   const buyProducts = async (
     kioskToken: string, 
     userToken: string, 
@@ -155,20 +154,20 @@ export const useTaphoammoAPI = () => {
   };
 
   const getProducts = async (
-    orderId: string, 
+    kioskToken: string, 
     userToken: string,
     proxyType: ProxyType
-  ): Promise<TaphoammoOrderResponse> => {
+  ): Promise<any> => {
     setLoading(true);
     setError(null);
     setRetry(0);
 
     try {
-      console.log('Getting products with params:', { orderId, userToken });
+      console.log('Getting products with params:', { kioskToken, userToken });
       
       const data = await withRetry(async () => {
         return await callTaphoammoAPI('/getProducts', {
-          orderId,
+          kioskToken,
           userToken
         }, proxyType);
       });

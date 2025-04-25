@@ -1,179 +1,179 @@
 
 import { useState } from 'react';
 import { useTaphoammoAPI } from './useTaphoammoAPI';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
-import { getStoredProxy } from '@/utils/corsProxy';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '../contexts/AuthContext';
+import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
 
-interface PurchaseOptions {
-  kioskToken: string;
-  quantity: number;
-  promotion?: string;
-}
-
-interface PurchaseResult {
-  success: boolean;
-  orderId?: string;
-  productKeys?: string[];
-  message?: string;
-  error?: string;
-}
-
-// Max time to poll for order status (ms)
-const MAX_POLL_TIME = 60000; // 1 minute
-// Poll interval (ms)
-const POLL_INTERVAL = 5000; // 5 seconds
-
-export const usePurchaseTaphoammo = () => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [productKeys, setProductKeys] = useState<string[]>([]);
-  const [pollCount, setPollCount] = useState(0);
-  const { buyProducts, getProducts } = useTaphoammoAPI();
+export const usePurchaseTaphoammo = (kioskToken: string) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
   const { user } = useAuth();
-
-  const purchase = async ({ kioskToken, quantity, promotion }: PurchaseOptions): Promise<PurchaseResult> => {
-    if (!user) {
-      toast.error('User must be logged in to make a purchase');
-      return { success: false, error: 'User not authenticated' };
+  
+  const { buyProducts } = useTaphoammoAPI();
+  
+  const purchaseProduct = async (quantity = 1) => {
+    if (!user?.id) {
+      toast.error("You must be logged in to make a purchase");
+      return;
     }
-
-    setIsProcessing(true);
-    setOrderId(null);
-    setProductKeys([]);
-    setPollCount(0);
-
-    try {
-      const userToken = user.id;
-      
-      // Call the edge function to process the order
-      const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
-        body: {
-          kioskToken,
-          userToken,
-          quantity,
-          promotion
-        }
-      });
-
-      if (error) throw error;
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to process order');
-      }
-
-      setOrderId(data.order_id);
-      
-      if (data.product_keys && data.product_keys.length > 0) {
-        setProductKeys(data.product_keys);
-      }
-
-      // If status is not completed, start polling
-      if (data.status === 'processing' && data.order_id) {
-        startPollingOrderStatus(data.order_id);
-      }
-
-      return {
-        success: true, 
-        orderId: data.order_id,
-        productKeys: data.product_keys || [],
-        message: data.message
-      };
-    } catch (error) {
-      console.error('Purchase error:', error);
-      toast.error(error instanceof Error ? error.message : 'An error occurred during purchase');
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const startPollingOrderStatus = async (orderIdToCheck: string) => {
-    // Set initial polling time
-    let startTime = Date.now();
-    let timerId: number | undefined;
-
-    const pollFunction = async () => {
-      try {
-        // Check if we've exceeded the maximum poll time
-        if (Date.now() - startTime > MAX_POLL_TIME) {
-          clearInterval(timerId);
-          toast.error('Order processing timed out. Please check your order status in your dashboard.');
-          return;
-        }
-
-        setPollCount(prev => prev + 1);
-        const result = await pollOrderStatus(orderIdToCheck);
-        
-        // If we got keys or a final status, stop polling
-        if (
-          (result.productKeys && result.productKeys.length > 0) || 
-          (result.status && ['completed', 'failed', 'cancelled'].includes(result.status))
-        ) {
-          clearInterval(timerId);
-          
-          if (result.status === 'failed' || result.status === 'cancelled') {
-            toast.error(`Order ${result.status}: Please contact support if your balance was deducted.`);
-          } else if (result.productKeys?.length) {
-            toast.success('Product keys received!');
-          }
-        }
-      } catch (error) {
-        console.error('Error polling order status:', error);
-        // Don't stop polling on error, just log it
-      }
-    };
-
-    // Start polling
-    timerId = setInterval(pollFunction, POLL_INTERVAL) as unknown as number;
     
-    // Run once immediately
-    pollFunction();
-  };
-
-  const pollOrderStatus = async (orderIdToCheck: string) => {
-    if (!user || !orderIdToCheck) {
-      return { success: false, error: 'Missing user or order ID' };
-    }
-
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    setOrderDetails(null);
+    
     try {
-      // Fix: Add the required proxyType argument
+      // Get the proxy type from localStorage
       const proxyType = getStoredProxy();
-      const response = await getProducts(orderIdToCheck, user.id, proxyType);
       
-      if (response.product_keys && response.product_keys.length > 0) {
-        setProductKeys(response.product_keys);
+      // Step 1: Check balance
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+      
+      if (userError) {
+        throw new Error(userError.message);
+      }
+      
+      // Step 2: Call Edge Function to handle purchase
+      const { data, error } = await supabase.functions.invoke('purchase-product', {
+        body: JSON.stringify({ 
+          kioskToken,
+          quantity,
+          proxyType
+        })
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (!data.success) {
+        throw new Error(data.message || "Failed to purchase product");
+      }
+      
+      // Step 3: Update UI if successful
+      setSuccess(true);
+      setOrderDetails(data);
+      
+      // Show success notification
+      toast.success("Product purchased successfully!", {
+        description: `Your order ID: ${data.orderId}`,
+      });
+      
+      return data;
+      
+    } catch (err) {
+      console.error("Purchase error:", err);
+      setError(err instanceof Error ? err.message : "Failed to purchase product");
+      
+      toast.error("Purchase failed", {
+        description: err instanceof Error ? err.message : "Failed to purchase product",
+      });
+      
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const validatePurchase = async (productPrice: number, quantity = 1): Promise<{ 
+    valid: boolean; 
+    message?: string; 
+    orderDetails?: any;
+  }> => {
+    if (!user?.id) {
+      return { valid: false, message: "You must be logged in to make a purchase" };
+    }
+    
+    try {
+      // Step 1: Check balance
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+      
+      if (userError) {
+        throw new Error(userError.message);
+      }
+      
+      const totalPrice = productPrice * quantity;
+      
+      if (userData.balance < totalPrice) {
+        return { 
+          valid: false, 
+          message: `Insufficient balance. You need $${totalPrice.toFixed(2)} but your balance is $${userData.balance.toFixed(2)}` 
+        };
+      }
+      
+      return { valid: true };
+      
+    } catch (err) {
+      console.error("Validation error:", err);
+      return { 
+        valid: false, 
+        message: err instanceof Error ? err.message : "Failed to validate purchase" 
+      };
+    }
+  };
+  
+  const checkStockAvailability = async (quantity = 1): Promise<{
+    available: boolean;
+    message?: string;
+    stockData?: any;
+  }> => {
+    try {
+      // Get admin info from Edge Function
+      const proxyType = getStoredProxy();
+      
+      const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
+        body: JSON.stringify({ 
+          action: 'check_stock',
+          kioskToken,
+          quantity,
+          proxyType
+        })
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (!data.success) {
         return {
-          success: true,
-          productKeys: response.product_keys,
-          status: response.status
+          available: false,
+          message: data.message || "Product is not available"
         };
       }
       
       return {
-        success: true,
-        productKeys: [],
-        status: response.status || 'processing'
+        available: true,
+        stockData: data.stockInfo
       };
-    } catch (error) {
-      console.error('Error polling order status:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error'
+      
+    } catch (err) {
+      console.error("Stock check error:", err);
+      return {
+        available: false,
+        message: err instanceof Error ? err.message : "Failed to check stock availability"
       };
     }
   };
-
+  
   return {
-    purchase,
-    pollOrderStatus,
-    isProcessing,
-    orderId,
-    productKeys,
-    pollCount
+    purchaseProduct,
+    validatePurchase,
+    checkStockAvailability,
+    loading,
+    error,
+    success,
+    orderDetails
   };
 };

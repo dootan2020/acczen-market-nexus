@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +10,11 @@ import { ProductImportTable } from '@/components/admin/import/ProductImportTable
 import { ProductImportCard } from '@/components/admin/import/ProductImportCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, ArrowRight, Check, Info } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, Info, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { taphoammoProxy } from '@/api/taphoammoProxy';
-import { ProxyType } from '@/utils/corsProxy';
+import { ProxyType, getStoredTokens } from '@/utils/corsProxy';
 
 export type TaphoammoProduct = {
   id: string;
@@ -38,11 +39,12 @@ export type ImportFilters = {
 };
 
 const AdminProductImport = () => {
-  const [userToken, setUserToken] = useState<string>('');
-  const [kioskToken, setKioskToken] = useState<string>('');
+  const storedTokens = getStoredTokens();
+  const [userToken, setUserToken] = useState<string>(storedTokens.userToken || '');
+  const [kioskToken, setKioskToken] = useState<string>(storedTokens.kioskToken || '');
   const [products, setProducts] = useState<TaphoammoProduct[]>([]);
   const [markupPercentage, setMarkupPercentage] = useState<number>(10);
-  const [activeTab, setActiveTab] = useState<string>('fetch');
+  const [activeTab, setActiveTab] = useState<string>('connection');
   const [filters, setFilters] = useState<ImportFilters>({
     category: 'all',  // Explicit default
     minRating: 0,
@@ -51,7 +53,7 @@ const AdminProductImport = () => {
   });
   const [apiError, setApiError] = useState<string | null>(null);
   
-  const { getStock, testConnection, loading, error } = useTaphoammoAPI();
+  const { getStock, testConnection, getProducts, loading, error } = useTaphoammoAPI();
   
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -63,6 +65,21 @@ const AdminProductImport = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Apply filters to products
+  const filteredProducts = products.filter(product => {
+    const productPrice = product.price || 0;
+    const productStock = product.stock_quantity || 0;
+    const productRating = product.rating || 0;
+    const productCategory = product.category || "";
+
+    return (
+      (filters.category === 'all' || productCategory === filters.category) &&
+      productPrice <= filters.maxPrice &&
+      productStock >= filters.minStock &&
+      productRating >= filters.minRating
+    );
   });
 
   const handleTestConnection = async (proxyType: ProxyType) => {
@@ -104,27 +121,13 @@ const AdminProductImport = () => {
     try {
       toast.info("Connecting to TaphoaMMO API...");
       
-      const stockInfo = await getStock(kioskToken, userToken, proxyType);
+      // First check connection through getStock
+      await getStock(kioskToken, userToken, proxyType);
       
-      if (!stockInfo) {
-        setApiError("Failed to fetch product information");
-        toast.error("Failed to fetch product information");
-        return;
-      }
-      
-      toast.success("Connected successfully", {
-        description: `Found: ${stockInfo.name || "product"}`
-      });
+      toast.success("Connected successfully");
       
       try {
-        const response = await taphoammoProxy({
-          endpoint: 'getProducts',
-          params: {
-            kioskToken,
-            userToken
-          },
-          proxyType
-        });
+        const response = await getProducts(kioskToken, userToken, proxyType);
         
         if (response.products && Array.isArray(response.products)) {
           const productsWithMeta = response.products.map((product: TaphoammoProduct) => ({
@@ -135,7 +138,7 @@ const AdminProductImport = () => {
           }));
           
           setProducts(productsWithMeta);
-          setActiveTab('preview');
+          setActiveTab('products');
           toast.success(`Found ${productsWithMeta.length} products`);
         } else {
           console.warn("No products found in response:", response);
@@ -234,12 +237,13 @@ const AdminProductImport = () => {
       
       toast.success(`Successfully imported ${data.imported} products`);
       
+      // Remove imported products from the list
       setProducts(prevProducts => 
         prevProducts.filter(product => !product.selected)
       );
       
       if (selectedProducts.length === products.length) {
-        setActiveTab('fetch');
+        setActiveTab('connection');
       }
       
     } catch (error) {
@@ -262,6 +266,16 @@ const AdminProductImport = () => {
     );
   };
   
+  const handleRefreshProducts = async (proxyType: ProxyType) => {
+    if (!userToken || !kioskToken) {
+      toast.error("Missing API credentials");
+      return;
+    }
+    
+    toast.info("Refreshing products data...");
+    await handleFetchProducts(proxyType);
+  };
+  
   const selectedCount = products.filter(p => p.selected).length;
   const selectedTotalValue = products
     .filter(p => p.selected)
@@ -278,20 +292,20 @@ const AdminProductImport = () => {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 mb-4">
-          <TabsTrigger value="fetch">1. Fetch Products</TabsTrigger>
+          <TabsTrigger value="connection">1. API Connection</TabsTrigger>
           <TabsTrigger 
-            value="preview" 
+            value="products" 
             disabled={products.length === 0}
           >
-            2. Preview & Import
+            2. Import Products
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="fetch">
+        <TabsContent value="connection">
           <Card>
             <CardHeader>
-              <CardTitle>API Credentials</CardTitle>
-              <CardDescription>Enter your TaphoaMMO API credentials</CardDescription>
+              <CardTitle>API Connection</CardTitle>
+              <CardDescription>Test your connection to the TaphoaMMO API</CardDescription>
             </CardHeader>
             <CardContent>
               <ProductImportForm 
@@ -309,8 +323,8 @@ const AdminProductImport = () => {
           
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Filters & Options</CardTitle>
-              <CardDescription>Filter products and set markup</CardDescription>
+              <CardTitle>Import Options</CardTitle>
+              <CardDescription>Set default markup and filters for imported products</CardDescription>
             </CardHeader>
             <CardContent>
               <ProductImportFilters 
@@ -325,15 +339,15 @@ const AdminProductImport = () => {
           
           <Alert className="mt-6">
             <Info className="h-4 w-4" />
-            <AlertTitle>Connection Information</AlertTitle>
+            <AlertTitle>CORS Proxy Information</AlertTitle>
             <AlertDescription>
-              Your API credentials will be securely handled by our server-side Edge Function.
-              No sensitive information will be exposed to the client.
+              If you encounter connection issues, try switching to a different CORS proxy.
+              Different proxies have varying reliability and may work better depending on your location.
             </AlertDescription>
           </Alert>
         </TabsContent>
         
-        <TabsContent value="preview">
+        <TabsContent value="products">
           {selectedCount > 0 && (
             <Alert className="mb-6" variant="default">
               <div className="flex items-center justify-between w-full">
@@ -358,22 +372,33 @@ const AdminProductImport = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Product Preview</CardTitle>
+                <CardTitle>Product List</CardTitle>
                 <CardDescription>
-                  Select products to import into your store
+                  Select products to import into your store ({filteredProducts.length} products found)
                 </CardDescription>
               </div>
-              <Button 
-                onClick={() => setActiveTab('fetch')} 
-                variant="outline" 
-                size="sm"
-              >
-                Back to Filters
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => handleRefreshProducts(getStoredTokens().proxyType || 'allorigins')}
+                  variant="outline" 
+                  size="sm"
+                  disabled={loading}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+                <Button 
+                  onClick={() => setActiveTab('connection')} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Back to Connection
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <ProductImportCard
                     key={product.id}
                     product={product}
@@ -382,9 +407,11 @@ const AdminProductImport = () => {
                   />
                 ))}
                 
-                {products.length === 0 && (
+                {filteredProducts.length === 0 && (
                   <div className="col-span-full text-center py-4 text-muted-foreground">
-                    No products found
+                    {products.length > 0 
+                      ? "No products match your current filters" 
+                      : "No products found"}
                   </div>
                 )}
               </div>
