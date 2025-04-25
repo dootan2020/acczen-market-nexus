@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const PayPalDeposit = () => {
@@ -15,7 +15,7 @@ const PayPalDeposit = () => {
 
   // PayPal configuration
   const paypalConfig = {
-    clientId: "your-paypal-client-id",
+    "client-id": "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
     currency: "USD",
     intent: "capture"
   };
@@ -25,41 +25,35 @@ const PayPalDeposit = () => {
   const handlePayPalSuccess = async (orderDetails: any, amount: number) => {
     try {
       // Call our edge function to process deposit
-      const response = await supabase.functions.invoke('process-paypal-deposit', {
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('process-paypal-deposit', {
+        body: {
           orderID: orderDetails.id,
           amount: amount,
           userID: user?.id
-        })
+        }
       });
 
-      if (response.data?.success) {
-        toast({
-          title: 'Deposit Successful',
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('Deposit Successful', {
           description: `$${amount} has been added to your account`
         });
         
-        // Navigate to success page if we have deposit data
-        if (response.data.deposit) {
-          navigate('/deposit/success', { 
-            state: { 
-              deposit: response.data.deposit,
-              transaction: response.data.transaction
-            } 
-          });
-        }
+        navigate('/deposit/success', { 
+          state: { 
+            deposit: data.deposit,
+            transaction: data.transaction
+          }
+        });
       } else {
-        toast({
-          title: 'Deposit Failed',
-          description: response.data?.message || 'Something went wrong',
-          variant: 'destructive'
+        toast.error('Deposit Failed', {
+          description: data?.message || 'Something went wrong'
         });
       }
     } catch (error) {
-      toast({
-        title: 'Deposit Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive'
+      toast.error('Deposit Failed', {
+        description: error instanceof Error ? error.message : 'An error occurred'
       });
     }
   };
@@ -90,10 +84,8 @@ const PayPalDeposit = () => {
                 }
               }}
               onError={(err) => {
-                toast({
-                  title: 'PayPal Error',
-                  description: 'An error occurred with PayPal payment',
-                  variant: 'destructive'
+                toast.error('PayPal Error', {
+                  description: 'An error occurred with PayPal payment'
                 });
               }}
             />
@@ -107,6 +99,7 @@ const PayPalDeposit = () => {
             value={customAmount}
             onChange={(e) => setCustomAmount(e.target.value)}
             min="1"
+            className="flex-1"
           />
           <PayPalButtons 
             style={{ layout: 'vertical', color: 'blue', shape: 'rect' }}
@@ -132,10 +125,8 @@ const PayPalDeposit = () => {
               }
             }}
             onError={(err) => {
-              toast({
-                title: 'PayPal Error',
-                description: 'An error occurred with PayPal payment',
-                variant: 'destructive'
+              toast.error('PayPal Error', {
+                description: 'An error occurred with PayPal payment'
               });
             }}
           />
