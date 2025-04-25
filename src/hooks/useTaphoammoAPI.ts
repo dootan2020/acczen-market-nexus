@@ -95,7 +95,7 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  // Add direct API call with CORS proxy when needed
+  // Direct API call with CORS proxy
   const callDirectAPI = async (
     endpoint: string,
     params: Record<string, string | number>,
@@ -132,7 +132,7 @@ export const useTaphoammoAPI = () => {
       }
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[Direct API Call] Error:`, error);
       throw error;
     }
@@ -163,21 +163,47 @@ export const useTaphoammoAPI = () => {
       }
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[Edge Function] Error in ${endpoint}:`, error);
       throw error;
     }
   };
 
-  // This function replaces the taphoammoProxy function that was in the deleted file
-  const callTaphoammoAPI = async (endpoint: string, params: any, proxyType: ProxyType) => {
-    if (proxyType === 'admin') {
-      // Use Edge Function
-      return callEdgeFunction(endpoint, params);
-    } else {
-      // Use direct call with optional proxy
-      return callDirectAPI(endpoint, params, proxyType);
+  // Try all available methods to call the API
+  const callTaphoammoAPI = async (endpoint: string, params: any, preferredProxy: ProxyType = 'allorigins') => {
+    // Define the order of proxies to try
+    const proxyOrder: ProxyType[] = [preferredProxy];
+    
+    // Add remaining proxies in a specific order, but don't duplicate the preferred one
+    ['admin', 'allorigins', 'corsproxy.io', 'corsanywhere', 'direct'].forEach(proxy => {
+      if (proxy !== preferredProxy) {
+        proxyOrder.push(proxy as ProxyType);
+      }
+    });
+    
+    let lastError: Error | null = null;
+    
+    // Try each proxy in order
+    for (const proxy of proxyOrder) {
+      try {
+        console.log(`Trying to call API with proxy: ${proxy}`);
+        
+        if (proxy === 'admin') {
+          // Use Edge Function
+          return await callEdgeFunction(endpoint, params);
+        } else {
+          // Use direct call with optional proxy
+          return await callDirectAPI(endpoint, params, proxy);
+        }
+      } catch (error) {
+        console.error(`Failed with proxy ${proxy}:`, error);
+        lastError = error as Error;
+        // Continue to next proxy
+      }
     }
+    
+    // If all methods failed, throw the last error
+    throw lastError || new Error('All connection methods failed');
   };
 
   const buyProducts = async (
@@ -218,7 +244,7 @@ export const useTaphoammoAPI = () => {
 
       setLoading(false);
       return data;
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error in buyProducts:', errorMsg);
       
@@ -266,7 +292,7 @@ export const useTaphoammoAPI = () => {
 
       setLoading(false);
       return data;
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       setLoading(false);
@@ -274,7 +300,6 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  // Fix: Ensure getStock returns a TaphoammoProduct by converting string values to numbers
   const getStock = async (
     kioskToken: string, 
     userToken: string,
@@ -284,7 +309,7 @@ export const useTaphoammoAPI = () => {
     setError(null);
     setRetry(0);
 
-    console.log('Checking API connection with params:', { kioskToken, userToken });
+    console.log('Checking API connection with params:', { kioskToken, userToken, proxyType });
 
     try {
       const data = await withRetry(async () => {
@@ -304,7 +329,7 @@ export const useTaphoammoAPI = () => {
         stock_quantity: data.stock ? parseInt(data.stock) : 0,
         price: data.price ? parseFloat(data.price) : 0
       };
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error in getStock:', errorMsg);
       setError(errorMsg);
@@ -327,7 +352,7 @@ export const useTaphoammoAPI = () => {
         success: true, 
         message: `Connection successful - Found: ${data.name} (Stock: ${data.stock_quantity})` 
       };
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       return { 
         success: false, 

@@ -22,7 +22,7 @@ import { ProxyType } from '@/utils/corsProxy';
 const formSchema = z.object({
   kioskToken: z.string().min(1, { message: 'Kiosk Token không được để trống' }),
   userToken: z.string().min(1, { message: 'User Token không được để trống' }),
-  proxyType: z.enum(['direct', 'corsproxy.io', 'admin'])
+  proxyType: z.enum(['direct', 'corsproxy.io', 'allorigins', 'corsanywhere', 'admin'])
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +48,7 @@ export default function ProductImportForm({
     defaultValues: {
       kioskToken: '',
       userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
-      proxyType: 'admin'
+      proxyType: 'allorigins' // Default to allorigins as it's working well
     }
   });
 
@@ -137,18 +137,18 @@ export default function ProductImportForm({
                 >
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="admin" />
+                      <RadioGroupItem value="allorigins" />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      Supabase Edge Function (khuyến nghị)
+                      AllOrigins CORS Proxy (khuyến nghị)
                     </FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="direct" />
+                      <RadioGroupItem value="admin" />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      Trực tiếp (nếu không có vấn đề CORS)
+                      Supabase Edge Function
                     </FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-3 space-y-0">
@@ -157,6 +157,22 @@ export default function ProductImportForm({
                     </FormControl>
                     <FormLabel className="font-normal">
                       CORS Proxy (corsproxy.io)
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="corsanywhere" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      CORS Anywhere
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="direct" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Trực tiếp (nếu không có vấn đề CORS)
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>
