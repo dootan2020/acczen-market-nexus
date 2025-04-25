@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +36,6 @@ import { supabase } from "@/integrations/supabase/client";
 const AdminDashboard = () => {
   const { data: stats, isLoading, error, timeRange, setTimeRange } = useDashboardStats();
   
-  // Fetch low stock products
   const { data: lowStockProducts } = useQuery({
     queryKey: ['low-stock-products'],
     queryFn: async () => {
@@ -53,7 +51,6 @@ const AdminDashboard = () => {
     }
   });
   
-  // Fetch recent API errors
   const { data: apiErrors } = useQuery({
     queryKey: ['recent-api-errors'],
     queryFn: async () => {
@@ -69,15 +66,12 @@ const AdminDashboard = () => {
     }
   });
   
-  // Colors for charts
   const COLORS = ['#2ECC71', '#3498DB', '#F1C40F', '#E74C3C'];
   
-  // Format number with commas
   const formatNumber = (num: number) => {
     return num.toLocaleString('en-US');
   };
   
-  // Format currency
   const formatCurrency = (num: number) => {
     return `$${num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
   };
@@ -147,9 +141,7 @@ const AdminDashboard = () => {
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
-      {/* Main Stats Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4 mb-6">
-        {/* Revenue Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -164,7 +156,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Users Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -181,7 +172,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Orders Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -196,7 +186,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Deposits Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
@@ -212,11 +201,10 @@ const AdminDashboard = () => {
         </Card>
       </div>
       
-      {/* Alerts section */}
       {(lowStockProducts?.length || apiErrors?.length) ? (
         <div className="space-y-4 mb-6">
           {lowStockProducts?.length ? (
-            <Alert variant="warning">
+            <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Low stock products</AlertTitle>
               <AlertDescription>
@@ -237,7 +225,6 @@ const AdminDashboard = () => {
         </div>
       ) : null}
       
-      {/* Revenue Chart Section */}
       <Tabs defaultValue={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Sales Overview</h2>
@@ -249,7 +236,6 @@ const AdminDashboard = () => {
           </TabsList>
         </div>
         
-        {/* Chart tabs content */}
         <TabsContent value={timeRange} className="space-y-4">
           <Card>
             <CardContent className="pt-6">
@@ -284,7 +270,6 @@ const AdminDashboard = () => {
       </Tabs>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Orders vs Deposits Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Orders vs Deposits</CardTitle>
@@ -337,7 +322,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Payment Methods Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Payment Methods</CardTitle>
@@ -381,7 +365,6 @@ const AdminDashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Recent Orders */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg font-medium">Recent Orders</CardTitle>
@@ -417,7 +400,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Order Status */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium">Order Status</CardTitle>

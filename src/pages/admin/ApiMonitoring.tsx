@@ -1,12 +1,9 @@
 
-import { ApiMonitoring } from "@/components/admin/monitoring/ApiMonitoring";
+import React from 'react';
+import ApiMonitoringPage from './ApiMonitoringPage';
 
-const ApiMonitoringPage = () => {
-  return (
-    <div className="container py-6">
-      <ApiMonitoring />
-    </div>
-  );
+const ApiMonitoring = () => {
+  return <ApiMonitoringPage />;
 };
 
-export default ApiMonitoringPage;
+export default ApiMonitoring;

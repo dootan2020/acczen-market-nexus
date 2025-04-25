@@ -197,7 +197,7 @@ const AdminReports = () => {
         </TabsContent>
         
         <TabsContent value="products">
-          <BestSellingProducts dateRange={dateRange} />
+          <BestSellingProducts dateRange={dateRange || { from: new Date(), to: new Date() }} />
         </TabsContent>
       </Tabs>
       

@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { format, subDays, startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format as formatDate, subDays, startOfToday, endOfToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 export type TimeRange = '7days' | '30days' | '12months' | 'today' | 'week' | 'month';
 
@@ -65,8 +64,8 @@ export const useDashboardStats = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-dashboard-stats', timeRange],
     queryFn: async () => {
-      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const toDate = format(dateRange.to, 'yyyy-MM-dd');
+      const fromDate = formatDate(dateRange.from, 'yyyy-MM-dd');
+      const toDate = formatDate(dateRange.to, 'yyyy-MM-dd');
       
       // Get users data
       const { data: users, error: usersError } = await supabase
@@ -210,11 +209,11 @@ export const useDashboardStats = () => {
       
       // Calculate percent changes from previous period
       const getPreviousPeriodData = async () => {
-        const previousFromDate = format(
+        const previousFromDate = formatDate(
           new Date(dateRange.from.getTime() - (dateRange.to.getTime() - dateRange.from.getTime())), 
           'yyyy-MM-dd'
         );
-        const previousToDate = format(
+        const previousToDate = formatDate(
           new Date(dateRange.from.getTime() - 1),
           'yyyy-MM-dd'
         );
@@ -316,7 +315,7 @@ export const useDashboardStats = () => {
       for (let i = 0; i <= daysDiff; i++) {
         const date = new Date(dateFrom);
         date.setDate(dateFrom.getDate() + i);
-        const dateKey = format(date, 'yyyy-MM-dd');
+        const dateKey = formatDate(date, 'yyyy-MM-dd');
         dataMap[dateKey] = 0;
       }
     } else if (format === 'month') {
@@ -326,7 +325,7 @@ export const useDashboardStats = () => {
       for (let i = 0; i <= monthsDiff; i++) {
         const date = new Date(dateFrom);
         date.setMonth(dateFrom.getMonth() + i);
-        const dateKey = format(date, 'yyyy-MM');
+        const dateKey = formatDate(date, 'yyyy-MM');
         dataMap[dateKey] = 0;
       }
     } else if (format === 'hour') {
@@ -334,7 +333,7 @@ export const useDashboardStats = () => {
       for (let i = 0; i < 24; i++) {
         const date = new Date(dateFrom);
         date.setHours(i);
-        const dateKey = format(date, 'HH:00');
+        const dateKey = formatDate(date, 'HH:00');
         dataMap[dateKey] = 0;
       }
     }
@@ -345,11 +344,11 @@ export const useDashboardStats = () => {
       let dateKey;
       
       if (format === 'day') {
-        dateKey = format(date, 'yyyy-MM-dd');
+        dateKey = formatDate(date, 'yyyy-MM-dd');
       } else if (format === 'month') {
-        dateKey = format(date, 'yyyy-MM');
+        dateKey = formatDate(date, 'yyyy-MM');
       } else if (format === 'hour') {
-        dateKey = format(date, 'HH:00');
+        dateKey = formatDate(date, 'HH:00');
       } else {
         return; // Unsupported format
       }
@@ -364,9 +363,9 @@ export const useDashboardStats = () => {
       let displayKey = key;
       
       if (format === 'day') {
-        displayKey = format(new Date(key), 'MM/dd');
+        displayKey = formatDate(new Date(key), 'MM/dd');
       } else if (format === 'month') {
-        displayKey = format(new Date(`${key}-01`), 'MMM yyyy');
+        displayKey = formatDate(new Date(`${key}-01`), 'MMM yyyy');
       }
       
       result.push({
