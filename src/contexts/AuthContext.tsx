@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,20 +40,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [inactiveWarningShown, setInactiveWarningShown] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Update last active timestamp on user activity
   useEffect(() => {
     const updateLastActive = () => {
       setLastActive(new Date());
       setInactiveWarningShown(false);
     };
 
-    // Listen to user activity events
     window.addEventListener('mousemove', updateLastActive);
     window.addEventListener('keypress', updateLastActive);
     window.addEventListener('click', updateLastActive);
     window.addEventListener('touchstart', updateLastActive);
 
-    // Set initial active time
     updateLastActive();
 
     return () => {
@@ -65,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Check for session timeout
   useEffect(() => {
     if (!session || !lastActive) return;
 
@@ -73,7 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const now = new Date();
       const inactiveTime = now.getTime() - lastActive.getTime();
 
-      // Show warning before session expires
       if (inactiveTime > SESSION_TIMEOUT_MS - WARNING_BEFORE_TIMEOUT_MS && !inactiveWarningShown) {
         toast.warning("Phiên làm việc sắp hết hạn", {
           description: "Bạn sẽ bị đăng xuất trong 5 phút nếu không hoạt động",
@@ -81,19 +75,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             label: "Tiếp tục",
             onClick: () => setLastActive(new Date()),
           },
-          duration: 0, // Don't auto-dismiss
+          duration: 0,
         });
         setInactiveWarningShown(true);
       }
 
-      // Auto logout on session timeout
       if (inactiveTime > SESSION_TIMEOUT_MS) {
         toast.info("Phiên làm việc đã hết hạn", {
           description: "Bạn đã được đăng xuất tự động vì không hoạt động"
         });
         signOut(true);
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(checkSessionTimeout);
   }, [session, lastActive, inactiveWarningShown]);
@@ -102,14 +95,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const setupSessionListener = async () => {
       console.log("Khởi tạo listener phiên đăng nhập...");
       
-      // Set up auth state change listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
           console.log("Auth state change:", event, currentSession?.user?.email || "No user");
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // Only show toast notifications for actual sign in/out events (not initial load)
           if (!initialLoad) {
             if (event === 'SIGNED_IN') {
               toast.success("Đăng nhập thành công", {
@@ -148,7 +139,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setIsLoading(false);
-        // Mark initial load as complete after getting the session
         setTimeout(() => setInitialLoad(false), 1000);
       } catch (error) {
         console.error("Lỗi nghiêm trọng khi khởi tạo phiên đăng nhập:", error);
@@ -185,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(data?.role === 'admin');
           setBalance(data?.balance || 0);
           
-          // Set user display name in priority order: full_name from profile, user metadata, email
           const displayName = data?.full_name || 
             user.user_metadata?.full_name || 
             user.email?.split('@')[0] || 
@@ -219,7 +208,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Bắt đầu quá trình đăng nhập cho:", email);
       
-      // Set up session persistence based on remember me option
       const options = {
         auth: {
           persistSession: remember,
@@ -229,12 +217,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      }, options);
+      });
 
       if (error) {
         console.error('Lỗi đăng nhập:', error);
         
-        // Provide specific error messages for different error types
         if (error.message.includes("Invalid login credentials")) {
           return { error: "Email hoặc mật khẩu không chính xác" };
         } else if (error.message.includes("Email not confirmed")) {
@@ -245,7 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       console.log("Đăng nhập thành công:", data.user?.email);
-      setLastActive(new Date()); // Reset inactivity timer on login
+      setLastActive(new Date());
       return {};
     } catch (error: any) {
       console.error('Lỗi nghiêm trọng khi đăng nhập:', error);
@@ -269,7 +256,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Lỗi đăng ký:', error);
         
-        // Provide specific error messages for different error types
         if (error.message.includes("already registered")) {
           return { error: "Email này đã được đăng ký" };
         } else if (error.message.includes("password")) {
@@ -289,7 +275,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async (force: boolean = false) => {
     if (!force) {
-      // Confirm before logout unless force is true
       const willLogout = window.confirm("Bạn có chắc chắn muốn đăng xuất không?");
       if (!willLogout) return;
     }
@@ -305,10 +290,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.log("Đăng xuất thành công");
         
-        // Clear any stored states related to the user session
         localStorage.removeItem('previousPath');
         
-        // No need to manually show toast here as it's handled by onAuthStateChange
         navigate('/');
       }
     } catch (error) {
