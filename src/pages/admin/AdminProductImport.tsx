@@ -47,8 +47,9 @@ const AdminProductImport = () => {
     minStock: 0,
     maxPrice: 100000,
   });
+  const [apiError, setApiError] = useState<string | null>(null);
   
-  const { getStock, loading, error } = useTaphoammoAPI();
+  const { getStock, testConnection, loading, error } = useTaphoammoAPI();
   
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -62,18 +63,50 @@ const AdminProductImport = () => {
     },
   });
 
+  const handleTestConnection = async () => {
+    if (!kioskToken || !userToken) {
+      toast.error("Please provide both Kiosk Token and User Token");
+      return { success: false, message: "Missing credentials" };
+    }
+    
+    try {
+      const result = await testConnection(kioskToken, userToken);
+      
+      if (result.success) {
+        toast.success("API connection successful");
+      } else {
+        toast.error("API connection failed", {
+          description: result.message
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Connection test error:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Connection test failed", {
+        description: errorMsg
+      });
+      return { success: false, message: errorMsg };
+    }
+  };
+
   const handleFetchProducts = async () => {
     if (!kioskToken || !userToken) {
       toast.error("Please provide both Kiosk Token and User Token");
       return;
     }
     
+    setApiError(null);
+    
     try {
       toast.info("Connecting to TaphoaMMO API...");
       
+      // First test the connection
       const stockInfo = await getStock(kioskToken, userToken);
       
       if (!stockInfo) {
+        setApiError("Failed to fetch product information");
         toast.error("Failed to fetch product information");
         return;
       }
@@ -82,36 +115,69 @@ const AdminProductImport = () => {
         description: `Connected to ${stockInfo.name || "product"}`
       });
       
-      const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
-        body: JSON.stringify({ kioskToken, userToken, filters })
-      });
+      console.log("Fetching products with filters:", filters);
       
-      if (error) {
-        toast.error("Failed to fetch products", {
-          description: error.message
+      try {
+        const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
+          body: JSON.stringify({ 
+            kioskToken, 
+            userToken, 
+            filters 
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
-        return;
-      }
-      
-      if (data && Array.isArray(data.products)) {
-        const productsWithMeta = data.products.map((product: TaphoammoProduct) => ({
-          ...product,
-          selected: false,
-          markup_percentage: markupPercentage,
-          final_price: calculateFinalPrice(product.price, markupPercentage)
-        }));
         
-        setProducts(productsWithMeta);
-        setActiveTab('preview');
-        toast.success(`Found ${productsWithMeta.length} products`);
-      } else {
-        toast.warning("No products found");
-        setProducts([]);
+        if (error) {
+          console.error("Edge function error:", error);
+          setApiError(`Edge function error: ${error.message}`);
+          toast.error("Failed to fetch products", {
+            description: error.message
+          });
+          return;
+        }
+        
+        if (data.error) {
+          console.error("API error:", data.error, data.details);
+          setApiError(`API error: ${data.error} - ${data.details || ""}`);
+          toast.error("API returned an error", {
+            description: data.details || data.error
+          });
+          return;
+        }
+        
+        if (data && Array.isArray(data.products)) {
+          const productsWithMeta = data.products.map((product: TaphoammoProduct) => ({
+            ...product,
+            selected: false,
+            markup_percentage: markupPercentage,
+            final_price: calculateFinalPrice(product.price, markupPercentage)
+          }));
+          
+          setProducts(productsWithMeta);
+          setActiveTab('preview');
+          toast.success(`Found ${productsWithMeta.length} products`);
+        } else {
+          console.warn("No products found in response:", data);
+          setApiError("No products found in API response");
+          toast.warning("No products found");
+          setProducts([]);
+        }
+      } catch (fetchError) {
+        console.error("Error invoking edge function:", fetchError);
+        const errorMsg = fetchError instanceof Error ? fetchError.message : "Unknown error";
+        setApiError(`Error invoking edge function: ${errorMsg}`);
+        toast.error("Failed to fetch products", {
+          description: errorMsg
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      setApiError(errorMsg);
       toast.error("Failed to fetch products", {
-        description: error instanceof Error ? error.message : "Unknown error"
+        description: errorMsg
       });
     }
   };
@@ -165,12 +231,24 @@ const AdminProductImport = () => {
       toast.info(`Importing ${selectedProducts.length} products...`);
       
       const { data, error } = await supabase.functions.invoke('import-taphoammo-products', {
-        body: JSON.stringify({ products: selectedProducts })
+        body: JSON.stringify({ products: selectedProducts }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       if (error) {
+        console.error("Import error:", error);
         toast.error("Import failed", {
           description: error.message
+        });
+        return;
+      }
+      
+      if (data.error) {
+        console.error("API import error:", data.error, data.details);
+        toast.error("Import failed", {
+          description: data.details || data.error
         });
         return;
       }
@@ -243,8 +321,9 @@ const AdminProductImport = () => {
                 onUserTokenChange={setUserToken}
                 onKioskTokenChange={setKioskToken}
                 onSubmit={handleFetchProducts}
+                onTestConnection={handleTestConnection}
                 loading={loading}
-                error={error}
+                error={apiError || error}
               />
             </CardContent>
           </Card>

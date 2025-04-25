@@ -71,18 +71,29 @@ export const useTaphoammoAPI = () => {
 
   // Call the TaphoaMMO API through our Edge Function
   const callTaphoammoAPI = async (endpoint: string, params: any) => {
+    console.log(`Calling Taphoammo API endpoint: ${endpoint}`, params);
+    
     const { data, error } = await supabase.functions.invoke('sync-taphoammo-api', {
       body: JSON.stringify({
         endpoint,
         params
-      })
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error(`Error calling Taphoammo API (${endpoint}):`, error);
+      throw new Error(error.message || 'API request failed');
+    }
+    
     if (data.success === 'false' || data.success === false) {
+      console.error(`Taphoammo API error (${endpoint}):`, data.message || 'Unknown error');
       throw new Error(data.message || 'API request failed');
     }
     
+    console.log(`Taphoammo API response (${endpoint}):`, data);
     return data;
   };
 
@@ -98,6 +109,8 @@ export const useTaphoammoAPI = () => {
 
     try {
       const startTime = performance.now();
+      console.log('Buying products with params:', { kioskToken, userToken, quantity, promotion });
+      
       const data = await withRetry(async () => {
         return await callTaphoammoAPI('/buyProducts', {
           kioskToken,
@@ -122,9 +135,10 @@ export const useTaphoammoAPI = () => {
       setLoading(false);
       return data;
     } catch (err) {
-      const startTime = performance.now();
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error in buyProducts:', errorMsg);
       
+      const startTime = performance.now();
       await logApiCall({
         api: 'taphoammo',
         endpoint: 'buy',
@@ -152,6 +166,8 @@ export const useTaphoammoAPI = () => {
     setRetry(0);
 
     try {
+      console.log('Getting products with params:', { orderId, userToken });
+      
       const data = await withRetry(async () => {
         return await callTaphoammoAPI('/getProducts', {
           orderId,
@@ -163,6 +179,7 @@ export const useTaphoammoAPI = () => {
       return data;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error in getProducts:', errorMsg);
       setError(errorMsg);
       setLoading(false);
       throw err;
@@ -177,6 +194,8 @@ export const useTaphoammoAPI = () => {
     setError(null);
     setRetry(0);
 
+    console.log('Checking API connection with params:', { kioskToken, userToken });
+
     try {
       const data = await withRetry(async () => {
         return await callTaphoammoAPI('/getStock', {
@@ -185,13 +204,40 @@ export const useTaphoammoAPI = () => {
         });
       });
 
+      console.log('API connection successful, received stock data:', data);
       setLoading(false);
       return data;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error in getStock:', errorMsg);
       setError(errorMsg);
       setLoading(false);
       throw err;
+    }
+  };
+  
+  const testConnection = async (
+    kioskToken: string, 
+    userToken: string
+  ): Promise<{ success: boolean; message: string }> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Testing API connection with params:', { kioskToken, userToken });
+      await getStock(kioskToken, userToken);
+      return { 
+        success: true, 
+        message: 'Connection successful' 
+      };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      return { 
+        success: false, 
+        message: `Connection failed: ${errorMsg}` 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,6 +245,7 @@ export const useTaphoammoAPI = () => {
     buyProducts,
     getProducts,
     getStock,
+    testConnection,
     loading,
     error,
     retry,
