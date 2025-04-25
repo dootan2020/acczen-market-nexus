@@ -11,11 +11,12 @@ interface TaphoammoProduct {
 }
 
 interface TaphoammoResponse {
-  success: string;
+  success: string; // "true" or "false" (string)
   message?: string;
   price?: string;
   name?: string;
   stock?: string;
+  order_id?: string;
   products?: Array<{
     id: string;
     name: string;
@@ -30,10 +31,31 @@ export const useTaphoammoService = () => {
   const [error, setError] = useState<string | null>(null);
   
   /**
+   * Validate input parameters
+   */
+  const validateParams = (params: {
+    kioskToken?: string;
+    userToken?: string;
+    orderId?: string;
+  }) => {
+    if (params.kioskToken && params.kioskToken.trim() === '') {
+      throw new Error('Kiosk Token cannot be empty');
+    }
+    if (params.userToken && params.userToken.trim() === '') {
+      throw new Error('User Token cannot be empty');
+    }
+    if (params.orderId && params.orderId.trim() === '') {
+      throw new Error('Order ID cannot be empty');
+    }
+  };
+  
+  /**
    * Call the TaphoaMMO API through our Edge Function
    */
   const callTaphoammoAPI = async (endpoint: string, params: any) => {
     try {
+      console.log(`[TaphoammoService] Calling ${endpoint} with params:`, params);
+      
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           ...params,
@@ -41,7 +63,12 @@ export const useTaphoammoService = () => {
         }
       });
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error(`[TaphoammoService] Supabase function error:`, error);
+        throw new Error(`API request failed: ${error.message}`);
+      }
+      
+      console.log(`[TaphoammoService] Response from ${endpoint}:`, data);
       
       // Check if success is "false" (string comparison)
       if (data.success === "false") {
@@ -50,7 +77,7 @@ export const useTaphoammoService = () => {
       
       return data;
     } catch (err) {
-      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, err);
+      console.error(`[TaphoammoService] Error in ${endpoint}:`, err);
       throw err;
     }
   };
@@ -66,16 +93,24 @@ export const useTaphoammoService = () => {
     setError(null);
     
     try {
+      // Validate input parameters
+      validateParams({ kioskToken, userToken });
+      
       const response = await callTaphoammoAPI('getStock', {
         kioskToken,
         userToken
       });
       
+      // Validate response structure
+      if (!response.name || !response.price || !response.stock) {
+        throw new Error('Invalid response format from API');
+      }
+      
       // Convert string values to proper types for TaphoammoProduct
       return {
         kiosk_token: kioskToken,
         name: response.name || '',
-        stock_quantity: response.stock ? parseInt(response.stock) : 0,
+        stock_quantity: response.stock ? parseInt(response.stock, 10) : 0,
         price: response.price ? parseFloat(response.price) : 0
       };
     } catch (err) {
@@ -98,6 +133,9 @@ export const useTaphoammoService = () => {
     setError(null);
     
     try {
+      // Validate input parameters
+      validateParams({ kioskToken, userToken });
+      
       const response = await callTaphoammoAPI('getProducts', {
         kioskToken,
         userToken
@@ -112,8 +150,45 @@ export const useTaphoammoService = () => {
         kiosk_token: kioskToken,
         name: product.name || '',
         price: parseFloat(product.price || '0'),
-        stock_quantity: parseInt(product.stock_quantity || '0')
+        stock_quantity: parseInt(product.stock_quantity || '0', 10)
       }));
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Buy products from TaphoaMMO
+   */
+  const buyProducts = async (
+    kioskToken: string,
+    userToken: string,
+    quantity: number,
+    promotion?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Validate input parameters
+      validateParams({ kioskToken, userToken });
+      
+      if (quantity <= 0) {
+        throw new Error('Quantity must be greater than 0');
+      }
+      
+      const response = await callTaphoammoAPI('buyProducts', {
+        kioskToken,
+        userToken,
+        quantity,
+        ...(promotion ? { promotion } : {})
+      });
+      
+      return response;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
@@ -134,6 +209,9 @@ export const useTaphoammoService = () => {
     setError(null);
     
     try {
+      // Validate input parameters
+      validateParams({ kioskToken, userToken });
+      
       const data = await getStock(kioskToken, userToken);
       return { 
         success: true, 
@@ -153,6 +231,7 @@ export const useTaphoammoService = () => {
   return {
     getStock,
     getProducts,
+    buyProducts,
     testConnection,
     loading,
     error
