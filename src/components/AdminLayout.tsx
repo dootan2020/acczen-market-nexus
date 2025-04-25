@@ -21,9 +21,17 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const AdminLayout = () => {
-  const { signOut } = useAuth();
+  const { signOut, userDisplayName } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -74,6 +82,45 @@ const AdminLayout = () => {
       icon: <ActivitySquare className="h-5 w-5" /> 
     },
   ];
+
+  // Generate breadcrumbs based on current route
+  const getBreadcrumbs = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    
+    if (pathSegments.length === 0) return null;
+    
+    // Only show breadcrumbs for admin routes
+    if (pathSegments[0] !== 'admin') return null;
+
+    const breadcrumbs = [];
+    let currentPath = '';
+    
+    // Add Home breadcrumb
+    breadcrumbs.push({
+      name: 'Admin',
+      path: '/admin',
+      isCurrentPage: pathSegments.length === 1
+    });
+    
+    // Add additional breadcrumbs based on path segments
+    for (let i = 1; i < pathSegments.length; i++) {
+      currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
+      const navItem = navItems.find(item => item.href === currentPath);
+      
+      // Only add if we have a matching navItem
+      if (navItem) {
+        breadcrumbs.push({
+          name: navItem.name,
+          path: currentPath,
+          isCurrentPage: i === pathSegments.length - 1
+        });
+      }
+    }
+    
+    return breadcrumbs;
+  };
+  
+  const breadcrumbs = getBreadcrumbs();
 
   return (
     <div className="flex h-screen">
@@ -142,6 +189,39 @@ const AdminLayout = () => {
         "flex flex-1 flex-col lg:pl-64",
         sidebarOpen ? "lg:ml-0" : ""
       )}>
+        <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b">
+          <div className="flex h-14 items-center justify-between px-4">
+            {/* Breadcrumbs */}
+            {breadcrumbs && (
+              <Breadcrumb className="hidden md:flex">
+                <BreadcrumbList>
+                  {breadcrumbs.map((crumb, idx) => (
+                    <React.Fragment key={crumb.path}>
+                      <BreadcrumbItem>
+                        {crumb.isCurrentPage ? (
+                          <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink as={Link} to={crumb.path}>
+                            {crumb.name}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                      {idx < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            )}
+            
+            {/* Admin info */}
+            <div className="ml-auto flex items-center gap-2 md:gap-4">
+              <div className="hidden md:block text-sm">
+                <p className="font-medium">Admin: {userDisplayName}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        
         <main className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
