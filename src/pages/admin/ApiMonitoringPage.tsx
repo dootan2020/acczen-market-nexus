@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { ApiLog } from '@/types/api-logs';  // Changed from ApiLogEntry
+import { ApiLog } from '@/types/api-logs';
 import { 
   Card, 
   CardContent, 
@@ -59,7 +59,7 @@ const ApiMonitoringPage = () => {
         .limit(100);
       
       if (error) throw error;
-      return data as ApiLog[];  // Changed from ApiLogEntry
+      return data as ApiLog[];
     }
   });
   

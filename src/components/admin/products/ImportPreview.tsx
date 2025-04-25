@@ -44,7 +44,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface ImportPreviewProps {
   product: ExtendedProduct;
-  categories: Tables['categories']['Row'][];
+  categories: Tables<'categories'>[];
   categoriesLoading: boolean;
   onPrevious: () => void;
   onNext: (product: ExtendedProduct) => void;

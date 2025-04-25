@@ -5,7 +5,7 @@ import { Tables } from '@/types/supabase';
 import { toast } from 'sonner';
 
 export const useCategories = () => {
-  const [categories, setCategories] = useState<Tables['categories']['Row'][] | null>(null);
+  const [categories, setCategories] = useState<Tables<'categories'>[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
