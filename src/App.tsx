@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -33,6 +34,7 @@ import ProductIntegration from "./pages/admin/ProductIntegration";
 import AdminLayout from "./components/AdminLayout";
 import Help from "./pages/Help";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import PurchasesPage from "@/components/dashboard/PurchasesPage";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +59,7 @@ function App() {
                 {/* Dashboard Routes */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/dashboard/purchases" element={<h1>Purchases</h1>} />
+                  <Route path="/dashboard/purchases" element={<PurchasesPage />} />
                   <Route path="/dashboard/history" element={<h1>Deposit History</h1>} />
                   <Route path="/dashboard/settings" element={<h1>Settings</h1>} />
                 </Route>
