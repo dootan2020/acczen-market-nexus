@@ -31,7 +31,7 @@ const HeroSection = () => {
           </div>
           <div className="hidden md:flex justify-center">
             <img 
-              src="https://placehold.co/600x400/2ECC71/FFFFFF/png?text=Digital+Products" 
+              src="/lovable-uploads/bb7a0cf2-88c6-403e-94bd-a94f9f1d4be8.png" 
               alt="Digital Products Illustration" 
               className="rounded-lg shadow-xl max-w-full h-auto"
             />

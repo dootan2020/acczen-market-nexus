@@ -14,16 +14,28 @@ export function MainNav({
       {...props}
     >
       <Link
+        to="/"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        Home
+      </Link>
+      <Link
         to="/products"
         className="text-sm font-medium transition-colors hover:text-primary"
       >
-        All Products
+        Products
       </Link>
       <Link
-        to="/help"
+        to="/about"
         className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
-        Help & FAQ
+        About
+      </Link>
+      <Link
+        to="/contact"
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+      >
+        Contact
       </Link>
     </nav>
   )

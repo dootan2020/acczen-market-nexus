@@ -12,7 +12,8 @@ const Footer = () => {
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl">
               <Package className="h-6 w-6 text-primary" />
-              <span>AccZen<span className="text-secondary">.net</span></span>
+              <span className="text-primary">AccZen</span>
+              <span>.net</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Your trusted marketplace for digital products in the MMO niche.

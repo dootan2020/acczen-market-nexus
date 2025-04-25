@@ -1,11 +1,11 @@
 
 export const siteConfig = {
-  name: "Digital Deals Hub",
+  name: "AccZen.net",
   description: "Digital products marketplace for the Make Money Online market",
-  url: "https://digitaldealshub.com",
-  ogImage: "https://digitaldealshub.com/og.jpg",
+  url: "https://acczen.net",
+  ogImage: "https://acczen.net/og.jpg",
   links: {
-    twitter: "https://twitter.com/digitaldealshub",
-    github: "https://github.com/digitaldealshub",
+    twitter: "https://twitter.com/acczen_net",
+    github: "https://github.com/acczen",
   }
 };
