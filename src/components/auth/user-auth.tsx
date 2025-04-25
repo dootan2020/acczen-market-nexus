@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function UserAuth() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
 
   if (!user) {
     return (
@@ -51,7 +51,7 @@ export function UserAuth() {
             Deposit
           </Link>
         </DropdownMenuItem>
-        {user.role === "admin" && (
+        {isAdmin && (
           <DropdownMenuItem asChild>
             <Link to="/admin" className="w-full cursor-pointer">
               Admin Dashboard
