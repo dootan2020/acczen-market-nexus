@@ -1,0 +1,54 @@
+
+export type ProxyType = 'allorigins' | 'cors-anywhere' | 'thingproxy' | 'cors.sh';
+
+export interface ProxyInfo {
+  value: ProxyType;
+  label: string;
+  description: string;
+}
+
+export const PROXY_OPTIONS: ProxyInfo[] = [
+  {
+    value: 'allorigins',
+    label: 'AllOrigins',
+    description: 'Reliable and fast proxy service with good uptime'
+  },
+  {
+    value: 'cors-anywhere',
+    label: 'CORS Anywhere',
+    description: 'Popular proxy service, may require registration'
+  },
+  {
+    value: 'thingproxy',
+    label: 'ThingProxy',
+    description: 'Simple and lightweight proxy solution'
+  },
+  {
+    value: 'cors.sh',
+    label: 'CORS.sh',
+    description: 'Modern proxy service with high reliability'
+  }
+];
+
+export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
+  switch(proxyType) {
+    case 'allorigins':
+      return `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    case 'cors-anywhere':
+      return `https://cors-anywhere.herokuapp.com/${url}`;
+    case 'thingproxy':
+      return `https://thingproxy.freeboard.io/fetch/${url}`;
+    case 'cors.sh':
+      return `https://cors.sh/${url}`;
+    default:
+      return `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  }
+};
+
+export const getStoredProxy = (): ProxyType => {
+  return (localStorage.getItem('preferred_cors_proxy') as ProxyType) || 'allorigins';
+};
+
+export const setStoredProxy = (proxy: ProxyType): void => {
+  localStorage.setItem('preferred_cors_proxy', proxy);
+};

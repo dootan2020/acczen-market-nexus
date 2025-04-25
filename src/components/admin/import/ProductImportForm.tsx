@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +5,16 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from 'react-hook-form';
 import { ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PROXY_OPTIONS, ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 
 interface ApiCredentials {
   userToken: string;
   kioskToken: string;
+  proxyType: ProxyType;
+  rememberProxy: boolean;
 }
 
 interface ProductImportFormProps {
@@ -17,8 +22,8 @@ interface ProductImportFormProps {
   kioskToken: string;
   onUserTokenChange: (token: string) => void;
   onKioskTokenChange: (token: string) => void;
-  onSubmit: () => void;
-  onTestConnection?: () => Promise<{ success: boolean; message: string }>;
+  onSubmit: (proxyType: ProxyType) => void;
+  onTestConnection?: (proxyType: ProxyType) => Promise<{ success: boolean; message: string }>;
   loading?: boolean;
   error?: string | null;
 }
@@ -44,14 +49,21 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
   const form = useForm<ApiCredentials>({
     defaultValues: {
       userToken,
-      kioskToken
+      kioskToken,
+      proxyType: getStoredProxy(),
+      rememberProxy: false
     }
   });
 
   const handleSubmit = (data: ApiCredentials) => {
     onUserTokenChange(data.userToken);
     onKioskTokenChange(data.kioskToken);
-    onSubmit();
+    
+    if (data.rememberProxy) {
+      setStoredProxy(data.proxyType);
+    }
+    
+    onSubmit(data.proxyType);
   };
   
   const handleTestConnection = async () => {
@@ -65,7 +77,7 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
     setConnectionStatus(null);
     
     try {
-      const result = await onTestConnection();
+      const result = await onTestConnection(values.proxyType);
       setConnectionStatus({
         tested: true,
         success: result.success,
@@ -162,6 +174,62 @@ export const ProductImportForm: React.FC<ProductImportFormProps> = ({
                   </a>
                 </FormDescription>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="proxyType"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel>CORS Proxy</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a proxy service" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PROXY_OPTIONS.map((proxy) => (
+                      <Tooltip key={proxy.value}>
+                        <TooltipTrigger asChild>
+                          <SelectItem value={proxy.value}>
+                            {proxy.label}
+                          </SelectItem>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{proxy.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="rememberProxy"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-start space-x-2 pt-6">
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-0.5">
+                  <FormLabel>Remember this proxy</FormLabel>
+                  <FormDescription>
+                    Save your proxy preference for future sessions
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />

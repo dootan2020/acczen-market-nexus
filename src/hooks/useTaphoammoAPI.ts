@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ApiLogInsert } from '@/types/api-logs';
 import { taphoammoProxy } from '@/api/taphoammoProxy';
+import { ProxyType } from '@/utils/corsProxy';
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -69,22 +70,20 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  // Call the TaphoaMMO API through our Edge Function
-  const callTaphoammoAPI = async (endpoint: string, params: any) => {
+  const callTaphoammoAPI = async (endpoint: string, params: any, proxyType: ProxyType) => {
     console.log(`[TaphoaMMO API] Calling ${endpoint}:`, params);
     
     try {
       const data = await taphoammoProxy({
         endpoint: endpoint.replace('/', '') as any,
-        params
+        params,
+        proxyType
       });
       
       if (data.success === false) {
-        console.error(`[TaphoaMMO API] Error from ${endpoint}:`, data.message);
         throw new Error(data.message || 'API request failed');
       }
       
-      console.log(`[TaphoaMMO API] Response from ${endpoint}:`, data);
       return data;
     } catch (error) {
       console.error(`[TaphoaMMO API] Error in ${endpoint}:`, error);
@@ -96,7 +95,8 @@ export const useTaphoammoAPI = () => {
     kioskToken: string, 
     userToken: string, 
     quantity: number, 
-    promotion?: string
+    promotion?: string,
+    proxyType: ProxyType
   ): Promise<TaphoammoOrderResponse> => {
     setLoading(true);
     setError(null);
@@ -112,7 +112,7 @@ export const useTaphoammoAPI = () => {
           userToken,
           quantity,
           promotion
-        });
+        }, proxyType);
       });
 
       await logApiCall({
@@ -154,7 +154,8 @@ export const useTaphoammoAPI = () => {
 
   const getProducts = async (
     orderId: string, 
-    userToken: string
+    userToken: string,
+    proxyType: ProxyType
   ): Promise<TaphoammoOrderResponse> => {
     setLoading(true);
     setError(null);
@@ -167,7 +168,7 @@ export const useTaphoammoAPI = () => {
         return await callTaphoammoAPI('/getProducts', {
           orderId,
           userToken
-        });
+        }, proxyType);
       });
 
       setLoading(false);
@@ -183,7 +184,8 @@ export const useTaphoammoAPI = () => {
 
   const getStock = async (
     kioskToken: string, 
-    userToken: string
+    userToken: string,
+    proxyType: ProxyType
   ): Promise<TaphoammoProduct> => {
     setLoading(true);
     setError(null);
@@ -196,7 +198,7 @@ export const useTaphoammoAPI = () => {
         return await callTaphoammoAPI('/getStock', {
           kioskToken,
           userToken
-        });
+        }, proxyType);
       });
 
       console.log('API connection successful, received stock data:', data);
@@ -213,17 +215,17 @@ export const useTaphoammoAPI = () => {
   
   const testConnection = async (
     kioskToken: string, 
-    userToken: string
+    userToken: string,
+    proxyType: ProxyType
   ): Promise<{ success: boolean; message: string }> => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Testing API connection with params:', { kioskToken, userToken });
-      await getStock(kioskToken, userToken);
+      const data = await getStock(kioskToken, userToken, proxyType);
       return { 
         success: true, 
-        message: 'Connection successful' 
+        message: `Connection successful - Found: ${data.name} (Stock: ${data.stock_quantity})` 
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';

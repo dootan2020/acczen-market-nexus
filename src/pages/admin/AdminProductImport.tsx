@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +13,7 @@ import { AlertCircle, ArrowRight, Check, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { taphoammoProxy } from '@/api/taphoammoProxy';
+import { ProxyType } from '@/utils/corsProxy';
 
 export type TaphoammoProduct = {
   id: string;
@@ -65,14 +65,14 @@ const AdminProductImport = () => {
     },
   });
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = async (proxyType: ProxyType) => {
     if (!kioskToken || !userToken) {
       toast.error("Please provide both Kiosk Token and User Token");
       return { success: false, message: "Missing credentials" };
     }
     
     try {
-      const result = await testConnection(kioskToken, userToken);
+      const result = await testConnection(kioskToken, userToken, proxyType);
       
       if (result.success) {
         toast.success("API connection successful");
@@ -93,7 +93,7 @@ const AdminProductImport = () => {
     }
   };
 
-  const handleFetchProducts = async () => {
+  const handleFetchProducts = async (proxyType: ProxyType) => {
     if (!kioskToken || !userToken) {
       toast.error("Please provide both Kiosk Token and User Token");
       return;
@@ -104,8 +104,7 @@ const AdminProductImport = () => {
     try {
       toast.info("Connecting to TaphoaMMO API...");
       
-      // First test the connection
-      const stockInfo = await getStock(kioskToken, userToken);
+      const stockInfo = await getStock(kioskToken, userToken, proxyType);
       
       if (!stockInfo) {
         setApiError("Failed to fetch product information");
@@ -123,7 +122,8 @@ const AdminProductImport = () => {
           params: {
             kioskToken,
             userToken
-          }
+          },
+          proxyType
         });
         
         if (response.products && Array.isArray(response.products)) {
