@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,7 +58,19 @@ interface ProductFormData {
   category_id: string;
   subcategory_id: string;
   status: ProductStatus;
+  sku: string; // Added SKU field to the form data
 }
+
+// Generate a random SKU
+const generateSKU = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'PROD-';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  result += '-' + Date.now().toString().substr(-4);
+  return result;
+};
 
 const AdminProducts = () => {
   const queryClient = useQueryClient();
@@ -79,6 +90,7 @@ const AdminProducts = () => {
     category_id: '',
     subcategory_id: '',
     status: 'active',
+    sku: '', // Added SKU field initialization
   });
 
   // Fetch products
@@ -112,6 +124,11 @@ const AdminProducts = () => {
           .replace(/[^\w\s]/gi, '')
           .replace(/\s+/g, '-');
       }
+      
+      // Generate SKU if not provided
+      if (!data.sku) {
+        data.sku = generateSKU();
+      }
 
       const productData = {
         name: data.name,
@@ -124,6 +141,7 @@ const AdminProducts = () => {
         category_id: data.category_id,
         subcategory_id: data.subcategory_id || null,
         status: data.status,
+        sku: data.sku, // Added SKU field to product data
       };
 
       if (isEditing && currentProduct) {
@@ -207,6 +225,7 @@ const AdminProducts = () => {
       category_id: categories?.[0]?.id || '',
       subcategory_id: '',
       status: 'active',
+      sku: generateSKU(), // Generate a new SKU for new products
     });
     setIsProductDialogOpen(true);
   };
@@ -226,6 +245,7 @@ const AdminProducts = () => {
       category_id: product.category_id,
       subcategory_id: product.subcategory_id || '',
       status: product.status as ProductStatus,
+      sku: product.sku, // Use the existing SKU for editing
     });
     setIsProductDialogOpen(true);
   };
