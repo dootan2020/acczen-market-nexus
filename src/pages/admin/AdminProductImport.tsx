@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -276,6 +275,10 @@ const AdminProductImport = () => {
     .filter(p => p.selected)
     .reduce((sum, p) => sum + (p.final_price || 0), 0);
 
+  const handleTestConnection = async (proxyType: ProxyType): Promise<{ success: boolean; message: string }> => {
+    return await testConnection(kioskToken, userToken, proxyType);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -315,7 +318,7 @@ const AdminProductImport = () => {
                 onUserTokenChange={setUserToken}
                 onKioskTokenChange={setKioskToken}
                 onSubmit={handleFetchProducts}
-                onTestConnection={testConnection}
+                onTestConnection={handleTestConnection}
                 loading={loading}
                 error={apiError || error}
               />
