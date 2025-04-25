@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserAuth } from "@/components/auth/user-auth";
 import { ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ListItemProps {
   title: string;
