@@ -81,7 +81,7 @@ const Login = () => {
     setTestingConnection(true);
     try {
       console.log("Kiểm tra kết nối Supabase...");
-      console.log("URL Supabase:", supabase.supabaseUrl);
+      console.log("URL Supabase:", import.meta.env.VITE_SUPABASE_URL); // Use environment variable instead
       
       // Thử kết nối đơn giản để kiểm tra
       const { data, error } = await supabase.from('profiles').select('count').limit(1);
