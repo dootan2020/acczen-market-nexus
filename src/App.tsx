@@ -31,7 +31,6 @@ import ApiDocumentation from "./pages/admin/ApiDocumentation";
 import { Toaster as UIToaster } from "./components/ui/toaster";
 import Help from "./pages/Help";
 import { AuthProvider } from "./contexts/AuthContext";
-import AdminProductImport from "./pages/admin/AdminProductImport";
 
 function App() {
   return (
@@ -71,7 +70,6 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="import-products" element={<AdminProductImport />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="users" element={<AdminUsers />} />
