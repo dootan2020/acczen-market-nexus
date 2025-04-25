@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +13,7 @@ import { AlertCircle, ArrowRight, Check, Info, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { taphoammoProxy } from '@/api/taphoammoProxy';
-import { ProxyType, getStoredTokens } from '@/utils/corsProxy';
+import { ProxyType, getStoredTokens, getStoredProxy } from '@/utils/corsProxy';
 
 export type TaphoammoProduct = {
   id: string;
@@ -67,7 +66,6 @@ const AdminProductImport = () => {
     },
   });
 
-  // Apply filters to products
   const filteredProducts = products.filter(product => {
     const productPrice = product.price || 0;
     const productStock = product.stock_quantity || 0;
@@ -121,7 +119,6 @@ const AdminProductImport = () => {
     try {
       toast.info("Connecting to TaphoaMMO API...");
       
-      // First check connection through getStock
       await getStock(kioskToken, userToken, proxyType);
       
       toast.success("Connected successfully");
@@ -237,7 +234,6 @@ const AdminProductImport = () => {
       
       toast.success(`Successfully imported ${data.imported} products`);
       
-      // Remove imported products from the list
       setProducts(prevProducts => 
         prevProducts.filter(product => !product.selected)
       );
@@ -379,7 +375,7 @@ const AdminProductImport = () => {
               </div>
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => handleRefreshProducts(getStoredTokens().proxyType || 'allorigins')}
+                  onClick={() => handleRefreshProducts(getStoredProxy())}
                   variant="outline" 
                   size="sm"
                   disabled={loading}

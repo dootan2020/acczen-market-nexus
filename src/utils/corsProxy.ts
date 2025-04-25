@@ -53,10 +53,11 @@ export const setStoredProxy = (proxy: ProxyType): void => {
   localStorage.setItem('preferred_cors_proxy', proxy);
 };
 
-export const getStoredTokens = (): { userToken: string; kioskToken: string } => {
+export const getStoredTokens = (): { userToken: string; kioskToken: string; proxyType: ProxyType } => {
   return {
     userToken: localStorage.getItem('taphoammo_user_token') || '',
-    kioskToken: localStorage.getItem('taphoammo_kiosk_token') || ''
+    kioskToken: localStorage.getItem('taphoammo_kiosk_token') || '',
+    proxyType: getStoredProxy() // Added proxyType to the returned object
   };
 };
 

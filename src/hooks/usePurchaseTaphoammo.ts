@@ -171,6 +171,7 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
     purchaseProduct,
     validatePurchase,
     checkStockAvailability,
+    isProcessing: loading, // Adding this to match what Checkout.tsx expects
     loading,
     error,
     success,

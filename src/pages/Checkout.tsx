@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, ShoppingCart, Trash2, CreditCard, Loader } from 'lucide-react';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';  // Added Badge import
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +25,7 @@ const Checkout = () => {
     apiProduct?: boolean;
   } | null>(null);
   
-  const { purchase, isProcessing: isTaphoammoProcessing } = usePurchaseTaphoammo();
+  const { purchaseProduct, isProcessing: isTaphoammoProcessing } = usePurchaseTaphoammo('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,12 +97,10 @@ const Checkout = () => {
         const item = cart.items[0];
         const productInfo = JSON.parse(localStorage.getItem(`product_${item.id}`) || '{}');
         
-        const result = await purchase({
-          kioskToken: productInfo.kioskToken,
-          quantity: item.quantity,
-        });
+        // Use the purchaseProduct method from the hook, with the specific quantity
+        const result = await purchaseProduct(item.quantity);
 
-        if (result.success) {
+        if (result && result.success) {
           toast.success('Purchase successful!');
           setPurchaseResult({
             orderId: result.orderId,
@@ -115,7 +112,7 @@ const Checkout = () => {
           // Update user balance after successful purchase
           setUserBalance(prev => prev - cart.totalPrice);
         } else {
-          toast.error(result.error || 'Failed to process your purchase');
+          toast.error((result && result.error) || 'Failed to process your purchase');
         }
       } else {
         // Handle regular product purchase
