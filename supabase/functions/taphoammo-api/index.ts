@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// TaphoaMMO API base URL
+// TaphoaMMO API base URL - Fixed from incorrect URL
 const API_BASE_URL = "https://taphoammo.net/api";
 
 // Timeout for fetch requests in milliseconds

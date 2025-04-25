@@ -16,7 +16,7 @@ interface ProductData {
 export default function ProductsImport() {
   const [step, setStep] = useState<'form' | 'preview' | 'edit'>('form');
   const [productData, setProductData] = useState<ProductData | null>(null);
-  const { getStock, loading, error } = useTaphoammoService();
+  const { getStock, loading, error, retry, maxRetries } = useTaphoammoService();
 
   const handleFetchProduct = async (kioskToken: string, userToken: string) => {
     try {
@@ -58,6 +58,8 @@ export default function ProductsImport() {
             onFetchProduct={handleFetchProduct}
             isLoading={loading}
             error={error}
+            retry={retry}
+            maxRetries={maxRetries}
           />
         )}
 

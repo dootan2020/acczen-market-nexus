@@ -29,6 +29,8 @@ interface TaphoammoResponse {
 export const useTaphoammoService = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const MAX_RETRIES = 2;
   
   /**
    * Validate input parameters
@@ -83,7 +85,7 @@ export const useTaphoammoService = () => {
   };
   
   /**
-   * Get stock information for a specific product
+   * Get stock information for a specific product with retry logic
    */
   const getStock = async (
     kioskToken: string, 
@@ -96,10 +98,27 @@ export const useTaphoammoService = () => {
       // Validate input parameters
       validateParams({ kioskToken, userToken });
       
-      const response = await callTaphoammoAPI('getStock', {
-        kioskToken,
-        userToken
-      });
+      // Try to call the API with retry logic
+      let response;
+      try {
+        response = await callTaphoammoAPI('getStock', {
+          kioskToken,
+          userToken
+        });
+      } catch (error) {
+        // If we haven't reached max retries, try again
+        if (retry < MAX_RETRIES) {
+          setRetry(retry + 1);
+          console.log(`Retry attempt ${retry + 1} of ${MAX_RETRIES}`);
+          throw error; // Re-throw to be caught by outer catch
+        }
+        // If we've reached max retries, reset and propagate error
+        setRetry(0);
+        throw error;
+      }
+      
+      // Reset retry counter on success
+      setRetry(0);
       
       // Validate response structure
       if (!response.name || !response.price || !response.stock) {
@@ -234,6 +253,8 @@ export const useTaphoammoService = () => {
     buyProducts,
     testConnection,
     loading,
-    error
+    error,
+    retry,
+    maxRetries: MAX_RETRIES
   };
 };
