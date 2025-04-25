@@ -64,11 +64,16 @@ const PurchasesPage = () => {
       // Add pagination
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
-      const { data: orders, error, count } = await query.range(from, to).count('exact');
+      
+      // First get the count
+      const { count: totalCount } = await query.count();
+      
+      // Then fetch the paginated data
+      const { data: orders, error } = await query.range(from, to);
       
       if (error) throw error;
       
-      return { orders, count };
+      return { orders, count: totalCount };
     },
     enabled: !!user,
   });
