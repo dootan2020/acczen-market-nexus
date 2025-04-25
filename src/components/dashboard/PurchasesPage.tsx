@@ -65,15 +65,24 @@ const PurchasesPage = () => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       
-      // First get the count
-      const { count: totalCount } = await query.count();
+      // First get the count - using the correct pattern for count queries
+      const countQuery = supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+        
+      if (search) {
+        countQuery.or(`order_items.product.name.ilike.%${search}%`);
+      }
+      
+      const { count } = await countQuery.count();
       
       // Then fetch the paginated data
       const { data: orders, error } = await query.range(from, to);
       
       if (error) throw error;
       
-      return { orders, count: totalCount };
+      return { orders, count };
     },
     enabled: !!user,
   });
