@@ -75,14 +75,16 @@ const PurchasesPage = () => {
         countQuery.or(`order_items.product.name.ilike.%${search}%`);
       }
       
-      const { count } = await countQuery.count();
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) throw countError;
       
       // Then fetch the paginated data
       const { data: orders, error } = await query.range(from, to);
       
       if (error) throw error;
       
-      return { orders, count };
+      return { orders, count: count ?? 0 };
     },
     enabled: !!user,
   });
