@@ -1,4 +1,3 @@
-
 import { fontFamily } from "tailwindcss/defaultTheme";
 import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
@@ -95,6 +94,12 @@ const config: Config = {
         ".h-screen": {
           height: "100dvh", 
         },
+        "html": {
+          colorScheme: "light dark"
+        },
+        "html.dark": {
+          colorScheme: "dark"
+        }
       })
     })
   ],

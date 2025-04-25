@@ -73,6 +73,28 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Thêm transitions cho các thành phần khác để mượt mà khi chuyển đổi theme */
+  button, 
+  a, 
+  input, 
+  textarea, 
+  select, 
+  .card, 
+  .badge, 
+  .container, 
+  .bg-background,
+  .bg-card,
+  .bg-popover,
+  .bg-primary,
+  .bg-secondary,
+  .bg-muted,
+  .bg-accent {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
   }
 }
 
