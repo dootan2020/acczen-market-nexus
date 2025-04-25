@@ -45,6 +45,11 @@ interface CategoryFormData {
   slug: string;
 }
 
+interface SubcategoryCount {
+  categoryId: string;
+  count: number;
+}
+
 const AdminCategories = () => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,6 +79,30 @@ const AdminCategories = () => {
       return data;
     }
   });
+
+  // Fetch all subcategories to get counts
+  const { data: allSubcategories } = useQuery({
+    queryKey: ['all-subcategories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select('id, category_id');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+  
+  // Calculate subcategory counts for each category
+  const subcategoryCounts: Record<string, number> = {};
+  if (allSubcategories) {
+    allSubcategories.forEach(subcategory => {
+      if (!subcategoryCounts[subcategory.category_id]) {
+        subcategoryCounts[subcategory.category_id] = 0;
+      }
+      subcategoryCounts[subcategory.category_id]++;
+    });
+  }
 
   // Create/Update category mutation
   const categoryMutation = useMutation({
@@ -219,10 +248,9 @@ const AdminCategories = () => {
     category.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get subcategory counts
-  const getSubcategoryCounts = (categoryId: string) => {
-    const { data: subcategories } = useSubcategories(categoryId);
-    return subcategories?.length || 0;
+  // Get subcategory count for a category
+  const getSubcategoryCount = (categoryId: string): number => {
+    return subcategoryCounts[categoryId] || 0;
   };
 
   return (
@@ -304,7 +332,7 @@ const AdminCategories = () => {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="text-sm">
-                                {getSubcategoryCounts(category.id)} subcategories
+                                {getSubcategoryCount(category.id)} subcategories
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
