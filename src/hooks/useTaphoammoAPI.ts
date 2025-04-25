@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,6 +20,22 @@ interface TaphoammoOrderResponse {
   status?: string;
 }
 
+interface TaphoammoResponse {
+  success: string;
+  price?: string;
+  name?: string;
+  stock?: string;
+  order_id?: string;
+  message?: string;
+  products?: Array<{
+    id: string;
+    name: string;
+    price: string;
+    stock_quantity: string;
+    [key: string]: any;
+  }>;
+}
+
 // Configuration
 const MAX_RETRIES = 2;
 const RETRY_DELAYS = [1000, 3000];
@@ -36,7 +51,6 @@ export const useTaphoammoAPI = () => {
     attempt = 0
   ): Promise<T> => {
     try {
-      // Set the state for UI feedback
       if (attempt > 0) {
         setRetry(attempt);
       }
@@ -47,16 +61,26 @@ export const useTaphoammoAPI = () => {
         throw err;
       }
       
-      // Implement exponential backoff
-      const delay = RETRY_DELAYS[attempt] || 3000;
+      const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
       console.log(`API call failed, retrying (${attempt + 1}/${MAX_RETRIES}) in ${delay}ms...`);
       toast.info(`API request failed. Retrying (${attempt + 1}/${MAX_RETRIES})...`);
       
-      // Wait before trying again
       await new Promise(resolve => setTimeout(resolve, delay));
       
       return withRetry(fn, attempt + 1);
     }
+  };
+
+  const validateResponse = (data: TaphoammoResponse): boolean => {
+    if (!data || typeof data.success !== 'string') {
+      return false;
+    }
+    
+    if (data.products) {
+      return Array.isArray(data.products);
+    }
+    
+    return true;
   };
 
   const logApiCall = async (logData: ApiLogInsert) => {
@@ -157,26 +181,30 @@ export const useTaphoammoAPI = () => {
     kioskToken: string, 
     userToken: string,
     proxyType: ProxyType
-  ): Promise<any> => {
+  ): Promise<TaphoammoResponse> => {
     setLoading(true);
     setError(null);
     setRetry(0);
 
     try {
-      console.log('Getting products with params:', { kioskToken, userToken });
-      
       const data = await withRetry(async () => {
-        return await callTaphoammoAPI('/getProducts', {
-          kioskToken,
-          userToken
-        }, proxyType);
+        const response = await taphoammoProxy({
+          endpoint: 'getProducts',
+          params: { kioskToken, userToken },
+          proxyType
+        });
+        
+        if (!validateResponse(response)) {
+          throw new Error('Invalid response format');
+        }
+        
+        return response;
       });
 
       setLoading(false);
       return data;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error in getProducts:', errorMsg);
       setError(errorMsg);
       setLoading(false);
       throw err;

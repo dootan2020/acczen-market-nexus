@@ -1,5 +1,5 @@
 
-export type ProxyType = 'allorigins' | 'cors-anywhere' | 'thingproxy' | 'cors.sh';
+export type ProxyType = 'allorigins' | 'cors-anywhere' | 'thingproxy' | 'cors.sh' | 'corsproxy';
 
 export interface ProxyInfo {
   value: ProxyType;
@@ -11,7 +11,12 @@ export const PROXY_OPTIONS: ProxyInfo[] = [
   {
     value: 'allorigins',
     label: 'AllOrigins',
-    description: 'Reliable and fast proxy service with good uptime'
+    description: 'Default proxy service - most reliable'
+  },
+  {
+    value: 'corsproxy',
+    label: 'Corsproxy.io',
+    description: 'Fast and reliable proxy service'
   },
   {
     value: 'cors-anywhere',
@@ -34,6 +39,8 @@ export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
   switch(proxyType) {
     case 'allorigins':
       return `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    case 'corsproxy':
+      return `https://corsproxy.io/?${encodeURIComponent(url)}`;
     case 'cors-anywhere':
       return `https://cors-anywhere.herokuapp.com/${url}`;
     case 'thingproxy':

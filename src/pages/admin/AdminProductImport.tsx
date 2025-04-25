@@ -80,31 +80,25 @@ const AdminProductImport = () => {
     );
   });
 
-  const handleTestConnection = async (proxyType: ProxyType) => {
-    if (!kioskToken || !userToken) {
-      toast.error("Please provide both Kiosk Token and User Token");
-      return { success: false, message: "Missing credentials" };
-    }
+  const handleTestWithSampleTokens = async () => {
+    const sampleTokens = {
+      kioskToken: 'IEB8KZ8SAJQ5616W2M21',
+      userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+    };
+    
+    setKioskToken(sampleTokens.kioskToken);
+    setUserToken(sampleTokens.userToken);
+    
+    toast.info('Testing with sample tokens...');
     
     try {
-      const result = await testConnection(kioskToken, userToken, proxyType);
-      
+      const result = await handleTestConnection('allorigins');
       if (result.success) {
-        toast.success("API connection successful");
-      } else {
-        toast.error("API connection failed", {
-          description: result.message
-        });
+        handleFetchProducts('allorigins');
       }
-      
-      return result;
     } catch (error) {
-      console.error("Connection test error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Connection test failed", {
-        description: errorMsg
-      });
-      return { success: false, message: errorMsg };
+      console.error('Test failed:', error);
+      toast.error('Test failed with sample tokens');
     }
   };
 
@@ -115,52 +109,49 @@ const AdminProductImport = () => {
     }
     
     setApiError(null);
+    let currentProxy = proxyType;
     
-    try {
-      toast.info("Connecting to TaphoaMMO API...");
-      
-      await getStock(kioskToken, userToken, proxyType);
-      
-      toast.success("Connected successfully");
-      
+    const tryWithProxy = async (proxy: ProxyType): Promise<boolean> => {
       try {
-        const response = await getProducts(kioskToken, userToken, proxyType);
+        await getStock(kioskToken, userToken, proxy);
+        const response = await getProducts(kioskToken, userToken, proxy);
         
         if (response.products && Array.isArray(response.products)) {
           const productsWithMeta = response.products.map((product: TaphoammoProduct) => ({
             ...product,
             selected: false,
             markup_percentage: markupPercentage,
-            final_price: calculateFinalPrice(product.price, markupPercentage)
+            final_price: calculateFinalPrice(Number(product.price), markupPercentage)
           }));
           
           setProducts(productsWithMeta);
           setActiveTab('products');
           toast.success(`Found ${productsWithMeta.length} products`);
-        } else {
-          console.warn("No products found in response:", response);
-          setApiError("No products found in API response");
-          toast.warning("No products found");
-          setProducts([]);
+          return true;
         }
-      } catch (fetchError) {
-        console.error("Error fetching products:", fetchError);
-        const errorMsg = fetchError instanceof Error ? fetchError.message : "Unknown error";
-        setApiError(`Error fetching products: ${errorMsg}`);
-        toast.error("Failed to fetch products", {
-          description: errorMsg
-        });
+        return false;
+      } catch (error) {
+        console.error(`Failed with proxy ${proxy}:`, error);
+        return false;
       }
-    } catch (error) {
-      console.error("Error in product fetch:", error);
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      setApiError(errorMsg);
-      toast.error("Failed to fetch products", {
-        description: errorMsg
-      });
+    };
+    
+    if (await tryWithProxy(currentProxy)) {
+      return;
     }
+    
+    if (currentProxy !== 'allorigins') {
+      toast.info('Switching to allorigins proxy...');
+      if (await tryWithProxy('allorigins')) {
+        return;
+      }
+    }
+    
+    setApiError('Failed to fetch products with available proxies');
+    toast.error('Could not fetch products');
+    setProducts([]);
   };
-  
+
   const calculateFinalPrice = (price: number, markup: number): number => {
     return price * (1 + (markup / 100));
   };
@@ -289,10 +280,7 @@ const AdminProductImport = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="connection">1. API Connection</TabsTrigger>
-          <TabsTrigger 
-            value="products" 
-            disabled={products.length === 0}
-          >
+          <TabsTrigger value="products" disabled={products.length === 0}>
             2. Import Products
           </TabsTrigger>
         </TabsList>
@@ -301,7 +289,16 @@ const AdminProductImport = () => {
           <Card>
             <CardHeader>
               <CardTitle>API Connection</CardTitle>
-              <CardDescription>Test your connection to the TaphoaMMO API</CardDescription>
+              <CardDescription>
+                Test your connection to the TaphoaMMO API
+                <Button
+                  variant="link"
+                  className="text-primary hover:underline ml-2"
+                  onClick={handleTestWithSampleTokens}
+                >
+                  Test with sample tokens
+                </Button>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ProductImportForm 
