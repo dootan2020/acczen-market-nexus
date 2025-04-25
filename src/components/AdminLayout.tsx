@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,7 +18,6 @@ import {
   Settings,
   BarChart,
   ActivitySquare,
-  Download,
   Import
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,6 +46,11 @@ const AdminLayout = () => {
       name: 'Products', 
       href: '/admin/products', 
       icon: <Package className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Import Products', 
+      href: '/admin/products-import', 
+      icon: <Import className="h-5 w-5" /> 
     },
     { 
       name: 'Categories', 

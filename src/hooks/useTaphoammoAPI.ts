@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ApiLogInsert } from '@/types/api-logs';
-import { ProxyType } from '@/utils/corsProxy';
+import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
 
 interface TaphoammoProduct {
   kiosk_token: string;
