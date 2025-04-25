@@ -9,7 +9,7 @@ import { Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DepositPage = () => {
-  const { user } = useAuth();
+  const { user, balance } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('paypal');
 
   return (
@@ -66,7 +66,7 @@ const DepositPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
-              ${user?.balance?.toFixed(2) ?? "0.00"}
+              ${balance?.toFixed(2) ?? "0.00"}
             </div>
             <p className="text-muted-foreground mt-2">
               Total available balance in your account

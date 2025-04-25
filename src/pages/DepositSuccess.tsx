@@ -10,7 +10,7 @@ import { format } from "date-fns";
 const DepositSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { balance } = useAuth();
   
   const { deposit, transaction } = location.state || {};
   
@@ -75,7 +75,7 @@ const DepositSuccess = () => {
         <CardFooter className="flex flex-col items-center gap-4">
           <div className="w-full text-center p-4 bg-muted rounded-md">
             <p className="text-sm text-muted-foreground">Current Balance</p>
-            <p className="text-2xl font-bold text-primary">${user?.balance.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">${balance?.toFixed(2)}</p>
           </div>
           <div className="w-full flex flex-col sm:flex-row gap-3">
             <Button 

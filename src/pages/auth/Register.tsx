@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ const Register = () => {
       return;
     }
     setIsLoading(true);
-    await signUp(email, password, { full_name: fullName });
+    await signUp(email, password, fullName);
     setIsLoading(false);
   };
 
