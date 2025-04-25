@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { usePurchases } from "@/hooks/usePurchases";
+import { useDepositsHistory } from "@/hooks/useDepositsHistory";
 import {
   Card,
   CardContent,
@@ -8,13 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PurchasesFilter } from "./purchases/PurchasesFilter";
-import { PurchasesTable } from "./purchases/PurchasesTable";
+import { DepositsFilter } from "./deposits/DepositsFilter";
+import { DepositsTable } from "./deposits/DepositsTable";
 import { PurchasesPagination } from "./purchases/PurchasesPagination";
 
-const PurchasesPage = () => {
+const DepositHistoryPage = () => {
   const {
-    orders,
+    deposits,
     page,
     setPage,
     search,
@@ -22,17 +22,17 @@ const PurchasesPage = () => {
     isLoading,
     error,
     totalPages
-  } = usePurchases();
+  } = useDepositsHistory();
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Your Purchases</CardTitle>
-          <CardDescription>View and manage your order history</CardDescription>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p>Loading your purchase history...</p>
+          <p>Loading your deposit history...</p>
         </CardContent>
       </Card>
     );
@@ -42,25 +42,25 @@ const PurchasesPage = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Your Purchases</CardTitle>
-          <CardDescription>View and manage your order history</CardDescription>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p className="text-red-500">Error loading purchases. Please try again later.</p>
+          <p className="text-red-500">Error loading deposit history. Please try again later.</p>
         </CardContent>
       </Card>
     );
   }
 
-  if (!orders.length) {
+  if (!deposits.length) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Your Purchases</CardTitle>
-          <CardDescription>View and manage your order history</CardDescription>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p>You haven't made any purchases yet. Browse our products to get started!</p>
+          <p>You haven't made any deposits yet. Add funds to get started!</p>
         </CardContent>
       </Card>
     );
@@ -70,12 +70,12 @@ const PurchasesPage = () => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Your Purchases</CardTitle>
-          <CardDescription>View and manage your order history</CardDescription>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
         </CardHeader>
         <CardContent>
-          <PurchasesFilter search={search} setSearch={setSearch} />
-          <PurchasesTable orders={orders} />
+          <DepositsFilter search={search} setSearch={setSearch} />
+          <DepositsTable deposits={deposits} />
           <PurchasesPagination 
             currentPage={page}
             totalPages={totalPages}
@@ -87,4 +87,4 @@ const PurchasesPage = () => {
   );
 };
 
-export default PurchasesPage;
+export default DepositHistoryPage;
