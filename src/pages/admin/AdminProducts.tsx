@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,24 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
-import { useCategories } from '@/hooks/useProducts';
+import { ProductFormData } from '@/types/products';
 import ProductForm from '@/components/admin/products/ProductForm';
 import ProductsTable from '@/components/admin/products/ProductsTable';
-import { ProductFormData } from '@/types/products';
-
-const generateSKU = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'PROD-';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  result += '-' + Date.now().toString().substr(-4);
-  return result;
-};
+import ProductDeleteDialog from '@/components/admin/products/ProductDeleteDialog';
+import { useCategories } from '@/hooks/useProducts';
+import { useProductMutations } from '@/hooks/useProductMutations';
 
 const AdminProducts = () => {
-  const queryClient = useQueryClient();
+  const { productMutation, deleteMutation } = useProductMutations();
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -69,96 +60,6 @@ const AdminProducts = () => {
 
   const { data: categories } = useCategories();
 
-  const productMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
-      if (!data.slug) {
-        data.slug = data.name
-          .toLowerCase()
-          .replace(/[^\w\s]/gi, '')
-          .replace(/\s+/g, '-');
-      }
-      
-      if (!data.sku) {
-        data.sku = generateSKU();
-      }
-
-      const productData = {
-        name: data.name,
-        description: data.description,
-        price: Number(data.price),
-        sale_price: data.sale_price ? Number(data.sale_price) : null,
-        stock_quantity: Number(data.stock_quantity),
-        image_url: data.image_url,
-        slug: data.slug,
-        category_id: data.category_id,
-        subcategory_id: data.subcategory_id || null,
-        status: data.status,
-        sku: data.sku,
-      };
-
-      if (isEditing && currentProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', currentProduct.id);
-        
-        if (error) throw error;
-        return { success: true, action: 'updated' };
-      } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([productData]);
-        
-        if (error) throw error;
-        return { success: true, action: 'created' };
-      }
-    },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({
-        title: `Product ${result.action}`,
-        description: `The product has been successfully ${result.action}.`,
-      });
-      setIsProductDialogOpen(false);
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save product',
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({
-        title: 'Product deleted',
-        description: 'The product has been successfully deleted.',
-      });
-      setIsDeleteDialogOpen(false);
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete product',
-      });
-    },
-  });
-
   const handleAddProduct = () => {
     setIsEditing(false);
     setCurrentProduct(null);
@@ -173,7 +74,7 @@ const AdminProducts = () => {
       category_id: categories?.[0]?.id || '',
       subcategory_id: '',
       status: 'active',
-      sku: generateSKU(),
+      sku: '',
     });
     setIsProductDialogOpen(true);
   };
@@ -217,7 +118,8 @@ const AdminProducts = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    productMutation.mutate(formData);
+    productMutation.mutate({ ...formData, id: currentProduct?.id, isEditing });
+    setIsProductDialogOpen(false);
   };
 
   const filteredProducts = products?.filter(product => 
@@ -292,33 +194,16 @@ const AdminProducts = () => {
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{currentProduct?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => currentProduct && deleteMutation.mutate(currentProduct.id)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent mr-2"></div>
-                  Deleting...
-                </>
-              ) : 'Delete Product'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProductDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        productName={currentProduct?.name || ''}
+        onConfirmDelete={() => {
+          currentProduct && deleteMutation.mutate(currentProduct.id);
+          setIsDeleteDialogOpen(false);
+        }}
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 };
