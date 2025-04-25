@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function UserAuth() {
   const { user, signOut, isAdmin, balance } = useAuth();
@@ -21,7 +22,7 @@ export function UserAuth() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success("Đăng xuất thành công");
+      // Toast notification is handled in AuthContext
       navigate("/");
     } catch (error) {
       console.error("Lỗi đăng xuất:", error);
@@ -29,6 +30,13 @@ export function UserAuth() {
         description: "Vui lòng thử lại sau."
       });
     }
+  };
+
+  // Get user's initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const email = user.email || "";
+    return email.charAt(0).toUpperCase();
   };
 
   if (!user) {
@@ -49,12 +57,19 @@ export function UserAuth() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
-          <User className="h-4 w-4" />
+        <Button variant="outline" size="icon" className="relative rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback>{getUserInitials()}</AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          <div className="flex flex-col">
+            <span>Tài khoản của tôi</span>
+            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+          </div>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled className="flex justify-between">
           <span>Số dư:</span>

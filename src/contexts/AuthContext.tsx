@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,23 +26,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [balance, setBalance] = useState<number>(0);
+  const [initialLoad, setInitialLoad] = useState<boolean>(true);
 
   useEffect(() => {
     const setupSessionListener = async () => {
       console.log("Khởi tạo listener phiên đăng nhập...");
       
+      // Set up auth state change listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
           console.log("Auth state change:", event, currentSession?.user?.email || "No user");
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          if (event === 'SIGNED_IN') {
-            toast.success("Đăng nhập thành công", {
-              description: "Chào mừng bạn trở lại!"
-            });
-          } else if (event === 'SIGNED_OUT') {
-            toast.success("Đăng xuất thành công");
+          // Only show toast notifications for actual sign in/out events (not initial load)
+          if (!initialLoad) {
+            if (event === 'SIGNED_IN') {
+              toast.success("Đăng nhập thành công", {
+                description: "Chào mừng bạn trở lại!"
+              });
+            } else if (event === 'SIGNED_OUT') {
+              toast.success("Đăng xuất thành công");
+            }
           }
           
           if (!currentSession?.user) {
@@ -67,9 +73,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setIsLoading(false);
+        // Mark initial load as complete after getting the session
+        setTimeout(() => setInitialLoad(false), 1000);
       } catch (error) {
         console.error("Lỗi nghiêm trọng khi khởi tạo phiên đăng nhập:", error);
         setIsLoading(false);
+        setInitialLoad(false);
       }
 
       return () => {

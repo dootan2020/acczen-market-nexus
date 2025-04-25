@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,7 @@ const Login = () => {
       if (result?.error) {
         console.error("Login error details:", result.error);
         
-        // Xử lý các loại lỗi cụ thể
+        // Handle specific error types
         if (result.error.includes("Invalid login credentials")) {
           setErrorMessage("Email hoặc mật khẩu không chính xác");
         } else if (result.error.includes("Email not confirmed")) {
@@ -63,7 +62,7 @@ const Login = () => {
           description: result.error
         });
       } else {
-        // Đăng nhập thành công, toast sẽ được hiển thị bởi AuthContext
+        // Success is handled by AuthContext
         navigate("/");
       }
     } catch (error) {

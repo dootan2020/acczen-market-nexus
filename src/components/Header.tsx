@@ -1,22 +1,10 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { siteConfig } from "@/config/site";
-import { Button } from "@/components/ui/button";
-import { Icons } from "@/components/icons";
-import { MainNav } from "@/components/main-nav";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserAuth } from "@/components/auth/user-auth";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
 import { ShoppingCart } from "lucide-react";
 
 interface ListItemProps {
@@ -143,14 +131,7 @@ export function Header() {
               <span className="sr-only">Shopping cart</span>
             </Button>
           </Link>
-          <div className="hidden md:flex space-x-1">
-            <Link to="/login">
-              <Button variant="outline" size="sm">Login</Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="default" size="sm" className="bg-primary">Register</Button>
-            </Link>
-          </div>
+          <UserAuth />
           <ModeToggle />
         </div>
       </div>
