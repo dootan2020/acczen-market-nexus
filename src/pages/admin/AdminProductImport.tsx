@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -111,44 +110,18 @@ const AdminProductImport = () => {
         return;
       }
       
-      toast.success("API connection successful", {
-        description: `Connected to ${stockInfo.name || "product"}`
+      toast.success("Connected successfully", {
+        description: `Found: ${stockInfo.name || "product"}`
       });
       
-      console.log("Fetching products with filters:", filters);
-      
       try {
-        const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
-          body: JSON.stringify({ 
-            kioskToken, 
-            userToken, 
-            filters 
-          }),
-          headers: {
-            'Content-Type': 'application/json'
-          }
+        const response = await callTaphoammoAPI('getProducts', {
+          kioskToken,
+          userToken
         });
         
-        if (error) {
-          console.error("Edge function error:", error);
-          setApiError(`Edge function error: ${error.message}`);
-          toast.error("Failed to fetch products", {
-            description: error.message
-          });
-          return;
-        }
-        
-        if (data.error) {
-          console.error("API error:", data.error, data.details);
-          setApiError(`API error: ${data.error} - ${data.details || ""}`);
-          toast.error("API returned an error", {
-            description: data.details || data.error
-          });
-          return;
-        }
-        
-        if (data && Array.isArray(data.products)) {
-          const productsWithMeta = data.products.map((product: TaphoammoProduct) => ({
+        if (response.products && Array.isArray(response.products)) {
+          const productsWithMeta = response.products.map((product: TaphoammoProduct) => ({
             ...product,
             selected: false,
             markup_percentage: markupPercentage,
@@ -159,21 +132,21 @@ const AdminProductImport = () => {
           setActiveTab('preview');
           toast.success(`Found ${productsWithMeta.length} products`);
         } else {
-          console.warn("No products found in response:", data);
+          console.warn("No products found in response:", response);
           setApiError("No products found in API response");
           toast.warning("No products found");
           setProducts([]);
         }
       } catch (fetchError) {
-        console.error("Error invoking edge function:", fetchError);
+        console.error("Error fetching products:", fetchError);
         const errorMsg = fetchError instanceof Error ? fetchError.message : "Unknown error";
-        setApiError(`Error invoking edge function: ${errorMsg}`);
+        setApiError(`Error fetching products: ${errorMsg}`);
         toast.error("Failed to fetch products", {
           description: errorMsg
         });
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error in product fetch:", error);
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       setApiError(errorMsg);
       toast.error("Failed to fetch products", {
@@ -393,13 +366,22 @@ const AdminProductImport = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <ProductImportTable 
-                products={products}
-                onSelectProduct={handleSelectProduct}
-                onSelectAll={handleSelectAllProducts}
-                onImportSelected={handleImportSelectedProducts}
-                onProductMarkupChange={handleProductMarkupChange}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <ProductImportCard
+                    key={product.id}
+                    product={product}
+                    onImport={() => handleSelectProduct(product.id, true)}
+                    loading={loading}
+                  />
+                ))}
+                
+                {products.length === 0 && (
+                  <div className="col-span-full text-center py-4 text-muted-foreground">
+                    No products found
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

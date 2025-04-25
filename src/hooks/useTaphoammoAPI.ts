@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ApiLogInsert } from '@/types/api-logs';
+import { taphoammoProxy } from '@/api/taphoammoProxy';
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -21,7 +21,7 @@ interface TaphoammoOrderResponse {
 
 // Configuration
 const MAX_RETRIES = 2;
-const RETRY_DELAYS = [1000, 3000]; // Retry delays in milliseconds
+const RETRY_DELAYS = [1000, 3000];
 
 export const useTaphoammoAPI = () => {
   const [loading, setLoading] = useState(false);
@@ -71,30 +71,25 @@ export const useTaphoammoAPI = () => {
 
   // Call the TaphoaMMO API through our Edge Function
   const callTaphoammoAPI = async (endpoint: string, params: any) => {
-    console.log(`Calling Taphoammo API endpoint: ${endpoint}`, params);
+    console.log(`[TaphoaMMO API] Calling ${endpoint}:`, params);
     
-    const { data, error } = await supabase.functions.invoke('sync-taphoammo-api', {
-      body: JSON.stringify({
-        endpoint,
+    try {
+      const data = await taphoammoProxy({
+        endpoint: endpoint.replace('/', '') as any,
         params
-      }),
-      headers: {
-        'Content-Type': 'application/json'
+      });
+      
+      if (data.success === false) {
+        console.error(`[TaphoaMMO API] Error from ${endpoint}:`, data.message);
+        throw new Error(data.message || 'API request failed');
       }
-    });
-
-    if (error) {
-      console.error(`Error calling Taphoammo API (${endpoint}):`, error);
-      throw new Error(error.message || 'API request failed');
+      
+      console.log(`[TaphoaMMO API] Response from ${endpoint}:`, data);
+      return data;
+    } catch (error) {
+      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, error);
+      throw error;
     }
-    
-    if (data.success === 'false' || data.success === false) {
-      console.error(`Taphoammo API error (${endpoint}):`, data.message || 'Unknown error');
-      throw new Error(data.message || 'API request failed');
-    }
-    
-    console.log(`Taphoammo API response (${endpoint}):`, data);
-    return data;
   };
 
   const buyProducts = async (
