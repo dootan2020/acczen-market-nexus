@@ -16,7 +16,8 @@ import {
   Home,
   Wallet,
   Settings,
-  BarChart
+  BarChart,
+  ActivitySquare
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -66,6 +67,11 @@ const AdminLayout = () => {
       name: 'Integrations', 
       href: '/admin/integrations', 
       icon: <Settings className="h-5 w-5" /> 
+    },
+    { 
+      name: 'API Monitoring', 
+      href: '/admin/api-monitoring', 
+      icon: <ActivitySquare className="h-5 w-5" /> 
     },
   ];
 

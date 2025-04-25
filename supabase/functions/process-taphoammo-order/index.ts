@@ -7,11 +7,69 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// API timeout setting (in milliseconds)
+const API_TIMEOUT = 30000; // 30 seconds
+
+// Maximum number of retries
+const MAX_RETRIES = 2;
+
+// Helper function for retry with exponential backoff
+async function fetchWithRetry(fn, retries = MAX_RETRIES) {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Set up timeout for API calls
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
+      });
+      
+      // Race between the actual API call and timeout
+      const startTime = performance.now();
+      const result = await Promise.race([
+        fn(),
+        timeoutPromise
+      ]);
+      const responseTime = performance.now() - startTime;
+      
+      // Return successful result along with metrics
+      return { 
+        result,
+        success: true,
+        retries: attempt,
+        responseTime
+      };
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1}/${retries + 1} failed:`, error);
+      lastError = error;
+      
+      // If we've used all retries, throw the error
+      if (attempt === retries) {
+        throw error;
+      }
+      
+      // Exponential backoff delay: 1s, 2s, 4s, etc.
+      const delay = Math.pow(2, attempt) * 1000;
+      console.log(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = performance.now();
+  let orderId = null;
+  let apiLog = {
+    api: 'taphoammo',
+    endpoint: 'process-order',
+    status: 'started',
+    details: {}
+  };
 
   try {
     const supabaseClient = createClient(
@@ -22,7 +80,18 @@ serve(async (req) => {
     // Parse request body
     const { kioskToken, userToken, quantity, promotion } = await req.json();
 
+    // Update API log with request details
+    apiLog.details = {
+      kioskToken,
+      userToken: userToken.substring(0, 8) + '...', // Only log partial token for security
+      quantity,
+      hasPromotion: !!promotion
+    };
+
     if (!kioskToken || !userToken || !quantity) {
+      apiLog.status = 'invalid-request';
+      await logApiCall(supabaseClient, apiLog);
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -38,6 +107,10 @@ serve(async (req) => {
     );
 
     if (userError || !user) {
+      apiLog.status = 'auth-error';
+      apiLog.details.error = userError?.message;
+      await logApiCall(supabaseClient, apiLog);
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -55,6 +128,10 @@ serve(async (req) => {
       .single();
 
     if (productError || !product) {
+      apiLog.status = 'product-not-found';
+      apiLog.details.error = productError?.message;
+      await logApiCall(supabaseClient, apiLog);
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -66,6 +143,7 @@ serve(async (req) => {
 
     // Calculate total cost
     const totalCost = product.price * quantity;
+    apiLog.details.amount = totalCost;
 
     // Get user balance
     const { data: profile, error: profileError } = await supabaseClient
@@ -75,6 +153,10 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
+      apiLog.status = 'profile-not-found';
+      apiLog.details.error = profileError?.message;
+      await logApiCall(supabaseClient, apiLog);
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -86,6 +168,11 @@ serve(async (req) => {
 
     // Check if user has sufficient balance
     if (profile.balance < totalCost) {
+      apiLog.status = 'insufficient-balance';
+      apiLog.details.userBalance = profile.balance;
+      apiLog.details.requiredAmount = totalCost;
+      await logApiCall(supabaseClient, apiLog);
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -95,85 +182,62 @@ serve(async (req) => {
       );
     }
 
-    // Call taphoammo API to buy products
-    const { data: mockResponse, error: mockError } = await supabaseClient.functions.invoke('mock-taphoammo', {
-      body: JSON.stringify({
-        kioskToken,
-        userToken,
-        quantity,
-        promotion
-      })
-    });
-
-    if (mockError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: 'Error calling taphoammo API'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    if (mockResponse.success === 'false') {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: mockResponse.message || 'Order processing failed'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Deduct amount from user balance
-    const { error: updateError } = await supabaseClient.rpc('update_user_balance', {
-      user_id: userToken,
-      amount: -totalCost
-    });
-
-    if (updateError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: 'Failed to update user balance'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    // Create transaction record
-    const { error: transactionError } = await supabaseClient
-      .from('transactions')
-      .insert({
-        user_id: userToken,
-        type: 'purchase',
-        amount: totalCost,
-        description: `Purchase of ${product.name} x ${quantity}`,
-        reference_id: mockResponse.order_id
+    // Call taphoammo API to buy products with retry logic
+    let apiResponse;
+    try {
+      const { result: mockResponse, success, retries, responseTime } = await fetchWithRetry(async () => {
+        const { data, error } = await supabaseClient.functions.invoke('mock-taphoammo', {
+          body: JSON.stringify({
+            kioskToken,
+            userToken,
+            quantity,
+            promotion
+          })
+        });
+        
+        if (error) throw error;
+        if (data.success === 'false') throw new Error(data.message || 'Order processing failed');
+        return data;
       });
-
-    if (transactionError) {
-      console.error('Failed to create transaction record:', transactionError);
+      
+      apiResponse = mockResponse;
+      apiLog.details.responseTime = responseTime;
+      apiLog.details.retries = retries;
+      orderId = apiResponse.order_id;
+      
+    } catch (error) {
+      apiLog.status = 'api-error';
+      apiLog.details.error = error.message;
+      await logApiCall(supabaseClient, apiLog);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `Error calling taphoammo API: ${error.message}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    // Create order in local database
-    const { data: order, error: orderError } = await supabaseClient
-      .from('orders')
-      .insert({
-        user_id: userToken,
-        status: 'completed',
-        total_amount: totalCost
-      })
-      .select('id')
-      .single();
+    // Start database transaction for updating user balance and creating records
+    try {
+      // Create order in local database first
+      const { data: order, error: orderError } = await supabaseClient
+        .from('orders')
+        .insert({
+          user_id: userToken,
+          status: apiResponse.status || 'completed',
+          total_amount: totalCost
+        })
+        .select('id')
+        .single();
 
-    if (orderError) {
-      console.error('Failed to create order record:', orderError);
-    }
+      if (orderError) {
+        throw new Error(`Failed to create order record: ${orderError.message}`);
+      }
 
-    // Create order items
-    if (order) {
-      await supabaseClient
+      // Create order items
+      const { error: itemError } = await supabaseClient
         .from('order_items')
         .insert({
           order_id: order.id,
@@ -183,24 +247,91 @@ serve(async (req) => {
           total: totalCost,
           data: {
             kiosk_token: kioskToken,
-            taphoammo_order_id: mockResponse.order_id,
-            product_keys: mockResponse.product_keys || []
+            taphoammo_order_id: apiResponse.order_id,
+            product_keys: apiResponse.product_keys || []
           }
         });
+
+      if (itemError) {
+        throw new Error(`Failed to create order items: ${itemError.message}`);
+      }
+
+      // Only deduct from user balance after ensuring order is recorded
+      const { error: updateError } = await supabaseClient.rpc('update_user_balance', {
+        user_id: userToken,
+        amount: -totalCost
+      });
+
+      if (updateError) {
+        throw new Error(`Failed to update user balance: ${updateError.message}`);
+      }
+
+      // Create transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: userToken,
+          type: 'purchase',
+          amount: totalCost,
+          description: `Purchase of ${product.name} x ${quantity}`,
+          reference_id: apiResponse.order_id
+        });
+
+      if (transactionError) {
+        console.error('Failed to create transaction record:', transactionError);
+      }
+      
+      // Log successful API call
+      apiLog.status = 'success';
+      apiLog.details.orderId = apiResponse.order_id;
+      apiLog.details.productKeysCount = apiResponse.product_keys?.length || 0;
+      await logApiCall(supabaseClient, apiLog);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          order_id: apiResponse.order_id,
+          message: apiResponse.message || 'Order processed successfully',
+          product_keys: apiResponse.product_keys || [],
+          status: apiResponse.status || 'completed'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+      
+    } catch (error) {
+      console.error('Error processing order:', error);
+      
+      // Log transaction failure
+      apiLog.status = 'transaction-error';
+      apiLog.details.error = error.message;
+      apiLog.details.orderId = orderId;
+      await logApiCall(supabaseClient, apiLog);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: error.message || 'Internal server error'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        order_id: mockResponse.order_id,
-        message: mockResponse.message || 'Order processed successfully',
-        product_keys: mockResponse.product_keys || []
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
   } catch (error) {
-    console.error('Error processing order:', error);
+    console.error('Unhandled error processing order:', error);
+    
+    // Try to log the error if possible
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      apiLog.status = 'critical-error';
+      apiLog.details.error = error.message;
+      await logApiCall(supabaseClient, apiLog);
+    } catch (e) {
+      console.error('Failed to log critical error:', e);
+    }
     
     return new Response(
       JSON.stringify({
@@ -211,3 +342,21 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to log API calls
+async function logApiCall(supabaseClient, logData) {
+  try {
+    const { error } = await supabaseClient
+      .from('api_logs')
+      .insert({
+        ...logData,
+        response_time: performance.now() - (logData.startTime || performance.now())
+      });
+      
+    if (error) {
+      console.error('Failed to log API call:', error);
+    }
+  } catch (e) {
+    console.error('Error logging API call:', e);
+  }
+}

@@ -11,14 +11,28 @@ interface PurchaseOptions {
   promotion?: string;
 }
 
+interface PurchaseResult {
+  success: boolean;
+  orderId?: string;
+  productKeys?: string[];
+  message?: string;
+  error?: string;
+}
+
+// Max time to poll for order status (ms)
+const MAX_POLL_TIME = 60000; // 1 minute
+// Poll interval (ms)
+const POLL_INTERVAL = 5000; // 5 seconds
+
 export const usePurchaseTaphoammo = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [productKeys, setProductKeys] = useState<string[]>([]);
+  const [pollCount, setPollCount] = useState(0);
   const { buyProducts, getProducts } = useTaphoammoAPI();
   const { user } = useAuth();
 
-  const purchase = async ({ kioskToken, quantity, promotion }: PurchaseOptions) => {
+  const purchase = async ({ kioskToken, quantity, promotion }: PurchaseOptions): Promise<PurchaseResult> => {
     if (!user) {
       toast.error('User must be logged in to make a purchase');
       return { success: false, error: 'User not authenticated' };
@@ -27,6 +41,7 @@ export const usePurchaseTaphoammo = () => {
     setIsProcessing(true);
     setOrderId(null);
     setProductKeys([]);
+    setPollCount(0);
 
     try {
       const userToken = user.id;
@@ -53,6 +68,11 @@ export const usePurchaseTaphoammo = () => {
         setProductKeys(data.product_keys);
       }
 
+      // If status is not completed, start polling
+      if (data.status === 'processing' && data.order_id) {
+        startPollingOrderStatus(data.order_id);
+      }
+
       return {
         success: true, 
         orderId: data.order_id,
@@ -71,12 +91,56 @@ export const usePurchaseTaphoammo = () => {
     }
   };
 
-  const pollOrderStatus = async (orderId: string) => {
-    if (!user || !orderId) return;
+  const startPollingOrderStatus = async (orderIdToCheck: string) => {
+    // Set initial polling time
+    let startTime = Date.now();
+    let timerId: number | undefined;
 
-    setIsProcessing(true);
+    const pollFunction = async () => {
+      try {
+        // Check if we've exceeded the maximum poll time
+        if (Date.now() - startTime > MAX_POLL_TIME) {
+          clearInterval(timerId);
+          toast.error('Order processing timed out. Please check your order status in your dashboard.');
+          return;
+        }
+
+        setPollCount(prev => prev + 1);
+        const result = await pollOrderStatus(orderIdToCheck);
+        
+        // If we got keys or a final status, stop polling
+        if (
+          (result.productKeys && result.productKeys.length > 0) || 
+          (result.status && ['completed', 'failed', 'cancelled'].includes(result.status))
+        ) {
+          clearInterval(timerId);
+          
+          if (result.status === 'failed' || result.status === 'cancelled') {
+            toast.error(`Order ${result.status}: Please contact support if your balance was deducted.`);
+          } else if (result.productKeys?.length) {
+            toast.success('Product keys received!');
+          }
+        }
+      } catch (error) {
+        console.error('Error polling order status:', error);
+        // Don't stop polling on error, just log it
+      }
+    };
+
+    // Start polling
+    timerId = setInterval(pollFunction, POLL_INTERVAL) as unknown as number;
+    
+    // Run once immediately
+    pollFunction();
+  };
+
+  const pollOrderStatus = async (orderIdToCheck: string) => {
+    if (!user || !orderIdToCheck) {
+      return { success: false, error: 'Missing user or order ID' };
+    }
+
     try {
-      const response = await getProducts(orderId, user.id);
+      const response = await getProducts(orderIdToCheck, user.id);
       
       if (response.product_keys && response.product_keys.length > 0) {
         setProductKeys(response.product_keys);
@@ -98,8 +162,6 @@ export const usePurchaseTaphoammo = () => {
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -108,6 +170,7 @@ export const usePurchaseTaphoammo = () => {
     pollOrderStatus,
     isProcessing,
     orderId,
-    productKeys
+    productKeys,
+    pollCount
   };
 };

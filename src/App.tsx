@@ -1,95 +1,97 @@
 
-import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { CartProvider } from "./contexts/CartContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
-import Layout from "./components/Layout";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
 import Index from "./pages/Index";
+import Layout from "./components/Layout";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ResetPassword from "./pages/auth/ResetPassword";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import VerifiedEmail from "./pages/auth/VerifiedEmail";
 import Dashboard from "./pages/Dashboard";
-import Deposit from "./pages/Deposit";
-import DepositSuccess from "./pages/DepositSuccess";
+import DashboardLayout from "./components/dashboard/DashboardLayout";
+import Register from "./pages/auth/Register";
+import Login from "./pages/auth/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
-import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDeposits from "./pages/admin/AdminDeposits";
+import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import ProductIntegration from "./pages/admin/ProductIntegration";
-import AdminLayout from "./components/AdminLayout";
+import ApiMonitoring from "./pages/admin/ApiMonitoring"; // Add this import
+import NotFound from "./pages/NotFound";
+import Deposit from "./pages/Deposit";
+import DepositSuccess from "./pages/DepositSuccess";
+import Checkout from "./pages/Checkout";
+import VerifyEmail from "./pages/auth/VerifyEmail";
+import VerifiedEmail from "./pages/auth/VerifiedEmail";
+import ResetPassword from "./pages/auth/ResetPassword";
+import ApiDocumentation from "./pages/admin/ApiDocumentation";
+import { Toaster as UIToaster } from "./components/ui/toaster";
 import Help from "./pages/Help";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import PurchasesPage from "@/components/dashboard/PurchasesPage";
-
-const queryClient = new QueryClient();
 
 function App() {
+  const location = useLocation();
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <CartProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/products/:slug" element={<ProductDetail />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                </Route>
-                
-                {/* Dashboard Routes */}
-                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/dashboard/purchases" element={<PurchasesPage />} />
-                  <Route path="/dashboard/history" element={<h1>Deposit History</h1>} />
-                  <Route path="/dashboard/settings" element={<h1>Settings</h1>} />
-                </Route>
-                
-                {/* Auth Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/auth/verify" element={<VerifyEmail />} />
-                <Route path="/auth/verified" element={<VerifiedEmail />} />
-                
-                {/* Admin Routes */}
-                <Route element={<AdminLayout />}>
-                  <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
-                  <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
-                  <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
-                  <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
-                  <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
-                  <Route path="/admin/deposits" element={<AdminProtectedRoute><AdminDeposits /></AdminProtectedRoute>} />
-                  <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
-                  <Route path="/admin/integrations" element={<AdminProtectedRoute><ProductIntegration /></AdminProtectedRoute>} />
-                </Route>
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </CartProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Index />} />
+          <Route path="products" element={<Products />} />
+          <Route path="products/:slug" element={<ProductDetail />} />
+          <Route path="deposit" element={<Deposit />} />
+          <Route path="deposit/success" element={<DepositSuccess />} />
+          <Route path="checkout" element={<Checkout />} />
+          <Route path="help" element={<Help />} />
+        </Route>
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="purchases" element={<Dashboard />} />
+          <Route path="history" element={<Dashboard />} />
+          <Route path="settings" element={<Dashboard />} />
+        </Route>
+
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="deposits" element={<AdminDeposits />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="integrations" element={<ProductIntegration />} />
+          <Route path="api-monitoring" element={<ApiMonitoring />} /> {/* Add new route */}
+          <Route path="api-docs" element={<ApiDocumentation />} />
+        </Route>
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verified-email" element={<VerifiedEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster position="top-right" richColors closeButton />
+      <UIToaster />
+    </>
   );
 }
 
