@@ -104,6 +104,8 @@ serve(async (req) => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "User-Agent": "Digital-Deals-Hub/1.0",
+          "Accept": "application/json",
         },
       },
       FETCH_TIMEOUT
@@ -115,8 +117,19 @@ serve(async (req) => {
       throw new Error(`API request failed with status ${response.status}`);
     }
     
-    const data = await response.json();
-    console.log(`[TaphoaMMO API] Response from ${endpoint}:`, data);
+    // Attempt to read and parse the response as text first
+    const responseText = await response.text();
+    console.log(`[TaphoaMMO API] Raw response: ${responseText}`);
+    
+    let data;
+    try {
+      // Try to parse as JSON
+      data = JSON.parse(responseText);
+      console.log(`[TaphoaMMO API] Response from ${endpoint}:`, data);
+    } catch (parseError) {
+      console.error(`[TaphoaMMO API] JSON parse error:`, parseError);
+      throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+    }
     
     // Validate response format
     if (typeof data !== "object") {
@@ -139,7 +152,7 @@ serve(async (req) => {
         message: error.message || "Internal server error",
       }),
       {
-        status: 500,
+        status: 400, // Using 400 instead of 500 to make it easier for the client to handle
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

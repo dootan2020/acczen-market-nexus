@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ApiLogInsert } from '@/types/api-logs';
-import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
+import { ProxyType, buildProxyUrl } from '@/utils/corsProxy';
 
 interface TaphoammoProduct {
   kiosk_token: string;
@@ -95,14 +95,62 @@ export const useTaphoammoAPI = () => {
     }
   };
 
-  // This function replaces the taphoammoProxy function that was in the deleted file
-  const callTaphoammoAPI = async (endpoint: string, params: any, proxyType: ProxyType) => {
+  // Add direct API call with CORS proxy when needed
+  const callDirectAPI = async (
+    endpoint: string,
+    params: Record<string, string | number>,
+    proxyType: ProxyType
+  ): Promise<any> => {
     try {
-      // Call our new taphoammo-api edge function
+      // Build the query string
+      const queryParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        queryParams.append(key, String(value));
+      });
+      
+      // Construct the API URL
+      let apiUrl = `https://taphoammo.net/api/${endpoint}?${queryParams.toString()}`;
+      
+      // Apply CORS proxy if needed
+      if (proxyType !== 'direct') {
+        apiUrl = buildProxyUrl(apiUrl, proxyType);
+      }
+      
+      console.log(`[Direct API Call] Using ${proxyType} to call: ${apiUrl}`);
+      
+      // Make the request
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success === "false") {
+        throw new Error(data.message || 'API returned an error');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`[Direct API Call] Error:`, error);
+      throw error;
+    }
+  };
+
+  // Edge function API call
+  const callEdgeFunction = async (
+    endpoint: string, 
+    params: Record<string, string | number>
+  ): Promise<any> => {
+    try {
+      console.log(`[Edge Function] Calling ${endpoint} with params:`, params);
+      
+      // Call our Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           ...params,
-          endpoint: endpoint.replace('/', '')
+          endpoint
         }
       });
       
@@ -110,15 +158,25 @@ export const useTaphoammoAPI = () => {
         throw new Error(error.message);
       }
       
-      // Compare string with string, not with boolean
       if (data.success === "false") {
         throw new Error(data.message || 'API request failed');
       }
       
       return data;
     } catch (error) {
-      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, error);
+      console.error(`[Edge Function] Error in ${endpoint}:`, error);
       throw error;
+    }
+  };
+
+  // This function replaces the taphoammoProxy function that was in the deleted file
+  const callTaphoammoAPI = async (endpoint: string, params: any, proxyType: ProxyType) => {
+    if (proxyType === 'admin') {
+      // Use Edge Function
+      return callEdgeFunction(endpoint, params);
+    } else {
+      // Use direct call with optional proxy
+      return callDirectAPI(endpoint, params, proxyType);
     }
   };
 
@@ -138,7 +196,7 @@ export const useTaphoammoAPI = () => {
       console.log('Buying products with params:', { kioskToken, userToken, quantity, promotion });
       
       const data = await withRetry(async () => {
-        return await callTaphoammoAPI('/buyProducts', {
+        return await callTaphoammoAPI('buyProducts', {
           kioskToken,
           userToken,
           quantity,
@@ -184,7 +242,7 @@ export const useTaphoammoAPI = () => {
   };
 
   const getProducts = async (
-    kioskToken: string, 
+    orderId: string, 
     userToken: string,
     proxyType: ProxyType
   ): Promise<TaphoammoResponse> => {
@@ -195,7 +253,7 @@ export const useTaphoammoAPI = () => {
     try {
       const data = await withRetry(async () => {
         const response = await callTaphoammoAPI('getProducts', { 
-          kioskToken, 
+          orderId, 
           userToken 
         }, proxyType);
         
@@ -230,7 +288,7 @@ export const useTaphoammoAPI = () => {
 
     try {
       const data = await withRetry(async () => {
-        return await callTaphoammoAPI('/getStock', {
+        return await callTaphoammoAPI('getStock', {
           kioskToken,
           userToken
         }, proxyType);
