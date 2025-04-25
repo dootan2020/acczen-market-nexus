@@ -236,6 +236,7 @@ export type Database = {
           name: string
           price: number
           sale_price: number | null
+          sku: string
           slug: string
           status: Database["public"]["Enums"]["product_status"]
           stock_quantity: number
@@ -255,6 +256,7 @@ export type Database = {
           name: string
           price: number
           sale_price?: number | null
+          sku: string
           slug: string
           status?: Database["public"]["Enums"]["product_status"]
           stock_quantity?: number
@@ -274,6 +276,7 @@ export type Database = {
           name?: string
           price?: number
           sale_price?: number | null
+          sku?: string
           slug?: string
           status?: Database["public"]["Enums"]["product_status"]
           stock_quantity?: number
