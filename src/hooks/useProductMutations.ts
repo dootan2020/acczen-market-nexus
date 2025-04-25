@@ -4,6 +4,7 @@ import { ProductFormData } from "@/types/products";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { generateSKU } from "@/utils/product-utils";
+import { Json } from "@/types/supabase";
 
 export const useProductMutations = () => {
   const queryClient = useQueryClient();
@@ -23,10 +24,18 @@ export const useProductMutations = () => {
         productData.sku = generateSKU();
       }
 
+      // Convert string values to appropriate types for database
+      const formattedProductData = {
+        ...productData,
+        price: parseFloat(productData.price),
+        sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
+        stock_quantity: parseInt(productData.stock_quantity, 10),
+      };
+
       if (isEditing) {
         const { error } = await supabase
           .from('products')
-          .update(productData)
+          .update(formattedProductData)
           .eq('id', data.id);
         
         if (error) throw error;
@@ -34,7 +43,7 @@ export const useProductMutations = () => {
       } else {
         const { error } = await supabase
           .from('products')
-          .insert([productData]);
+          .insert([formattedProductData]);
         
         if (error) throw error;
         return { success: true, action: 'created' };
