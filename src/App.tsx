@@ -32,6 +32,7 @@ import AdminReports from "./pages/admin/AdminReports";
 import ProductIntegration from "./pages/admin/ProductIntegration";
 import AdminLayout from "./components/AdminLayout";
 import Help from "./pages/Help";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 const queryClient = new QueryClient();
 
@@ -51,11 +52,24 @@ function App() {
                   <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/help" element={<Help />} />
                   <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
-                  <Route path="/deposit/success" element={<ProtectedRoute><DepositSuccess /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
                 </Route>
+                
+                {/* Dashboard Routes */}
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard/purchases" element={<h1>Purchases</h1>} />
+                  <Route path="/dashboard/history" element={<h1>Deposit History</h1>} />
+                  <Route path="/dashboard/settings" element={<h1>Settings</h1>} />
+                </Route>
+                
+                {/* Auth Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/auth/verify" element={<VerifyEmail />} />
+                <Route path="/auth/verified" element={<VerifiedEmail />} />
+                
+                {/* Admin Routes */}
                 <Route element={<AdminLayout />}>
                   <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
                   <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
@@ -66,11 +80,8 @@ function App() {
                   <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
                   <Route path="/admin/integrations" element={<AdminProtectedRoute><ProductIntegration /></AdminProtectedRoute>} />
                 </Route>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/auth/verify" element={<VerifyEmail />} />
-                <Route path="/auth/verified" element={<VerifiedEmail />} />
+                
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </CartProvider>
           </AuthProvider>
