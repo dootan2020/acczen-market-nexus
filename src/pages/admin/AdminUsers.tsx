@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableCell,  // Add this import
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { EditRoleDialog } from '@/components/admin/users/EditRoleDialog';
