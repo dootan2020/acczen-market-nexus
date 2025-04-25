@@ -25,6 +25,8 @@ type AuthContextType = {
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes before timeout
+const MAX_LOGOUT_RETRIES = 3;
+const LOGOUT_RETRY_DELAY = 1000; // 1 second
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -279,23 +281,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!willLogout) return;
     }
     
-    try {
-      console.log("Đang đăng xuất...");
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Lỗi đăng xuất:', error);
-        toast.error("Lỗi đăng xuất", {
-          description: error.message
-        });
-      } else {
-        console.log("Đăng xuất thành công");
+    let toastId = null;
+    if (!force) {
+      toastId = toast.loading("Đang đăng xuất...");
+    }
+    
+    let logoutSuccess = false;
+    let retries = 0;
+    
+    while (!logoutSuccess && retries < MAX_LOGOUT_RETRIES) {
+      try {
+        console.log(`Đang đăng xuất... (lần thử ${retries + 1})`);
+        const { error } = await supabase.auth.signOut();
         
-        localStorage.removeItem('previousPath');
+        if (error) {
+          if (error.message.includes("Auth session missing")) {
+            console.warn("Phiên đăng nhập không tồn tại, tiến hành xóa dữ liệu cục bộ");
+            logoutSuccess = true;
+          } else if (error.status === 403) {
+            console.warn("Lỗi 403 từ API đăng xuất, có thể do phiên đã hết hạn");
+            logoutSuccess = true;
+          } else {
+            console.error('Lỗi đăng xuất:', error);
+            retries++;
+            
+            if (retries < MAX_LOGOUT_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, LOGOUT_RETRY_DELAY));
+            }
+          }
+        } else {
+          console.log("Đăng xuất thành công từ Supabase API");
+          logoutSuccess = true;
+        }
+      } catch (error) {
+        console.error('Lỗi nghiêm trọng khi đăng xuất:', error);
+        retries++;
         
-        navigate('/');
+        if (retries < MAX_LOGOUT_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, LOGOUT_RETRY_DELAY));
+        }
       }
-    } catch (error) {
-      console.error('Lỗi nghiêm trọng khi đăng xuất:', error);
+    }
+    
+    try {
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setBalance(0);
+      setUserDisplayName("");
+      
+      localStorage.removeItem('previousPath');
+      
+      if (toastId) {
+        toast.success("Đăng xuất thành công", {
+          id: toastId,
+          description: "Hẹn gặp lại bạn sau!"
+        });
+      }
+      
+      navigate('/');
+    } catch (cleanupError) {
+      console.error('Lỗi khi xóa dữ liệu cục bộ:', cleanupError);
+      
+      if (toastId) {
+        toast.error("Có lỗi xảy ra", {
+          id: toastId,
+          description: "Đã có lỗi khi đăng xuất, vui lòng làm mới trang"
+        });
+      }
+      
+      navigate('/');
     }
   };
 
