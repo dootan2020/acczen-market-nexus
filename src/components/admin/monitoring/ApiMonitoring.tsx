@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ApiLogEntry } from '@/types/api-logs';
+import { ApiLog } from '@/types/api-logs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ export function ApiMonitoring() {
         .limit(100);
       
       if (error) throw error;
-      return logs as ApiLogEntry[];
+      return logs as ApiLog[];
     }
   });
   
@@ -354,7 +354,7 @@ export function ApiMonitoring() {
 }
 
 interface LogsTableProps {
-  logs: ApiLogEntry[];
+  logs: ApiLog[];
   isLoading: boolean;
   getStatusBadge: (status: string) => React.ReactNode;
 }

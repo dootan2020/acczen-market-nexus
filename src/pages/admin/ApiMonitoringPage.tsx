@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
+import { ApiLog } from '@/types/api-logs';  // Changed from ApiLogEntry
 import { 
   Card, 
   CardContent, 
@@ -23,7 +24,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
-import { ApiLogEntry } from '@/types/api-logs';
 import { 
   AlertTriangle,
   CheckCircle,
@@ -59,7 +59,7 @@ const ApiMonitoringPage = () => {
         .limit(100);
       
       if (error) throw error;
-      return data as ApiLogEntry[];
+      return data as ApiLog[];  // Changed from ApiLogEntry
     }
   });
   
