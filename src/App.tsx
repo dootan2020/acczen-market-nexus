@@ -31,12 +31,13 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import ApiDocumentation from "./pages/admin/ApiDocumentation";
 import { Toaster as UIToaster } from "./components/ui/toaster";
 import Help from "./pages/Help";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   const location = useLocation();
 
   return (
-    <>
+    <AuthProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Index />} />
@@ -91,7 +92,7 @@ function App() {
       </Routes>
       <Toaster position="top-right" richColors closeButton />
       <UIToaster />
-    </>
+    </AuthProvider>
   );
 }
 
