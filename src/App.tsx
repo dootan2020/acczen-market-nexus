@@ -1,8 +1,6 @@
+
 import React from 'react';
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -29,119 +27,55 @@ import AdminExchangeRates from './pages/admin/AdminExchangeRates';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import ApiLogsPage from './pages/admin/ApiLogsPage';
-import { CurrencyIcon } from 'lucide-react';
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <HomePage />,
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/reset-password",
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: "/update-password",
-    element: <UpdatePasswordPage />,
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <PrivateRoute>
-        <Dashboard />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/dashboard/*",
-    element: (
-      <PrivateRoute>
-        <Dashboard />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin",
-    element: (
-      <AdminGuard>
-        <AdminLayout />
-      </AdminGuard>
-    ),
-    children: [
-      {
-        index: true,
-        element: <AdminProtectedRoute><ProductsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "products",
-        element: <AdminProtectedRoute><ProductsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "products/edit/:id",
-        element: <AdminProtectedRoute><ProductEditPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "products-import",
-        element: <AdminProtectedRoute><ProductsImportPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "categories",
-        element: <AdminProtectedRoute><CategoriesPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "categories/edit/:id",
-        element: <AdminProtectedRoute><CategoryEditPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "orders",
-        element: <AdminProtectedRoute><OrdersPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "users",
-        element: <AdminProtectedRoute><UsersPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "deposits",
-        element: <AdminProtectedRoute><DepositsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "reports",
-        element: <AdminProtectedRoute><ReportsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "integrations",
-        element: <AdminProtectedRoute><IntegrationsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "api-monitoring",
-        element: <AdminProtectedRoute><APIMonitoringPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "api-logs",
-        element: <AdminProtectedRoute><ApiLogsPage /></AdminProtectedRoute>,
-      },
-    ],
-  },
-  {
-    path: "/admin/exchange-rates",
-    element: <AdminGuard><AdminExchangeRates /></AdminGuard>
-  },
-]);
 
 function App() {
   return (
     <ReactQueryProvider>
       <AuthProvider>
         <CurrencyProvider>
-          <RouterProvider router={router} />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/update-password" element={<UpdatePasswordPage />} />
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/*" element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <AdminGuard>
+                <AdminLayout />
+              </AdminGuard>
+            }>
+              <Route index element={<AdminProtectedRoute><ProductsPage /></AdminProtectedRoute>} />
+              <Route path="products" element={<AdminProtectedRoute><ProductsPage /></AdminProtectedRoute>} />
+              <Route path="products/edit/:id" element={<AdminProtectedRoute><ProductEditPage /></AdminProtectedRoute>} />
+              <Route path="products-import" element={<AdminProtectedRoute><ProductsImportPage /></AdminProtectedRoute>} />
+              <Route path="categories" element={<AdminProtectedRoute><CategoriesPage /></AdminProtectedRoute>} />
+              <Route path="categories/edit/:id" element={<AdminProtectedRoute><CategoryEditPage /></AdminProtectedRoute>} />
+              <Route path="orders" element={<AdminProtectedRoute><OrdersPage /></AdminProtectedRoute>} />
+              <Route path="users" element={<AdminProtectedRoute><UsersPage /></AdminProtectedRoute>} />
+              <Route path="deposits" element={<AdminProtectedRoute><DepositsPage /></AdminProtectedRoute>} />
+              <Route path="reports" element={<AdminProtectedRoute><ReportsPage /></AdminProtectedRoute>} />
+              <Route path="integrations" element={<AdminProtectedRoute><IntegrationsPage /></AdminProtectedRoute>} />
+              <Route path="api-monitoring" element={<AdminProtectedRoute><APIMonitoringPage /></AdminProtectedRoute>} />
+              <Route path="api-logs" element={<AdminProtectedRoute><ApiLogsPage /></AdminProtectedRoute>} />
+            </Route>
+            
+            <Route path="/admin/exchange-rates" element={
+              <AdminGuard>
+                <AdminExchangeRates />
+              </AdminGuard>
+            } />
+          </Routes>
         </CurrencyProvider>
       </AuthProvider>
     </ReactQueryProvider>

@@ -1,8 +1,9 @@
 
-import ApiMonitoringPage from './ApiMonitoringPage';
+import React from 'react';
+import APIMonitoringPage from './APIMonitoringPage';
 
-const AdminApiMonitoring = () => {
-  return <ApiMonitoringPage />;
+const AdminApiMonitoring: React.FC = () => {
+  return <APIMonitoringPage />;
 };
 
 export default AdminApiMonitoring;
