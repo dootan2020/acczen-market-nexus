@@ -1,34 +1,16 @@
 
 import React from 'react';
-import { DialogFooter } from '@/components/ui/dialog';
+import { DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ProductFormData } from '@/types/products';
+import ProductBasicInfo from './form/ProductBasicInfo';
+import ProductDescription from './form/ProductDescription';
+import ProductPricing from './form/ProductPricing';
+import ProductInventory from './form/ProductInventory';
+import SubcategorySelector from '@/components/SubcategorySelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { DialogClose } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import SubcategorySelector from '@/components/SubcategorySelector';
-import { ProductStatus } from '@/types/products';
-
-interface ProductFormData {
-  name: string;
-  description: string;
-  price: string;
-  sale_price: string;
-  stock_quantity: string;
-  image_url: string;
-  slug: string;
-  category_id: string;
-  subcategory_id: string;
-  status: ProductStatus;
-  sku: string;
-}
 
 interface ProductFormProps {
   formData: ProductFormData;
@@ -51,124 +33,59 @@ const ProductForm: React.FC<ProductFormProps> = ({
   isEditing,
   isPending,
 }) => {
+  const handleStatusChange = (value: string) => {
+    handleInputChange({
+      target: { name: 'status', value }
+    } as React.ChangeEvent<HTMLInputElement>);
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Product Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="slug">Slug</Label>
-            <Input
-              id="slug"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              placeholder="auto-generated-if-empty"
-            />
-          </div>
-        </div>
+        <ProductBasicInfo 
+          name={formData.name}
+          slug={formData.slug}
+          onChange={handleInputChange}
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
+        <ProductDescription 
+          description={formData.description}
+          onChange={handleInputChange}
+        />
+        
+        <ProductPricing 
+          price={formData.price}
+          salePrice={formData.sale_price}
+          onChange={handleInputChange}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <ProductInventory 
+            stockQuantity={formData.stock_quantity}
+            status={formData.status}
             onChange={handleInputChange}
-            rows={3}
+            onStatusChange={handleStatusChange}
           />
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="price">Price (VND)</Label>
-            <Input
-              id="price"
-              name="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-              placeholder="Enter price in VND"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sale_price">Sale Price (VND)</Label>
-            <Input
-              id="sale_price"
-              name="sale_price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.sale_price}
-              onChange={handleInputChange}
-              placeholder="Optional sale price in VND"
-            />
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="stock_quantity">Stock Quantity</Label>
-            <Input
-              id="stock_quantity"
-              name="stock_quantity"
-              type="number"
-              min="0"
-              value={formData.stock_quantity}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="category_id">Category</Label>
-            <Select 
-              name="category_id" 
-              value={formData.category_id}
-              onValueChange={handleCategoryChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map(category => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              name="status" 
-              value={formData.status}
-              onValueChange={(value) => handleInputChange({
-                target: { name: 'status', value }
-              } as React.ChangeEvent<HTMLInputElement>)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category_id">Category</Label>
+          <Select 
+            name="category_id" 
+            value={formData.category_id}
+            onValueChange={handleCategoryChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories?.map(category => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="space-y-2">
@@ -206,6 +123,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           )}
         </div>
       </div>
+
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">Cancel</Button>
