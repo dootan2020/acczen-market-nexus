@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { toast } from 'sonner';
 
@@ -154,8 +153,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       payload: { ...item, quantity: 1 }
     });
     
-    toast({
-      title: "Added to cart",
+    toast("Added to cart", {
       description: `${item.name} has been added to your cart`,
     });
   };
@@ -167,8 +165,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       payload: { id }
     });
     
-    toast({
-      title: "Removed from cart",
+    toast("Removed from cart", {
       description: "Item has been removed from your cart",
     });
   };
@@ -185,8 +182,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
     
-    toast({
-      title: "Cart cleared",
+    toast("Cart cleared", {
       description: "All items have been removed from your cart",
     });
   };
