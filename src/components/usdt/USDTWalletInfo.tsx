@@ -2,9 +2,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode } from "lucide-react";
+import { Copy } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 interface USDTWalletInfoProps {
   walletAddress: string;
@@ -29,9 +30,9 @@ export const USDTWalletInfo: React.FC<USDTWalletInfoProps> = ({
   return (
     <div className="text-center space-y-6">
       <div className="space-y-4">
-        <p className="text-sm font-medium text-muted-foreground">
+        <Label className="text-sm font-medium text-muted-foreground">
           Địa chỉ ví USDT (TRC20):
-        </p>
+        </Label>
         <Card className="bg-muted/30">
           <CardContent className="pt-6">
             <div className="relative">

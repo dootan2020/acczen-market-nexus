@@ -29,7 +29,7 @@ export const USDTTransactionForm: React.FC<USDTTransactionFormProps> = ({
           placeholder="Nhập số USDT..."
           min="1"
           step="0.01"
-          className="bg-white"
+          className="bg-white mt-1.5"
         />
       </div>
 
@@ -45,7 +45,7 @@ export const USDTTransactionForm: React.FC<USDTTransactionFormProps> = ({
               value={txid}
               onChange={(e) => onTxidChange(e.target.value)}
               placeholder="Nhập mã giao dịch..."
-              className="font-mono text-sm bg-white"
+              className="font-mono text-sm bg-white mt-1.5"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Sau khi chuyển USDT, nhập mã giao dịch (TXID) từ ví hoặc sàn giao dịch của bạn
