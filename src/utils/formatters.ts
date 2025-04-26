@@ -1,12 +1,12 @@
 
 /**
- * Format currency values using the Vietnamese locale and VND currency
+ * Format currency values using the specific locale and currency
  */
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number, currencyCode: string = 'VND'): string => {
   return new Intl.NumberFormat('vi-VN', { 
     style: 'currency', 
-    currency: 'VND',
-    maximumFractionDigits: 0
+    currency: currencyCode,
+    maximumFractionDigits: currencyCode === 'VND' ? 0 : 2
   }).format(value);
 };
 
