@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -23,35 +24,37 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
-      <QueryClientProvider client={queryClient}>
-        <CartProvider>
-          <CurrencyProvider>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Products />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/product/:slug" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/deposit" element={<Deposit />} />
-                <Route path="/dashboard/*" element={
-                  <ProtectedRoute>
-                    <Dashboard />
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <CartProvider>
+            <CurrencyProvider>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Products />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/product/:slug" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/deposit" element={<Deposit />} />
+                  <Route path="/dashboard/*" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                </Route>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/admin/products" element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminProducts />
                   </ProtectedRoute>
                 } />
-              </Route>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/admin/products" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminProducts />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </CurrencyProvider>
-        </CartProvider>
-        <Toaster />
-      </QueryClientProvider>
+              </Routes>
+            </CurrencyProvider>
+          </CartProvider>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
