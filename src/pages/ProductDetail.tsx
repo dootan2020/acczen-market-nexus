@@ -144,6 +144,7 @@ const ProductDetail = () => {
           soldCount={Math.floor(Math.random() * 100) + 50} // Mock data - would come from API in real app
           rating={4.5} // Mock data - would come from API in real app
           reviewCount={23} // Mock data - would come from API in real app
+          kiosk_token={product.kiosk_token}
         />
       </div>
 

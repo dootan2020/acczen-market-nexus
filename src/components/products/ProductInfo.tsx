@@ -19,6 +19,7 @@ interface ProductInfoProps {
   soldCount?: number;
   rating?: number;
   reviewCount?: number;
+  kiosk_token?: string | null;
 }
 
 const ProductInfo = ({ 
@@ -30,19 +31,21 @@ const ProductInfo = ({
   image,
   rating = 0,
   reviewCount = 0,
-  soldCount = 0
+  soldCount = 0,
+  kiosk_token
 }: ProductInfoProps) => {
   const { addItem } = useCart();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
   const isOutOfStock = stockQuantity === 0;
+  const effectivePrice = salePrice || price;
 
   const handleAddToCart = () => {
     addItem({
       id,
       name,
-      price: salePrice || price,
+      price: effectivePrice,
       image
     });
 
@@ -76,6 +79,12 @@ const ProductInfo = ({
       <ProductActions
         isOutOfStock={isOutOfStock}
         onAddToCart={handleAddToCart}
+        productId={id}
+        productName={name}
+        productPrice={effectivePrice}
+        productImage={image}
+        quantity={quantity}
+        kioskToken={kiosk_token}
       />
     </div>
   );

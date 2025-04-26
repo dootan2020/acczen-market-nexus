@@ -5,6 +5,7 @@ import Index from "./pages/Index";
 import Layout from "./components/Layout";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import OrderDetail from "./pages/OrderDetail"; // Import the new OrderDetail page
 import Dashboard from "./pages/Dashboard";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import Register from "./pages/auth/Register";
@@ -82,6 +83,18 @@ function App() {
           <Route path="api-monitoring" element={<ApiMonitoring />} />
           <Route path="api-docs" element={<ApiDocumentation />} />
         </Route>
+
+        {/* Add the OrderDetail route (protected) */}
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrderDetail />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
