@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle, Check } from 'lucide-react';
+import { Loader2, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,13 +42,14 @@ export default function ProductImportForm({
 }: ProductImportFormProps) {
   const [connectionStatus, setConnectionStatus] = useState<{success?: boolean; message?: string}>({});
   const [testingConnection, setTestingConnection] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       kioskToken: '',
       userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
-      proxyType: 'allorigins' // Default to allorigins as it's working well
+      proxyType: 'admin' // Default to Edge Function as it should be more reliable with improvements
     }
   });
 
@@ -123,58 +124,85 @@ export default function ProductImportForm({
           )}
         />
         
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Phương thức kết nối</div>
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center text-xs"
+          >
+            {showAdvanced ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" /> 
+                Ẩn tùy chọn nâng cao
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" /> 
+                Hiện tùy chọn nâng cao
+              </>
+            )}
+          </Button>
+        </div>
+        
         <FormField
           control={form.control}
           name="proxyType"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Phương thức kết nối</FormLabel>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className="flex flex-col space-y-1"
                 >
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="allorigins" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      AllOrigins CORS Proxy (khuyến nghị)
-                    </FormLabel>
-                  </FormItem>
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="admin" />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      Supabase Edge Function
+                      Supabase Edge Function (khuyến nghị)
                     </FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="corsproxy.io" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      CORS Proxy (corsproxy.io)
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="corsanywhere" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      CORS Anywhere
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="direct" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Trực tiếp (nếu không có vấn đề CORS)
-                    </FormLabel>
-                  </FormItem>
+                  
+                  {showAdvanced && (
+                    <>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="allorigins" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          AllOrigins CORS Proxy
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="corsproxy.io" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          CORS Proxy (corsproxy.io)
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="corsanywhere" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          CORS Anywhere
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="direct" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Trực tiếp (nếu không có vấn đề CORS)
+                        </FormLabel>
+                      </FormItem>
+                    </>
+                  )}
                 </RadioGroup>
               </FormControl>
               <FormMessage />
@@ -186,7 +214,27 @@ export default function ProductImportForm({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Lỗi</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {error}
+              {error.includes('Edge Function') && showAdvanced && (
+                <div className="mt-2 text-xs">
+                  <strong>Gợi ý:</strong> Hãy thử phương thức kết nối khác như "AllOrigins CORS Proxy"
+                </div>
+              )}
+              {!showAdvanced && error.includes('Edge Function') && (
+                <div className="mt-2 text-xs">
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    size="sm" 
+                    className="p-0 h-auto text-xs underline"
+                    onClick={() => setShowAdvanced(true)}
+                  >
+                    Hiện tùy chọn nâng cao
+                  </Button> và thử phương thức kết nối khác.
+                </div>
+              )}
+            </AlertDescription>
           </Alert>
         )}
         

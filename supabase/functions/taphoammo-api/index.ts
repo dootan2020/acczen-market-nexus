@@ -43,17 +43,21 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const endpoint = url.searchParams.get("endpoint");
+    let requestBody = {};
+    
+    try {
+      // Get the request body
+      requestBody = await req.json();
+      console.log(`[TaphoaMMO API] Request body:`, requestBody);
+    } catch (parseError) {
+      console.error(`[TaphoaMMO API] Error parsing request body:`, parseError);
+      throw new Error("Invalid request body format");
+    }
+    
+    const endpoint = requestBody.endpoint;
     
     if (!endpoint) {
       throw new Error("Missing 'endpoint' parameter");
-    }
-    
-    // Get the request body
-    let requestBody = {};
-    if (req.method === "POST") {
-      requestBody = await req.json();
     }
     
     console.log(`[TaphoaMMO API] Request to ${endpoint} with params:`, requestBody);

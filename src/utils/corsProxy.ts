@@ -1,31 +1,40 @@
 
+/**
+ * Types of available proxies for API calls
+ */
 export type ProxyType = 'direct' | 'corsproxy.io' | 'allorigins' | 'corsanywhere' | 'admin';
 
-export const getStoredProxy = (): ProxyType => {
-  // Try to get stored value from localStorage
-  const stored = localStorage.getItem('preferred_proxy_type');
-  
-  // Default to 'allorigins' proxy if no stored value (since you mentioned it works well)
-  return (stored as ProxyType) || 'allorigins';
-};
-
-export const setStoredProxy = (type: ProxyType): void => {
-  localStorage.setItem('preferred_proxy_type', type);
-};
-
-export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
+/**
+ * Build a proper URL for the selected CORS proxy
+ * @param targetUrl The original API URL to proxy
+ * @param proxyType The type of proxy to use
+ * @returns A properly formatted proxy URL
+ */
+export function buildProxyUrl(targetUrl: string, proxyType: ProxyType): string {
   switch (proxyType) {
-    case 'corsproxy.io':
-      return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    case 'allorigins':
-      return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    case 'corsanywhere':
-      return `https://cors-anywhere.herokuapp.com/${url}`;
     case 'direct':
-      return url;
-    case 'admin':
+      return targetUrl;
+    case 'corsproxy.io':
+      return `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+    case 'allorigins':
+      return `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+    case 'corsanywhere':
+      return `https://cors-anywhere.herokuapp.com/${targetUrl}`;
     default:
-      // This will be handled by the Edge Function
-      return url;
+      return targetUrl;
   }
-};
+}
+
+/**
+ * Get a list of available proxies with descriptions
+ * @returns Array of proxy options
+ */
+export function getProxyOptions() {
+  return [
+    { value: 'admin', label: 'Supabase Edge Function (khuyến nghị)', description: 'Gọi API qua backend server của bạn' },
+    { value: 'allorigins', label: 'AllOrigins', description: 'CORS proxy đáng tin cậy' },
+    { value: 'corsproxy.io', label: 'corsproxy.io', description: 'Public CORS proxy' },
+    { value: 'corsanywhere', label: 'CORS Anywhere', description: 'Có thể yêu cầu tạo token' },
+    { value: 'direct', label: 'Trực tiếp', description: 'Không sử dụng proxy, có thể gặp vấn đề CORS' }
+  ];
+}

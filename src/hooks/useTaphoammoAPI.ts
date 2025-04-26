@@ -37,8 +37,8 @@ interface TaphoammoResponse {
 }
 
 // Configuration
-const MAX_RETRIES = 2;
-const RETRY_DELAYS = [1000, 3000];
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 3000, 5000];
 
 export const useTaphoammoAPI = () => {
   const [loading, setLoading] = useState(false);
@@ -61,7 +61,7 @@ export const useTaphoammoAPI = () => {
         throw err;
       }
       
-      const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+      const delay = RETRY_DELAYS[attempt] || 5000;
       console.log(`API call failed, retrying (${attempt + 1}/${MAX_RETRIES}) in ${delay}ms...`);
       toast.info(`API request failed. Retrying (${attempt + 1}/${MAX_RETRIES})...`);
       
@@ -118,20 +118,48 @@ export const useTaphoammoAPI = () => {
       
       console.log(`[Direct API Call] Using ${proxyType} to call: ${apiUrl}`);
       
-      // Make the request
-      const response = await fetch(apiUrl);
+      // Make the request with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+      try {
+        const response = await fetch(apiUrl, {
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "Digital-Deals-Hub/1.0",
+            "Accept": "application/json"
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        // Get response text first for better error handling
+        const responseText = await response.text();
+        console.log(`[Direct API Call] Raw response: ${responseText}`);
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+        }
+        
+        if (data.success === "false") {
+          throw new Error(data.message || 'API returned an error');
+        }
+        
+        return data;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout after 15 seconds');
+        }
+        throw fetchError;
       }
-      
-      const data = await response.json();
-      
-      if (data.success === "false") {
-        throw new Error(data.message || 'API returned an error');
-      }
-      
-      return data;
     } catch (error: any) {
       console.error(`[Direct API Call] Error:`, error);
       throw error;
@@ -155,8 +183,11 @@ export const useTaphoammoAPI = () => {
       });
       
       if (error) {
+        console.error(`[Edge Function] Error response:`, error);
         throw new Error(error.message);
       }
+      
+      console.log(`[Edge Function] Response:`, data);
       
       if (data.success === "false") {
         throw new Error(data.message || 'API request failed');
