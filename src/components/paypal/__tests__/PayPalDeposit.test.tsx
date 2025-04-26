@@ -1,7 +1,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import PayPalDeposit from '../PayPalDeposit';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('PayPalDeposit', () => {
   beforeEach(() => {

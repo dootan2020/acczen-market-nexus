@@ -3,6 +3,13 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import * as React from 'react';
 
+// Make sure global test functions are available
+import { describe, it, expect, beforeEach } from 'vitest';
+global.describe = describe;
+global.it = it;
+global.expect = expect;
+global.beforeEach = beforeEach;
+
 // Mock PayPal SDK
 vi.mock('@paypal/react-paypal-js', () => {
   return {
