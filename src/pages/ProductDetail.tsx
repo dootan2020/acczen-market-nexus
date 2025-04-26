@@ -52,6 +52,7 @@ const ProductDetail = () => {
     );
   }
 
+  // Process product features
   let featuresList: string[] = [];
   if (product.features) {
     try {
@@ -64,6 +65,26 @@ const ProductDetail = () => {
       }
     } catch (e) {
       console.error("Error parsing product features:", e);
+    }
+  }
+
+  // Process product metadata
+  let specifications: string | null = null;
+  let usageInstructions: string | null = null;
+
+  if (product.metadata) {
+    try {
+      // Handle metadata being a string or already parsed object
+      const metadata = typeof product.metadata === 'string'
+        ? JSON.parse(product.metadata)
+        : product.metadata;
+
+      if (metadata) {
+        specifications = metadata.specifications || null;
+        usageInstructions = metadata.usage_instructions || null;
+      }
+    } catch (e) {
+      console.error("Error processing product metadata:", e);
     }
   }
 
@@ -103,8 +124,8 @@ const ProductDetail = () => {
 
       <ProductDescription 
         description={product.description}
-        specifications={product.metadata?.specifications || null}
-        usage={product.metadata?.usage_instructions || null}
+        specifications={specifications}
+        usage={usageInstructions}
       />
 
       <ProductBenefits />
