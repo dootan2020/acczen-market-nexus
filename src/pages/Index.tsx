@@ -6,7 +6,7 @@ import FAQSection from "@/components/home/FAQSection";
 
 const Index = () => {
   return (
-    <div>
+    <div className="flex flex-col">
       <HeroSection />
       <StatsSection />
       <FeaturedProducts />

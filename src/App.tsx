@@ -27,6 +27,7 @@ import AdminExchangeRates from './pages/admin/AdminExchangeRates';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import ApiLogsPage from './pages/admin/ApiLogsPage';
+import Index from './pages/Index';
 
 function App() {
   return (
@@ -34,7 +35,12 @@ function App() {
       <AuthProvider>
         <CurrencyProvider>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<HomePage />}>
+              <Route index element={<Index />} />
+            </Route>
+            <Route path="/home" element={<HomePage />}>
+              <Route index element={<Index />} />
+            </Route>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
