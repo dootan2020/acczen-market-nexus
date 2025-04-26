@@ -1,4 +1,3 @@
-
 import { CartState, CartAction } from '@/types/cart';
 
 export const initialState: CartState = {
@@ -14,22 +13,20 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       
       if (existingItemIndex > -1) {
         const updatedItems = [...state.items];
-        updatedItems[existingItemIndex].quantity += 1;
+        updatedItems[existingItemIndex].quantity += action.payload.quantity;
         
         return {
           ...state,
           items: updatedItems,
-          totalItems: state.totalItems + 1,
-          totalPrice: state.totalPrice + action.payload.price
+          totalItems: state.totalItems + action.payload.quantity,
+          totalPrice: state.totalPrice + (action.payload.price * action.payload.quantity)
         };
       } else {
-        const newItem = { ...action.payload, quantity: 1 };
-        
         return {
           ...state,
-          items: [...state.items, newItem],
-          totalItems: state.totalItems + 1,
-          totalPrice: state.totalPrice + action.payload.price
+          items: [...state.items, action.payload],
+          totalItems: state.totalItems + action.payload.quantity,
+          totalPrice: state.totalPrice + (action.payload.price * action.payload.quantity)
         };
       }
     }
