@@ -3,6 +3,7 @@ import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import TextAlign from '@tiptap/extension-text-align';
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -31,6 +32,10 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         HTMLAttributes: {
           class: 'text-primary hover:underline',
         },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right'],
       }),
     ],
     content: value,
