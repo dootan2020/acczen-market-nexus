@@ -2,13 +2,20 @@
 import { useParams, Link } from "react-router-dom";
 import { useProduct } from "@/hooks/useProduct";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductInfo from "@/components/products/ProductInfo";
 import ProductBenefits from "@/components/products/ProductBenefits";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import ProductDescription from "@/components/products/ProductDescription";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -20,9 +27,9 @@ const ProductDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="container py-12">
+      <div className="container py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="h-[400px] rounded-lg bg-muted animate-pulse" />
+          <div className="h-[400px] rounded-lg bg-muted animate-pulse shadow-sm" />
           <div className="space-y-4">
             <div className="h-8 w-3/4 bg-muted animate-pulse" />
             <div className="h-6 w-1/4 bg-muted animate-pulse" />
@@ -37,8 +44,8 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="container py-12">
-        <div className="bg-muted p-6 rounded-lg text-center">
+      <div className="container py-8">
+        <div className="bg-muted p-6 rounded-lg text-center shadow-sm">
           <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
           <p className="text-muted-foreground mb-4">
@@ -89,18 +96,33 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center text-sm text-muted-foreground mb-6">
-        <Link to="/" className="hover:text-foreground">Trang chủ</Link>
-        <ChevronRight className="h-4 w-4 mx-1" />
-        <Link to="/products" className="hover:text-foreground">Sản phẩm</Link>
-        <ChevronRight className="h-4 w-4 mx-1" />
-        <Link to={`/products?category=${product.category?.slug}`} className="hover:text-foreground">
-          {product.category?.name}
-        </Link>
-        <ChevronRight className="h-4 w-4 mx-1" />
-        <span className="text-foreground font-medium truncate">{product.name}</span>
-      </div>
+    <div className="container py-6 px-4 sm:px-6 lg:px-8">
+      {/* Improved Breadcrumb */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Trang chủ</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/products">Sản phẩm</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          {product.category && (
+            <>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/products?category=${product.category.slug}`}>
+                  {product.category.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+            </>
+          )}
+          <BreadcrumbItem>
+            <span className="text-foreground font-medium line-clamp-1">{product.name}</span>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <ProductImageGallery 
@@ -119,23 +141,38 @@ const ProductDetail = () => {
           stockQuantity={product.stock_quantity}
           image={product.image_url || ''}
           features={featuresList}
+          soldCount={Math.floor(Math.random() * 100) + 50} // Mock data - would come from API in real app
+          rating={4.5} // Mock data - would come from API in real app
+          reviewCount={23} // Mock data - would come from API in real app
         />
       </div>
 
+      {/* Product Description Tabs */}
       <ProductDescription 
         description={product.description}
         specifications={specifications}
         usage={usageInstructions}
       />
 
+      {/* Product Benefits */}
       <ProductBenefits />
 
+      {/* Related Products */}
       {product.category_id && (
         <RelatedProducts 
           categoryId={product.category_id} 
           currentProductId={product.id}
         />
       )}
+
+      {/* Continue Shopping Button */}
+      <div className="flex justify-center mt-10 mb-6">
+        <Button asChild variant="outline" size="lg" className="gap-2">
+          <Link to="/products">
+            Tiếp tục mua sắm
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 };
