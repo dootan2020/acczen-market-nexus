@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, ShoppingCart, Trash2, CreditCard, Loader } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { usePurchaseTaphoammo } from '@/hooks/usePurchaseTaphoammo';
 
@@ -25,6 +27,7 @@ const Checkout = () => {
     apiProduct?: boolean;
   } | null>(null);
   
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const { purchaseProduct, isProcessing: isTaphoammoProcessing } = usePurchaseTaphoammo('');
   const navigate = useNavigate();
 
@@ -79,7 +82,11 @@ const Checkout = () => {
     }
 
     if (userBalance < cart.totalPrice) {
-      toast.error('Insufficient balance. Please add funds to your account.');
+      // Convert to USD for display
+      const balanceUSD = convertVNDtoUSD(userBalance);
+      const totalPriceUSD = convertVNDtoUSD(cart.totalPrice);
+      
+      toast.error(`Insufficient balance. You need ${formatUSD(totalPriceUSD)} but your balance is only ${formatUSD(balanceUSD)}`);
       return;
     }
 
@@ -150,6 +157,10 @@ const Checkout = () => {
   };
 
   const hasInsufficientBalance = userBalance < cart.totalPrice;
+  
+  // Convert values to USD for display
+  const userBalanceUSD = convertVNDtoUSD(userBalance);
+  const remainingBalanceUSD = convertVNDtoUSD(Math.max(0, userBalance - cart.totalPrice));
 
   return (
     <div className="container py-8 max-w-5xl mx-auto">
@@ -185,6 +196,8 @@ const Checkout = () => {
                   {cart.items.map((item) => {
                     const productInfo = JSON.parse(localStorage.getItem(`product_${item.id}`) || '{}');
                     const isApiProduct = !!productInfo.kioskToken;
+                    const itemPriceUSD = convertVNDtoUSD(item.price);
+                    const itemTotalUSD = convertVNDtoUSD(item.price * item.quantity);
                     
                     return (
                       <TableRow key={item.id}>
@@ -205,7 +218,7 @@ const Checkout = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatUSD(itemPriceUSD)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center">
                             <Button
@@ -227,7 +240,7 @@ const Checkout = () => {
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">${(item.price * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatUSD(itemTotalUSD)}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -253,16 +266,16 @@ const Checkout = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${cart.totalPrice.toFixed(2)}</span>
+                  <span>{formatUSD(convertVNDtoUSD(cart.totalPrice))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
-                  <span>$0.00</span>
+                  <span>{formatUSD(0)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>${cart.totalPrice.toFixed(2)}</span>
+                  <span>{formatUSD(convertVNDtoUSD(cart.totalPrice))}</span>
                 </div>
                 
                 <div className="pt-4">
@@ -270,12 +283,12 @@ const Checkout = () => {
                     <div className="flex justify-between mb-2">
                       <span>Your Balance</span>
                       <span className={hasInsufficientBalance ? "text-red-500" : "text-green-500"}>
-                        ${userBalance.toFixed(2)}
+                        {formatUSD(userBalanceUSD)}
                       </span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span>After Purchase</span>
-                      <span>${Math.max(0, userBalance - cart.totalPrice).toFixed(2)}</span>
+                      <span>{formatUSD(remainingBalanceUSD)}</span>
                     </div>
                     
                     {hasInsufficientBalance && (

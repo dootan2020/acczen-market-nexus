@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ export const PurchaseConfirmModal = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext();
 
   const handleConfirmPurchase = async () => {
     if (!user) {
@@ -82,7 +84,11 @@ export const PurchaseConfirmModal = ({
       console.log("Chi phí:", totalCost, "Số dư:", userData.balance);
       
       if (userData.balance < totalCost) {
-        throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toFixed(0)}đ nhưng chỉ có ${userData.balance.toFixed(0)}đ`);
+        // Convert amounts to USD for display in error message
+        const totalCostUSD = convertVNDtoUSD(totalCost);
+        const balanceUSD = convertVNDtoUSD(userData.balance);
+        
+        throw new Error(`Số dư không đủ. Bạn cần ${formatUSD(totalCostUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}`);
       }
       
       // 2. Check stock availability using our API client
@@ -241,6 +247,10 @@ export const PurchaseConfirmModal = ({
     }
   };
 
+  // Calculate USD price for display
+  const totalPriceVND = productPrice * quantity;
+  const totalPriceUSD = convertVNDtoUSD(totalPriceVND);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -266,10 +276,7 @@ export const PurchaseConfirmModal = ({
                 Số lượng: {quantity}
               </p>
               <p className="font-medium text-primary">
-                {new Intl.NumberFormat('vi-VN', { 
-                  style: 'currency', 
-                  currency: 'VND' 
-                }).format(productPrice * quantity)}
+                {formatUSD(totalPriceUSD)}
               </p>
             </div>
           </div>

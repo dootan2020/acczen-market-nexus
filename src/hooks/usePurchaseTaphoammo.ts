@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 // ProxyType enum to match what we're using in our new implementation
 enum ProxyType {
@@ -21,6 +22,7 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
   const [success, setSuccess] = useState(false);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const { user } = useAuth();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   
   const purchaseProduct = async (quantity = 1) => {
     if (!user?.id) {
@@ -114,9 +116,13 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
       const totalPrice = productPrice * quantity;
       
       if (userData.balance < totalPrice) {
+        // Convert to USD for display
+        const totalPriceUSD = convertVNDtoUSD(totalPrice);
+        const balanceUSD = convertVNDtoUSD(userData.balance);
+        
         return { 
           valid: false, 
-          message: `Insufficient balance. You need $${totalPrice.toFixed(2)} but your balance is $${userData.balance.toFixed(2)}` 
+          message: `Insufficient balance. You need ${formatUSD(totalPriceUSD)} but your balance is ${formatUSD(balanceUSD)}` 
         };
       }
       

@@ -123,9 +123,26 @@ serve(async (req: Request) => {
       );
     }
 
+    // Get exchange rate for display purposes only
+    const { data: exchangeRate } = await supabase
+      .from('exchange_rates')
+      .select('rate')
+      .eq('from_currency', 'VND')
+      .eq('to_currency', 'USD')
+      .single();
+      
+    const rate = exchangeRate?.rate || 0.000043; // Fallback rate if not found
+
     if (profile.balance < totalAmount) {
+      // Calculate USD values for the error message
+      const balanceUSD = profile.balance * rate;
+      const totalAmountUSD = totalAmount * rate;
+      
       return new Response(
-        JSON.stringify({ success: false, message: 'Insufficient balance' }),
+        JSON.stringify({ 
+          success: false, 
+          message: `Insufficient balance. You need $${totalAmountUSD.toFixed(2)} but your balance is $${balanceUSD.toFixed(2)}` 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -218,7 +235,7 @@ serve(async (req: Request) => {
       .from('transactions')
       .insert({
         user_id: user.id,
-        amount: totalAmount,
+        amount: -totalAmount, // Negative amount for purchases
         type: 'purchase',
         reference_id: order.id,
         description: `Purchase of ${items.length} product(s)`
@@ -237,6 +254,7 @@ serve(async (req: Request) => {
         order: {
           id: createdOrder.id,
           total: totalAmount,
+          totalUSD: totalAmount * rate, // Include USD value for display
           items: orderItems.length
         }
       }),
