@@ -1,9 +1,9 @@
 
 import React from 'react';
-import ApiMonitoringPage from './ApiMonitoringPage';
+import APIMonitoringPage from './APIMonitoringPage';
 
 const ApiMonitoring = () => {
-  return <ApiMonitoringPage />;
+  return <APIMonitoringPage />;
 };
 
 export default ApiMonitoring;
