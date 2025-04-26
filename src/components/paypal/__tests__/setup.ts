@@ -10,6 +10,11 @@ global.it = it;
 global.expect = expect;
 global.beforeEach = beforeEach;
 
+// Add Jest DOM matchers to Vitest
+import { expect } from 'vitest';
+import matchers from '@testing-library/jest-dom/matchers';
+expect.extend(matchers);
+
 // Mock PayPal SDK
 vi.mock('@paypal/react-paypal-js', () => {
   return {

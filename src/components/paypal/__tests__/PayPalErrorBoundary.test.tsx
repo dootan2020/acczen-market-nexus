@@ -2,6 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { PayPalErrorBoundary } from '../PayPalErrorBoundary';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
 
 describe('PayPalErrorBoundary', () => {
   const mockOnSuccess = vi.fn();
