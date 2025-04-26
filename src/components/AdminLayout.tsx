@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Link, useLocation } from 'react-router-dom';
@@ -18,7 +17,8 @@ import {
   Settings,
   BarChart,
   ActivitySquare,
-  Import
+  Import,
+  CurrencyIcon
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -86,6 +86,11 @@ const AdminLayout = () => {
       name: 'API Monitoring', 
       href: '/admin/api-monitoring', 
       icon: <ActivitySquare className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Exchange Rates', 
+      href: '/admin/exchange-rates', 
+      icon: <CurrencyIcon className="h-5 w-5" /> 
     },
   ];
 

@@ -147,6 +147,36 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rate_history: {
+        Row: {
+          created_at: string
+          from_currency: string
+          id: string
+          new_rate: number
+          old_rate: number | null
+          to_currency: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_currency: string
+          id?: string
+          new_rate: number
+          old_rate?: number | null
+          to_currency: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_currency?: string
+          id?: string
+          new_rate?: number
+          old_rate?: number | null
+          to_currency?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string
@@ -155,6 +185,7 @@ export type Database = {
           rate: number
           to_currency: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -163,6 +194,7 @@ export type Database = {
           rate: number
           to_currency: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -171,6 +203,7 @@ export type Database = {
           rate?: number
           to_currency?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -511,6 +544,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_exchange_rate: {
+        Args: {
+          p_from_currency: string
+          p_to_currency: string
+          p_new_rate: number
+        }
+        Returns: boolean
+      }
       generate_random_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
