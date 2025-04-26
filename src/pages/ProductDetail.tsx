@@ -1,3 +1,4 @@
+
 import { useParams, Link } from "react-router-dom";
 import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,10 @@ import ProductCard from "@/components/ProductCard";
 import { useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 
-interface ProductFeatures {
-  features: string[];
-}
-
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || "");
-  const { data: relatedProducts, isLoading: isLoadingRelated } = useRelatedProducts(
+  const { data: relatedProducts } = useRelatedProducts(
     product?.category_id || "", 
     product?.id || ""
   );
@@ -43,12 +40,11 @@ const ProductDetail = () => {
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="h-[400px] rounded-lg bg-muted animate-pulse" />
-          <div>
-            <div className="h-8 w-3/4 bg-muted animate-pulse mb-4" />
-            <div className="h-6 w-1/4 bg-muted animate-pulse mb-8" />
-            <div className="h-4 w-full bg-muted animate-pulse mb-2" />
-            <div className="h-4 w-5/6 bg-muted animate-pulse mb-2" />
-            <div className="h-4 w-4/6 bg-muted animate-pulse mb-8" />
+          <div className="space-y-4">
+            <div className="h-8 w-3/4 bg-muted animate-pulse" />
+            <div className="h-6 w-1/4 bg-muted animate-pulse" />
+            <div className="h-4 w-full bg-muted animate-pulse" />
+            <div className="h-4 w-5/6 bg-muted animate-pulse" />
             <div className="h-10 w-full bg-muted animate-pulse" />
           </div>
         </div>
@@ -61,12 +57,12 @@ const ProductDetail = () => {
       <div className="container py-12">
         <div className="bg-muted p-6 rounded-lg text-center">
           <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
+          <h2 className="text-2xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
           <p className="text-muted-foreground mb-4">
-            The product you are looking for does not exist or has been removed.
+            Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
           </p>
           <Button asChild>
-            <Link to="/products">Back to Products</Link>
+            <Link to="/products">Quay lại trang sản phẩm</Link>
           </Button>
         </div>
       </div>
@@ -94,9 +90,9 @@ const ProductDetail = () => {
   return (
     <div className="container py-8">
       <div className="flex items-center text-sm text-muted-foreground mb-6">
-        <Link to="/" className="hover:text-foreground">Home</Link>
+        <Link to="/" className="hover:text-foreground">Trang chủ</Link>
         <ChevronRight className="h-4 w-4 mx-1" />
-        <Link to="/products" className="hover:text-foreground">Products</Link>
+        <Link to="/products" className="hover:text-foreground">Sản phẩm</Link>
         <ChevronRight className="h-4 w-4 mx-1" />
         <Link to={`/products?category=${product.category?.slug}`} className="hover:text-foreground">
           {product.category?.name}
@@ -106,7 +102,7 @@ const ProductDetail = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <div className="relative overflow-hidden rounded-lg border">
+        <div className="relative overflow-hidden rounded-lg border bg-background">
           <img 
             src={product.image_url || 'https://placehold.co/600x400?text=No+Image'} 
             alt={product.name}
@@ -114,7 +110,7 @@ const ProductDetail = () => {
           />
           {product.sale_price && (
             <Badge className="absolute top-4 left-4 bg-destructive hover:bg-destructive">
-              Sale
+              Giảm giá
             </Badge>
           )}
           {product.category && (
@@ -129,11 +125,11 @@ const ProductDetail = () => {
           
           <div className="flex items-baseline mb-4">
             <span className="text-2xl font-bold text-primary mr-2">
-              ${product.sale_price?.toFixed(2) || product.price.toFixed(2)}
+              {(product.sale_price || product.price).toLocaleString('vi-VN')}đ
             </span>
             {product.sale_price && (
               <span className="text-lg text-muted-foreground line-through">
-                ${product.price.toFixed(2)}
+                {product.price.toLocaleString('vi-VN')}đ
               </span>
             )}
           </div>
@@ -141,15 +137,15 @@ const ProductDetail = () => {
           <div className="mb-6">
             {isOutOfStock ? (
               <Badge variant="destructive" className="text-sm py-1">
-                Out of Stock
+                Hết hàng
               </Badge>
             ) : isLowStock ? (
               <Badge variant="outline" className="text-sm py-1 border-amber-500 text-amber-500">
-                Only {product.stock_quantity} left
+                Chỉ còn {product.stock_quantity} sản phẩm
               </Badge>
             ) : (
               <Badge variant="outline" className="text-sm py-1 border-primary text-primary">
-                In Stock ({product.stock_quantity} available)
+                Còn hàng ({product.stock_quantity} sản phẩm)
               </Badge>
             )}
           </div>
@@ -160,7 +156,7 @@ const ProductDetail = () => {
 
           {featuresList.length > 0 && (
             <div className="mb-6">
-              <h3 className="font-medium mb-2">Key Features:</h3>
+              <h3 className="font-medium mb-2">Tính năng chính:</h3>
               <ul className="space-y-2">
                 {featuresList.map((feature, index) => (
                   <li key={index} className="flex items-center">
@@ -172,15 +168,15 @@ const ProductDetail = () => {
             </div>
           )}
 
-          <div className="mt-auto">
+          <div className="mt-auto space-y-4">
             <Button 
-              className="w-full mb-4 gap-2"
+              className="w-full gap-2"
               size="lg"
               onClick={handleAddToCart}
               disabled={isOutOfStock}
             >
               <ShoppingCart className="h-5 w-5" />
-              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+              {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ hàng"}
             </Button>
 
             {!isOutOfStock && (
@@ -189,7 +185,7 @@ const ProductDetail = () => {
                 variant="secondary"
                 size="lg"
               >
-                Buy Now
+                Mua ngay
               </Button>
             )}
           </div>
@@ -200,40 +196,40 @@ const ProductDetail = () => {
         <div className="flex items-center p-4 border rounded-lg">
           <Package className="h-8 w-8 text-primary mr-3" />
           <div>
-            <h3 className="font-medium">Instant Delivery</h3>
-            <p className="text-sm text-muted-foreground">Delivered to your email</p>
+            <h3 className="font-medium">Giao hàng tức thì</h3>
+            <p className="text-sm text-muted-foreground">Nhận hàng qua email</p>
           </div>
         </div>
         <div className="flex items-center p-4 border rounded-lg">
           <Shield className="h-8 w-8 text-primary mr-3" />
           <div>
-            <h3 className="font-medium">100% Guaranteed</h3>
-            <p className="text-sm text-muted-foreground">Or your money back</p>
+            <h3 className="font-medium">Bảo đảm 100%</h3>
+            <p className="text-sm text-muted-foreground">Hoàn tiền nếu có vấn đề</p>
           </div>
         </div>
         <div className="flex items-center p-4 border rounded-lg">
           <Clock className="h-8 w-8 text-primary mr-3" />
           <div>
-            <h3 className="font-medium">24/7 Support</h3>
-            <p className="text-sm text-muted-foreground">We're always here to help</p>
+            <h3 className="font-medium">Hỗ trợ 24/7</h3>
+            <p className="text-sm text-muted-foreground">Luôn sẵn sàng hỗ trợ bạn</p>
           </div>
         </div>
       </div>
 
       {relatedProducts && relatedProducts.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+          <h2 className="text-2xl font-bold mb-6">Sản phẩm liên quan</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((product) => (
+            {relatedProducts.map((relatedProduct) => (
               <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                image={product.image_url || ''}
-                price={product.price}
-                category={product.category?.name || ''}
-                stock={product.stock_quantity}
-                featured={product.status === 'active' && product.stock_quantity > 0}
+                key={relatedProduct.id}
+                id={relatedProduct.id}
+                name={relatedProduct.name}
+                image={relatedProduct.image_url || ''}
+                price={relatedProduct.price}
+                category={relatedProduct.category?.name || ''}
+                stock={relatedProduct.stock_quantity}
+                featured={relatedProduct.status === 'active' && relatedProduct.stock_quantity > 0}
               />
             ))}
           </div>
