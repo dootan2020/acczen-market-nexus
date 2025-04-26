@@ -198,10 +198,12 @@ export const PurchaseConfirmModal = ({
             .single();
           
           if (!fetchError && orderItem) {
-            // Fix: Don't use spread operator here, construct a new object instead
+            // Fix: Type check and access data properties safely
+            const itemData = orderItem.data as Record<string, any> || {};
+            
             const updatedData = {
-              kiosk_token: orderItem.data.kiosk_token,
-              taphoammo_order_id: orderItem.data.taphoammo_order_id,
+              kiosk_token: typeof itemData === 'object' ? itemData.kiosk_token : kioskToken,
+              taphoammo_order_id: typeof itemData === 'object' ? itemData.taphoammo_order_id : orderData.order_id,
               product_keys: productKeys
             };
             

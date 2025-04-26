@@ -8,7 +8,18 @@ export const enableAPIDebugMode = () => {
     const url = args[0];
     const options = args[1] || {};
     
-    console.log(`🌐 Request to: ${typeof url === 'string' ? url : url instanceof URL ? url.href : (url as Request).url}`);
+    // Fix: Handle different URL object types correctly
+    let urlString = '';
+    if (typeof url === 'string') {
+      urlString = url;
+    } else if (url instanceof URL) {
+      urlString = url.href;
+    } else {
+      // url is a Request object
+      urlString = (url as Request).url;
+    }
+    
+    console.log(`🌐 Request to: ${urlString}`);
     console.log('📤 Options:', options);
     
     try {
