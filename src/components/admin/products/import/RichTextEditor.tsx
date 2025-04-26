@@ -54,7 +54,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          onClick={() => editor.chain().focus().setBold().run()}
           data-active={editor.isActive('bold')}
           className={editor.isActive('bold') ? 'bg-muted' : ''}
         >
@@ -63,7 +63,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          onClick={() => editor.chain().focus().setItalic().run()}
           data-active={editor.isActive('italic')}
           className={editor.isActive('italic') ? 'bg-muted' : ''}
         >
@@ -72,7 +72,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onClick={() => editor.chain().focus().setBulletList().run()}
           data-active={editor.isActive('bulletList')}
           className={editor.isActive('bulletList') ? 'bg-muted' : ''}
         >
@@ -81,7 +81,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onClick={() => editor.chain().focus().setOrderedList().run()}
           data-active={editor.isActive('orderedList')}
           className={editor.isActive('orderedList') ? 'bg-muted' : ''}
         >
@@ -90,7 +90,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() => editor.chain().focus().setHeading({ level: 2 }).run()}
           data-active={editor.isActive('heading', { level: 2 })}
           className={editor.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}
         >
@@ -99,7 +99,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() => editor.chain().focus().setHeading({ level: 3 }).run()}
           data-active={editor.isActive('heading', { level: 3 })}
           className={editor.isActive('heading', { level: 3 }) ? 'bg-muted' : ''}
         >
