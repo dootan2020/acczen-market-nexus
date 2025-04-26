@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, ArrowRight, Clock, Share2 } from "lucide-react";
+import { ShoppingCart, ArrowRight } from "lucide-react";
 
 interface ProductActionsProps {
   isOutOfStock: boolean;
@@ -9,9 +9,9 @@ interface ProductActionsProps {
 
 const ProductActions = ({ isOutOfStock, onAddToCart }: ProductActionsProps) => {
   return (
-    <div className="mt-auto grid grid-cols-2 gap-3">
+    <div className="flex flex-col-reverse gap-4 sm:flex-row sm:gap-4">
       <Button 
-        className="shadow-sm"
+        className="w-full shadow-sm font-bold"
         size="lg"
         onClick={onAddToCart}
         disabled={isOutOfStock}
@@ -21,30 +21,12 @@ const ProductActions = ({ isOutOfStock, onAddToCart }: ProductActionsProps) => {
       </Button>
 
       <Button 
-        className="bg-[#2ECC71] hover:bg-[#27AE60] shadow-md"
+        className="w-full bg-[#F97316] hover:bg-[#EA580C] shadow-md font-bold"
         size="lg"
         disabled={isOutOfStock}
       >
         Mua ngay
         <ArrowRight className="ml-2 h-5 w-5" />
-      </Button>
-      
-      <Button 
-        className="col-span-2 md:col-span-1"
-        variant="outline"
-        size="lg"
-      >
-        <Clock className="mr-2 h-5 w-5" />
-        Đặt trước
-      </Button>
-      
-      <Button 
-        className="col-span-2 md:col-span-1"
-        variant="outline"
-        size="lg"
-      >
-        <Share2 className="mr-2 h-5 w-5" />
-        Chia sẻ
       </Button>
     </div>
   );
