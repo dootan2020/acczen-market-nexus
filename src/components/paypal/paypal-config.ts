@@ -6,5 +6,5 @@ export const PAYPAL_OPTIONS = {
   components: "buttons",
   disableFunding: "credit",
   dataDsr: "false",
-  debug: true
+  debug: false // Setting debug to false to reduce errors in production
 } as const;

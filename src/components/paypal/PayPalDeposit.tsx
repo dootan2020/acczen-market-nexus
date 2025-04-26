@@ -86,94 +86,96 @@ const PayPalDeposit = () => {
   const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
 
   return (
-    <Card className="w-full border-border/40 shadow-md">
-      <CardHeader className="text-center space-y-2">
-        <CardTitle className="text-2xl font-semibold flex items-center justify-center gap-2">
-          <Wallet className="h-6 w-6 text-primary" />
-          Nạp tiền qua PayPal
-        </CardTitle>
-        <CardDescription>
-          Nạp tiền an toàn và nhanh chóng qua PayPal
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        <Alert className="bg-amber-50/50 border-amber-200">
-          <InfoIcon className="h-4 w-4 text-amber-500" />
-          <AlertTitle className="text-amber-700">Thông tin quan trọng</AlertTitle>
-          <AlertDescription className="text-amber-600">
-            Phí giao dịch PayPal: {(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)} sẽ được tính vào tổng tiền thanh toán.
-          </AlertDescription>
-        </Alert>
+    <PayPalScriptProvider options={PAYPAL_OPTIONS}>
+      <Card className="w-full border-border/40 shadow-md">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-semibold flex items-center justify-center gap-2">
+            <Wallet className="h-6 w-6 text-primary" />
+            Nạp tiền qua PayPal
+          </CardTitle>
+          <CardDescription>
+            Nạp tiền an toàn và nhanh chóng qua PayPal
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          <Alert className="bg-amber-50/50 border-amber-200">
+            <InfoIcon className="h-4 w-4 text-amber-500" />
+            <AlertTitle className="text-amber-700">Thông tin quan trọng</AlertTitle>
+            <AlertDescription className="text-amber-600">
+              Phí giao dịch PayPal: {(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)} sẽ được tính vào tổng tiền thanh toán.
+            </AlertDescription>
+          </Alert>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="amount" className="font-medium">
-              Số tiền muốn nạp (USD)
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Nhập số tiền..."
-              value={customAmount}
-              onChange={handleCustomAmountChange}
-              className="bg-white mt-1.5"
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="amount" className="font-medium">
+                Số tiền muốn nạp (USD)
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Nhập số tiền..."
+                value={customAmount}
+                onChange={handleCustomAmountChange}
+                className="bg-white mt-1.5"
+              />
+            </div>
+
+            <USDTPresetAmounts
+              selectedAmount={customAmount ? customAmount : selectedAmount?.toString() || ''}
+              onAmountSelect={(value) => {
+                setSelectedAmount(parseFloat(value));
+                setCustomAmount('');
+              }}
             />
-          </div>
 
-          <USDTPresetAmounts
-            selectedAmount={customAmount ? customAmount : selectedAmount?.toString() || ''}
-            onAmountSelect={(value) => {
-              setSelectedAmount(parseFloat(value));
-              setCustomAmount('');
-            }}
-          />
-
-          <Card className="bg-muted/30 border-border/40">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Phí giao dịch:</span>
-                  <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+            <Card className="bg-muted/30 border-border/40">
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Phí giao dịch:</span>
+                    <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                    <span className="font-medium">Tổng thanh toán:</span>
+                    <span className="text-lg font-bold text-green-600">
+                      ${totalAmount.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                  <span className="font-medium">Tổng thanh toán:</span>
-                  <span className="text-lg font-bold text-green-600">
-                    ${totalAmount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {amount > 0 && (
-          <div className="pt-2">
-            <PayPalErrorBoundary amount={amount} onSuccess={handlePaymentSuccess}>
-              <PayPalButtonWrapper amount={amount} onSuccess={handlePaymentSuccess} />
-            </PayPalErrorBoundary>
+              </CardContent>
+            </Card>
           </div>
-        )}
 
-        <div className="flex flex-col items-center space-y-4 pt-2 text-center">
-          <Button
-            variant="ghost" 
-            className="text-primary hover:text-primary/90 w-full"
-            onClick={() => navigate('/deposit')}
-          >
-            <CreditCard className="mr-2 h-4 w-4" />
-            Chọn phương thức khác
-          </Button>
-          
-          <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
-            <Lock className="h-4 w-4" />
-            <span>Kết nối bảo mật SSL 256-bit</span>
+          {amount > 0 && (
+            <div className="pt-2">
+              <PayPalErrorBoundary amount={amount} onSuccess={handlePaymentSuccess}>
+                <PayPalButtonWrapper amount={amount} onSuccess={handlePaymentSuccess} />
+              </PayPalErrorBoundary>
+            </div>
+          )}
+
+          <div className="flex flex-col items-center space-y-4 pt-2 text-center">
+            <Button
+              variant="ghost" 
+              className="text-primary hover:text-primary/90 w-full"
+              onClick={() => navigate('/deposit')}
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              Chọn phương thức khác
+            </Button>
+            
+            <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+              <Lock className="h-4 w-4" />
+              <span>Kết nối bảo mật SSL 256-bit</span>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PayPalScriptProvider>
   );
 };
 
