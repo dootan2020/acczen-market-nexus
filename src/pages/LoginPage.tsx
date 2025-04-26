@@ -1,14 +1,21 @@
 
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import Login from './auth/Login';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Redirect if user is already logged in
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+  
   return (
     <Layout>
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Login</h1>
-        <p>Login form will go here.</p>
-      </div>
+      <Login />
     </Layout>
   );
 };
