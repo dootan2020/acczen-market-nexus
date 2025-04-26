@@ -6,11 +6,15 @@ import { Lock } from "lucide-react";
 import { PAYPAL_OPTIONS } from './paypal-config';
 import { PayPalButtonWrapper } from './PayPalButtonWrapper';
 import { PayPalErrorBoundary } from './PayPalErrorBoundary';
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const PayPalDeposit = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
+  const navigate = useNavigate();
 
   const presetAmounts = [10, 20, 50, 100];
   const FEE_PERCENTAGE = 0.044; // 4.4%
@@ -36,6 +40,51 @@ const PayPalDeposit = () => {
   const handlePresetAmount = (amount: number) => {
     setSelectedAmount(amount);
     setCustomAmount('');
+  };
+
+  // Modified to return a Promise
+  const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
+    try {
+      // Call the edge function to process the PayPal deposit
+      const { data, error } = await supabase.functions.invoke('process-paypal-deposit', {
+        body: {
+          orderID: orderDetails.id,
+          amount: amount,
+          userID: supabase.auth.getUser().then(res => res.data.user?.id),
+          idempotencyKey: orderDetails.id, // Use the PayPal order ID as idempotency key
+        },
+      });
+
+      if (error) {
+        console.error('Error processing deposit:', error);
+        toast.error('Payment Processing Error', { 
+          description: 'There was a problem processing your deposit. Please contact support.' 
+        });
+        return;
+      }
+
+      toast.success('Deposit Successful', { 
+        description: `$${amount.toFixed(2)} has been added to your account.` 
+      });
+
+      // Redirect to success page or refresh the page
+      navigate('/deposit/success', { 
+        state: { 
+          deposit: {
+            id: data.depositId,
+            amount: amount,
+            payment_method: 'PayPal',
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          } 
+        } 
+      });
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast.error('Payment Processing Error', { 
+        description: 'There was an unexpected error. Please try again later.' 
+      });
+    }
   };
 
   const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
@@ -96,8 +145,8 @@ const PayPalDeposit = () => {
 
             {amount > 0 && (
               <div className="pt-2">
-                <PayPalErrorBoundary amount={amount} onSuccess={() => {}}>
-                  <PayPalButtonWrapper amount={amount} onSuccess={() => {}} />
+                <PayPalErrorBoundary amount={amount} onSuccess={handlePaymentSuccess}>
+                  <PayPalButtonWrapper amount={amount} onSuccess={handlePaymentSuccess} />
                 </PayPalErrorBoundary>
               </div>
             )}
