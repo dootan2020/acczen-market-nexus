@@ -5,12 +5,37 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import USDTDeposit from '@/components/USDTDeposit';
 import PayPalDeposit from '@/components/PayPalDeposit';
-import { Info } from "lucide-react";
+import { Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DepositPage = () => {
   const { user, balance } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('paypal');
+  const [paypalError, setPaypalError] = useState<boolean>(false);
+
+  // Handle tab change
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    // Reset any errors when changing tabs
+    if (newTab !== 'paypal') {
+      setPaypalError(false);
+    }
+  };
+
+  // Logged in validation
+  if (!user) {
+    return (
+      <div className="container mx-auto p-4">
+        <Alert variant="destructive" className="max-w-lg mx-auto">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            Please log in to access deposit features.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -29,7 +54,7 @@ const DepositPage = () => {
           <Tabs 
             defaultValue="paypal" 
             value={activeTab} 
-            onValueChange={setActiveTab}
+            onValueChange={handleTabChange}
             className="w-full"
           >
             <TabsList className="grid grid-cols-2 w-full">

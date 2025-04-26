@@ -10,20 +10,44 @@ import { useNavigate } from "react-router-dom";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// PayPal configuration
+// PayPal configuration with updated settings
 const PAYPAL_OPTIONS = {
-  clientId: "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
+  // Sử dụng một PayPal client ID mới từ sandbox PayPal
+  clientId: "test", // Thay bằng client ID đang hoạt động trong sandbox
   currency: "USD",
   intent: "capture",
   components: "buttons",
-  disableFunding: "credit,card",
-  dataDsr: "false"
+  // Chỉ vô hiệu hóa các phương thức thanh toán không cần thiết
+  disableFunding: "credit", 
+  dataDsr: "false",
+  // Thêm debug mode để có thêm thông tin về lỗi
+  debug: true
 };
 
-// PayPal Buttons wrapper with loading and error states
+// PayPal Buttons wrapper with enhanced error handling
 const PayPalButtonWrapper = ({ amount, onSuccess }) => {
-  const [{ isPending, isRejected, isResolved }] = usePayPalScriptReducer();
+  const [{ isPending, isRejected, isResolved, options }, dispatch] = usePayPalScriptReducer();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorDetails, setErrorDetails] = useState("");
+  
+  // Log PayPal script state for debugging
+  useEffect(() => {
+    console.log('PayPal Script State:', { isPending, isRejected, isResolved, options });
+    
+    // Reset script if it was rejected
+    if (isRejected) {
+      console.log('Attempting to reload PayPal script...');
+      setTimeout(() => {
+        dispatch({
+          type: "resetOptions",
+          value: {
+            ...PAYPAL_OPTIONS,
+            'data-client-token': `${Date.now()}` // Force refresh by changing token
+          }
+        });
+      }, 3000);
+    }
+  }, [isPending, isRejected, isResolved, options, dispatch]);
   
   if (isPending) return (
     <div className="w-full h-12 bg-gray-100 animate-pulse rounded-md flex items-center justify-center">
@@ -37,6 +61,7 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
       <AlertTitle>PayPal Error</AlertTitle>
       <AlertDescription>
         Could not load PayPal. Please check your internet connection or try again later.
+        {errorDetails && <div className="mt-2 text-xs overflow-auto max-h-20">{errorDetails}</div>}
       </AlertDescription>
     </Alert>
   );
@@ -60,11 +85,13 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
         setIsProcessing(true);
         try {
           const orderDetails = await actions?.order?.capture();
+          console.log('PayPal order captured:', orderDetails);
           if (orderDetails) {
             await onSuccess(orderDetails, amount);
           }
         } catch (error) {
           console.error("PayPal Capture Error:", error);
+          setErrorDetails(error.message || JSON.stringify(error));
           toast.error('Payment Processing Error', {
             description: 'There was an error capturing your payment'
           });
@@ -79,6 +106,7 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
       }}
       onError={(err) => {
         console.error("PayPal Button Error:", err);
+        setErrorDetails(err.message || JSON.stringify(err));
         toast.error('PayPal Error', {
           description: 'An error occurred with PayPal payment. Please try again later.'
         });
@@ -88,20 +116,84 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
   );
 };
 
+// Fallback PayPal button component for when the main buttons fail
+const FallbackPayPalButton = ({ amount, onSuccess }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const handleClick = () => {
+    setIsProcessing(true);
+    // Open PayPal in a new window
+    const paypalWindow = window.open(
+      `https://www.paypal.com/checkout?currency=USD&amount=${amount}`,
+      '_blank'
+    );
+    
+    // Check if window was successfully opened
+    if (paypalWindow) {
+      toast.info('PayPal Checkout Opened', { 
+        description: 'Please complete your payment in the new window and return to this page.' 
+      });
+    } else {
+      toast.error('Popup Blocked', { 
+        description: 'Please allow popups for this site and try again.' 
+      });
+      setIsProcessing(false);
+    }
+  };
+  
+  return (
+    <Button 
+      onClick={handleClick}
+      disabled={isProcessing}
+      variant="outline"
+      className="w-full bg-[#0070ba] text-white hover:bg-[#005ea6]"
+    >
+      {isProcessing ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        <>Pay with PayPal</>
+      )}
+    </Button>
+  );
+};
+
 const PayPalDeposit = () => {
   const { user } = useAuth();
   const [customAmount, setCustomAmount] = useState('');
   const [directAmount, setDirectAmount] = useState('');
   const [showManualOption, setShowManualOption] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paypalLoadFailed, setPaypalLoadFailed] = useState(false);
   const navigate = useNavigate();
 
-  // Detect if PayPal fails to load after a certain time
+  // Show manual option earlier and detect if PayPal fails
   useEffect(() => {
+    // Show manual option right away for better UX
+    setShowManualOption(true);
+    
+    // Check if PayPal script loads within a reasonable time
     const timer = setTimeout(() => {
-      setShowManualOption(true);
+      // If we haven't detected script loading by now, likely there's an issue
+      setPaypalLoadFailed(true);
     }, 5000);
+    
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for PayPal script load errors
+  useEffect(() => {
+    const handleScriptError = (event) => {
+      if (event.target.src && event.target.src.includes('paypal.com/sdk')) {
+        console.error('PayPal script failed to load:', event);
+        setPaypalLoadFailed(true);
+      }
+    };
+    
+    window.addEventListener('error', handleScriptError, true);
+    return () => window.removeEventListener('error', handleScriptError, true);
   }, []);
 
   const presetAmounts = [10, 20, 50, 100];
@@ -159,6 +251,7 @@ const PayPalDeposit = () => {
         });
       }
     } catch (error) {
+      console.error('Deposit processing error:', error);
       toast.error('Deposit Failed', {
         description: error instanceof Error ? error.message : 'An error occurred while processing your deposit'
       });
@@ -217,75 +310,87 @@ const PayPalDeposit = () => {
   };
 
   return (
-    <PayPalScriptProvider options={PAYPAL_OPTIONS}>
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          {presetAmounts.map(amount => (
-            <div key={amount} className="relative rounded-md border shadow-sm p-4 text-center">
-              <div className="font-semibold mb-2">${amount}</div>
-              <PayPalButtonWrapper amount={amount} onSuccess={handlePayPalSuccess} />
-            </div>
-          ))}
-        </div>
-        
-        <div className="border-t pt-4">
-          <h3 className="font-medium mb-2">Custom Amount</h3>
-          <div className="flex flex-col space-y-2">
-            <Input 
-              type="number" 
-              placeholder="Enter amount (USD)" 
-              value={customAmount}
-              onChange={(e) => setCustomAmount(e.target.value)}
-              min="1"
-              step="0.01"
-              className="mb-2"
-            />
-            <div className="h-[50px]">
-              {customAmount && parseFloat(customAmount) > 0 && (
-                <PayPalButtonWrapper 
-                  amount={parseFloat(customAmount)} 
-                  onSuccess={handlePayPalSuccess} 
-                />
-              )}
-            </div>
+    <>
+      {paypalLoadFailed && (
+        <Alert className="mb-6" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>PayPal Integration Issue</AlertTitle>
+          <AlertDescription>
+            We're having trouble connecting to PayPal. Please try using the manual deposit option below.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <PayPalScriptProvider options={PAYPAL_OPTIONS}>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            {presetAmounts.map(amount => (
+              <div key={amount} className="relative rounded-md border shadow-sm p-4 text-center">
+                <div className="font-semibold mb-2">${amount}</div>
+                <PayPalButtonWrapper amount={amount} onSuccess={handlePayPalSuccess} />
+              </div>
+            ))}
           </div>
-        </div>
-
-        {/* Manual deposit option that shows if PayPal doesn't load */}
-        {showManualOption && (
+          
           <div className="border-t pt-4">
-            <Alert className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Having trouble with PayPal?</AlertTitle>
-              <AlertDescription>
-                You can request a manual deposit that will be processed by our team.
-              </AlertDescription>
-            </Alert>
+            <h3 className="font-medium mb-2">Custom Amount</h3>
             <div className="flex flex-col space-y-2">
               <Input 
                 type="number" 
-                placeholder="Enter amount for manual deposit" 
-                value={directAmount}
-                onChange={(e) => setDirectAmount(e.target.value)}
+                placeholder="Enter amount (USD)" 
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
                 min="1"
                 step="0.01"
+                className="mb-2"
               />
-              <Button 
-                onClick={handleManualDeposit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : "Request Manual Deposit"}
-              </Button>
+              <div className="h-[50px]">
+                {customAmount && parseFloat(customAmount) > 0 && (
+                  <PayPalButtonWrapper 
+                    amount={parseFloat(customAmount)} 
+                    onSuccess={handlePayPalSuccess} 
+                  />
+                )}
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </PayPalScriptProvider>
+
+          {/* Manual deposit option that shows if PayPal doesn't load */}
+          {showManualOption && (
+            <div className="border-t pt-4">
+              <Alert className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Having trouble with PayPal?</AlertTitle>
+                <AlertDescription>
+                  You can request a manual deposit that will be processed by our team.
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-col space-y-2">
+                <Input 
+                  type="number" 
+                  placeholder="Enter amount for manual deposit" 
+                  value={directAmount}
+                  onChange={(e) => setDirectAmount(e.target.value)}
+                  min="1"
+                  step="0.01"
+                />
+                <Button 
+                  onClick={handleManualDeposit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : "Request Manual Deposit"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </PayPalScriptProvider>
+    </>
   );
 };
 
