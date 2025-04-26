@@ -147,6 +147,33 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          from_currency: string
+          id: string
+          rate: number
+          to_currency: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_currency: string
+          id?: string
+          rate: number
+          to_currency: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_currency?: string
+          id?: string
+          rate?: number
+          to_currency?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string

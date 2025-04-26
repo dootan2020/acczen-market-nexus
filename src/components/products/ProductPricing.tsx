@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/utils/formatters";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 
 interface ProductPricingProps {
   price: number;
@@ -10,23 +10,32 @@ interface ProductPricingProps {
   soldCount?: number;
 }
 
-const ProductPricing = ({ price, salePrice, stockQuantity, soldCount = 0 }: ProductPricingProps) => {
+const ProductPricing = ({ 
+  price, 
+  salePrice, 
+  stockQuantity, 
+  soldCount = 0 
+}: ProductPricingProps) => {
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const isOutOfStock = stockQuantity === 0;
   const isLowStock = stockQuantity <= 5 && stockQuantity > 0;
   const discount = salePrice ? Math.round(((price - salePrice) / price) * 100) : 0;
+
+  const usdPrice = convertVNDtoUSD(price);
+  const usdSalePrice = salePrice ? convertVNDtoUSD(salePrice) : null;
 
   return (
     <>
       <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="text-2xl sm:text-3xl font-bold text-primary">
-            {formatCurrency(salePrice || price)}
+            {formatUSD(usdSalePrice || usdPrice)}
           </span>
           
           {salePrice && (
             <>
               <span className="text-lg text-muted-foreground line-through">
-                {formatCurrency(price)}
+                {formatUSD(usdPrice)}
               </span>
               
               <Badge variant="destructive" className="ml-2">

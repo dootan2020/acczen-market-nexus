@@ -1,111 +1,49 @@
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@/components/theme-provider";
+import Home from "@/pages/Home";
+import Products from "@/pages/Products";
+import ProductDetail from "@/pages/ProductDetail";
+import Cart from "@/pages/Cart";
+import Checkout from "@/pages/Checkout";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
+import Deposit from "@/pages/Deposit";
+import AdminRoute from "@/components/AdminRoute";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import { CartProvider } from "@/providers/CartProvider";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 
-import { Routes, Route } from "react-router-dom";
-import { Toaster } from "./components/ui/sonner";
-import Index from "./pages/Index";
-import Layout from "./components/Layout";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetail";
-import OrderDetail from "./pages/OrderDetail"; // Import the new OrderDetail page
-import Dashboard from "./pages/Dashboard";
-import { DashboardLayout } from "./components/dashboard/DashboardLayout";
-import Register from "./pages/auth/Register";
-import Login from "./pages/auth/Login";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminGuard from "./components/AdminGuard";
-import AdminLayout from "./components/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminDeposits from "./pages/admin/AdminDeposits";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminReports from "./pages/admin/AdminReports";
-import ProductIntegration from "./pages/admin/ProductIntegration";
-import ApiMonitoring from "./pages/admin/ApiMonitoring";
-import NotFound from "./pages/NotFound";
-import Deposit from "./pages/Deposit";
-import DepositSuccess from "./pages/DepositSuccess";
-import Checkout from "./pages/Checkout";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import VerifiedEmail from "./pages/auth/VerifiedEmail";
-import ResetPassword from "./pages/auth/ResetPassword";
-import ApiDocumentation from "./pages/admin/ApiDocumentation";
-import { Toaster as UIToaster } from "./components/ui/toaster";
-import Help from "./pages/Help";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProductsImport from "./pages/admin/ProductsImport";
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Index />} />
-          <Route path="products" element={<Products />} />
-          <Route path="product/:slug" element={<ProductDetail />} />
-          <Route path="deposit" element={<Deposit />} />
-          <Route path="deposit/success" element={<DepositSuccess />} />
-          <Route path="checkout" element={<Checkout />} />
-          <Route path="help" element={<Help />} />
-        </Route>
-
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="purchases" element={<Dashboard />} />
-          <Route path="history" element={<Dashboard />} />
-          <Route path="settings" element={<Dashboard />} />
-        </Route>
-
-        <Route
-          path="/admin"
-          element={
-            <AdminGuard>
-              <AdminLayout />
-            </AdminGuard>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="products-import" element={<ProductsImport />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="deposits" element={<AdminDeposits />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="integrations" element={<ProductIntegration />} />
-          <Route path="api-monitoring" element={<ApiMonitoring />} />
-          <Route path="api-docs" element={<ApiDocumentation />} />
-        </Route>
-
-        {/* Add the OrderDetail route (protected) */}
-        <Route
-          path="/orders/:id"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <OrderDetail />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/verified-email" element={<VerifiedEmail />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster position="bottom-right" richColors closeButton />
-      <UIToaster />
-    </AuthProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <CartProvider>
+          <CurrencyProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/product/:slug" element={<ProductDetail />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/deposit" element={<Deposit />} />
+                <Route path="/dashboard/*" element={<Dashboard />} />
+                <AdminRoute path="/admin/products" element={<AdminProducts />} />
+              </Routes>
+            </Router>
+          </CurrencyProvider>
+        </CartProvider>
+        <Toaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
