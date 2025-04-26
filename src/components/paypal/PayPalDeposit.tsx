@@ -1,16 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, CreditCard, Wallet } from "lucide-react";
+import { Lock, CreditCard, Wallet, InfoIcon } from "lucide-react";
 import { PAYPAL_OPTIONS } from './paypal-config';
 import { PayPalButtonWrapper } from './PayPalButtonWrapper';
 import { PayPalErrorBoundary } from './PayPalErrorBoundary';
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { USDTPresetAmounts } from '../usdt/USDTPresetAmounts';
 
 const PayPalDeposit = () => {
   const [customAmount, setCustomAmount] = useState('');
@@ -18,7 +21,6 @@ const PayPalDeposit = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const navigate = useNavigate();
 
-  const presetAmounts = [10, 20, 50, 100];
   const FEE_PERCENTAGE = 0.044; // 4.4%
   const FEE_FIXED = 0.30; // $0.30 USD
 
@@ -37,11 +39,6 @@ const PayPalDeposit = () => {
     const value = e.target.value;
     setCustomAmount(value);
     setSelectedAmount(null);
-  };
-
-  const handlePresetAmount = (amount: number) => {
-    setSelectedAmount(amount);
-    setCustomAmount('');
   };
 
   const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
@@ -89,15 +86,8 @@ const PayPalDeposit = () => {
   const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
 
   return (
-    <Card className="w-full max-w-xl mx-auto border-border/40 shadow-md">
+    <Card className="w-full border-border/40 shadow-md">
       <CardHeader className="text-center space-y-2">
-        <div className="flex justify-center mb-2">
-          <img 
-            src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_200x51.png" 
-            alt="PayPal"
-            className="h-8"
-          />
-        </div>
         <CardTitle className="text-2xl font-semibold flex items-center justify-center gap-2">
           <Wallet className="h-6 w-6 text-primary" />
           Nạp tiền qua PayPal
@@ -108,9 +98,17 @@ const PayPalDeposit = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        <Alert className="bg-amber-50/50 border-amber-200">
+          <InfoIcon className="h-4 w-4 text-amber-500" />
+          <AlertTitle className="text-amber-700">Thông tin quan trọng</AlertTitle>
+          <AlertDescription className="text-amber-600">
+            Phí giao dịch PayPal: {(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)} sẽ được tính vào tổng tiền thanh toán.
+          </AlertDescription>
+        </Alert>
+
         <div className="space-y-4">
           <div>
-            <Label htmlFor="amount">
+            <Label htmlFor="amount" className="font-medium">
               Số tiền muốn nạp (USD)
             </Label>
             <Input
@@ -125,18 +123,13 @@ const PayPalDeposit = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {presetAmounts.map((presetAmount) => (
-              <Button
-                key={presetAmount}
-                variant={selectedAmount === presetAmount ? "default" : "outline"}
-                onClick={() => handlePresetAmount(presetAmount)}
-                className="w-full h-12 text-lg font-medium"
-              >
-                ${presetAmount}
-              </Button>
-            ))}
-          </div>
+          <USDTPresetAmounts
+            selectedAmount={customAmount ? customAmount : selectedAmount?.toString() || ''}
+            onAmountSelect={(value) => {
+              setSelectedAmount(parseFloat(value));
+              setCustomAmount('');
+            }}
+          />
 
           <Card className="bg-muted/30 border-border/40">
             <CardContent className="pt-6">
@@ -164,7 +157,7 @@ const PayPalDeposit = () => {
           </div>
         )}
 
-        <div className="space-y-4 text-center">
+        <div className="flex flex-col items-center space-y-4 pt-2 text-center">
           <Button
             variant="ghost" 
             className="text-primary hover:text-primary/90 w-full"

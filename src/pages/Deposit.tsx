@@ -11,15 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const DepositPage = () => {
   const { user, balance } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('paypal');
-  const [paypalError, setPaypalError] = useState<boolean>(false);
 
   // Handle tab change
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    // Reset any errors when changing tabs
-    if (newTab !== 'paypal') {
-      setPaypalError(false);
-    }
   };
 
   // Logged in validation
@@ -38,11 +33,11 @@ const DepositPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Deposit Funds</h1>
+    <div className="container mx-auto py-6 px-4">
+      <h1 className="text-2xl font-bold mb-6">Deposit Funds</h1>
       
       <div className="grid md:grid-cols-2 gap-6">
-        <div>
+        <div className="w-full">
           <Alert className="mb-4">
             <Info className="h-4 w-4" />
             <AlertTitle>Payment Information</AlertTitle>
@@ -57,26 +52,16 @@ const DepositPage = () => {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-2 w-full mb-6">
               <TabsTrigger value="paypal">PayPal</TabsTrigger>
               <TabsTrigger value="usdt">USDT</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="paypal">
-              <Card>
-                <CardHeader>
-                  <CardTitle>PayPal Deposit</CardTitle>
-                  <CardDescription>
-                    Instantly add funds to your account using PayPal
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PayPalDeposit />
-                </CardContent>
-              </Card>
+            <TabsContent value="paypal" className="mt-0">
+              <PayPalDeposit />
             </TabsContent>
             
-            <TabsContent value="usdt">
+            <TabsContent value="usdt" className="mt-0">
               <USDTDeposit />
             </TabsContent>
           </Tabs>

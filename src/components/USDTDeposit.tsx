@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Wallet, Lock, CreditCard, Clock } from "lucide-react";
+import { Wallet, Lock, CreditCard, Clock, InfoIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { USDTPresetAmounts } from './usdt/USDTPresetAmounts';
 import { USDTWalletInfo } from './usdt/USDTWalletInfo';
@@ -100,7 +101,7 @@ const USDTDeposit = () => {
   };
 
   return (
-    <Card className="w-full max-w-xl mx-auto border-border/40 shadow-md">
+    <Card className="w-full border-border/40 shadow-md">
       <CardHeader className="text-center space-y-2">
         <CardTitle className="text-2xl font-semibold flex items-center justify-center gap-2">
           <Wallet className="h-6 w-6 text-primary" />
@@ -113,7 +114,7 @@ const USDTDeposit = () => {
       
       <CardContent className="space-y-6">
         <Alert className="bg-amber-50/50 border-amber-200">
-          <Clock className="h-4 w-4 text-amber-500" />
+          <InfoIcon className="h-4 w-4 text-amber-500" />
           <AlertTitle className="text-amber-700">Lưu ý quan trọng</AlertTitle>
           <AlertDescription className="text-amber-600">
             Chỉ gửi USDT qua mạng TRC20. Các mạng khác không được hỗ trợ và có thể dẫn đến mất tiền.
@@ -150,10 +151,10 @@ const USDTDeposit = () => {
             )}
           </Button>
 
-          <div className="flex flex-col items-center space-y-4 text-center">
+          <div className="flex flex-col items-center space-y-4 pt-2 text-center">
             <Button
               variant="ghost"
-              className="text-primary hover:text-primary/90"
+              className="text-primary hover:text-primary/90 w-full"
               onClick={() => navigate('/deposit')}
             >
               <CreditCard className="mr-2 h-4 w-4" />

@@ -20,7 +20,7 @@ export const USDTTransactionForm: React.FC<USDTTransactionFormProps> = ({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="amount">Số tiền muốn nạp (USDT)</Label>
+        <Label htmlFor="amount" className="font-medium">Số tiền muốn nạp (USDT)</Label>
         <Input
           id="amount"
           type="number"
