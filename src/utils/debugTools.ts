@@ -1,0 +1,79 @@
+
+import { taphoammoApi } from './taphoammoApi';
+
+export const enableAPIDebugMode = () => {
+  // Override fetch to monitor API calls
+  const originalFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const url = args[0];
+    const options = args[1] || {};
+    
+    console.log(`🌐 Request to: ${typeof url === 'string' ? url : url.url}`);
+    console.log('📤 Options:', options);
+    
+    try {
+      const response = await originalFetch.apply(this, args);
+      const clonedResponse = response.clone();
+      
+      console.log(`✅ Response status: ${response.status} ${response.statusText}`);
+      
+      try {
+        // Try to read body if it's JSON
+        const text = await clonedResponse.text();
+        try {
+          const json = JSON.parse(text);
+          console.log('📥 Response data:', json);
+        } catch {
+          console.log('📥 Response text:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
+        }
+      } catch (e) {
+        console.log('⚠️ Cannot read response body');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Request failed:', error);
+      throw error;
+    }
+  };
+  
+  console.log('🔍 API debug mode activated');
+  return 'Debug mode active - check console for API requests';
+};
+
+// Test function for TaphoaMMO API
+export const testTaphoammoConnection = async (kioskToken: string, userToken: string) => {
+  try {
+    console.log('🧪 Testing TaphoaMMO API connection...');
+    const stockInfo = await taphoammoApi.getStock(kioskToken, userToken);
+    console.log('✅ Connection successful!', stockInfo);
+    return {
+      success: true,
+      message: `Connected successfully! Found: ${stockInfo.name} (Stock: ${stockInfo.stock_quantity})`,
+      data: stockInfo
+    };
+  } catch (error) {
+    console.error('❌ Connection test failed:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      error
+    };
+  }
+};
+
+// Add to window for console access
+declare global {
+  interface Window {
+    debugTools: {
+      enableAPIDebugMode: typeof enableAPIDebugMode;
+      testTaphoammoConnection: typeof testTaphoammoConnection;
+    };
+  }
+}
+
+// Expose debug functions to window object for console access
+window.debugTools = {
+  enableAPIDebugMode,
+  testTaphoammoConnection
+};
