@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { PAYPAL_OPTIONS } from './paypal-config';
 import { PayPalButtonWrapper } from './PayPalButtonWrapper';
-import { FallbackPayPalButton } from './FallbackPayPalButton';
+import { PayPalErrorBoundary } from './PayPalErrorBoundary';
 
 const PayPalDeposit = () => {
   const { user } = useAuth();
@@ -17,7 +17,6 @@ const PayPalDeposit = () => {
   const [directAmount, setDirectAmount] = useState('');
   const [showManualOption, setShowManualOption] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paypalLoadFailed, setPaypalLoadFailed] = useState(false);
   const navigate = useNavigate();
 
   const handlePayPalSuccess = async (orderDetails: any, amount: number) => {
@@ -80,7 +79,6 @@ const PayPalDeposit = () => {
     }
   };
 
-  // Handle manual deposit request
   const handleManualDeposit = async () => {
     try {
       const amount = parseFloat(directAmount);
@@ -137,7 +135,9 @@ const PayPalDeposit = () => {
           {presetAmounts.map(amount => (
             <div key={amount} className="relative rounded-md border shadow-sm p-4 text-center">
               <div className="font-semibold mb-2">${amount}</div>
-              <PayPalButtonWrapper amount={amount} onSuccess={handlePayPalSuccess} />
+              <PayPalErrorBoundary amount={amount} onSuccess={handlePayPalSuccess}>
+                <PayPalButtonWrapper amount={amount} onSuccess={handlePayPalSuccess} />
+              </PayPalErrorBoundary>
             </div>
           ))}
         </div>
@@ -156,10 +156,15 @@ const PayPalDeposit = () => {
             />
             <div className="h-[50px]">
               {customAmount && parseFloat(customAmount) > 0 && (
-                <PayPalButtonWrapper 
+                <PayPalErrorBoundary 
                   amount={parseFloat(customAmount)} 
-                  onSuccess={handlePayPalSuccess} 
-                />
+                  onSuccess={handlePayPalSuccess}
+                >
+                  <PayPalButtonWrapper 
+                    amount={parseFloat(customAmount)} 
+                    onSuccess={handlePayPalSuccess} 
+                  />
+                </PayPalErrorBoundary>
               )}
             </div>
           </div>
