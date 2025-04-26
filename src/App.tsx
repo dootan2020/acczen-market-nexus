@@ -1,3 +1,4 @@
+
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import Index from "./pages/Index";
@@ -40,7 +41,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Index />} />
           <Route path="products" element={<Products />} />
-          <Route path="products/:slug" element={<ProductDetail />} />
+          <Route path="product/:slug" element={<ProductDetail />} />
           <Route path="deposit" element={<Deposit />} />
           <Route path="deposit/success" element={<DepositSuccess />} />
           <Route path="checkout" element={<Checkout />} />

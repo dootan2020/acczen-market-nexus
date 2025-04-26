@@ -2,9 +2,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useProduct(slug: string) {
+export function useProduct(id: string) {
   return useQuery({
-    queryKey: ["product", slug],
+    queryKey: ["product", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -12,7 +12,7 @@ export function useProduct(slug: string) {
           *,
           category:categories(*)
         `)
-        .eq("slug", slug)
+        .eq("id", id)
         .single();
 
       if (error) {
@@ -21,7 +21,7 @@ export function useProduct(slug: string) {
       
       return data;
     },
-    enabled: !!slug,
+    enabled: !!id,
   });
 }
 

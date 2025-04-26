@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
