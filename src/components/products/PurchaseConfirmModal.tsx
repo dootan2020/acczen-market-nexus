@@ -198,8 +198,10 @@ export const PurchaseConfirmModal = ({
             .single();
           
           if (!fetchError && orderItem) {
+            // Fix: Don't use spread operator here, construct a new object instead
             const updatedData = {
-              ...orderItem.data,
+              kiosk_token: orderItem.data.kiosk_token,
+              taphoammo_order_id: orderItem.data.taphoammo_order_id,
               product_keys: productKeys
             };
             
