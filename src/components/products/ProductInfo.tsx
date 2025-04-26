@@ -1,12 +1,12 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Star, CreditCard, Share2, Clock, Plus, Minus } from "lucide-react";
+import { ShoppingCart, Star, CreditCard, Share2, Clock, Plus, Minus, ArrowRight } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import RichTextContent from "@/components/RichTextContent";
 
 interface ProductInfoProps {
   id: string;
@@ -52,7 +52,6 @@ const ProductInfo = ({
   };
 
   const handleAddToCart = () => {
-    // First add the item without quantity
     addItem({
       id,
       name,
@@ -60,20 +59,12 @@ const ProductInfo = ({
       image
     });
 
-    // Update the quantity if needed (quantity=1 is already the default)
-    if (quantity > 1) {
-      // This would require updating the useCart hook to support initial quantity
-      // For now, we'll stick with adding the item with quantity=1
-      // In a future update, we could modify the useCart hook to support initial quantity
-    }
-
     toast({
       title: "Đã thêm vào giỏ hàng",
       description: `${quantity} x ${name}`,
     });
   };
 
-  // Generate star rating display
   const renderRating = () => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -103,7 +94,6 @@ const ProductInfo = ({
     <div className="flex flex-col h-full">
       <h1 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight">{name}</h1>
       
-      {/* Rating and Sales Info */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
         {rating > 0 && (
           <div className="flex items-center gap-1">
@@ -111,15 +101,8 @@ const ProductInfo = ({
             <span className="text-sm text-muted-foreground">({reviewCount})</span>
           </div>
         )}
-        
-        {soldCount > 0 && (
-          <div className="text-sm text-muted-foreground">
-            Đã bán: <span className="font-medium">{soldCount}</span>
-          </div>
-        )}
       </div>
       
-      {/* Price Display */}
       <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="text-2xl sm:text-3xl font-bold text-primary">
@@ -140,44 +123,33 @@ const ProductInfo = ({
         </div>
       </div>
       
-      {/* Stock Information */}
-      <div className="mb-4">
-        {isOutOfStock ? (
-          <Badge variant="destructive" className="text-sm py-1">
-            Hết hàng
-          </Badge>
-        ) : isLowStock ? (
-          <Badge variant="outline" className="text-sm py-1 border-amber-500 text-amber-500">
-            Chỉ còn {stockQuantity} sản phẩm
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-sm py-1 border-primary text-primary">
-            Còn hàng ({stockQuantity} sản phẩm)
-          </Badge>
-        )}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "py-1.5 px-3",
+            isOutOfStock 
+              ? "border-destructive text-destructive" 
+              : isLowStock
+              ? "bg-[#e6f7ef] border-[#27ae60] text-[#27ae60]"
+              : "bg-[#e6f7ef] border-[#27ae60] text-[#27ae60]"
+          )}
+        >
+          {isOutOfStock 
+            ? "Hết hàng" 
+            : isLowStock
+            ? `Chỉ còn ${stockQuantity} sản phẩm`
+            : `Còn hàng (${stockQuantity} sản phẩm)`}
+        </Badge>
+        
+        <Badge 
+          variant="outline" 
+          className="py-1.5 px-3 bg-[#e6f3f9] border-[#3498db] text-[#3498db]"
+        >
+          Đã bán: {soldCount}
+        </Badge>
       </div>
       
-      {/* Short Description */}
-      <p className="text-muted-foreground mb-6 line-clamp-3">
-        {description}
-      </p>
-      
-      {/* Features List */}
-      {features && features.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-medium mb-2">Tính năng chính:</h3>
-          <ul className="space-y-2">
-            {features.map((feature, index) => (
-              <li key={index} className="flex items-center">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2"></div>
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {/* Quantity Selector */}
       <div className="flex items-center mb-6">
         <span className="mr-4 font-medium">Số lượng:</span>
         <div className="flex items-center border rounded-md">
@@ -220,43 +192,41 @@ const ProductInfo = ({
         </div>
       </div>
       
-      {/* Action Buttons */}
-      <div className="mt-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="mt-auto grid grid-cols-2 gap-3">
         <Button 
-          className="w-full gap-2 shadow-sm"
+          className="shadow-sm"
           size="lg"
           onClick={handleAddToCart}
           disabled={isOutOfStock}
         >
-          <ShoppingCart className="h-5 w-5" />
-          {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ hàng"}
+          <ShoppingCart className="mr-2 h-5 w-5" />
+          Thêm vào giỏ
         </Button>
 
         <Button 
-          className="w-full gap-2 shadow-sm"
-          variant="secondary"
+          className="bg-[#2ECC71] hover:bg-[#27AE60] shadow-md"
           size="lg"
           disabled={isOutOfStock}
         >
-          <CreditCard className="h-5 w-5" />
           Mua ngay
+          <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
         
         <Button 
-          className="w-full gap-2"
+          className="col-span-2 md:col-span-1"
           variant="outline"
           size="lg"
         >
-          <Clock className="h-5 w-5" />
+          <Clock className="mr-2 h-5 w-5" />
           Đặt trước
         </Button>
         
         <Button 
-          className="w-full gap-2"
+          className="col-span-2 md:col-span-1"
           variant="outline"
           size="lg"
         >
-          <Share2 className="h-5 w-5" />
+          <Share2 className="mr-2 h-5 w-5" />
           Chia sẻ
         </Button>
       </div>
