@@ -78,7 +78,16 @@ serve(async (req) => {
     );
 
     // Parse request body
-    const { kioskToken, userToken, quantity, promotion } = await req.json();
+    const requestBody = await req.json();
+    const action = requestBody.action || 'buy_product';
+
+    // Handle different actions
+    if (action === 'check_order') {
+      return await handleCheckOrder(requestBody, supabaseClient, corsHeaders);
+    }
+    
+    // Default action is buy_product
+    const { kioskToken, userToken, quantity, promotion } = requestBody;
 
     // Update API log with request details
     apiLog.details = {
@@ -342,6 +351,136 @@ serve(async (req) => {
     );
   }
 });
+
+// Handle check order status
+async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
+  const { orderId } = requestBody;
+  
+  if (!orderId) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Missing order ID'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    );
+  }
+  
+  try {
+    // First check if the order exists in our mock orders
+    const { data: mockOrder, error: mockOrderError } = await supabaseClient
+      .from('taphoammo_mock_orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
+      
+    if (mockOrderError) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `Order not found: ${mockOrderError.message}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+    
+    // If order is already completed, just return the current status
+    if (mockOrder.status === 'completed') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          status: 'completed',
+          message: 'Order is already completed',
+          product_keys: mockOrder.product_keys || []
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // If order is still processing, make a call to the mock API to check status
+    const { data, error } = await supabaseClient.functions.invoke('mock-taphoammo', {
+      body: JSON.stringify({
+        action: 'check_order',
+        orderId
+      })
+    });
+    
+    if (error) {
+      throw new Error(`Error checking order status: ${error.message}`);
+    }
+    
+    // If the API returns that the order is now completed
+    if (data.status === 'completed') {
+      // Update the mock order in our database
+      const { error: updateError } = await supabaseClient
+        .from('taphoammo_mock_orders')
+        .update({
+          status: 'completed',
+          product_keys: data.product_keys || []
+        })
+        .eq('order_id', orderId);
+        
+      if (updateError) {
+        console.error('Error updating mock order:', updateError);
+      }
+      
+      // Update the actual order items
+      const { data: orderItems, error: orderItemsError } = await supabaseClient
+        .from('order_items')
+        .select('id, data, order_id')
+        .eq('data->taphoammo_order_id', orderId);
+        
+      if (!orderItemsError && orderItems.length > 0) {
+        const orderItem = orderItems[0];
+        const updatedData = {
+          ...orderItem.data,
+          product_keys: data.product_keys || []
+        };
+        
+        // Update order item with product keys
+        const { error: updateItemError } = await supabaseClient
+          .from('order_items')
+          .update({ data: updatedData })
+          .eq('id', orderItem.id);
+          
+        if (updateItemError) {
+          console.error('Error updating order item:', updateItemError);
+        }
+        
+        // Update order status
+        const { error: updateOrderError } = await supabaseClient
+          .from('orders')
+          .update({ status: 'completed' })
+          .eq('id', orderItem.order_id);
+          
+        if (updateOrderError) {
+          console.error('Error updating order status:', updateOrderError);
+        }
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: data.status || 'processing',
+        message: data.message || 'Order status checked successfully',
+        product_keys: data.product_keys || []
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('Error checking order status:', error);
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error.message || 'Error checking order status'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
 
 // Helper function to log API calls
 async function logApiCall(supabaseClient, logData) {

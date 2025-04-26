@@ -36,6 +36,13 @@ import {
   AlertTitle
 } from "@/components/ui/alert";
 
+// Define more specific types for the data property
+interface OrderItemData {
+  product_keys?: string[];
+  kiosk_token?: string;
+  taphoammo_order_id?: string;
+}
+
 interface OrderItem {
   id: string;
   product: {
@@ -46,11 +53,7 @@ interface OrderItem {
   quantity: number;
   price: number;
   total: number;
-  data?: {
-    product_keys?: string[];
-    kiosk_token?: string;
-    taphoammo_order_id?: string;
-  };
+  data?: OrderItemData; // Use the specific type
 }
 
 interface Order {
@@ -105,7 +108,19 @@ const OrderDetail = () => {
         throw error;
       }
 
-      setOrder(data);
+      // Transform the data to match our Order type
+      const orderData: Order = {
+        id: data.id,
+        created_at: data.created_at,
+        status: data.status,
+        total_amount: data.total_amount,
+        items: data.items.map((item: any) => ({
+          ...item,
+          data: item.data as OrderItemData // Cast to our specific type
+        }))
+      };
+
+      setOrder(orderData);
     } catch (err) {
       console.error("Error fetching order:", err);
       setError(err instanceof Error ? err.message : "Failed to load order details");
@@ -248,7 +263,7 @@ const OrderDetail = () => {
             </CardHeader>
             <CardContent className="pb-3">
               {isPending && (
-                <Alert variant="warning" className="mb-4">
+                <Alert className="mb-4">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đang được xử lý</AlertTitle>
                   <AlertDescription>
@@ -257,7 +272,7 @@ const OrderDetail = () => {
                 </Alert>
               )}
               {!isPending && order.items[0]?.data?.product_keys?.length > 0 && (
-                <Alert variant="success">
+                <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đã hoàn thành</AlertTitle>
                   <AlertDescription>

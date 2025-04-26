@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Changed from useRouter to useNavigate
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ export const PurchaseConfirmModal = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate(); // Changed from router to navigate
 
   const handleConfirmPurchase = async () => {
     if (!user) {
@@ -48,7 +48,7 @@ export const PurchaseConfirmModal = ({
         description: "Bạn cần đăng nhập để mua sản phẩm",
         variant: "destructive",
       });
-      router.push("/login");
+      navigate("/login"); // Changed from router.push to navigate
       return;
     }
 
@@ -90,7 +90,7 @@ export const PurchaseConfirmModal = ({
       
       // Redirect to the order details page
       setTimeout(() => {
-        router.push(`/orders/${data.order_id}`);
+        navigate(`/orders/${data.order_id}`); // Changed from router.push to navigate
       }, 500);
       
     } catch (error) {
