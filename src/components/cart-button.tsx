@@ -1,9 +1,8 @@
-
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart } from "lucide-react"
-import { useCart } from "@/contexts/CartContext"
+import { useCart } from "@/hooks/useCart"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 

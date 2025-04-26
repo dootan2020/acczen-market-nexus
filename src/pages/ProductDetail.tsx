@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { ShoppingCart, Package, Shield, Clock, AlertTriangle, ChevronRight } fro
 import { useToast } from "@/hooks/use-toast";
 import ProductCard from "@/components/ProductCard";
 import { useEffect } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/hooks/useCart";
 
 interface ProductFeatures {
   features: string[];
@@ -24,7 +23,6 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const { addItem } = useCart();
 
-  // Scroll to top when navigating between product pages
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
@@ -78,16 +76,13 @@ const ProductDetail = () => {
   const isOutOfStock = product.stock_quantity === 0;
   const isLowStock = product.stock_quantity <= 5 && product.stock_quantity > 0;
 
-  // Safely parse features data
   let featuresList: string[] = [];
   if (product.features) {
     try {
-      // If features is a string, parse it, otherwise use it directly
       const featuresData = typeof product.features === 'string' 
         ? JSON.parse(product.features) 
         : product.features;
         
-      // Check if features is an object with a features property
       if (featuresData && featuresData.features && Array.isArray(featuresData.features)) {
         featuresList = featuresData.features;
       }
@@ -98,7 +93,6 @@ const ProductDetail = () => {
 
   return (
     <div className="container py-8">
-      {/* Breadcrumbs */}
       <div className="flex items-center text-sm text-muted-foreground mb-6">
         <Link to="/" className="hover:text-foreground">Home</Link>
         <ChevronRight className="h-4 w-4 mx-1" />
@@ -111,9 +105,7 @@ const ProductDetail = () => {
         <span className="text-foreground font-medium truncate">{product.name}</span>
       </div>
 
-      {/* Product Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Product Image */}
         <div className="relative overflow-hidden rounded-lg border">
           <img 
             src={product.image_url || 'https://placehold.co/600x400?text=No+Image'} 
@@ -132,11 +124,9 @@ const ProductDetail = () => {
           )}
         </div>
 
-        {/* Product Info */}
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
           
-          {/* Price */}
           <div className="flex items-baseline mb-4">
             <span className="text-2xl font-bold text-primary mr-2">
               ${product.sale_price?.toFixed(2) || product.price.toFixed(2)}
@@ -148,7 +138,6 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Stock Status */}
           <div className="mb-6">
             {isOutOfStock ? (
               <Badge variant="destructive" className="text-sm py-1">
@@ -165,12 +154,10 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Description */}
           <p className="text-muted-foreground mb-6">
             {product.description}
           </p>
 
-          {/* Features */}
           {featuresList.length > 0 && (
             <div className="mb-6">
               <h3 className="font-medium mb-2">Key Features:</h3>
@@ -185,7 +172,6 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Actions */}
           <div className="mt-auto">
             <Button 
               className="w-full mb-4 gap-2"
@@ -210,7 +196,6 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Product Info Sections */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div className="flex items-center p-4 border rounded-lg">
           <Package className="h-8 w-8 text-primary mr-3" />
@@ -235,7 +220,6 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Related Products */}
       {relatedProducts && relatedProducts.length > 0 && (
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Related Products</h2>
