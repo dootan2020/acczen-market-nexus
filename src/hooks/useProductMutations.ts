@@ -36,31 +36,31 @@ export const useProductMutations = () => {
         console.log('Saving product data:', formattedProductData);
 
         if (isEditing) {
-          const { data, error } = await supabase
+          const result = await supabase
             .from('products')
             .update(formattedProductData)
-            .eq('id', data.id)
+            .eq('id', productData.id)
             .select();
           
-          if (error) {
-            console.error('Product update error:', error);
-            throw error;
+          if (result.error) {
+            console.error('Product update error:', result.error);
+            throw result.error;
           }
           
-          console.log('Product updated successfully:', data);
+          console.log('Product updated successfully:', result.data);
           return { success: true, action: 'updated' };
         } else {
-          const { data, error } = await supabase
+          const result = await supabase
             .from('products')
             .insert([formattedProductData])
             .select();
           
-          if (error) {
-            console.error('Product creation error:', error);
-            throw error;
+          if (result.error) {
+            console.error('Product creation error:', result.error);
+            throw result.error;
           }
           
-          console.log('Product created successfully:', data);
+          console.log('Product created successfully:', result.data);
           return { success: true, action: 'created' };
         }
       } catch (error) {
