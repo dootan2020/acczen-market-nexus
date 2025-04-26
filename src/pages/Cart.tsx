@@ -1,11 +1,12 @@
-
 import React from 'react';
 import { useCart } from '@/hooks/useCart';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const Cart: React.FC = () => {
   const { cart, removeItem, updateQuantity } = useCart();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const { items, totalPrice } = cart;
 
   if (items.length === 0) {
@@ -37,7 +38,9 @@ const Cart: React.FC = () => {
               />
               <div className="flex-grow">
                 <h2 className="font-semibold">{item.name}</h2>
-                <p className="text-muted-foreground">Giá: {item.price} VND</p>
+                <p className="text-muted-foreground">
+                  Price: {formatUSD(convertVNDtoUSD(item.price))}
+                </p>
                 <div className="flex items-center gap-2 mt-2">
                   <Button 
                     variant="outline" 
@@ -67,13 +70,13 @@ const Cart: React.FC = () => {
           ))}
         </div>
         <div className="bg-secondary/30 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Tổng kết</h2>
+          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="flex justify-between mb-4">
-            <span>Tổng tiền:</span>
-            <span className="font-bold">{totalPrice} VND</span>
+            <span>Total:</span>
+            <span className="font-bold">{formatUSD(convertVNDtoUSD(totalPrice))}</span>
           </div>
           <Button className="w-full" asChild>
-            <Link to="/checkout">Thanh toán</Link>
+            <Link to="/checkout">Checkout</Link>
           </Button>
         </div>
       </div>
