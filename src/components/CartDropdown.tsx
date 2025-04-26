@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { formatCurrency } from "@/utils/formatters";
 
 const CartDropdown = () => {
   const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ const CartDropdown = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80" align="end">
-        <DropdownMenuLabel>Your Cart</DropdownMenuLabel>
+        <DropdownMenuLabel>Giỏ hàng của bạn</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.length > 0 ? (
           <>
@@ -60,7 +62,7 @@ const CartDropdown = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium line-clamp-1">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ${item.price.toFixed(2)} x {item.quantity}
+                          {formatCurrency(item.price)} x {item.quantity}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Button 
@@ -98,8 +100,8 @@ const CartDropdown = () => {
             </ScrollArea>
             <div className="p-4 space-y-4">
               <div className="flex justify-between font-medium">
-                <span>Total:</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>Tổng tiền:</span>
+                <span>{formatCurrency(totalPrice)}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
@@ -108,14 +110,14 @@ const CartDropdown = () => {
                   asChild
                   onClick={() => setOpen(false)}
                 >
-                  <Link to="/cart">View Cart</Link>
+                  <Link to="/cart">Xem giỏ hàng</Link>
                 </Button>
                 <Button 
                   className="w-full"
                   asChild
                   onClick={() => setOpen(false)}
                 >
-                  <Link to="/checkout">Checkout</Link>
+                  <Link to="/checkout">Thanh toán</Link>
                 </Button>
               </div>
             </div>
@@ -125,9 +127,9 @@ const CartDropdown = () => {
             <div className="flex justify-center mb-4">
               <ShoppingCart className="h-12 w-12 text-muted-foreground" />
             </div>
-            <p className="mb-4">Your cart is empty</p>
+            <p className="mb-4">Giỏ hàng của bạn trống</p>
             <Button asChild className="w-full" onClick={() => setOpen(false)}>
-              <Link to="/products">Browse Products</Link>
+              <Link to="/products">Xem sản phẩm</Link>
             </Button>
           </div>
         )}

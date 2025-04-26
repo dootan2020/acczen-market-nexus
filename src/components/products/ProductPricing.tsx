@@ -1,6 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/utils/formatters";
 
 interface ProductPricingProps {
   price: number;
@@ -19,13 +20,13 @@ const ProductPricing = ({ price, salePrice, stockQuantity, soldCount = 0 }: Prod
       <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="text-2xl sm:text-3xl font-bold text-primary">
-            {(salePrice || price).toLocaleString('vi-VN')}đ
+            {formatCurrency(salePrice || price)}
           </span>
           
           {salePrice && (
             <>
               <span className="text-lg text-muted-foreground line-through">
-                {price.toLocaleString('vi-VN')}đ
+                {formatCurrency(price)}
               </span>
               
               <Badge variant="destructive" className="ml-2">

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
+import { formatCurrency } from "@/utils/formatters";
 
 interface ProductCardProps {
   id: string;
@@ -74,12 +75,12 @@ const ProductCard = ({
           </div>
           {stock <= 5 && stock > 0 && (
             <Badge variant="outline" className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm">
-              Only {stock} left
+              Chỉ còn {stock} sản phẩm
             </Badge>
           )}
           {stock === 0 && (
             <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-              <Badge variant="destructive" className="text-lg py-1 px-3">Out of Stock</Badge>
+              <Badge variant="destructive" className="text-lg py-1 px-3">Hết hàng</Badge>
             </div>
           )}
         </div>
@@ -90,15 +91,15 @@ const ProductCard = ({
         </Link>
         <div className="flex justify-between items-center">
           <div>
-            <span className="text-lg font-bold text-primary">${(salePrice || price).toFixed(2)}</span>
+            <span className="text-lg font-bold text-primary">{formatCurrency(salePrice || price)}</span>
             {salePrice && (
               <span className="text-sm text-muted-foreground line-through ml-2">
-                ${price.toFixed(2)}
+                {formatCurrency(price)}
               </span>
             )}
           </div>
           <span className="text-sm text-muted-foreground">
-            {stock > 10 ? 'In Stock' : stock > 0 ? `${stock} available` : 'Out of stock'}
+            {stock > 10 ? 'Còn hàng' : stock > 0 ? `Còn ${stock} sản phẩm` : 'Hết hàng'}
           </span>
         </div>
       </CardContent>
@@ -109,7 +110,7 @@ const ProductCard = ({
           onClick={handleAddToCart}
         >
           <ShoppingCart className="h-4 w-4" />
-          Add to Cart
+          Thêm vào giỏ hàng
         </Button>
       </CardFooter>
     </Card>
