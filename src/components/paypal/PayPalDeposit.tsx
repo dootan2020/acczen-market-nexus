@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Input } from "@/components/ui/input";
-import { Lock } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Lock, CreditCard } from "lucide-react";
 import { PAYPAL_OPTIONS } from './paypal-config';
 import { PayPalButtonWrapper } from './PayPalButtonWrapper';
 import { PayPalErrorBoundary } from './PayPalErrorBoundary';
@@ -42,16 +43,14 @@ const PayPalDeposit = () => {
     setCustomAmount('');
   };
 
-  // Modified to return a Promise
   const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
     try {
-      // Call the edge function to process the PayPal deposit
       const { data, error } = await supabase.functions.invoke('process-paypal-deposit', {
         body: {
           orderID: orderDetails.id,
           amount: amount,
           userID: supabase.auth.getUser().then(res => res.data.user?.id),
-          idempotencyKey: orderDetails.id, // Use the PayPal order ID as idempotency key
+          idempotencyKey: orderDetails.id,
         },
       });
 
@@ -67,7 +66,6 @@ const PayPalDeposit = () => {
         description: `$${amount.toFixed(2)} has been added to your account.` 
       });
 
-      // Redirect to success page or refresh the page
       navigate('/deposit/success', { 
         state: { 
           deposit: {
@@ -91,56 +89,68 @@ const PayPalDeposit = () => {
 
   return (
     <PayPalScriptProvider options={PAYPAL_OPTIONS}>
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-        <div className="w-full max-w-[400px] bg-white rounded-xl shadow-sm p-6 space-y-6">
-          <div className="text-center space-y-2">
-            <img 
-              src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_200x51.png" 
-              alt="PayPal Logo"
-              className="h-12 mx-auto"
-            />
-            <h2 className="text-2xl font-semibold">Nạp tiền qua PayPal</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Số tiền muốn nạp (USD)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Nhập số tiền..."
-                value={customAmount}
-                onChange={handleCustomAmountChange}
-                className="w-full"
+      <div className="container max-w-xl mx-auto px-4 py-8">
+        <Card className="border-border/40 shadow-md">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center">
+              <img 
+                src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_200x51.png" 
+                alt="PayPal"
+                className="h-8 mb-2"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {presetAmounts.map((presetAmount) => (
-                <button
-                  key={presetAmount}
-                  onClick={() => handlePresetAmount(presetAmount)}
-                  className={`p-3 rounded-lg border transition-colors ${
-                    selectedAmount === presetAmount
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white border-gray-200 hover:border-primary text-gray-700'
-                  }`}
-                >
-                  ${presetAmount}
-                </button>
-              ))}
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div className="text-sm text-gray-600">
-                Phí giao dịch: {(FEE_PERCENTAGE * 100).toFixed(1)}% + {FEE_FIXED.toFixed(2)} USD
+            <CardTitle className="text-2xl font-semibold">Nạp tiền qua PayPal</CardTitle>
+            <CardDescription>
+              Nạp tiền an toàn và nhanh chóng qua PayPal
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground/90">
+                  Số tiền muốn nạp (USD)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Nhập số tiền..."
+                  value={customAmount}
+                  onChange={handleCustomAmountChange}
+                  className="w-full"
+                />
               </div>
-              <div className="text-lg font-semibold">
-                Tổng thanh toán: {totalAmount.toFixed(2)} USD
+
+              <div className="grid grid-cols-2 gap-3">
+                {presetAmounts.map((presetAmount) => (
+                  <Button
+                    key={presetAmount}
+                    variant={selectedAmount === presetAmount ? "default" : "outline"}
+                    onClick={() => handlePresetAmount(presetAmount)}
+                    className="w-full h-12 text-lg font-medium"
+                  >
+                    ${presetAmount}
+                  </Button>
+                ))}
               </div>
+
+              <Card className="bg-muted/30 border-border/40">
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Phí giao dịch:</span>
+                      <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <span className="font-medium">Tổng thanh toán:</span>
+                      <span className="text-lg font-bold text-primary">
+                        ${totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {amount > 0 && (
@@ -151,18 +161,23 @@ const PayPalDeposit = () => {
               </div>
             )}
 
-            <div className="text-center space-y-4">
-              <a href="/deposit" className="text-accent hover:underline text-sm">
+            <div className="space-y-4 text-center">
+              <Button
+                variant="ghost" 
+                className="text-primary hover:text-primary/90"
+                onClick={() => navigate('/deposit')}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
                 Chọn phương thức khác
-              </a>
+              </Button>
               
-              <div className="flex items-center justify-center text-sm text-gray-500 gap-1">
+              <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                 <Lock className="h-4 w-4" />
                 <span>Kết nối bảo mật SSL 256-bit</span>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </PayPalScriptProvider>
   );
