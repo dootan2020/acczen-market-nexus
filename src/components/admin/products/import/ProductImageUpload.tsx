@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { UseFormReturn } from 'react-hook-form';
 import { ImportProductFormValues } from './types';
+import { Loader2 } from 'lucide-react';
 
 interface ProductImageUploadProps {
   form: UseFormReturn<ImportProductFormValues>;
@@ -21,29 +22,46 @@ export default function ProductImageUpload({ form }: ProductImageUploadProps) {
     
     setUploading(true);
     try {
+      // Generate a unique file path to avoid name collisions
       const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = fileName;
       
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading file to storage bucket:', filePath);
+      
+      const { data, error: uploadError } = await supabase.storage
         .from('products')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', data);
 
       const { data: { publicUrl } } = supabase.storage
         .from('products')
         .getPublicUrl(filePath);
 
+      console.log('Public URL generated:', publicUrl);
+      
       form.setValue('image_url', publicUrl);
       toast.success("Upload thành công", {
         description: "Hình ảnh đã được tải lên thành công",
       });
       
       return publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
+      let errorMessage = "Không thể tải lên hình ảnh. Vui lòng thử lại.";
+      
+      if (error.message) {
+        errorMessage += ` Chi tiết: ${error.message}`;
+      }
+      
       toast.error("Lỗi upload", {
-        description: "Không thể tải lên hình ảnh. Vui lòng thử lại.",
+        description: errorMessage,
       });
       return null;
     } finally {
@@ -80,6 +98,12 @@ export default function ProductImageUpload({ form }: ProductImageUploadProps) {
                 disabled={uploading}
               />
             </div>
+            {uploading && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Đang tải lên...</span>
+              </div>
+            )}
             {imageFile && field.value && (
               <div className="mt-2">
                 <img 

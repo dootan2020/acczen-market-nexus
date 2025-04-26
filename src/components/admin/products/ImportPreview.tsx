@@ -27,7 +27,10 @@ import { Tables } from '@/types/supabase';
 import { useSubcategories } from '@/hooks/useSubcategories';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import ProductDescription from './import/ProductDescription';
+import ProductImageUpload from './import/ProductImageUpload';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Tên sản phẩm không được để trống' }),
@@ -61,7 +64,6 @@ export default function ImportPreview({
   onPrevious,
   onNext
 }: ImportPreviewProps) {
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const form = useForm<FormValues>({
@@ -84,44 +86,6 @@ export default function ImportPreview({
 
   const selectedCategoryId = form.watch('category_id');
   const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategories(selectedCategoryId);
-
-  const handleImageUpload = async (file: File) => {
-    if (!file) return null;
-    
-    setUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random().toString(36).slice(2)}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-
-      form.setValue('image_url', publicUrl);
-      toast({
-        title: "Upload thành công",
-        description: "Hình ảnh đã được tải lên thành công",
-      });
-      
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        variant: "destructive",
-        title: "Lỗi upload",
-        description: "Không thể tải lên hình ảnh. Vui lòng thử lại.",
-      });
-      return null;
-    } finally {
-      setUploading(false);
-    }
-  };
   
   const onSubmit = async (data: FormValues) => {
     const processedProduct = {
@@ -356,69 +320,9 @@ export default function ImportPreview({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Hình ảnh sản phẩm</FormLabel>
-                  <div className="space-y-4">
-                    <FormControl>
-                      <Input {...field} type="url" placeholder="Nhập URL hình ảnh" />
-                    </FormControl>
-                    <div className="flex flex-col space-y-2">
-                      <Label>Hoặc tải lên hình ảnh</Label>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setImageFile(file);
-                            const url = await handleImageUpload(file);
-                            if (url) {
-                              field.onChange(url);
-                            }
-                          }
-                        }}
-                        disabled={uploading}
-                      />
-                    </div>
-                    {imageFile && field.value && (
-                      <div className="mt-2">
-                        <img 
-                          src={field.value} 
-                          alt="Preview" 
-                          className="max-w-[200px] h-auto rounded-md"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <FormDescription>
-                    Nhập URL hoặc tải lên hình ảnh sản phẩm
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ProductImageUpload form={form} />
             
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Mô tả</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      rows={5}
-                      placeholder="Mô tả sản phẩm..."
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ProductDescription form={form} />
           </div>
           
           <div className="flex justify-between">
@@ -426,7 +330,12 @@ export default function ImportPreview({
               Quay lại
             </Button>
             <Button type="submit" disabled={uploading}>
-              {uploading ? 'Đang tải lên...' : 'Tiếp tục'}
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : 'Tiếp tục'}
             </Button>
           </div>
         </form>
