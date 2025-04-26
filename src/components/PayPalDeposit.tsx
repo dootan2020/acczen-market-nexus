@@ -12,15 +12,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // PayPal configuration with updated settings
 const PAYPAL_OPTIONS = {
-  // Sử dụng một PayPal client ID mới từ sandbox PayPal
-  clientId: "test", // Thay bằng client ID đang hoạt động trong sandbox
+  // Use a valid sandbox PayPal client ID
+  clientId: "test", // Replace with your working sandbox client ID
   currency: "USD",
   intent: "capture",
   components: "buttons",
-  // Chỉ vô hiệu hóa các phương thức thanh toán không cần thiết
+  // Only disable unnecessary payment methods
   disableFunding: "credit", 
   dataDsr: "false",
-  // Thêm debug mode để có thêm thông tin về lỗi
+  // Add debug mode for additional error information
   debug: true
 };
 
@@ -38,8 +38,9 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
     if (isRejected) {
       console.log('Attempting to reload PayPal script...');
       setTimeout(() => {
+        // Fix: Use the correct dispatch action type
         dispatch({
-          type: "resetOptions",
+          type: "reload",
           value: {
             ...PAYPAL_OPTIONS,
             'data-client-token': `${Date.now()}` // Force refresh by changing token
@@ -91,7 +92,8 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
           }
         } catch (error) {
           console.error("PayPal Capture Error:", error);
-          setErrorDetails(error.message || JSON.stringify(error));
+          // Fix: Ensure error message is a string
+          setErrorDetails(error instanceof Error ? error.message : JSON.stringify(error));
           toast.error('Payment Processing Error', {
             description: 'There was an error capturing your payment'
           });
@@ -106,7 +108,8 @@ const PayPalButtonWrapper = ({ amount, onSuccess }) => {
       }}
       onError={(err) => {
         console.error("PayPal Button Error:", err);
-        setErrorDetails(err.message || JSON.stringify(err));
+        // Fix: Ensure error message is a string
+        setErrorDetails(err instanceof Error ? err.message : JSON.stringify(err));
         toast.error('PayPal Error', {
           description: 'An error occurred with PayPal payment. Please try again later.'
         });
