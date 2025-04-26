@@ -1,27 +1,38 @@
 
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import React from 'react';
+import * as React from 'react';
 
 // Mock PayPal SDK
-vi.mock('@paypal/react-paypal-js', () => ({
-  PayPalScriptProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  PayPalButtons: ({ onApprove, onError, createOrder }: any) => {
-    return (
-      <button 
-        onClick={() => onApprove({ orderID: 'test-order' }, { order: { capture: () => Promise.resolve({ id: 'test-capture' }) } })}
-        data-testid="paypal-button"
-      >
-        PayPal Button
-      </button>
-    );
-  },
-  usePayPalScriptReducer: () => [{
-    isPending: false,
-    isResolved: true,
-    isRejected: false
-  }]
-}));
+vi.mock('@paypal/react-paypal-js', () => {
+  return {
+    PayPalScriptProvider: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, null, children);
+    },
+    PayPalButtons: ({ onApprove }: any) => {
+      const handleClick = () => {
+        onApprove(
+          { orderID: 'test-order' }, 
+          { order: { capture: () => Promise.resolve({ id: 'test-capture' }) } }
+        );
+      };
+      
+      return React.createElement(
+        'button',
+        { 
+          onClick: handleClick,
+          'data-testid': 'paypal-button'
+        },
+        'PayPal Button'
+      );
+    },
+    usePayPalScriptReducer: () => [{
+      isPending: false,
+      isResolved: true,
+      isRejected: false
+    }]
+  };
+});
 
 // Mock navigation
 vi.mock('react-router-dom', () => ({
