@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +35,6 @@ import {
   AlertTitle
 } from "@/components/ui/alert";
 
-// Define more specific types for the data property
 interface OrderItemData {
   product_keys?: string[];
   kiosk_token?: string;
@@ -53,7 +51,7 @@ interface OrderItem {
   quantity: number;
   price: number;
   total: number;
-  data?: OrderItemData; // Use the specific type
+  data?: OrderItemData;
 }
 
 interface Order {
@@ -102,7 +100,7 @@ const OrderDetail = () => {
           )
         `)
         .eq("id", id)
-        .maybeSingle(); // Changed from single() to maybeSingle() to avoid error
+        .maybeSingle();
 
       if (error) {
         throw error;
@@ -112,7 +110,6 @@ const OrderDetail = () => {
         throw new Error("Order not found");
       }
 
-      // Transform the data to match our Order type
       const orderData: Order = {
         id: data.id,
         created_at: data.created_at,
@@ -120,7 +117,7 @@ const OrderDetail = () => {
         total_amount: data.total_amount,
         items: data.items.map((item: any) => ({
           ...item,
-          data: item.data as OrderItemData // Cast to our specific type
+          data: item.data as OrderItemData
         }))
       };
 
@@ -141,7 +138,6 @@ const OrderDetail = () => {
         throw new Error("Không tìm thấy mã đơn hàng Taphoammo");
       }
       
-      // Call the edge function to check the order status
       const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
         body: JSON.stringify({
           action: 'check_order',
@@ -154,7 +150,6 @@ const OrderDetail = () => {
       }
       
       if (data.success) {
-        // Refresh the order details
         await fetchOrderDetails();
         
         toast({
@@ -258,7 +253,6 @@ const OrderDetail = () => {
         </div>
 
         <div className="grid gap-6">
-          {/* Order Status */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center">
@@ -271,7 +265,7 @@ const OrderDetail = () => {
             </CardHeader>
             <CardContent className="pb-3">
               {isPending && (
-                <Alert variant="warning" className="mb-4">
+                <Alert variant="destructive" className="mb-4">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đang được xử lý</AlertTitle>
                   <AlertDescription>
@@ -280,7 +274,7 @@ const OrderDetail = () => {
                 </Alert>
               )}
               {!isPending && order.items[0]?.data?.product_keys?.length > 0 && (
-                <Alert variant="success">
+                <Alert variant="default">
                   <CheckCircle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đã hoàn thành</AlertTitle>
                   <AlertDescription>
@@ -312,7 +306,6 @@ const OrderDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Order Items and Total */}
           <Card>
             <CardHeader>
               <CardTitle>Chi tiết sản phẩm</CardTitle>
@@ -367,7 +360,6 @@ const OrderDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Product Keys (if available) */}
           {order.items.map((item, index) => {
             if (!item.data || !item.data.product_keys || item.data.product_keys.length === 0) {
               return null;
@@ -411,7 +403,6 @@ const OrderDetail = () => {
             );
           })}
 
-          {/* Actions */}
           <div className="flex justify-between mt-4">
             <Button asChild variant="outline">
               <Link to="/dashboard">
