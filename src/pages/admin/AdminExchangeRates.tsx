@@ -50,9 +50,8 @@ export default function AdminExchangeRates() {
         .from('exchange_rate_history')
         .select(`
           *,
-          updater:updated_by(
-            email
-          )
+          updated_by,
+          profiles:updated_by(email)
         `)
         .eq('from_currency', 'VND')
         .eq('to_currency', 'USD')
@@ -159,7 +158,7 @@ export default function AdminExchangeRates() {
                     {record.new_rate.toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    {record.updater?.email ?? 'N/A'}
+                    {record.profiles?.email ?? 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}
