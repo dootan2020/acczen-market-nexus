@@ -90,7 +90,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="price">Price ($)</Label>
+            <Label htmlFor="price">Price (VND)</Label>
             <Input
               id="price"
               name="price"
@@ -100,10 +100,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
               value={formData.price}
               onChange={handleInputChange}
               required
+              placeholder="Enter price in VND"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sale_price">Sale Price ($)</Label>
+            <Label htmlFor="sale_price">Sale Price (VND)</Label>
             <Input
               id="sale_price"
               name="sale_price"
@@ -112,7 +113,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               step="0.01"
               value={formData.sale_price}
               onChange={handleInputChange}
-              placeholder="Optional"
+              placeholder="Optional sale price in VND"
             />
           </div>
         </div>

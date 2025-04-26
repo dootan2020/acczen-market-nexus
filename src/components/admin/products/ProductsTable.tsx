@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Eye, Edit, Trash2, Package } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatters';
 
 interface ProductsTableProps {
   products: any[];
@@ -73,10 +74,10 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                ${Number(product.price).toFixed(2)}
+                {formatCurrency(product.price)}
                 {product.sale_price && (
                   <div className="text-xs text-muted-foreground line-through">
-                    ${Number(product.sale_price).toFixed(2)}
+                    {formatCurrency(product.sale_price)}
                   </div>
                 )}
               </TableCell>
