@@ -7,51 +7,83 @@ import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@pa
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// PayPal configuration
+const PAYPAL_OPTIONS = {
+  clientId: "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
+  currency: "USD",
+  intent: "capture",
+  components: "buttons",
+  disableFunding: "credit,card",
+  dataDsr: "false"
+};
 
 // PayPal Buttons wrapper with loading and error states
 const PayPalButtonWrapper = ({ amount, onSuccess }) => {
-  const [{ isPending, isRejected, isResolved, options }] = usePayPalScriptReducer();
+  const [{ isPending, isRejected, isResolved }] = usePayPalScriptReducer();
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  if (isPending) return <div className="w-full h-10 bg-gray-100 animate-pulse rounded-md"></div>;
+  if (isPending) return (
+    <div className="w-full h-12 bg-gray-100 animate-pulse rounded-md flex items-center justify-center">
+      <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+    </div>
+  );
   
   if (isRejected) return (
     <Alert variant="destructive" className="mb-4">
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>PayPal Error</AlertTitle>
       <AlertDescription>
-        Could not load PayPal. Please try again later or use another payment method.
+        Could not load PayPal. Please check your internet connection or try again later.
       </AlertDescription>
     </Alert>
   );
   
   return (
     <PayPalButtons 
-      style={{ layout: 'vertical', color: 'blue', shape: 'rect' }}
+      style={{ layout: 'vertical', color: 'blue', shape: 'rect', height: 45 }}
       createOrder={(data, actions) => {
         return actions.order.create({
           intent: "CAPTURE",
           purchase_units: [{
             amount: {
-              currency_code: options.currency || "USD",
+              currency_code: "USD",
               value: amount.toString()
-            }
+            },
+            description: `Deposit funds - $${amount}`
           }]
         });
       }}
       onApprove={async (data, actions) => {
-        const orderDetails = await actions?.order?.capture();
-        if (orderDetails) {
-          onSuccess(orderDetails, amount);
+        setIsProcessing(true);
+        try {
+          const orderDetails = await actions?.order?.capture();
+          if (orderDetails) {
+            await onSuccess(orderDetails, amount);
+          }
+        } catch (error) {
+          console.error("PayPal Capture Error:", error);
+          toast.error('Payment Processing Error', {
+            description: 'There was an error capturing your payment'
+          });
+        } finally {
+          setIsProcessing(false);
         }
+      }}
+      onCancel={() => {
+        toast.info('Payment Cancelled', {
+          description: 'You cancelled the PayPal payment'
+        });
       }}
       onError={(err) => {
         console.error("PayPal Button Error:", err);
         toast.error('PayPal Error', {
-          description: 'An error occurred with PayPal payment'
+          description: 'An error occurred with PayPal payment. Please try again later.'
         });
       }}
+      disabled={isProcessing}
     />
   );
 };
@@ -61,17 +93,8 @@ const PayPalDeposit = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [directAmount, setDirectAmount] = useState('');
   const [showManualOption, setShowManualOption] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-
-  // PayPal configuration
-  const paypalConfig = {
-    clientId: "ATFgOxb5_ulsypPJ944oFWC0p9YeGGcDmH5hzRqTgMTVfpR-jB2aHJ4-PA-0uK3TA58CT_Gc8PZozUCK",
-    currency: "USD",
-    intent: "capture",
-    components: "buttons",
-    disableFunding: "credit,card",
-    dataDsr: "false"
-  };
 
   // Detect if PayPal fails to load after a certain time
   useEffect(() => {
@@ -84,17 +107,30 @@ const PayPalDeposit = () => {
   const presetAmounts = [10, 20, 50, 100];
 
   const handlePayPalSuccess = async (orderDetails, amount) => {
+    if (!user?.id) {
+      toast.error('Authentication Error', {
+        description: 'You must be logged in to make a deposit'
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
+      // Create a unique idempotency key to prevent duplicate transactions
+      const idempotencyKey = `${user.id}-${orderDetails.id}-${Date.now()}`;
+      
       // Call our edge function to process deposit
       const { data, error } = await supabase.functions.invoke('process-paypal-deposit', {
         body: {
           orderID: orderDetails.id,
           amount: amount,
-          userID: user?.id
+          userID: user.id,
+          idempotencyKey
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Failed to process deposit');
 
       if (data?.success) {
         toast.success('Deposit Successful', {
@@ -103,19 +139,31 @@ const PayPalDeposit = () => {
         
         navigate('/deposit/success', { 
           state: { 
-            deposit: data.deposit,
-            transaction: data.transaction
+            deposit: {
+              id: data.depositId || orderDetails.id,
+              user_id: user.id,
+              amount: amount,
+              payment_method: 'PayPal',
+              status: 'completed',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              paypal_order_id: orderDetails.id,
+              paypal_payer_id: orderDetails.payer?.payer_id,
+              paypal_payer_email: orderDetails.payer?.email_address
+            }
           }
         });
       } else {
         toast.error('Deposit Failed', {
-          description: data?.message || 'Something went wrong'
+          description: data?.message || 'Something went wrong with your deposit'
         });
       }
     } catch (error) {
       toast.error('Deposit Failed', {
-        description: error instanceof Error ? error.message : 'An error occurred'
+        description: error instanceof Error ? error.message : 'An error occurred while processing your deposit'
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -130,38 +178,46 @@ const PayPalDeposit = () => {
         return;
       }
 
+      setIsSubmitting(true);
+
+      // Create a pending manual deposit record
+      const { data, error } = await supabase
+        .from('deposits')
+        .insert({
+          user_id: user?.id,
+          amount: amount,
+          status: 'pending',
+          payment_method: 'Manual Transfer',
+          metadata: {
+            request_time: new Date().toISOString(),
+            requester_ip: 'client_request'
+          }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast.success('Deposit Request Submitted', {
         description: `Your request to deposit $${amount} has been submitted for manual approval.`
       });
-
-      // In a real app, you would create a pending deposit record here
-      // and send it to the admin for approval
-      
-      // For demo purposes, we'll create a mock deposit
-      const mockDeposit = {
-        id: `manual-${Date.now()}`,
-        user_id: user?.id,
-        amount: amount,
-        status: 'pending',
-        payment_method: 'Manual Transfer',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
       
       navigate('/deposit/success', { 
         state: { 
-          deposit: mockDeposit
+          deposit: data
         }
       });
     } catch (error) {
       toast.error('Request Failed', {
-        description: error instanceof Error ? error.message : 'An error occurred'
+        description: error instanceof Error ? error.message : 'An error occurred while submitting your deposit request'
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <PayPalScriptProvider options={paypalConfig}>
+    <PayPalScriptProvider options={PAYPAL_OPTIONS}>
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {presetAmounts.map(amount => (
@@ -181,6 +237,7 @@ const PayPalDeposit = () => {
               value={customAmount}
               onChange={(e) => setCustomAmount(e.target.value)}
               min="1"
+              step="0.01"
               className="mb-2"
             />
             <div className="h-[50px]">
@@ -211,9 +268,18 @@ const PayPalDeposit = () => {
                 value={directAmount}
                 onChange={(e) => setDirectAmount(e.target.value)}
                 min="1"
+                step="0.01"
               />
-              <Button onClick={handleManualDeposit}>
-                Request Manual Deposit
+              <Button 
+                onClick={handleManualDeposit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : "Request Manual Deposit"}
               </Button>
             </div>
           </div>

@@ -9,9 +9,30 @@ const corsHeaders = {
 
 const PAYPAL_API_URL = Deno.env.get('PAYPAL_API_URL') || 'https://api-m.sandbox.paypal.com'
 const WEBHOOK_ID = Deno.env.get('PAYPAL_WEBHOOK_ID')
+const CLIENT_ID = Deno.env.get('PAYPAL_CLIENT_ID')
+const CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET')
+
+// Check if required environment variables are set
+function validateEnvironment() {
+  const requiredVars = [
+    { name: 'PAYPAL_CLIENT_ID', value: CLIENT_ID },
+    { name: 'PAYPAL_CLIENT_SECRET', value: CLIENT_SECRET },
+    { name: 'PAYPAL_WEBHOOK_ID', value: WEBHOOK_ID },
+    { name: 'SUPABASE_URL', value: Deno.env.get('SUPABASE_URL') },
+    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') }
+  ];
+  
+  const missingVars = requiredVars
+    .filter(v => !v.value)
+    .map(v => v.name);
+  
+  if (missingVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  }
+}
 
 async function getPayPalAccessToken() {
-  const auth = btoa(`${Deno.env.get('PAYPAL_CLIENT_ID')}:${Deno.env.get('PAYPAL_CLIENT_SECRET')}`)
+  const auth = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)
   
   try {
     const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
@@ -40,6 +61,10 @@ async function getPayPalAccessToken() {
 
 async function verifyWebhookSignature(event: any, accessToken: string) {
   try {
+    if (!WEBHOOK_ID) {
+      throw new Error('PAYPAL_WEBHOOK_ID environment variable is not set');
+    }
+    
     const response = await fetch(`${PAYPAL_API_URL}/v1/notifications/verify-webhook-signature`, {
       method: 'POST',
       headers: {
@@ -72,66 +97,86 @@ async function verifyWebhookSignature(event: any, accessToken: string) {
 }
 
 async function findDepositByOrderId(supabaseClient: any, orderId: string) {
-  const { data, error } = await supabaseClient
-    .from('deposits')
-    .select('*')
-    .eq('paypal_order_id', orderId)
-    .single();
+  try {
+    const { data, error } = await supabaseClient
+      .from('deposits')
+      .select('*')
+      .eq('paypal_order_id', orderId)
+      .single();
 
-  if (error) {
-    console.error('Error finding deposit:', error);
-    throw error;
+    if (error) {
+      console.error('Error finding deposit:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error finding deposit for order ID ${orderId}:`, error);
+    return null;
   }
-
-  return data;
 }
 
 async function updateDepositStatus(supabaseClient: any, id: string, status: string, additionalData = {}) {
-  const { data, error } = await supabaseClient
-    .from('deposits')
-    .update({
-      status,
-      updated_at: new Date().toISOString(),
-      ...additionalData
-    })
-    .eq('id', id)
-    .select();
+  try {
+    const { data, error } = await supabaseClient
+      .from('deposits')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+        ...additionalData
+      })
+      .eq('id', id)
+      .select();
 
-  if (error) {
-    console.error('Error updating deposit:', error);
+    if (error) {
+      console.error('Error updating deposit:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error updating deposit ${id} to ${status}:`, error);
     throw error;
   }
-
-  return data;
 }
 
 async function createTransaction(supabaseClient: any, type: 'deposit' | 'refund', amount: number, userId: string, referenceId: string, description: string) {
-  const { data, error } = await supabaseClient
-    .from('transactions')
-    .insert({
-      type,
-      amount,
-      user_id: userId,
-      reference_id: referenceId,
-      description
-    });
+  try {
+    const { data, error } = await supabaseClient
+      .from('transactions')
+      .insert({
+        type,
+        amount,
+        user_id: userId,
+        reference_id: referenceId,
+        description
+      });
 
-  if (error) {
-    console.error('Error creating transaction:', error);
+    if (error) {
+      console.error('Error creating transaction:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error creating ${type} transaction:`, error);
     throw error;
   }
-
-  return data;
 }
 
 async function updateUserBalance(supabaseClient: any, userId: string, amount: number) {
-  const { error } = await supabaseClient.rpc(
-    'update_user_balance',
-    { user_id: userId, amount }
-  );
+  try {
+    const { error } = await supabaseClient.rpc(
+      'update_user_balance',
+      { user_id: userId, amount }
+    );
 
-  if (error) {
-    console.error('Error updating user balance:', error);
+    if (error) {
+      console.error('Error updating user balance:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error(`Error updating balance for user ${userId}:`, error);
     throw error;
   }
 }
@@ -152,6 +197,36 @@ async function sendNotificationEmail(supabase: any, userId: string, templateName
   }
 }
 
+async function logWebhookEvent(supabase: any, eventType: string, eventData: any, status: 'success' | 'error', errorMessage?: string) {
+  try {
+    // Store webhook event log
+    await supabase
+      .from('api_logs')
+      .insert({
+        api: 'PayPal',
+        endpoint: 'webhook',
+        status: status,
+        details: {
+          event_type: eventType,
+          event_id: eventData.id,
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
+          data: eventData
+        }
+      });
+  } catch (logError) {
+    console.error('Error logging webhook event:', logError);
+    // Don't throw - this is a non-critical operation
+  }
+}
+
+async function getOrderIdFromResource(resource: any) {
+  // Try different ways to extract order ID based on event type
+  return resource.supplementary_data?.related_ids?.order_id || 
+         resource.supplementary_data?.related_ids?.sale_id || 
+         resource.id;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -161,6 +236,9 @@ serve(async (req) => {
   console.log('PayPal webhook received');
 
   try {
+    // Validate environment variables
+    validateEnvironment();
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -175,20 +253,26 @@ serve(async (req) => {
 
     if (!isValid) {
       console.error('Invalid webhook signature');
+      await logWebhookEvent(
+        supabaseClient, 
+        event.webhook_event?.event_type, 
+        event.webhook_event, 
+        'error', 
+        'Invalid webhook signature'
+      );
       throw new Error('Invalid webhook signature');
     }
 
     // Extract event data
     const webhookEvent = event.webhook_event;
     const eventType = webhookEvent.event_type;
+    await logWebhookEvent(supabaseClient, eventType, webhookEvent, 'success');
     
     // Handle different webhook event types
     switch (eventType) {
       case 'PAYMENT.CAPTURE.COMPLETED': {
         const payment = webhookEvent.resource;
-        const orderId = payment.supplementary_data?.related_ids?.order_id || 
-                         payment.supplementary_data?.related_ids?.sale_id || 
-                         payment.id;
+        const orderId = await getOrderIdFromResource(payment);
         
         console.log('Processing completed payment for order:', orderId);
         
@@ -196,7 +280,10 @@ serve(async (req) => {
         const deposit = await findDepositByOrderId(supabaseClient, orderId);
         if (!deposit) {
           console.error('Deposit record not found for PayPal order ID:', orderId);
-          throw new Error(`Deposit record not found for PayPal order ID: ${orderId}`);
+          return new Response(JSON.stringify({ success: false, message: 'Deposit record not found' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
         }
         
         if (deposit.status === 'completed') {
@@ -210,7 +297,12 @@ serve(async (req) => {
         // Update deposit status
         await updateDepositStatus(supabaseClient, deposit.id, 'completed', {
           paypal_payer_id: payment.payer?.payer_id,
-          paypal_payer_email: payment.payer?.email_address
+          paypal_payer_email: payment.payer?.email_address,
+          metadata: {
+            ...deposit.metadata,
+            webhook_processed: new Date().toISOString(),
+            payment_details: payment
+          }
         });
         
         // Create transaction record
@@ -242,9 +334,7 @@ serve(async (req) => {
       case 'PAYMENT.CAPTURE.DECLINED': 
       case 'PAYMENT.CAPTURE.REFUNDED': {
         const payment = webhookEvent.resource;
-        const orderId = payment.supplementary_data?.related_ids?.order_id || 
-                         payment.supplementary_data?.related_ids?.sale_id || 
-                         payment.id;
+        const orderId = await getOrderIdFromResource(payment);
         
         console.log(`Processing ${eventType.toLowerCase()} for order:`, orderId);
         
@@ -252,7 +342,10 @@ serve(async (req) => {
         const deposit = await findDepositByOrderId(supabaseClient, orderId);
         if (!deposit) {
           console.error('Deposit record not found for PayPal order ID:', orderId);
-          throw new Error(`Deposit record not found for PayPal order ID: ${orderId}`);
+          return new Response(JSON.stringify({ success: false, message: 'Deposit record not found' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
         }
         
         // If this is a refund and the deposit was already completed, we need to reverse the balance
@@ -269,11 +362,25 @@ serve(async (req) => {
           
           // Update user balance (subtract the amount)
           await updateUserBalance(supabaseClient, deposit.user_id, -deposit.amount);
+          
+          // Send refund notification
+          await sendNotificationEmail(supabaseClient, deposit.user_id, 'payment_refunded', {
+            amount: deposit.amount,
+            payment_method: 'PayPal',
+            transaction_id: orderId,
+            date: new Date().toISOString()
+          });
         }
         
         // Update deposit status based on event type
         const newStatus = eventType === 'PAYMENT.CAPTURE.REFUNDED' ? 'refunded' : 'failed';
-        await updateDepositStatus(supabaseClient, deposit.id, newStatus);
+        await updateDepositStatus(supabaseClient, deposit.id, newStatus, {
+          metadata: {
+            ...deposit.metadata,
+            webhook_processed: new Date().toISOString(),
+            payment_details: payment
+          }
+        });
         
         console.log(`Successfully processed ${eventType.toLowerCase()} for deposit:`, deposit.id);
         break;
@@ -281,9 +388,7 @@ serve(async (req) => {
       
       case 'PAYMENT.CAPTURE.PENDING': {
         const payment = webhookEvent.resource;
-        const orderId = payment.supplementary_data?.related_ids?.order_id || 
-                         payment.supplementary_data?.related_ids?.sale_id || 
-                         payment.id;
+        const orderId = await getOrderIdFromResource(payment);
         
         console.log('Processing pending payment for order:', orderId);
         
@@ -291,13 +396,21 @@ serve(async (req) => {
         const deposit = await findDepositByOrderId(supabaseClient, orderId);
         if (!deposit) {
           console.error('Deposit record not found for PayPal order ID:', orderId);
-          throw new Error(`Deposit record not found for PayPal order ID: ${orderId}`);
+          return new Response(JSON.stringify({ success: false, message: 'Deposit record not found' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
         }
         
         // Update deposit with pending reason if available
         const pendingReason = payment.status_details?.reason || 'unknown';
         await updateDepositStatus(supabaseClient, deposit.id, 'pending', {
-          metadata: { pending_reason: pendingReason }
+          metadata: {
+            ...deposit.metadata,
+            webhook_processed: new Date().toISOString(),
+            pending_reason: pendingReason,
+            payment_details: payment
+          }
         });
         
         console.log('Updated deposit to pending status with reason:', pendingReason);
