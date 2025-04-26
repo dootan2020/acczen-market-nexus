@@ -102,9 +102,9 @@ const ProductDetail = () => {
       </div>
 
       <ProductDescription 
-        description={product.long_description || product.description}
-        specifications={product.specifications}
-        usage={product.usage_instructions}
+        description={product.description}
+        specifications={product.metadata?.specifications || null}
+        usage={product.metadata?.usage_instructions || null}
       />
 
       <ProductBenefits />
