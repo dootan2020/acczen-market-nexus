@@ -8,7 +8,7 @@ export const enableAPIDebugMode = () => {
     const url = args[0];
     const options = args[1] || {};
     
-    console.log(`🌐 Request to: ${typeof url === 'string' ? url : url.url}`);
+    console.log(`🌐 Request to: ${typeof url === 'string' ? url : url instanceof URL ? url.href : (url as Request).url}`);
     console.log('📤 Options:', options);
     
     try {

@@ -128,20 +128,22 @@ export const PurchaseConfirmModal = ({
       
       // 5. Add order items
       console.log("Lưu chi tiết đơn hàng:", order.id);
+      const orderItemData = {
+        order_id: order.id,
+        product_id: productId,
+        quantity: quantity,
+        price: productPrice,
+        total: totalCost,
+        data: {
+          kiosk_token: kioskToken,
+          taphoammo_order_id: orderData.order_id,
+          product_keys: orderData.product_keys || []
+        }
+      };
+      
       const { error: itemError } = await supabase
         .from('order_items')
-        .insert({
-          order_id: order.id,
-          product_id: productId,
-          quantity: quantity,
-          price: productPrice,
-          total: totalCost,
-          data: {
-            kiosk_token: kioskToken,
-            taphoammo_order_id: orderData.order_id,
-            product_keys: orderData.product_keys || []
-          }
-        });
+        .insert(orderItemData);
       
       if (itemError) {
         console.error("Lỗi lưu chi tiết đơn hàng:", itemError);
