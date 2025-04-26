@@ -28,6 +28,9 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import ApiLogsPage from './pages/admin/ApiLogsPage';
 import Index from './pages/Index';
+import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
+import { DashboardLayout } from './components/dashboard/DashboardLayout';
 
 function App() {
   return (
@@ -37,24 +40,31 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />}>
               <Route index element={<Index />} />
+              <Route path="products" element={<Products />} />
+              <Route path="product/:slug" element={<ProductDetail />} />
             </Route>
+            
             <Route path="/home" element={<HomePage />}>
               <Route index element={<Index />} />
+              <Route path="products" element={<Products />} />
+              <Route path="product/:slug" element={<ProductDetail />} />
             </Route>
+            
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/update-password" element={<UpdatePasswordPage />} />
+            
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <Dashboard />
+                <DashboardLayout />
               </PrivateRoute>
-            } />
-            <Route path="/dashboard/*" element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            } />
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="purchases" element={<Dashboard />} />
+              <Route path="history" element={<Dashboard />} />
+              <Route path="settings" element={<Dashboard />} />
+            </Route>
             
             <Route path="/admin" element={
               <AdminGuard>

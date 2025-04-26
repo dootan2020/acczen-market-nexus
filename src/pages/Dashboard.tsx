@@ -11,11 +11,11 @@ const Dashboard = () => {
 
   // Render the appropriate component based on the current path
   const renderDashboardContent = () => {
-    if (path === "/dashboard/purchases") {
+    if (path.includes("/dashboard/purchases")) {
       return <PurchasesPage />;
-    } else if (path === "/dashboard/history") {
+    } else if (path.includes("/dashboard/history")) {
       return <DepositHistoryPage />;
-    } else if (path === "/dashboard/settings") {
+    } else if (path.includes("/dashboard/settings")) {
       return <SettingsPage />;
     } else {
       return <DashboardComponent />;
