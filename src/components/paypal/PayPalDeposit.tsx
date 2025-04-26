@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";  // Add this import
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, CreditCard } from "lucide-react";
