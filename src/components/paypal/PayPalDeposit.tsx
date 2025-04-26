@@ -89,7 +89,7 @@ const PayPalDeposit = () => {
 
   return (
     <PayPalScriptProvider options={PAYPAL_OPTIONS}>
-      <div className="container max-w-xl mx-auto px-4 py-8">
+      <div className="space-y-6">
         <Card className="border-border/40 shadow-md">
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center">
@@ -99,7 +99,9 @@ const PayPalDeposit = () => {
                 className="h-8 mb-2"
               />
             </div>
-            <CardTitle className="text-2xl font-semibold">Nạp tiền qua PayPal</CardTitle>
+            <CardTitle className="text-2xl font-semibold">
+              Nạp tiền qua PayPal
+            </CardTitle>
             <CardDescription>
               Nạp tiền an toàn và nhanh chóng qua PayPal
             </CardDescription>
@@ -108,21 +110,22 @@ const PayPalDeposit = () => {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-foreground/90">
+                <Label htmlFor="amount">
                   Số tiền muốn nạp (USD)
-                </label>
+                </Label>
                 <Input
+                  id="amount"
                   type="number"
                   min="0"
                   step="0.01"
                   placeholder="Nhập số tiền..."
                   value={customAmount}
                   onChange={handleCustomAmountChange}
-                  className="w-full"
+                  className="bg-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {presetAmounts.map((presetAmount) => (
                   <Button
                     key={presetAmount}

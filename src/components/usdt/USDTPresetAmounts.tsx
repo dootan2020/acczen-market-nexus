@@ -14,13 +14,13 @@ export const USDTPresetAmounts: React.FC<USDTPresetAmountsProps> = ({
   const presetAmounts = [10, 20, 50, 100];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {presetAmounts.map((preset) => (
         <Button
           key={preset}
           type="button"
           variant={selectedAmount === preset.toString() ? "default" : "outline"}
-          className="w-full"
+          className="w-full h-12 text-lg font-medium"
           onClick={() => onAmountSelect(preset.toString())}
         >
           ${preset}
