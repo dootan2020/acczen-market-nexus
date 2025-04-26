@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -24,11 +24,16 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ExtendedProduct } from '@/pages/admin/ProductsImport';
 import { Tables } from '@/types/supabase';
+import { useSubcategories } from '@/hooks/useSubcategories';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Tên sản phẩm không được để trống' }),
   description: z.string().optional(),
   category_id: z.string().optional(),
+  subcategory_id: z.string().optional(),
   price: z.coerce.number().nonnegative({ message: 'Giá gốc phải là số dương' }),
   selling_price: z.coerce.number().nonnegative({ message: 'Giá bán phải là số dương' }),
   stock_quantity: z.coerce.number().int().nonnegative({ message: 'Số lượng phải là số nguyên dương' }),
@@ -56,12 +61,16 @@ export default function ImportPreview({
   onPrevious,
   onNext
 }: ImportPreviewProps) {
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: product.name,
       description: product.description || '',
       category_id: product.category_id || '',
+      subcategory_id: product.subcategory_id || '',
       price: product.price,
       selling_price: product.selling_price || product.price,
       stock_quantity: product.stock_quantity,
@@ -72,12 +81,54 @@ export default function ImportPreview({
       kiosk_token: product.kiosk_token
     }
   });
+
+  const selectedCategoryId = form.watch('category_id');
+  const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategories(selectedCategoryId);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return null;
+    
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      form.setValue('image_url', publicUrl);
+      toast({
+        title: "Upload thành công",
+        description: "Hình ảnh đã được tải lên thành công",
+      });
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi upload",
+        description: "Không thể tải lên hình ảnh. Vui lòng thử lại.",
+      });
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
   
-  const onSubmit = (data: FormValues) => {
-    onNext({
+  const onSubmit = async (data: FormValues) => {
+    const processedProduct = {
       ...product,
       ...data
-    });
+    };
+    onNext(processedProduct);
   };
 
   return (
@@ -128,7 +179,10 @@ export default function ImportPreview({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Danh mục</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={(value) => {
+                    field.onChange(value);
+                    form.setValue('subcategory_id', '');
+                  }} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn danh mục" />
@@ -152,6 +206,46 @@ export default function ImportPreview({
                   </Select>
                   <FormDescription>
                     Chọn danh mục cho sản phẩm
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="subcategory_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Danh mục con</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={!selectedCategoryId || subcategoriesLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn danh mục con" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subcategoriesLoading ? (
+                        <div className="p-2">
+                          <Skeleton className="h-5 w-full mb-2" />
+                          <Skeleton className="h-5 w-full mb-2" />
+                          <Skeleton className="h-5 w-full" />
+                        </div>
+                      ) : (
+                        subcategories?.map((subcategory) => (
+                          <SelectItem key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Chọn danh mục con cho sản phẩm
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -267,12 +361,41 @@ export default function ImportPreview({
               name="image_url"
               render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>URL Hình ảnh</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
+                  <FormLabel>Hình ảnh sản phẩm</FormLabel>
+                  <div className="space-y-4">
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="Nhập URL hình ảnh" />
+                    </FormControl>
+                    <div className="flex flex-col space-y-2">
+                      <Label>Hoặc tải lên hình ảnh</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImageFile(file);
+                            const url = await handleImageUpload(file);
+                            if (url) {
+                              field.onChange(url);
+                            }
+                          }
+                        }}
+                        disabled={uploading}
+                      />
+                    </div>
+                    {imageFile && field.value && (
+                      <div className="mt-2">
+                        <img 
+                          src={field.value} 
+                          alt="Preview" 
+                          className="max-w-[200px] h-auto rounded-md"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <FormDescription>
-                    Nhập URL hình ảnh sản phẩm
+                    Nhập URL hoặc tải lên hình ảnh sản phẩm
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -302,8 +425,8 @@ export default function ImportPreview({
             <Button type="button" variant="outline" onClick={onPrevious}>
               Quay lại
             </Button>
-            <Button type="submit">
-              Tiếp tục
+            <Button type="submit" disabled={uploading}>
+              {uploading ? 'Đang tải lên...' : 'Tiếp tục'}
             </Button>
           </div>
         </form>
