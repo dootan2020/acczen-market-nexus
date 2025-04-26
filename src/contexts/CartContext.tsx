@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Define cart item interface
 export interface CartItem {
@@ -132,7 +132,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 // Cart provider component
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState, () => {
     // Load cart from localStorage on init
     if (typeof window !== 'undefined') {
@@ -141,8 +141,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     return initialState;
   });
-  
-  const { toast } = useToast();
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -206,7 +204,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       {children}
     </CartContext.Provider>
   );
-}
+};
 
 // Custom hook to use the cart context
 export function useCart() {
