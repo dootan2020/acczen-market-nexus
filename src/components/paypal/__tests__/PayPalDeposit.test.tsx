@@ -2,6 +2,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import PayPalDeposit from '../PayPalDeposit';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import './setup';
 import '@testing-library/jest-dom';
 
 describe('PayPalDeposit', () => {
