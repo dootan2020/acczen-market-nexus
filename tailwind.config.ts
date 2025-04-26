@@ -82,10 +82,28 @@ const config: Config = {
           "50%": { opacity: "0.9", transform: "scale(1.03)" },
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'hsl(var(--foreground))',
+            a: {
+              color: 'hsl(var(--primary))',
+              '&:hover': {
+                color: 'hsl(var(--primary))',
+              },
+            },
+            'h1, h2, h3, h4, h5, h6': {
+              color: 'hsl(var(--foreground))',
+            },
+          },
+        },
+      },
     },
   },
   plugins: [
     require("tailwindcss-animate"),
+    require('@tailwindcss/typography'),
     plugin(({ addBase }) => {
       addBase({
         ".min-h-screen": {
