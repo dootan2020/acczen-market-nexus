@@ -102,10 +102,14 @@ const OrderDetail = () => {
           )
         `)
         .eq("id", id)
-        .single();
+        .maybeSingle(); // Changed from single() to maybeSingle() to avoid error
 
       if (error) {
         throw error;
+      }
+
+      if (!data) {
+        throw new Error("Order not found");
       }
 
       // Transform the data to match our Order type
@@ -133,11 +137,15 @@ const OrderDetail = () => {
     try {
       setRefreshing(true);
       
+      if (!order?.items?.[0]?.data?.taphoammo_order_id) {
+        throw new Error("Không tìm thấy mã đơn hàng Taphoammo");
+      }
+      
       // Call the edge function to check the order status
       const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
         body: JSON.stringify({
           action: 'check_order',
-          orderId: order?.items?.[0]?.data?.taphoammo_order_id
+          orderId: order.items[0].data.taphoammo_order_id
         })
       });
       
@@ -263,7 +271,7 @@ const OrderDetail = () => {
             </CardHeader>
             <CardContent className="pb-3">
               {isPending && (
-                <Alert className="mb-4">
+                <Alert variant="warning" className="mb-4">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đang được xử lý</AlertTitle>
                   <AlertDescription>
@@ -272,7 +280,7 @@ const OrderDetail = () => {
                 </Alert>
               )}
               {!isPending && order.items[0]?.data?.product_keys?.length > 0 && (
-                <Alert>
+                <Alert variant="success">
                   <CheckCircle className="h-4 w-4" />
                   <AlertTitle>Đơn hàng đã hoàn thành</AlertTitle>
                   <AlertDescription>

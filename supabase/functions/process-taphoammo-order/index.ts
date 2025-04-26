@@ -57,8 +57,11 @@ async function fetchWithRetry(fn, retries = MAX_RETRIES) {
 }
 
 serve(async (req) => {
+  console.log("Edge Function received request:", req.method, req.url);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -72,15 +75,37 @@ serve(async (req) => {
   };
 
   try {
+    console.log("Creating Supabase client");
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Parse request body
-    const requestBody = await req.json();
-    const action = requestBody.action || 'buy_product';
+    let requestBody;
+    try {
+      console.log("Parsing request body");
+      requestBody = await req.json();
+      console.log("Request body:", JSON.stringify(requestBody));
+    } catch (error) {
+      console.error("Error parsing request body:", error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Invalid JSON in request body'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
 
+    const action = requestBody.action || 'buy_product';
+    console.log("Requested action:", action);
+
+    // Handle check_stock action - similar to what we're using in products-import
+    if (action === 'check_stock') {
+      return await handleCheckStock(requestBody, supabaseClient, corsHeaders);
+    }
+    
     // Handle different actions
     if (action === 'check_order') {
       return await handleCheckOrder(requestBody, supabaseClient, corsHeaders);
@@ -101,6 +126,7 @@ serve(async (req) => {
       apiLog.status = 'invalid-request';
       await logApiCall(supabaseClient, apiLog);
       
+      console.error("Missing required parameters");
       return new Response(
         JSON.stringify({
           success: false,
@@ -111,6 +137,7 @@ serve(async (req) => {
     }
 
     // Get auth user from userToken
+    console.log("Getting user by ID:", userToken);
     const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(
       userToken
     );
@@ -120,6 +147,7 @@ serve(async (req) => {
       apiLog.details.error = userError?.message;
       await logApiCall(supabaseClient, apiLog);
       
+      console.error("Invalid user token:", userError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -129,25 +157,66 @@ serve(async (req) => {
       );
     }
 
-    // Get product from kiosk token
-    const { data: product, error: productError } = await supabaseClient
+    // First check if this product exists in taphoammo_mock_products
+    console.log("Checking for product with kiosk_token:", kioskToken);
+    const { data: mockProduct, error: mockProductError } = await supabaseClient
       .from('taphoammo_mock_products')
       .select('*')
       .eq('kiosk_token', kioskToken)
       .single();
 
-    if (productError || !product) {
-      apiLog.status = 'product-not-found';
-      apiLog.details.error = productError?.message;
-      await logApiCall(supabaseClient, apiLog);
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: 'Product not found'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      );
+    // If product not found in mock table, try to fetch from API using the same method as products-import
+    let product;
+    
+    if (mockProductError || !mockProduct) {
+      console.log("Product not found in mock table, fetching from API");
+      try {
+        // This part simulates what products-import does
+        const proxyType = 'admin'; // Default to using Edge Functions
+        
+        const stockResponse = await supabaseClient.functions.invoke('taphoammo-api', {
+          body: {
+            endpoint: 'getStock',
+            kioskToken,
+            userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+          }
+        });
+        
+        if (stockResponse.error) {
+          throw new Error(`API error: ${stockResponse.error.message}`);
+        }
+        
+        if (!stockResponse.data || stockResponse.data.success === "false") {
+          throw new Error(stockResponse.data?.message || "Failed to get product information");
+        }
+        
+        // Create a product object similar to what we'd get from the database
+        product = {
+          id: 'temp-' + Math.random().toString(36).substring(2, 15),
+          kiosk_token: kioskToken,
+          name: stockResponse.data.name || 'Unknown Product',
+          price: parseFloat(stockResponse.data.price) || 0,
+          stock_quantity: parseInt(stockResponse.data.stock) || 0
+        };
+        
+        console.log("Product fetched from API:", product);
+      } catch (error) {
+        console.error("Error fetching product from API:", error);
+        apiLog.status = 'product-fetch-error';
+        apiLog.details.error = error.message;
+        await logApiCall(supabaseClient, apiLog);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: `Error fetching product: ${error.message}`
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    } else {
+      product = mockProduct;
+      console.log("Found product in mock table:", product);
     }
 
     // Calculate total cost
@@ -155,6 +224,7 @@ serve(async (req) => {
     apiLog.details.amount = totalCost;
 
     // Get user balance
+    console.log("Getting user balance for:", userToken);
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('balance')
@@ -166,6 +236,7 @@ serve(async (req) => {
       apiLog.details.error = profileError?.message;
       await logApiCall(supabaseClient, apiLog);
       
+      console.error("Could not retrieve user balance:", profileError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -182,6 +253,7 @@ serve(async (req) => {
       apiLog.details.requiredAmount = totalCost;
       await logApiCall(supabaseClient, apiLog);
       
+      console.error("Insufficient balance:", profile.balance, "needed:", totalCost);
       return new Response(
         JSON.stringify({
           success: false,
@@ -194,6 +266,7 @@ serve(async (req) => {
     // Call taphoammo API to buy products with retry logic
     let apiResponse;
     try {
+      console.log("Calling mock-taphoammo API to buy product");
       const { result: mockResponse, success, retries, responseTime } = await fetchWithRetry(async () => {
         const { data, error } = await supabaseClient.functions.invoke('mock-taphoammo', {
           body: JSON.stringify({
@@ -213,12 +286,14 @@ serve(async (req) => {
       apiLog.details.responseTime = responseTime;
       apiLog.details.retries = retries;
       orderId = apiResponse.order_id;
+      console.log("API response:", apiResponse);
       
     } catch (error) {
       apiLog.status = 'api-error';
       apiLog.details.error = error.message;
       await logApiCall(supabaseClient, apiLog);
       
+      console.error("Error calling taphoammo API:", error);
       return new Response(
         JSON.stringify({
           success: false,
@@ -230,6 +305,7 @@ serve(async (req) => {
 
     // Start database transaction for updating user balance and creating records
     try {
+      console.log("Creating order record in database");
       // Create order in local database first
       const { data: order, error: orderError } = await supabaseClient
         .from('orders')
@@ -245,6 +321,7 @@ serve(async (req) => {
         throw new Error(`Failed to create order record: ${orderError.message}`);
       }
 
+      console.log("Creating order items for order:", order.id);
       // Create order items
       const { error: itemError } = await supabaseClient
         .from('order_items')
@@ -265,6 +342,7 @@ serve(async (req) => {
         throw new Error(`Failed to create order items: ${itemError.message}`);
       }
 
+      console.log("Updating user balance");
       // Only deduct from user balance after ensuring order is recorded
       const { error: updateError } = await supabaseClient.rpc('update_user_balance', {
         user_id: userToken,
@@ -275,6 +353,7 @@ serve(async (req) => {
         throw new Error(`Failed to update user balance: ${updateError.message}`);
       }
 
+      console.log("Creating transaction record");
       // Create transaction record
       const { error: transactionError } = await supabaseClient
         .from('transactions')
@@ -296,10 +375,12 @@ serve(async (req) => {
       apiLog.details.productKeysCount = apiResponse.product_keys?.length || 0;
       await logApiCall(supabaseClient, apiLog);
 
+      console.log("Purchase successful, returning response");
       return new Response(
         JSON.stringify({
           success: true,
-          order_id: apiResponse.order_id,
+          order_id: order.id, // Return our database order ID instead of Taphoammo order ID
+          taphoammo_order_id: apiResponse.order_id,
           message: apiResponse.message || 'Order processed successfully',
           product_keys: apiResponse.product_keys || [],
           status: apiResponse.status || 'completed'
@@ -354,6 +435,7 @@ serve(async (req) => {
 
 // Handle check order status
 async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
+  console.log("Handling check_order action");
   const { orderId } = requestBody;
   
   if (!orderId) {
@@ -368,6 +450,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
   
   try {
     // First check if the order exists in our mock orders
+    console.log("Checking for mock order:", orderId);
     const { data: mockOrder, error: mockOrderError } = await supabaseClient
       .from('taphoammo_mock_orders')
       .select('*')
@@ -375,6 +458,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
       .single();
       
     if (mockOrderError) {
+      console.error("Mock order not found:", mockOrderError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -386,6 +470,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
     
     // If order is already completed, just return the current status
     if (mockOrder.status === 'completed') {
+      console.log("Order is already completed");
       return new Response(
         JSON.stringify({
           success: true,
@@ -398,6 +483,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
     }
     
     // If order is still processing, make a call to the mock API to check status
+    console.log("Calling mock API to check order status");
     const { data, error } = await supabaseClient.functions.invoke('mock-taphoammo', {
       body: JSON.stringify({
         action: 'check_order',
@@ -411,6 +497,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
     
     // If the API returns that the order is now completed
     if (data.status === 'completed') {
+      console.log("API reports order is now completed");
       // Update the mock order in our database
       const { error: updateError } = await supabaseClient
         .from('taphoammo_mock_orders')
@@ -425,6 +512,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
       }
       
       // Update the actual order items
+      console.log("Updating order items with product keys");
       const { data: orderItems, error: orderItemsError } = await supabaseClient
         .from('order_items')
         .select('id, data, order_id')
@@ -459,6 +547,7 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
       }
     }
     
+    console.log("Returning order status");
     return new Response(
       JSON.stringify({
         success: true,
@@ -482,9 +571,80 @@ async function handleCheckOrder(requestBody, supabaseClient, corsHeaders) {
   }
 }
 
+// Handle check stock availability - similar to what products-import does
+async function handleCheckStock(requestBody, supabaseClient, corsHeaders) {
+  console.log("Handling check_stock action");
+  const { kioskToken, quantity = 1, proxyType = 'admin' } = requestBody;
+  
+  if (!kioskToken) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Missing kiosk token'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    );
+  }
+  
+  try {
+    // Use taphoammo-api edge function to check stock
+    console.log("Calling taphoammo-api to check stock");
+    const { data, error } = await supabaseClient.functions.invoke('taphoammo-api', {
+      body: {
+        endpoint: 'getStock',
+        kioskToken,
+        userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+      }
+    });
+    
+    if (error) {
+      throw new Error(`API error: ${error.message}`);
+    }
+    
+    if (!data || data.success === "false") {
+      throw new Error(data?.message || "Failed to get stock information");
+    }
+    
+    // Convert to proper types
+    const stockData = {
+      name: data.name || '',
+      stock_quantity: data.stock ? parseInt(data.stock) : 0,
+      price: data.price ? parseFloat(data.price) : 0,
+      kiosk_token: kioskToken
+    };
+    
+    // Check if we have enough stock
+    const available = stockData.stock_quantity >= quantity;
+    
+    console.log("Stock check result:", available, stockData);
+    return new Response(
+      JSON.stringify({
+        success: true,
+        available,
+        message: available ? 
+          `Product available (${stockData.stock_quantity} in stock)` : 
+          `Not enough stock (requested: ${quantity}, available: ${stockData.stock_quantity})`,
+        stockInfo: stockData
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error checking stock:', error);
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error.message || 'Error checking stock availability'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
+
 // Helper function to log API calls
 async function logApiCall(supabaseClient, logData) {
   try {
+    console.log("Logging API call:", logData);
     const { error } = await supabaseClient
       .from('api_logs')
       .insert({

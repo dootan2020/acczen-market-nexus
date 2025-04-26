@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom"; // Changed from useRouter to useNavigate
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ export const PurchaseConfirmModal = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const navigate = useNavigate(); // Changed from router to navigate
+  const navigate = useNavigate();
 
   const handleConfirmPurchase = async () => {
     if (!user) {
@@ -48,7 +48,7 @@ export const PurchaseConfirmModal = ({
         description: "Bạn cần đăng nhập để mua sản phẩm",
         variant: "destructive",
       });
-      navigate("/login"); // Changed from router.push to navigate
+      navigate("/login");
       return;
     }
 
@@ -64,7 +64,28 @@ export const PurchaseConfirmModal = ({
     try {
       setIsProcessing(true);
       
-      // Call the Edge Function to process the purchase
+      console.log("Gọi Edge Function process-taphoammo-order để mua sản phẩm");
+      console.log("Params:", { kioskToken, quantity, userToken: user.id });
+      
+      // First check stock to make sure product is available
+      const { data: stockData, error: stockError } = await supabase.functions.invoke('process-taphoammo-order', {
+        body: JSON.stringify({
+          action: 'check_stock',
+          kioskToken,
+          quantity
+        })
+      });
+      
+      if (stockError) {
+        console.error("Stock check error:", stockError);
+        throw new Error("Lỗi khi kiểm tra tồn kho: " + stockError.message);
+      }
+      
+      if (!stockData.success || !stockData.available) {
+        throw new Error(stockData.message || "Sản phẩm này đã hết hàng");
+      }
+      
+      // If stock is available, proceed with purchase
       const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
         body: JSON.stringify({
           action: 'buy_product',
@@ -75,6 +96,7 @@ export const PurchaseConfirmModal = ({
       });
       
       if (error) {
+        console.error("Purchase error:", error);
         throw new Error(error.message);
       }
       
@@ -90,7 +112,7 @@ export const PurchaseConfirmModal = ({
       
       // Redirect to the order details page
       setTimeout(() => {
-        navigate(`/orders/${data.order_id}`); // Changed from router.push to navigate
+        navigate(`/orders/${data.order_id}`);
       }, 500);
       
     } catch (error) {
