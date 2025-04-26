@@ -8,6 +8,7 @@ import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductInfo from "@/components/products/ProductInfo";
 import ProductBenefits from "@/components/products/ProductBenefits";
 import RelatedProducts from "@/components/products/RelatedProducts";
+import ProductDescription from "@/components/products/ProductDescription";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -99,6 +100,12 @@ const ProductDetail = () => {
           features={featuresList}
         />
       </div>
+
+      <ProductDescription 
+        description={product.long_description || product.description}
+        specifications={product.specifications}
+        usage={product.usage_instructions}
+      />
 
       <ProductBenefits />
 
