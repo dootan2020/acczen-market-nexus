@@ -38,3 +38,36 @@ export function getProxyOptions() {
     { value: 'direct', label: 'Trực tiếp', description: 'Không sử dụng proxy, có thể gặp vấn đề CORS' }
   ];
 }
+
+/**
+ * Retrieve the stored proxy type from localStorage or return default
+ * @returns The proxy type to use
+ */
+export function getStoredProxy(): ProxyType {
+  if (typeof window !== 'undefined') {
+    const storedProxy = localStorage.getItem('preferred_proxy');
+    if (storedProxy && isValidProxyType(storedProxy)) {
+      return storedProxy as ProxyType;
+    }
+  }
+  return 'admin'; // Default to admin/edge function
+}
+
+/**
+ * Set the preferred proxy type in localStorage
+ * @param proxyType The proxy type to store
+ */
+export function setStoredProxy(proxyType: ProxyType): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('preferred_proxy', proxyType);
+  }
+}
+
+/**
+ * Type guard to check if the value is a valid ProxyType
+ * @param value The value to check
+ * @returns True if value is a valid ProxyType
+ */
+function isValidProxyType(value: string): boolean {
+  return ['direct', 'corsproxy.io', 'allorigins', 'corsanywhere', 'admin'].includes(value);
+}
