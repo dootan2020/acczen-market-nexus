@@ -157,51 +157,41 @@ serve(async (req) => {
       );
     }
 
-    // First check if this product exists in taphoammo_mock_products
+    // First check if this product exists in database
     console.log("Checking for product with kiosk_token:", kioskToken);
-    const { data: mockProduct, error: mockProductError } = await supabaseClient
-      .from('taphoammo_mock_products')
+    const { data: existingProduct, error: productError } = await supabaseClient
+      .from('products')
       .select('*')
       .eq('kiosk_token', kioskToken)
-      .single();
+      .maybeSingle();
 
-    // If product not found in mock table, try to fetch from API using the same method as products-import
+    // If product not found in database, try to fetch product info from API
     let product;
     
-    if (mockProductError || !mockProduct) {
-      console.log("Product not found in mock table, fetching from API");
+    if (productError || !existingProduct) {
+      console.log("Product not found in database, fetching from API");
       try {
-        // This part simulates what products-import does
-        const proxyType = 'admin'; // Default to using Edge Functions
-        
-        const stockResponse = await supabaseClient.functions.invoke('taphoammo-api', {
-          body: {
-            endpoint: 'getStock',
-            kioskToken,
-            userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
-          }
+        // Use the import-taphoammo-products function to get product info
+        const { data: productData, error: fetchError } = await supabaseClient.functions.invoke('import-taphoammo-products', {
+          body: JSON.stringify({
+            action: 'get_product_info',
+            kioskToken
+          })
         });
         
-        if (stockResponse.error) {
-          throw new Error(`API error: ${stockResponse.error.message}`);
+        if (fetchError) {
+          throw new Error(`API error: ${fetchError.message}`);
         }
         
-        if (!stockResponse.data || stockResponse.data.success === "false") {
-          throw new Error(stockResponse.data?.message || "Failed to get product information");
+        if (!productData || !productData.success) {
+          throw new Error(productData?.message || "Failed to get product information");
         }
         
-        // Create a product object similar to what we'd get from the database
-        product = {
-          id: 'temp-' + Math.random().toString(36).substring(2, 15),
-          kiosk_token: kioskToken,
-          name: stockResponse.data.name || 'Unknown Product',
-          price: parseFloat(stockResponse.data.price) || 0,
-          stock_quantity: parseInt(stockResponse.data.stock) || 0
-        };
-        
+        product = productData.product;
         console.log("Product fetched from API:", product);
+        
       } catch (error) {
-        console.error("Error fetching product from API:", error);
+        console.error("Error fetching product:", error);
         apiLog.status = 'product-fetch-error';
         apiLog.details.error = error.message;
         await logApiCall(supabaseClient, apiLog);
@@ -215,8 +205,8 @@ serve(async (req) => {
         );
       }
     } else {
-      product = mockProduct;
-      console.log("Found product in mock table:", product);
+      product = existingProduct;
+      console.log("Found product in database:", product);
     }
 
     // Calculate total cost
@@ -587,44 +577,75 @@ async function handleCheckStock(requestBody, supabaseClient, corsHeaders) {
   }
   
   try {
-    // Use taphoammo-api edge function to check stock
-    console.log("Calling taphoammo-api to check stock");
-    const { data, error } = await supabaseClient.functions.invoke('taphoammo-api', {
-      body: {
-        endpoint: 'getStock',
-        kioskToken,
-        userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
-      }
+    // First check if product exists in the products table
+    console.log("Checking if product exists in database");
+    const { data: existingProduct, error: productError } = await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('kiosk_token', kioskToken)
+      .maybeSingle();
+      
+    if (!productError && existingProduct) {
+      // Product exists in database, check if it has enough stock
+      console.log("Product found in database, checking stock:", existingProduct.stock_quantity);
+      const available = existingProduct.stock_quantity >= quantity;
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          available,
+          message: available ? 
+            `Product available (${existingProduct.stock_quantity} in stock)` : 
+            `Not enough stock (requested: ${quantity}, available: ${existingProduct.stock_quantity})`,
+          stockInfo: {
+            name: existingProduct.name,
+            stock_quantity: existingProduct.stock_quantity,
+            price: existingProduct.price,
+            kiosk_token: kioskToken
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // If product not in database, fetch from taphoammo API
+    console.log("Product not found in database, checking with API");
+    
+    // Use import-taphoammo-products edge function to check product availability
+    const { data: importData, error: importError } = await supabaseClient.functions.invoke('import-taphoammo-products', {
+      body: JSON.stringify({
+        action: 'get_product_info',
+        kioskToken
+      })
     });
     
-    if (error) {
-      throw new Error(`API error: ${error.message}`);
+    if (importError) {
+      throw new Error(`API error: ${importError.message}`);
     }
     
-    if (!data || data.success === "false") {
-      throw new Error(data?.message || "Failed to get stock information");
+    if (!importData || !importData.success) {
+      throw new Error(importData?.message || "Failed to get product information");
     }
     
-    // Convert to proper types
-    const stockData = {
-      name: data.name || '',
-      stock_quantity: data.stock ? parseInt(data.stock) : 0,
-      price: data.price ? parseFloat(data.price) : 0,
-      kiosk_token: kioskToken
-    };
+    const product = importData.product;
     
     // Check if we have enough stock
-    const available = stockData.stock_quantity >= quantity;
+    const available = product.stock_quantity >= quantity;
     
-    console.log("Stock check result:", available, stockData);
+    console.log("Stock check result from API:", available, product);
     return new Response(
       JSON.stringify({
         success: true,
         available,
         message: available ? 
-          `Product available (${stockData.stock_quantity} in stock)` : 
-          `Not enough stock (requested: ${quantity}, available: ${stockData.stock_quantity})`,
-        stockInfo: stockData
+          `Product available (${product.stock_quantity} in stock)` : 
+          `Not enough stock (requested: ${quantity}, available: ${product.stock_quantity})`,
+        stockInfo: {
+          name: product.name,
+          stock_quantity: product.stock_quantity,
+          price: product.price,
+          kiosk_token: kioskToken
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
