@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import ProductImportForm from '@/components/admin/products/ProductImportForm';
@@ -19,6 +20,7 @@ export interface TaphoammoProduct {
 // Extended product type with additional fields for our database
 export interface ExtendedProduct extends TaphoammoProduct {
   category_id?: string;
+  subcategory_id?: string;
   description?: string;
   selling_price?: number;
   status: 'active' | 'inactive';

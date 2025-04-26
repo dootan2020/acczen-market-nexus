@@ -17,8 +17,10 @@ interface ImportProductRequest {
     price: number;
     markup_percentage: number;
     category?: string;
+    subcategory?: string; // Added subcategory support
     rating?: number;
     sales_count?: number;
+    image_url?: string; // Support for image URL
   }>;
 }
 
@@ -116,6 +118,8 @@ serve(async (req) => {
               price: adjustedPrice,
               stock_quantity: product.stock_quantity,
               category_id: product.category,
+              subcategory_id: product.subcategory, // Added subcategory_id
+              image_url: product.image_url, // Added image_url support
               updated_at: new Date().toISOString()
             })
             .eq('id', existingProduct.id);
@@ -139,6 +143,8 @@ serve(async (req) => {
               price: adjustedPrice,
               stock_quantity: product.stock_quantity,
               category_id: product.category,
+              subcategory_id: product.subcategory, // Added subcategory_id
+              image_url: product.image_url, // Added image_url support
               status: 'active',
               kiosk_token: product.kiosk_token
             })
