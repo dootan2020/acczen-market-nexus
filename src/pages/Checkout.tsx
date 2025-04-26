@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, ShoppingCart, Trash2, CreditCard, Loader } from 'lucide-react';
@@ -13,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { usePurchaseTaphoammo } from '@/hooks/usePurchaseTaphoammo';
+import { useOrderConfirmation } from '@/hooks/useOrderConfirmation';
 
 const Checkout = () => {
   const { cart, removeItem, updateQuantity, clearCart } = useCart();
@@ -29,6 +29,7 @@ const Checkout = () => {
   
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const { purchaseProduct, isProcessing: isTaphoammoProcessing } = usePurchaseTaphoammo('');
+  const { sendOrderConfirmationEmail } = useOrderConfirmation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,6 +109,25 @@ const Checkout = () => {
         const result = await purchaseProduct(item.quantity);
 
         if (result && result.success) {
+          // Send confirmation email
+          const orderDetails = {
+            id: result.orderId || `ORDER-${Date.now()}`,
+            items: [{
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              product_id: item.id
+            }],
+            total: cart.totalPrice,
+            payment_method: 'Account Balance',
+            digital_items: result.productKeys?.length ? [{
+              name: item.name,
+              keys: result.productKeys
+            }] : undefined
+          };
+          
+          await sendOrderConfirmationEmail(session.user.id, orderDetails);
+          
           toast.success('Purchase successful!');
           setPurchaseResult({
             orderId: result.orderId,
@@ -135,9 +155,35 @@ const Checkout = () => {
         if (error) throw error;
 
         if (data.success) {
+          // Get detailed product info for the email
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, name, price')
+            .in('id', cart.items.map(item => item.id));
+          
+          const productMap = new Map(products?.map(p => [p.id, p]) || []);
+          
+          // Prepare order details for email
+          const orderDetails = {
+            id: data.order.id,
+            items: cart.items.map(item => {
+              const product = productMap.get(item.id);
+              return {
+                name: product?.name || item.name,
+                quantity: item.quantity,
+                price: product?.price || item.price
+              };
+            }),
+            total: cart.totalPrice,
+            payment_method: 'Account Balance'
+          };
+          
+          // Send confirmation email
+          await sendOrderConfirmationEmail(session.user.id, orderDetails);
+          
           toast.success('Purchase successful!');
           setPurchaseResult({
-            orderId: data.orderId,
+            orderId: data.order.id,
             apiProduct: false
           });
           setShowSuccessDialog(true);
@@ -357,7 +403,7 @@ const Checkout = () => {
           </DialogHeader>
           
           <div className="py-4">
-            <p className="mb-4">Your purchase has been processed successfully.</p>
+            <p className="mb-4">Your purchase has been processed successfully. A confirmation email has been sent to your registered email address.</p>
             
             {purchaseResult?.apiProduct && purchaseResult.productKeys?.length ? (
               <div className="bg-muted p-4 rounded-md">
@@ -387,7 +433,7 @@ const Checkout = () => {
               className="sm:w-full"
               onClick={() => {
                 setShowSuccessDialog(false);
-                navigate('/dashboard');
+                navigate('/dashboard/purchases');
               }}
             >
               Go to Dashboard

@@ -44,6 +44,44 @@ export const PurchaseConfirmModal = ({
   const navigate = useNavigate();
   const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext();
 
+  const sendOrderConfirmationEmail = async (userId: string, orderData: any) => {
+    try {
+      const response = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          user_id: userId,
+          template: 'order_confirmation',
+          data: {
+            order_id: orderData.order_id,
+            date: new Date().toISOString(),
+            total: convertVNDtoUSD(orderData.total_amount || productPrice * quantity),
+            payment_method: 'Account Balance',
+            items: [
+              {
+                name: productName,
+                quantity: quantity,
+                price: convertVNDtoUSD(productPrice),
+                total: convertVNDtoUSD(productPrice * quantity)
+              }
+            ],
+            digital_items: orderData.product_keys?.length ? [
+              {
+                name: productName,
+                keys: orderData.product_keys
+              }
+            ] : []
+          }
+        }
+      });
+
+      if (!response.data?.success) {
+        console.error("Failed to send order confirmation email:", response.error);
+      }
+    } catch (error) {
+      console.error("Error sending confirmation email:", error);
+      // Don't throw here - we don't want to break the purchase flow if email fails
+    }
+  };
+
   const handleConfirmPurchase = async () => {
     if (!user) {
       toast({
@@ -221,15 +259,23 @@ export const PurchaseConfirmModal = ({
         }
       }
       
-      // 9. Show success message
+      // 9. Send confirmation email
+      console.log("Sending order confirmation email");
+      await sendOrderConfirmationEmail(user.id, {
+        order_id: orderData.order_id,
+        total_amount: totalCost,
+        product_keys: productKeys
+      });
+      
+      // 10. Show success message
       toast({
         title: "Đặt hàng thành công",
         description: `Mã đơn hàng: ${orderData.order_id}`,
       });
       
-      // 10. Navigate to order details page
+      // 11. Navigate to order details page
       setTimeout(() => {
-        navigate(`/orders/${order.id}`);
+        navigate(`/dashboard/purchases`);
       }, 1000);
       
     } catch (error) {
@@ -286,7 +332,7 @@ export const PurchaseConfirmModal = ({
             <ul className="list-disc pl-5 space-y-1">
               <li>Đơn hàng sẽ được xử lý ngay sau khi xác nhận</li>
               <li>Số dư tài khoản của bạn sẽ bị trừ tương ứng</li>
-              <li>Bạn sẽ nhận được thông tin sản phẩm trong trang chi tiết đơn hàng</li>
+              <li>Bạn sẽ nhận được email xác nhận kèm thông tin sản phẩm</li>
             </ul>
           </div>
         </div>
