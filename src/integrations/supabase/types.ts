@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_health: {
+        Row: {
+          api_name: string
+          created_at: string
+          error_count: number
+          id: string
+          is_open: boolean
+          last_error: string | null
+          opened_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_name: string
+          created_at?: string
+          error_count?: number
+          id?: string
+          is_open?: boolean
+          last_error?: string | null
+          opened_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_name?: string
+          created_at?: string
+          error_count?: number
+          id?: string
+          is_open?: boolean
+          last_error?: string | null
+          opened_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_logs: {
         Row: {
           api: string
@@ -279,6 +312,33 @@ export type Database = {
           total_amount?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      product_cache: {
+        Row: {
+          kiosk_token: string
+          name: string | null
+          price: number | null
+          product_id: string
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          kiosk_token: string
+          name?: string | null
+          price?: number | null
+          product_id: string
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          kiosk_token?: string
+          name?: string | null
+          price?: number | null
+          product_id?: string
+          stock_quantity?: number
+          updated_at?: string
         }
         Relationships: []
       }
