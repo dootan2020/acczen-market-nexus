@@ -10,6 +10,7 @@ export class OrderApi extends BaseApiClient {
     promotion?: string
   ): Promise<OrderResponse> {
     try {
+      // Always use SYSTEM_TOKEN regardless of provided userToken
       const params: Record<string, string | number> = {
         kioskToken,
         userToken: SYSTEM_TOKEN,
@@ -31,6 +32,7 @@ export class OrderApi extends BaseApiClient {
 
   async getProducts(orderId: string, userToken: string = SYSTEM_TOKEN): Promise<ProductsResponse> {
     try {
+      // Always use SYSTEM_TOKEN regardless of provided userToken
       return await this.callApi('getProducts', { 
         orderId, 
         userToken: SYSTEM_TOKEN 

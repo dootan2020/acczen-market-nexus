@@ -1,15 +1,14 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { ProxyType, buildProxyUrl, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
+import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
+
+const ALLORIGINS_PROXY = "https://api.allorigins.win/raw?url=";
 
 export class BaseApiClient {
   protected async callApi(endpoint: string, params: Record<string, string | number>, proxyType?: ProxyType): Promise<any> {
-    const proxy = proxyType || getStoredProxy();
-    
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[TaphoaMMO API] Calling ${endpoint} with proxy: ${proxy}`);
+        console.log(`[TaphoaMMO API] Calling ${endpoint}`);
       }
       
       // Build query string
@@ -20,7 +19,9 @@ export class BaseApiClient {
       
       // Construct API URL
       const apiUrl = `${API_CONFIG.baseUrl}/${endpoint}?${queryParams.toString()}`;
-      const finalUrl = buildProxyUrl(apiUrl, proxy);
+      
+      // Use AllOrigins proxy by default
+      const finalUrl = ALLORIGINS_PROXY + encodeURIComponent(apiUrl);
       
       // Add timeout to avoid hanging requests
       const controller = new AbortController();
@@ -54,37 +55,22 @@ export class BaseApiClient {
         throw new Error(data.message || data.description || 'API returned an error');
       }
       
-      setStoredProxy(proxy);
       await this.logApiCall(endpoint, params, true, responseTime);
       
       return data;
     } catch (error: any) {
       await this.logApiCall(endpoint, params, false, 0, error.message);
       
-      if (proxyType) {
-        throw error;
-      }
-      
-      return this.tryWithFallbackProxies(endpoint, params, proxy);
+      // If AllOrigins proxy failed, try Edge Function as fallback
+      return this.tryWithEdgeFunction(endpoint, params);
     }
   }
 
-  private async tryWithFallbackProxies(
+  private async tryWithEdgeFunction(
     endpoint: string, 
-    params: Record<string, string | number>, 
-    failedProxy: ProxyType
+    params: Record<string, string | number>
   ): Promise<any> {
-    const proxyOrder: ProxyType[] = ['admin', 'allorigins', 'corsproxy.io', 'corsanywhere', 'direct'];
-    const proxiesToTry = proxyOrder.filter(p => p !== failedProxy);
-    
-    for (const proxy of proxiesToTry) {
-      try {
-        const data = await this.callApi(endpoint, params, proxy);
-        return data;
-      } catch (error) {
-        continue;
-      }
-    }
+    console.log('[TaphoaMMO API] AllOrigins failed, trying Edge Function');
     
     try {
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
@@ -95,9 +81,8 @@ export class BaseApiClient {
       return data;
     } catch (serverError) {
       console.error(`[TaphoaMMO API] Edge function call failed:`, serverError);
+      throw new Error('All connection methods failed');
     }
-    
-    throw new Error('All connection methods failed');
   }
 
   private async logApiCall(
