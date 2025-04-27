@@ -55,19 +55,22 @@ export class TaphoammoApiService {
   }
 
   private async recordFailure(error: Error): Promise<void> {
-    // Using raw SQL by including it in the update call without sql tag
-    const { data, error: updateError } = await supabase
-      .from('api_health')
-      .update({
-        error_count: supabase.rpc('increment_error_count'),
-        last_error: error.message,
-        is_open: supabase.rpc('check_if_should_open_circuit'),
-        opened_at: supabase.rpc('update_opened_at_if_needed')
-      })
-      .eq('api_name', 'taphoammo');
+    try {
+      const { data, error: updateError } = await supabase
+        .from('api_health')
+        .update({
+          error_count: await supabase.rpc('increment_error_count'),
+          last_error: error.message,
+          is_open: await supabase.rpc('check_if_should_open_circuit'),
+          opened_at: await supabase.rpc('update_opened_at_if_needed')
+        })
+        .eq('api_name', 'taphoammo');
 
-    if (updateError) {
-      console.error('Failed to record API failure:', updateError);
+      if (updateError) {
+        console.error('Failed to record API failure:', updateError);
+      }
+    } catch (err) {
+      console.error('Error in recordFailure:', err);
     }
   }
 

@@ -612,13 +612,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_if_should_open_circuit: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       generate_random_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      increment_error_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      update_opened_at_if_needed: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       update_user_balance: {
         Args: { user_id: string; amount: number }
