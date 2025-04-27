@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -27,9 +28,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function UserAuth() {
   const { user, signOut, isAdmin, balance, userDisplayName } = useAuth();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
+  // Convert balance from VND to USD for display
+  const displayBalance = React.useMemo(() => {
+    if (balance === undefined) return "0.00";
+    const usdBalance = convertVNDtoUSD(balance);
+    console.log("UserAuth - Balance conversion:", { originalVND: balance, convertedUSD: usdBalance });
+    return formatUSD(usdBalance);
+  }, [balance, convertVNDtoUSD, formatUSD]);
   
   // Save current path when navigating to login
   const handleLoginClick = () => {
@@ -116,7 +126,7 @@ export function UserAuth() {
           <div className="px-2 py-1.5 bg-primary/10 rounded-md mb-2">
             <div className="flex justify-between items-center">
               <span className="text-sm">Số dư:</span>
-              <span className="font-semibold text-primary">${balance?.toFixed(2) ?? "0.00"}</span>
+              <span className="font-semibold text-primary">{displayBalance}</span>
             </div>
           </div>
           

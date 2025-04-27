@@ -15,4 +15,6 @@ export interface CurrencyContextType {
   formatUSD: (amount: number) => string;
   formatVND: (amount: number) => string;
   isLoading: boolean;
+  getExchangeRate: (fromCurrency: CurrencyCode, toCurrency: CurrencyCode) => number;
+  convertCurrency: (amount: number, fromCurrency: CurrencyCode, toCurrency: CurrencyCode) => number;
 }

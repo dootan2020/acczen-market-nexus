@@ -5,6 +5,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,8 @@ interface UserRowProps {
 }
 
 export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+  
   const getUserInitials = (user: any) => {
     if (user.full_name) {
       return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
@@ -29,6 +32,12 @@ export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
     }
     return user.email.substring(0, 2).toUpperCase();
   };
+
+  // Convert VND balance to USD and format
+  const displayBalance = React.useMemo(() => {
+    const usdBalance = convertVNDtoUSD(user.balance || 0);
+    return formatUSD(usdBalance);
+  }, [user.balance, convertVNDtoUSD, formatUSD]);
 
   return (
     <TableRow>
@@ -50,7 +59,7 @@ export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
           {user.role}
         </Badge>
       </TableCell>
-      <TableCell className="text-right">${Number(user.balance).toFixed(2)}</TableCell>
+      <TableCell className="text-right">{displayBalance}</TableCell>
       <TableCell>{format(new Date(user.created_at), 'MMM dd, yyyy')}</TableCell>
       <TableCell className="text-right">
         <DropdownMenu>

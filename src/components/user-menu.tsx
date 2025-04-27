@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LogOut, User, Settings, ShoppingBag, Shield } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrencyContext } from "@/contexts/CurrencyContext"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ import {
 
 export function UserMenu() {
   const { user, signOut, isAdmin, balance, userDisplayName } = useAuth()
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext()
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false)
 
   // Get user's initials for avatar
@@ -64,6 +66,14 @@ export function UserMenu() {
       console.error("Lỗi đăng xuất:", error)
     }
   }
+
+  // Convert balance from VND to USD for display
+  const displayBalance = React.useMemo(() => {
+    if (balance === undefined) return "0.00"
+    const usdBalance = convertVNDtoUSD(balance)
+    console.log("Balance conversion:", { originalVND: balance, convertedUSD: usdBalance })
+    return formatUSD(usdBalance)
+  }, [balance, convertVNDtoUSD, formatUSD])
 
   if (!user) {
     return (
@@ -104,7 +114,7 @@ export function UserMenu() {
           <div className="px-2 py-1.5 bg-primary/10 rounded-md mb-2">
             <div className="flex justify-between items-center">
               <span className="text-sm">Số dư:</span>
-              <span className="font-semibold text-primary">${balance?.toFixed(2) ?? "0.00"}</span>
+              <span className="font-semibold text-primary">{displayBalance}</span>
             </div>
           </div>
           
