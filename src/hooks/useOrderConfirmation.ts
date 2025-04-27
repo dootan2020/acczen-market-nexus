@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { toast } from 'sonner';
+import { Json } from '@/types/supabase';
 
 // Define types for order data
 export interface OrderItem {
@@ -32,6 +33,29 @@ export interface OrderStatusUpdateData {
   updated_at: string;
   message?: string;
 }
+
+interface OrderItemData {
+  product_keys?: string[];
+  kiosk_token?: string;
+  taphoammo_order_id?: string;
+  [key: string]: any;  // Allow for other properties
+}
+
+// Safely check if a value is a non-null object
+const isObject = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+// Safely extract product keys from Json data
+const safeGetProductKeys = (data: Json | null | undefined): string[] | undefined => {
+  if (!data) return undefined;
+  
+  if (isObject(data) && Array.isArray(data.product_keys)) {
+    return data.product_keys as string[];
+  }
+  
+  return undefined;
+};
 
 export const useOrderConfirmation = () => {
   const { convertVNDtoUSD } = useCurrencyContext();
@@ -163,11 +187,17 @@ export const useOrderConfirmation = () => {
         total: orderData.total_amount,
         payment_method: "Account Balance", // Default value
         digital_items: orderData.order_items
-          .filter(item => item.data?.product_keys && item.data.product_keys.length > 0)
-          .map(item => ({
-            name: item.product?.name || "Unknown Product",
-            keys: item.data?.product_keys || []
-          }))
+          .filter(item => {
+            const productKeys = safeGetProductKeys(item.data);
+            return productKeys && productKeys.length > 0;
+          })
+          .map(item => {
+            const productKeys = safeGetProductKeys(item.data);
+            return {
+              name: item.product?.name || "Unknown Product",
+              keys: productKeys || []
+            };
+          })
       };
       
       // Send the email with the reconstructed data
