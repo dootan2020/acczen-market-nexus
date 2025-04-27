@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/formatters";
+import { Json } from "@/types/supabase";
 
 interface Product {
   id: string;
@@ -29,7 +30,8 @@ interface OrderItem {
     product_keys?: string[];
     kiosk_token?: string;
     taphoammo_order_id?: string;
-  };
+    [key: string]: any; // Allow for additional properties
+  } | null;
 }
 
 interface Order {

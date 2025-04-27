@@ -6,6 +6,35 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
+// Define types to match the structure from OrderItem in PurchasesTable
+interface OrderItemData {
+  product_keys?: string[];
+  kiosk_token?: string;
+  taphoammo_order_id?: string;
+  [key: string]: any; // Allow for any additional properties
+}
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  price: number;
+  total: number;
+  data: OrderItemData | null;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+  };
+}
+
+interface Order {
+  id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItem[];
+}
+
 export const usePurchases = () => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -57,9 +86,19 @@ export const usePurchases = () => {
       if (countError) throw countError;
       
       // Then fetch the paginated data
-      const { data: orders, error } = await query.range(from, to);
+      const { data: ordersData, error } = await query.range(from, to);
       
       if (error) throw error;
+      
+      // Process the data to ensure OrderItemData is correctly formatted
+      const orders: Order[] = ordersData?.map(order => ({
+        ...order,
+        order_items: order.order_items.map(item => ({
+          ...item,
+          // Ensure data is properly structured or set to null if undefined
+          data: item.data || null
+        }))
+      })) || [];
       
       return { orders, count: count ?? 0 };
     },
