@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +17,6 @@ export function usePurchaseProduct() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const validatePurchase = async (product: PurchaseProduct) => {
     if (!user) {
@@ -27,7 +25,6 @@ export function usePurchaseProduct() {
         description: "Bạn cần đăng nhập để mua sản phẩm",
         variant: "destructive",
       });
-      navigate("/login");
       return false;
     }
 
@@ -80,9 +77,7 @@ export function usePurchaseProduct() {
       // Buy products from TaphoaMMO
       const purchaseData = await taphoammoApi.order.buyProducts(
         product.kioskToken!, 
-        user!.id, 
-        product.quantity,
-        'direct'
+        product.quantity
       );
 
       // Create order in database
@@ -99,11 +94,15 @@ export function usePurchaseProduct() {
       if (orderError) throw new Error("Lỗi khi lưu thông tin đơn hàng");
 
       // Get product keys
-      const { data: productsData } = await taphoammoApi.order.getProducts(
-        purchaseData.order_id,
-        user!.id,
-        'direct'
+      const productsData = await taphoammoApi.order.getProducts(
+        purchaseData.order_id
       );
+
+      // Extract product keys safely
+      let productKeys: string[] = [];
+      if (productsData.data && Array.isArray(productsData.data)) {
+        productKeys = productsData.data.map(item => item.product);
+      }
 
       // Save order details
       await supabase.from('order_items').insert({
@@ -115,7 +114,7 @@ export function usePurchaseProduct() {
         data: {
           kiosk_token: product.kioskToken,
           taphoammo_order_id: purchaseData.order_id,
-          product_keys: productsData?.data?.map(item => item.product) || []
+          product_keys: productKeys
         }
       });
 

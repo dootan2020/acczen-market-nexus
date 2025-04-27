@@ -4,14 +4,21 @@ interface PurchaseModalProductProps {
   productImage: string;
   quantity: number;
   totalPrice: number;
+  formatPrice?: (amount: number) => string;
 }
 
 export function PurchaseModalProduct({
   productName,
   productImage,
   quantity,
-  totalPrice
+  totalPrice,
+  formatPrice
 }: PurchaseModalProductProps) {
+  // Format price using provided function or fallback to default Vietnamese format
+  const formattedPrice = formatPrice 
+    ? formatPrice(totalPrice) 
+    : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice);
+
   return (
     <div className="flex items-center gap-4">
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border">
@@ -27,10 +34,7 @@ export function PurchaseModalProduct({
           Số lượng: {quantity}
         </p>
         <p className="font-medium text-primary">
-          {new Intl.NumberFormat('vi-VN', { 
-            style: 'currency', 
-            currency: 'VND' 
-          }).format(totalPrice)}
+          {formattedPrice}
         </p>
       </div>
     </div>
