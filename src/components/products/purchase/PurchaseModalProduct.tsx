@@ -3,16 +3,14 @@ interface PurchaseModalProductProps {
   productName: string;
   productImage: string;
   quantity: number;
-  totalPriceUSD: number;
-  formatUSD: (amount: number) => string;
+  totalPrice: number;
 }
 
 export function PurchaseModalProduct({
   productName,
   productImage,
   quantity,
-  totalPriceUSD,
-  formatUSD
+  totalPrice
 }: PurchaseModalProductProps) {
   return (
     <div className="flex items-center gap-4">
@@ -29,7 +27,10 @@ export function PurchaseModalProduct({
           Số lượng: {quantity}
         </p>
         <p className="font-medium text-primary">
-          {formatUSD(totalPriceUSD)}
+          {new Intl.NumberFormat('vi-VN', { 
+            style: 'currency', 
+            currency: 'VND' 
+          }).format(totalPrice)}
         </p>
       </div>
     </div>
