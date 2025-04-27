@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -19,12 +20,21 @@ import { useAdminPagination } from '@/hooks/useAdminPagination';
 
 type UserRole = 'user' | 'admin';
 
+interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  full_name: string;
+  role: UserRole;
+  balance: number;
+  created_at: string;
+}
+
 const AdminUsers = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
   const [isAdjustBalanceDialogOpen, setIsAdjustBalanceDialogOpen] = useState(false);
 
@@ -39,7 +49,7 @@ const AdminUsers = () => {
     nextPage,
     hasNextPage,
     hasPrevPage
-  } = useAdminPagination(
+  } = useAdminPagination<UserProfile>(
     'profiles',
     ['admin-users'],
     { pageSize: 10 },
@@ -110,11 +120,14 @@ const AdminUsers = () => {
       if (updateError) throw updateError;
       
       // Record the transaction
+      // Using the proper transaction type based on database enum
+      const transactionType = operation === 'add' ? 'deposit' : 'refund';
+      
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: id,
-          type: operation === 'add' ? 'credit' : 'debit',
+          type: transactionType,
           amount: amount,
           description: notes || `Manual balance ${operation === 'add' ? 'increase' : 'decrease'} by admin`
         });
@@ -141,12 +154,12 @@ const AdminUsers = () => {
   });
 
   // Handler functions
-  const handleEditRole = (user: any) => {
+  const handleEditRole = (user: UserProfile) => {
     setCurrentUser(user);
     setIsEditRoleDialogOpen(true);
   };
 
-  const handleAdjustBalance = (user: any) => {
+  const handleAdjustBalance = (user: UserProfile) => {
     setCurrentUser(user);
     setIsAdjustBalanceDialogOpen(true);
   };

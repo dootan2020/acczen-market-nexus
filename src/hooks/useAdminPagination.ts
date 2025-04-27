@@ -2,6 +2,9 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type TableName = keyof Database['public']['Tables'];
 
 interface PaginationOptions {
   pageSize?: number;
@@ -22,8 +25,13 @@ interface PaginationHookResult<T> {
   hasPrevPage: boolean;
 }
 
+type FilterOperator = {
+  operator: 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like' | 'ilike' | 'in';
+  value: any;
+};
+
 export function useAdminPagination<T>(
-  table: string,
+  table: TableName,
   queryKey: string[],
   options: PaginationOptions = { pageSize: 10, initialPage: 1 },
   filters?: Record<string, any>,
@@ -46,13 +54,27 @@ export function useAdminPagination<T>(
           if (value !== undefined && value !== null && value !== '') {
             if (Array.isArray(value)) {
               query = query.in(key, value);
-            } else if (typeof value === 'object' && value.operator) {
+            } else if (typeof value === 'object' && value && 'operator' in value) {
               // Handle custom operators like gt, lt, etc.
-              const { operator, value: opValue } = value;
+              const { operator, value: opValue } = value as FilterOperator;
               if (operator === 'like') {
                 query = query.ilike(key, `%${opValue}%`);
-              } else {
-                query = query[operator](key, opValue);
+              } else if (operator === 'in') {
+                query = query.in(key, opValue);
+              } else if (operator === 'eq') {
+                query = query.eq(key, opValue);
+              } else if (operator === 'neq') {
+                query = query.neq(key, opValue);
+              } else if (operator === 'gt') {
+                query = query.gt(key, opValue);
+              } else if (operator === 'lt') {
+                query = query.lt(key, opValue);
+              } else if (operator === 'gte') {
+                query = query.gte(key, opValue);
+              } else if (operator === 'lte') {
+                query = query.lte(key, opValue);
+              } else if (operator === 'ilike') {
+                query = query.ilike(key, `%${opValue}%`);
               }
             } else {
               query = query.eq(key, value);
@@ -84,13 +106,27 @@ export function useAdminPagination<T>(
           if (value !== undefined && value !== null && value !== '') {
             if (Array.isArray(value)) {
               query = query.in(key, value);
-            } else if (typeof value === 'object' && value.operator) {
+            } else if (typeof value === 'object' && value && 'operator' in value) {
               // Handle custom operators like gt, lt, etc.
-              const { operator, value: opValue } = value;
+              const { operator, value: opValue } = value as FilterOperator;
               if (operator === 'like') {
                 query = query.ilike(key, `%${opValue}%`);
-              } else {
-                query = query[operator](key, opValue);
+              } else if (operator === 'in') {
+                query = query.in(key, opValue);
+              } else if (operator === 'eq') {
+                query = query.eq(key, opValue);
+              } else if (operator === 'neq') {
+                query = query.neq(key, opValue);
+              } else if (operator === 'gt') {
+                query = query.gt(key, opValue);
+              } else if (operator === 'lt') {
+                query = query.lt(key, opValue);
+              } else if (operator === 'gte') {
+                query = query.gte(key, opValue);
+              } else if (operator === 'lte') {
+                query = query.lte(key, opValue);
+              } else if (operator === 'ilike') {
+                query = query.ilike(key, `%${opValue}%`);
               }
             } else {
               query = query.eq(key, value);

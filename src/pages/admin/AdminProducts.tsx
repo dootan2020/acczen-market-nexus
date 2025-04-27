@@ -21,13 +21,30 @@ import { useCategories } from '@/hooks/useProducts';
 import { useProductMutations } from '@/hooks/useProductMutations';
 import { useAdminPagination } from '@/hooks/useAdminPagination';
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  sale_price?: number;
+  stock_quantity: number;
+  image_url?: string;
+  slug: string;
+  category_id: string;
+  subcategory_id?: string;
+  status: string;
+  sku: string;
+  category?: any;
+  subcategory?: any;
+}
+
 const AdminProducts = () => {
   const { productMutation, deleteMutation } = useProductMutations();
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<any>(null);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -53,7 +70,7 @@ const AdminProducts = () => {
     nextPage,
     hasNextPage,
     hasPrevPage
-  } = useAdminPagination(
+  } = useAdminPagination<Product>(
     'products',
     ['admin-products'],
     { pageSize: 10 },
@@ -82,7 +99,7 @@ const AdminProducts = () => {
     setIsProductDialogOpen(true);
   };
 
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (product: Product) => {
     setIsEditing(true);
     setCurrentProduct(product);
     setFormData({
