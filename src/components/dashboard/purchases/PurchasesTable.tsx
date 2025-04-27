@@ -9,10 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/formatters";
-import { Json } from "@/types/supabase";
+import { useOrderConfirmation } from "@/hooks/useOrderConfirmation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
@@ -48,6 +49,9 @@ interface PurchasesTableProps {
 
 export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
+  const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { resendOrderConfirmationEmail } = useOrderConfirmation();
 
   const handleOrderClick = (orderId: string) => {
     setOpenOrderId(orderId === openOrderId ? null : orderId);
@@ -60,6 +64,26 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
+  };
+
+  const handleResendConfirmationEmail = async (orderId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to resend confirmation emails");
+      return;
+    }
+
+    setResendingEmailId(orderId);
+    try {
+      const result = await resendOrderConfirmationEmail(user.id, orderId);
+      if (!result.success) {
+        throw new Error(result.error?.message || "Failed to resend email");
+      }
+    } catch (error) {
+      console.error("Error resending email:", error);
+      toast.error("Failed to resend confirmation email");
+    } finally {
+      setResendingEmailId(null);
+    }
   };
 
   return (
@@ -104,7 +128,31 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
                     <div className="text-sm">
                       <div className="flex justify-between items-center mb-4">
                         <p className="font-medium">Order Details</p>
-                        <p className="text-xs text-muted-foreground">Order ID: {order.id}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">Order ID: {order.id}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResendConfirmationEmail(order.id);
+                            }}
+                            disabled={resendingEmailId === order.id}
+                          >
+                            {resendingEmailId === order.id ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="h-3 w-3 mr-1" />
+                                Resend Email
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       
                       {order.order_items.map((item) => (
