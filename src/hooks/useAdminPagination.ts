@@ -98,7 +98,15 @@ export function useAdminPagination<T>(
   } = useQuery({
     queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filters)],
     queryFn: async () => {
-      let query = supabase.from(table).select(relations || '*');
+      // Create a properly typed query using the table parameter
+      let query = supabase.from(table);
+      
+      // Add select with relations if provided
+      if (relations) {
+        query = query.select(relations);
+      } else {
+        query = query.select('*');
+      }
       
       // Apply filters if provided
       if (filters) {

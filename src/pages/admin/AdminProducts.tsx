@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ProductFormData } from '@/types/products';
+import { ProductFormData, ProductStatus } from '@/types/products';
 import ProductForm from '@/components/admin/products/ProductForm';
 import ProductsTable from '@/components/admin/products/ProductsTable';
 import ProductDeleteDialog from '@/components/admin/products/ProductDeleteDialog';
@@ -32,7 +31,7 @@ interface Product {
   slug: string;
   category_id: string;
   subcategory_id?: string;
-  status: string;
+  status: ProductStatus;
   sku: string;
   category?: any;
   subcategory?: any;
@@ -59,7 +58,6 @@ const AdminProducts = () => {
     sku: '',
   });
 
-  // Use pagination hook
   const { 
     data: products, 
     isLoading,
@@ -93,7 +91,7 @@ const AdminProducts = () => {
       slug: '',
       category_id: categories?.[0]?.id || '',
       subcategory_id: '',
-      status: 'active',
+      status: 'active' as ProductStatus,
       sku: '',
     });
     setIsProductDialogOpen(true);
@@ -181,7 +179,6 @@ const AdminProducts = () => {
         </CardContent>
       </Card>
       
-      {/* Pagination controls */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-4">
           <div className="flex items-center gap-2">
@@ -208,7 +205,6 @@ const AdminProducts = () => {
         </div>
       )}
       
-      {/* Product Dialog (Add/Edit) */}
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -233,7 +229,6 @@ const AdminProducts = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <ProductDeleteDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
