@@ -104,10 +104,15 @@ export const PurchaseConfirmModal = ({
 
     try {
       setIsProcessing(true);
-      console.log("Bắt đầu xử lý mua hàng");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Bắt đầu xử lý mua hàng");
+      }
       
       // 1. Check user balance
-      console.log("Kiểm tra số dư người dùng:", user.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Kiểm tra số dư người dùng:", user.id);
+      }
+      
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('balance, username')
@@ -119,7 +124,9 @@ export const PurchaseConfirmModal = ({
       }
       
       const totalCost = productPrice * quantity;
-      console.log("Chi phí:", totalCost, "Số dư:", userData.balance);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Chi phí:", totalCost, "Số dư:", userData.balance);
+      }
       
       if (userData.balance < totalCost) {
         // Convert amounts to USD for display in error message
@@ -129,32 +136,25 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${formatUSD(totalCostUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}`);
       }
       
-      // 2. Check stock availability using our API client
-      console.log("Kiểm tra tồn kho cho:", kioskToken);
-      try {
-        const stockInfo = await taphoammoApi.getStock(kioskToken, user.id);
-        console.log("Thông tin tồn kho:", stockInfo);
-        
-        if (stockInfo.stock_quantity < quantity) {
-          throw new Error(`Không đủ hàng trong kho. Bạn yêu cầu ${quantity} nhưng chỉ còn ${stockInfo.stock_quantity}`);
-        }
-      } catch (stockError) {
-        console.warn("Cảnh báo khi kiểm tra tồn kho:", stockError);
-        // Continue with purchase even if stock check fails
-        // The buy request will fail if there's no stock anyway
+      // 2. Make purchase request directly without stock check
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Thực hiện mua hàng trực tiếp");
       }
       
-      // 3. Make purchase request
-      console.log("Thực hiện mua hàng");
-      const orderData = await taphoammoApi.buyProducts(kioskToken, quantity, user.id);
-      console.log("Kết quả mua hàng:", orderData);
+      const orderData = await taphoammoApi.buyProducts(kioskToken, quantity);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Kết quả mua hàng:", orderData);
+      }
       
       if (!orderData.order_id) {
         throw new Error("Không nhận được mã đơn hàng từ API");
       }
       
-      // 4. Create order record in database
-      console.log("Lưu thông tin đơn hàng vào database");
+      // 3. Create order record in database
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Lưu thông tin đơn hàng vào database");
+      }
+      
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -170,8 +170,11 @@ export const PurchaseConfirmModal = ({
         throw new Error("Lỗi khi lưu thông tin đơn hàng");
       }
       
-      // 5. Add order items
-      console.log("Lưu chi tiết đơn hàng:", order.id);
+      // 4. Add order items
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Lưu chi tiết đơn hàng:", order.id);
+      }
+      
       const orderItemData = {
         order_id: order.id,
         product_id: productId,
@@ -193,8 +196,11 @@ export const PurchaseConfirmModal = ({
         console.error("Lỗi lưu chi tiết đơn hàng:", itemError);
       }
       
-      // 6. Update user balance
-      console.log("Cập nhật số dư người dùng");
+      // 5. Update user balance
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Cập nhật số dư người dùng");
+      }
+      
       const newBalance = userData.balance - totalCost;
       const { error: balanceError } = await supabase
         .from('profiles')
@@ -205,8 +211,11 @@ export const PurchaseConfirmModal = ({
         console.error("Lỗi cập nhật số dư:", balanceError);
       }
       
-      // 7. Log transaction
-      console.log("Lưu lịch sử giao dịch");
+      // 6. Log transaction
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Lưu lịch sử giao dịch");
+      }
+      
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
@@ -221,15 +230,22 @@ export const PurchaseConfirmModal = ({
         console.error("Lỗi lưu giao dịch:", transactionError);
       }
       
-      // 8. Check for product keys if needed
-      console.log("Kiểm tra trạng thái đơn hàng:", orderData.order_id);
+      // 7. Check for product keys if needed
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Kiểm tra trạng thái đơn hàng:", orderData.order_id);
+      }
+      
       let productKeys = orderData.product_keys || [];
       
       if (orderData.status === "processing" || !productKeys.length) {
-        console.log("Đơn hàng đang xử lý, kiểm tra product keys");
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Đơn hàng đang xử lý, kiểm tra product keys");
+        }
         
-        const checkResult = await taphoammoApi.checkOrderUntilComplete(orderData.order_id, user.id);
-        console.log("Kết quả kiểm tra đơn hàng:", checkResult);
+        const checkResult = await taphoammoApi.checkOrderUntilComplete(orderData.order_id);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Kết quả kiểm tra đơn hàng:", checkResult);
+        }
         
         if (checkResult.success && checkResult.product_keys?.length) {
           productKeys = checkResult.product_keys;
@@ -259,21 +275,24 @@ export const PurchaseConfirmModal = ({
         }
       }
       
-      // 9. Send confirmation email
-      console.log("Sending order confirmation email");
+      // 8. Send confirmation email
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Sending order confirmation email");
+      }
+      
       await sendOrderConfirmationEmail(user.id, {
         order_id: orderData.order_id,
         total_amount: totalCost,
         product_keys: productKeys
       });
       
-      // 10. Show success message
+      // 9. Show success message
       toast({
         title: "Đặt hàng thành công",
         description: `Mã đơn hàng: ${orderData.order_id}`,
       });
       
-      // 11. Navigate to order details page
+      // 10. Navigate to order details page
       setTimeout(() => {
         navigate(`/dashboard/purchases`);
       }, 1000);

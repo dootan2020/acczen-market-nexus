@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType, buildProxyUrl, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 
@@ -30,11 +31,22 @@ interface ProductsResponse {
 class TaphoammoApiClient {
   // Call API with the specified proxy
   async callApi(endpoint: string, params: Record<string, string | number>, proxyType?: ProxyType): Promise<any> {
+    // Replace user token with system token if it's a Supabase user ID
+    if (params.userToken && typeof params.userToken === 'string' && 
+        params.userToken.includes('-') && params.userToken.length > 30) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[TaphoaMMO API] Using system token instead of user ID");
+      }
+      params.userToken = SYSTEM_TOKEN;
+    }
+    
     // Get the preferred proxy or use the provided one
     const proxy = proxyType || getStoredProxy();
     
     try {
-      console.log(`[TaphoaMMO API] Calling ${endpoint} with proxy: ${proxy}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[TaphoaMMO API] Calling ${endpoint} with proxy: ${proxy}`);
+      }
       
       // Build query string
       const queryParams = new URLSearchParams();
@@ -48,7 +60,9 @@ class TaphoammoApiClient {
       // Apply proxy if needed
       const finalUrl = buildProxyUrl(apiUrl, proxy);
       
-      console.log(`[TaphoaMMO API] Final URL: ${finalUrl}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[TaphoaMMO API] Final URL: ${finalUrl}`);
+      }
       
       // Add timeout to avoid hanging requests
       const controller = new AbortController();
@@ -73,7 +87,9 @@ class TaphoammoApiClient {
       
       // Get text response first for better error handling
       const responseText = await response.text();
-      console.log(`[TaphoaMMO API] Raw response: ${responseText}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[TaphoaMMO API] Raw response: ${responseText}`);
+      }
       
       let data;
       try {
@@ -95,7 +111,9 @@ class TaphoammoApiClient {
       
       return data;
     } catch (error: any) {
-      console.error(`[TaphoaMMO API] Error with proxy ${proxy}:`, error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[TaphoaMMO API] Error with proxy ${proxy}:`, error);
+      }
       
       // Log failed API call
       this.logApiCall(endpoint, params, false, 0, error.message);
@@ -121,12 +139,37 @@ class TaphoammoApiClient {
     // Try each proxy in turn
     for (const proxy of proxiesToTry) {
       try {
-        console.log(`[TaphoaMMO API] Trying fallback proxy: ${proxy}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[TaphoaMMO API] Trying fallback proxy: ${proxy}`);
+        }
         const data = await this.callApi(endpoint, params, proxy);
         return data;
       } catch (error) {
-        console.error(`[TaphoaMMO API] Fallback proxy ${proxy} also failed`);
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`[TaphoaMMO API] Fallback proxy ${proxy} also failed`);
+        }
         // Continue to next proxy
+      }
+    }
+    
+    // Try Edge Function as a last resort
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[TaphoaMMO API] Trying server-side call with Edge Function`);
+      }
+      
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: { endpoint, params }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (serverError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[TaphoaMMO API] Edge function call failed:`, serverError);
       }
     }
     
@@ -137,7 +180,7 @@ class TaphoammoApiClient {
   // Get stock information for a product
   async getStock(kioskToken: string, userToken: string = SYSTEM_TOKEN): Promise<StockInfo> {
     try {
-      const data = await this.callApi('getStock', { kioskToken, userToken });
+      const data = await this.callApi('getStock', { kioskToken, userToken: SYSTEM_TOKEN });
       
       return {
         kiosk_token: kioskToken,
@@ -146,25 +189,36 @@ class TaphoammoApiClient {
         price: data.price ? parseFloat(data.price) : 0
       };
     } catch (error) {
-      console.error('[TaphoaMMO API] Error getting stock:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[TaphoaMMO API] Error getting stock:', error);
+      }
       throw error;
     }
   }
   
   // Buy products
-  async buyProducts(kioskToken: string, quantity: number, userToken: string, promotion?: string): Promise<OrderResponse> {
+  async buyProducts(kioskToken: string, quantity: number, userToken: string = SYSTEM_TOKEN, promotion?: string): Promise<OrderResponse> {
     try {
-      // First check if the product is in stock
-      console.log('[TaphoaMMO API] Checking stock before purchase');
-      await this.getStock(kioskToken, userToken);
+      // Skip stock check and proceed directly with purchase
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TaphoaMMO API] Proceeding directly with purchase');
+      }
       
       // Proceed with purchase
-      const params: Record<string, string | number> = { kioskToken, userToken, quantity };
+      const params: Record<string, string | number> = {
+        kioskToken,
+        userToken: SYSTEM_TOKEN, // Always use system token 
+        quantity
+      };
+      
       if (promotion) {
         params.promotion = promotion;
       }
       
-      console.log('[TaphoaMMO API] Making purchase request');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TaphoaMMO API] Making purchase request');
+      }
+      
       const data = await this.callApi('buyProducts', params);
       
       return {
@@ -174,7 +228,9 @@ class TaphoammoApiClient {
         status: data.status || 'processing'
       };
     } catch (error) {
-      console.error('[TaphoaMMO API] Error buying products:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[TaphoaMMO API] Error buying products:', error);
+      }
       throw error;
     }
   }
@@ -182,7 +238,10 @@ class TaphoammoApiClient {
   // Get products from an order
   async getProducts(orderId: string, userToken: string = SYSTEM_TOKEN): Promise<ProductsResponse> {
     try {
-      const data = await this.callApi('getProducts', { orderId, userToken });
+      const data = await this.callApi('getProducts', { 
+        orderId, 
+        userToken: SYSTEM_TOKEN // Always use system token
+      });
       
       return {
         success: data.success,
@@ -190,7 +249,9 @@ class TaphoammoApiClient {
         description: data.description
       };
     } catch (error) {
-      console.error('[TaphoaMMO API] Error getting products:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[TaphoaMMO API] Error getting products:', error);
+      }
       throw error;
     }
   }
@@ -206,8 +267,11 @@ class TaphoammoApiClient {
     
     while (tries < maxTries) {
       try {
-        console.log(`[TaphoaMMO API] Checking order status (attempt ${tries + 1}/${maxTries})`);
-        const result = await this.getProducts(orderId, userToken);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[TaphoaMMO API] Checking order status (attempt ${tries + 1}/${maxTries})`);
+        }
+        
+        const result = await this.getProducts(orderId, SYSTEM_TOKEN);
         
         // If order is complete and has product data
         if (result.success === "true" && result.data && result.data.length > 0) {
@@ -242,7 +306,10 @@ class TaphoammoApiClient {
         };
         
       } catch (error: any) {
-        console.error(`[TaphoaMMO API] Error checking order (attempt ${tries + 1}):`, error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`[TaphoaMMO API] Error checking order (attempt ${tries + 1}):`, error);
+        }
+        
         tries++;
         
         if (tries >= maxTries) {
@@ -292,7 +359,9 @@ class TaphoammoApiClient {
         }
       });
     } catch (error) {
-      console.error('[TaphoaMMO API] Error logging API call:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[TaphoaMMO API] Error logging API call:', error);
+      }
     }
   }
 }
