@@ -1,5 +1,5 @@
 
-import { taphoammoApi } from './taphoammoApi';
+import { taphoammoApi } from './api/taphoammoApi';
 
 export const enableAPIDebugMode = () => {
   // Override fetch to monitor API calls
@@ -56,12 +56,12 @@ export const enableAPIDebugMode = () => {
 export const testTaphoammoConnection = async (kioskToken: string, userToken: string) => {
   try {
     console.log('🧪 Testing TaphoaMMO API connection...');
-    const stockInfo = await taphoammoApi.getStock(kioskToken, userToken);
-    console.log('✅ Connection successful!', stockInfo);
+    const result = await taphoammoApi.testConnection(kioskToken, userToken);
+    console.log('✅ Connection successful!', result);
     return {
       success: true,
-      message: `Connected successfully! Found: ${stockInfo.name} (Stock: ${stockInfo.stock_quantity})`,
-      data: stockInfo
+      message: result.message || `Connected successfully!`,
+      data: result
     };
   } catch (error) {
     console.error('❌ Connection test failed:', error);

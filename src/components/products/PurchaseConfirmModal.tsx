@@ -175,7 +175,8 @@ export const PurchaseConfirmModal = ({
       let productKeys = orderData.product_keys || [];
       
       if (orderData.status === "processing" || !productKeys.length) {
-        const checkResult = await getProducts(orderData.order_id, user.id);
+        // Fix: Added the missing 'direct' proxyType parameter
+        const checkResult = await getProducts(orderData.order_id, user.id, 'direct');
         
         if (checkResult.success === "true" && checkResult.data?.length) {
           productKeys = checkResult.data.map(item => item.product);

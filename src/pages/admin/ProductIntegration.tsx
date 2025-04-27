@@ -148,7 +148,7 @@ const ProductIntegration = () => {
   const updateStockMutation = useMutation({
     mutationFn: async ({ kioskToken }: { kioskToken: string }) => {
       try {
-        const proxyType = getStoredProxy();
+        const proxyType = getStoredProxy() as 'direct' | 'corsproxy.io' | 'admin';
         const product = await getStock(kioskToken, 'admin', proxyType);
         
         const { error: mockError } = await supabase
