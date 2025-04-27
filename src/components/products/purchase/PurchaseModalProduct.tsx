@@ -3,8 +3,10 @@ interface PurchaseModalProductProps {
   productName: string;
   productImage: string;
   quantity: number;
-  totalPrice: number;
+  totalPrice?: number;
+  totalPriceUSD?: number;
   formatPrice?: (amount: number) => string;
+  formatUSD?: (amount: number) => string;
 }
 
 export function PurchaseModalProduct({
@@ -12,12 +14,18 @@ export function PurchaseModalProduct({
   productImage,
   quantity,
   totalPrice,
-  formatPrice
+  totalPriceUSD,
+  formatPrice,
+  formatUSD
 }: PurchaseModalProductProps) {
   // Format price using provided function or fallback to default Vietnamese format
-  const formattedPrice = formatPrice 
+  const formattedPrice = totalPrice && formatPrice 
     ? formatPrice(totalPrice) 
-    : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice);
+    : totalPrice 
+      ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)
+      : totalPriceUSD && formatUSD 
+        ? formatUSD(totalPriceUSD)
+        : '';
 
   return (
     <div className="flex items-center gap-4">
