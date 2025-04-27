@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
+// Use these more specific types from the generated Database type
 type TableName = keyof Database['public']['Tables'];
 
 interface PaginationOptions {
@@ -46,7 +47,9 @@ export function useAdminPagination<T>(
   const { data: countData } = useQuery({
     queryKey: [...queryKey, 'count'],
     queryFn: async () => {
-      let query = supabase.from(table).select('*', { count: 'exact', head: true });
+      // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
+      const tableRef = supabase.from(table as any);
+      let query = tableRef.select('*', { count: 'exact', head: true });
       
       // Apply filters if provided
       if (filters) {
@@ -98,15 +101,11 @@ export function useAdminPagination<T>(
   } = useQuery({
     queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filters)],
     queryFn: async () => {
-      // Create a properly typed query using the table parameter
-      let query = supabase.from(table);
+      // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
+      const tableRef = supabase.from(table as any);
       
-      // Add select with relations if provided
-      if (relations) {
-        query = query.select(relations);
-      } else {
-        query = query.select('*');
-      }
+      // Initialize the query with the select statement
+      let query = relations ? tableRef.select(relations) : tableRef.select('*');
       
       // Apply filters if provided
       if (filters) {
