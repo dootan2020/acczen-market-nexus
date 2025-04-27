@@ -55,13 +55,14 @@ export class TaphoammoApiService {
   }
 
   private async recordFailure(error: Error): Promise<void> {
+    // Using raw SQL by including it in the update call without sql tag
     const { data, error: updateError } = await supabase
       .from('api_health')
       .update({
-        error_count: supabase.sql`error_count + 1`,
+        error_count: supabase.rpc('increment_error_count'),
         last_error: error.message,
-        is_open: supabase.sql`CASE WHEN error_count >= 2 THEN true ELSE false END`,
-        opened_at: supabase.sql`CASE WHEN error_count >= 2 THEN NOW() ELSE opened_at END`
+        is_open: supabase.rpc('check_if_should_open_circuit'),
+        opened_at: supabase.rpc('update_opened_at_if_needed')
       })
       .eq('api_name', 'taphoammo');
 
