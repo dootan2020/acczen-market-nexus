@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 const PAGE_SIZE = 10;
 
@@ -95,8 +96,8 @@ export const usePurchases = () => {
         ...order,
         order_items: order.order_items.map(item => ({
           ...item,
-          // Ensure data is properly structured or set to null if undefined
-          data: item.data || null
+          // Properly transform JSON data to match OrderItemData type
+          data: item.data ? safeTransformData(item.data) : null
         }))
       })) || [];
       
@@ -104,6 +105,23 @@ export const usePurchases = () => {
     },
     enabled: !!user,
   });
+
+  // Helper function to safely transform JSON data to OrderItemData
+  const safeTransformData = (data: Json): OrderItemData | null => {
+    if (!data) return null;
+    
+    // If it's an object, we can work with it
+    if (typeof data === 'object' && data !== null) {
+      // If it's an array, we can't transform it to OrderItemData
+      if (Array.isArray(data)) return null;
+      
+      // Return the object as OrderItemData
+      return data as OrderItemData;
+    }
+    
+    // If it's a primitive (string, number, boolean), we can't transform it
+    return null;
+  };
 
   const totalPages = data?.count ? Math.ceil(data.count / PAGE_SIZE) : 0;
 
