@@ -8,11 +8,13 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const currency = useCurrency();
   
-  console.log("CurrencyProvider - Exchange rates loaded:", {
-    VNDtoUSD: currency.getExchangeRate('VND', 'USD'),
-    USDtoVND: currency.getExchangeRate('USD', 'VND'),
-    isLoading: currency.isLoading
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log("CurrencyProvider - Exchange rates loaded:", {
+      VNDtoUSD: currency.getExchangeRate('VND', 'USD'),
+      USDtoVND: currency.getExchangeRate('USD', 'VND'),
+      isLoading: currency.isLoading
+    });
+  }
   
   return (
     <CurrencyContext.Provider value={currency}>

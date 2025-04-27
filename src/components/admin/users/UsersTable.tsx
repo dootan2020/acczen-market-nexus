@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreVertical } from "lucide-react";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import React from "react";
+import { useMemo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,14 +45,9 @@ export const UsersTable = ({ users, onEditRole, onAdjustBalance }: UsersTablePro
   return (
     <>
       {users.map((user) => {
-        // Convert VND balance to USD and format
-        const displayBalance = React.useMemo(() => {
+        // Convert VND balance to USD and format using useMemo
+        const displayBalance = useMemo(() => {
           const usdBalance = convertVNDtoUSD(user.balance || 0);
-          console.log("UsersTable - Balance conversion:", { 
-            user: user.email, 
-            originalVND: user.balance, 
-            convertedUSD: usdBalance 
-          });
           return formatUSD(usdBalance);
         }, [user.balance]);
         

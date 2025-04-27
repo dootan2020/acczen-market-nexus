@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { format } from "date-fns";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
     return user.email.substring(0, 2).toUpperCase();
   };
 
-  // Convert VND balance to USD and format
+  // Convert VND balance to USD and format - using useMemo for optimization
   const displayBalance = useMemo(() => {
     const usdBalance = convertVNDtoUSD(user.balance || 0);
     return formatUSD(usdBalance);

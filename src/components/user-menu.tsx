@@ -24,11 +24,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function UserMenu() {
   const { user, signOut, isAdmin, balance, userDisplayName } = useAuth()
-  const { convertVNDtoUSD, formatUSD } = useCurrencyContext()
+  const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext()
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false)
+  const [showVndBalance, setShowVndBalance] = React.useState(false)
 
   // Get user's initials for avatar
   const getUserInitials = () => {
@@ -67,13 +74,17 @@ export function UserMenu() {
     }
   }
 
-  // Convert balance from VND to USD for display
+  // Convert balance from VND to USD for display with memoization
   const displayBalance = React.useMemo(() => {
-    if (balance === undefined) return "0.00"
-    const usdBalance = convertVNDtoUSD(balance)
-    console.log("Balance conversion:", { originalVND: balance, convertedUSD: usdBalance })
-    return formatUSD(usdBalance)
-  }, [balance, convertVNDtoUSD, formatUSD])
+    if (balance === undefined) return "₫0";
+    
+    if (showVndBalance) {
+      return formatVND(balance);
+    } else {
+      const usdBalance = convertVNDtoUSD(balance);
+      return formatUSD(usdBalance);
+    }
+  }, [balance, convertVNDtoUSD, formatUSD, formatVND, showVndBalance]);
 
   if (!user) {
     return (
@@ -111,12 +122,26 @@ export function UserMenu() {
           
           <DropdownMenuSeparator className="my-1" />
           
-          <div className="px-2 py-1.5 bg-primary/10 rounded-md mb-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Số dư:</span>
-              <span className="font-semibold text-primary">{displayBalance}</span>
-            </div>
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div 
+                  className="px-2 py-1.5 bg-primary/10 rounded-md mb-2 cursor-pointer"
+                  onClick={() => setShowVndBalance(!showVndBalance)}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Số dư:</span>
+                    <span className="font-semibold text-primary">{displayBalance}</span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Click để chuyển đổi đơn vị tiền tệ</p>
+                <p>VND: {formatVND(balance || 0)}</p>
+                <p>USD: {formatUSD(convertVNDtoUSD(balance || 0))}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
           <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
             <Link to={isAdmin ? "/admin" : "/dashboard"}>

@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useMemo } from "react";
 
 interface ProductCardProps {
   id: string;
@@ -53,8 +55,21 @@ const ProductCard = ({
     }
   };
 
-  const displayPrice = convertVNDtoUSD(price);
-  const displaySalePrice = salePrice ? convertVNDtoUSD(salePrice) : null;
+  // Using useMemo to optimize price conversions
+  const displayPrice = useMemo(() => 
+    convertVNDtoUSD(price), [price, convertVNDtoUSD]);
+    
+  const displaySalePrice = useMemo(() => 
+    salePrice ? convertVNDtoUSD(salePrice) : null, 
+    [salePrice, convertVNDtoUSD]);
+
+  // Using useMemo for formatted prices
+  const formattedPrice = useMemo(() => 
+    formatUSD(displayPrice), [displayPrice, formatUSD]);
+    
+  const formattedSalePrice = useMemo(() => 
+    displaySalePrice ? formatUSD(displaySalePrice) : null, 
+    [displaySalePrice, formatUSD]);
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${featured ? 'border-primary/20 bg-primary/5' : ''}`}>
@@ -94,11 +109,11 @@ const ProductCard = ({
         <div className="flex justify-between items-center">
           <div>
             <span className="text-lg font-bold text-primary">
-              {formatUSD(displaySalePrice || displayPrice)}
+              {formattedSalePrice || formattedPrice}
             </span>
             {displaySalePrice && (
               <span className="text-sm text-muted-foreground line-through ml-2">
-                {formatUSD(displayPrice)}
+                {formattedPrice}
               </span>
             )}
           </div>

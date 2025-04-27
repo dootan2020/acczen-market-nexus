@@ -1,24 +1,30 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AccountBalanceProps {
   balance: number;
 }
 
 export function AccountBalance({ balance }: AccountBalanceProps) {
-  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+  const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext();
+  const [isHovered, setIsHovered] = useState(false);
   
-  // Convert VND balance to USD and format
+  // Convert VND balance to USD and format - using useMemo for optimization
   const displayBalance = React.useMemo(() => {
     const usdBalance = convertVNDtoUSD(balance);
-    console.log("AccountBalance - Balance conversion:", { originalVND: balance, convertedUSD: usdBalance });
     return formatUSD(usdBalance);
   }, [balance, convertVNDtoUSD, formatUSD]);
+  
+  // Format the original VND balance
+  const displayVndBalance = React.useMemo(() => {
+    return formatVND(balance);
+  }, [balance, formatVND]);
   
   return (
     <Card>
@@ -27,7 +33,23 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
         <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{displayBalance}</div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className="text-2xl font-bold cursor-help" 
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                {isHovered ? displayVndBalance : displayBalance}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>USD: {displayBalance}</p>
+              <p>VND: {displayVndBalance}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Link to="/deposit">
           <Button className="mt-2 w-full">Deposit</Button>
         </Link>
