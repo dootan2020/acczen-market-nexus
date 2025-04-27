@@ -10,8 +10,8 @@ export interface ExchangeRate {
 }
 
 export interface CurrencyContextType {
-  exchangeRate: number;
   convertVNDtoUSD: (amount: number) => number;
+  convertUSDtoVND: (amount: number) => number;
   formatUSD: (amount: number) => string;
   formatVND: (amount: number) => string;
   isLoading: boolean;

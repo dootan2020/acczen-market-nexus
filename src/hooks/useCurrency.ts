@@ -1,30 +1,52 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExchangeRate } from "@/types/currency";
+import { ExchangeRate, CurrencyCode } from "@/types/currency";
 
 export const useCurrency = () => {
-  const { data: exchangeRate, isLoading } = useQuery({
-    queryKey: ['exchange-rate', 'VND', 'USD'],
+  const { data: exchangeRates, isLoading } = useQuery({
+    queryKey: ['exchange-rates'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exchange_rates')
         .select('*')
-        .eq('from_currency', 'VND')
-        .eq('to_currency', 'USD')
-        .single();
+        .or('from_currency.eq.VND,from_currency.eq.USD');
 
       if (error) throw error;
-      return data as ExchangeRate;
+      return data as ExchangeRate[];
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
-  const convertVNDtoUSD = (amount: number): number => {
-    if (!exchangeRate?.rate) return 0;
-    return amount * exchangeRate.rate;
+  // Find exchange rate for a specific currency pair
+  const getExchangeRate = (fromCurrency: CurrencyCode, toCurrency: CurrencyCode): number => {
+    if (!exchangeRates) return 0;
+    
+    const rate = exchangeRates.find(
+      r => r.from_currency === fromCurrency && r.to_currency === toCurrency
+    );
+    
+    return rate ? rate.rate : 0;
   };
 
+  // Convert between VND and USD
+  const convertCurrency = (
+    amount: number, 
+    fromCurrency: CurrencyCode, 
+    toCurrency: CurrencyCode
+  ): number => {
+    const rate = getExchangeRate(fromCurrency, toCurrency);
+    return amount * rate;
+  };
+
+  // Specific conversion methods for easier use
+  const convertVNDtoUSD = (amount: number): number => 
+    convertCurrency(amount, 'VND', 'USD');
+
+  const convertUSDtoVND = (amount: number): number => 
+    convertCurrency(amount, 'USD', 'VND');
+
+  // Formatting methods
   const formatUSD = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -41,10 +63,13 @@ export const useCurrency = () => {
   };
 
   return {
-    exchangeRate: exchangeRate?.rate ?? 0,
     convertVNDtoUSD,
+    convertUSDtoVND,
     formatUSD,
     formatVND,
     isLoading,
+    getExchangeRate,
+    convertCurrency
   };
 };
+
