@@ -24,6 +24,10 @@ export const usePurchases = () => {
           created_at,
           order_items (
             id,
+            quantity,
+            price,
+            total,
+            data,
             product:products(id, name, price)
           )
         `)
