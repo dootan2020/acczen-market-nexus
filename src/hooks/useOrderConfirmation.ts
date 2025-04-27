@@ -34,6 +34,29 @@ export interface OrderStatusUpdateData {
   message?: string;
 }
 
+// Define the interface for order data from the database
+interface OrderRow {
+  id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItemRow[];
+}
+
+interface OrderItemRow {
+  id: string;
+  quantity: number;
+  price: number;
+  total: number;
+  data: Json | null;
+  product?: ProductInfo | null;
+}
+
+interface ProductInfo {
+  id: string;
+  name: string;
+}
+
 interface OrderItemData {
   product_keys?: string[];
   kiosk_token?: string;
@@ -41,7 +64,7 @@ interface OrderItemData {
   [key: string]: any;  // Allow for other properties
 }
 
-// Safely check if a value is a non-null object
+// Type guard to check if a value is a non-null object
 const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 };
@@ -148,7 +171,7 @@ export const useOrderConfirmation = () => {
     try {
       toast.info("Retrieving order data...");
       
-      // Fetch the order data from the database
+      // Fetch the order data from the database with strong typing
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select(`
@@ -175,18 +198,21 @@ export const useOrderConfirmation = () => {
         return { success: false, error: orderError || new Error("Order not found") };
       }
       
+      // Type assertion to ensure we have the right structure
+      const typedOrderData = orderData as OrderRow;
+      
       // Process the order data for email sending
       const confirmationData: OrderConfirmationData = {
-        id: orderData.id,
-        items: orderData.order_items.map(item => ({
+        id: typedOrderData.id,
+        items: typedOrderData.order_items.map(item => ({
           name: item.product?.name || "Unknown Product",
           quantity: item.quantity,
           price: item.price,
           product_id: item.product?.id
         })),
-        total: orderData.total_amount,
+        total: typedOrderData.total_amount,
         payment_method: "Account Balance", // Default value
-        digital_items: orderData.order_items
+        digital_items: typedOrderData.order_items
           .filter(item => {
             const productKeys = safeGetProductKeys(item.data);
             return productKeys && productKeys.length > 0;

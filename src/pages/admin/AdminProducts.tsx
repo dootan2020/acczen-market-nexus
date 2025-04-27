@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +16,10 @@ import { ProductFormData } from '@/types/products';
 import ProductForm from '@/components/admin/products/ProductForm';
 import ProductsTable from '@/components/admin/products/ProductsTable';
 import ProductDeleteDialog from '@/components/admin/products/ProductDeleteDialog';
+import { ProductSearch } from '@/components/admin/products/ProductSearch';
 import { useCategories } from '@/hooks/useProducts';
 import { useProductMutations } from '@/hooks/useProductMutations';
+import { useAdminPagination } from '@/hooks/useAdminPagination';
 
 const AdminProducts = () => {
   const { productMutation, deleteMutation } = useProductMutations();
@@ -41,22 +42,24 @@ const AdminProducts = () => {
     sku: '',
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['admin-products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(*),
-          subcategory:subcategories(*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  // Use pagination hook
+  const { 
+    data: products, 
+    isLoading,
+    currentPage,
+    totalPages,
+    goToPage,
+    prevPage,
+    nextPage,
+    hasNextPage,
+    hasPrevPage
+  } = useAdminPagination(
+    'products',
+    ['admin-products'],
+    { pageSize: 10 },
+    {},
+    `*, category:categories(*), subcategory:subcategories(*)`
+  );
 
   const { data: categories } = useCategories();
 
@@ -138,17 +141,10 @@ const AdminProducts = () => {
         </Button>
       </div>
       
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input 
-            className="pl-10" 
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
+      <ProductSearch 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       
       <Card>
         <CardContent className="p-0">
@@ -167,6 +163,33 @@ const AdminProducts = () => {
           )}
         </CardContent>
       </Card>
+      
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={prevPage}
+              disabled={!hasPrevPage}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={nextPage}
+              disabled={!hasNextPage}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* Product Dialog (Add/Edit) */}
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>

@@ -9,12 +9,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableCell,  // Add this import
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { EditRoleDialog } from '@/components/admin/users/EditRoleDialog';
-import { UserRow } from '@/components/admin/users/UserRow';
+import { AdjustBalanceDialog } from '@/components/admin/users/AdjustBalanceDialog';
+import { UsersTable } from '@/components/admin/users/UsersTable';
 import { UsersFilter } from '@/components/admin/users/UsersFilter';
+import { useAdminPagination } from '@/hooks/useAdminPagination';
 
 type UserRole = 'user' | 'admin';
 
@@ -27,19 +28,23 @@ const AdminUsers = () => {
   const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
   const [isAdjustBalanceDialogOpen, setIsAdjustBalanceDialogOpen] = useState(false);
 
-  // Fetch users
-  const { data: users, isLoading } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  // Fetch users with pagination
+  const { 
+    data: users, 
+    isLoading,
+    currentPage,
+    totalPages,
+    goToPage,
+    prevPage,
+    nextPage,
+    hasNextPage,
+    hasPrevPage
+  } = useAdminPagination(
+    'profiles',
+    ['admin-users'],
+    { pageSize: 10 },
+    {}
+  );
 
   // Update user role mutation
   const updateRoleMutation = useMutation({
@@ -69,16 +74,97 @@ const AdminUsers = () => {
     },
   });
 
-  // Handle edit role dialog
+  // Adjust balance mutation
+  const adjustBalanceMutation = useMutation({
+    mutationFn: async ({ 
+      id, 
+      amount, 
+      operation, 
+      notes 
+    }: { 
+      id: string, 
+      amount: number, 
+      operation: 'add' | 'subtract',
+      notes: string 
+    }) => {
+      // Get current balance
+      const { data: userData, error: fetchError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const currentBalance = userData?.balance || 0;
+      const newBalance = operation === 'add' 
+        ? currentBalance + amount 
+        : Math.max(0, currentBalance - amount);
+      
+      // Update balance
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('id', id);
+      
+      if (updateError) throw updateError;
+      
+      // Record the transaction
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: id,
+          type: operation === 'add' ? 'credit' : 'debit',
+          amount: amount,
+          description: notes || `Manual balance ${operation === 'add' ? 'increase' : 'decrease'} by admin`
+        });
+      
+      if (transactionError) throw transactionError;
+      
+      return { success: true, newBalance };
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({
+        title: 'Balance adjusted',
+        description: `User balance has been ${variables.operation === 'add' ? 'increased' : 'decreased'} successfully.`,
+      });
+      setIsAdjustBalanceDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to adjust user balance',
+      });
+    },
+  });
+
+  // Handler functions
   const handleEditRole = (user: any) => {
     setCurrentUser(user);
     setIsEditRoleDialogOpen(true);
   };
 
-  // Handle update role
+  const handleAdjustBalance = (user: any) => {
+    setCurrentUser(user);
+    setIsAdjustBalanceDialogOpen(true);
+  };
+
   const handleUpdateRole = (role: UserRole) => {
     if (currentUser) {
       updateRoleMutation.mutate({ id: currentUser.id, role });
+    }
+  };
+
+  const handleAdjustBalanceConfirm = (amount: number, operation: 'add' | 'subtract', notes: string) => {
+    if (currentUser) {
+      adjustBalanceMutation.mutate({ 
+        id: currentUser.id, 
+        amount, 
+        operation, 
+        notes 
+      });
     }
   };
 
@@ -127,22 +213,11 @@ const AdminUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers?.length ? (
-                    filteredUsers.map((user) => (
-                      <UserRow
-                        key={user.id}
-                        user={user}
-                        onEditRole={handleEditRole}
-                        onAdjustBalance={() => {}}
-                      />
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  )}
+                  <UsersTable 
+                    users={filteredUsers || []}
+                    onEditRole={handleEditRole}
+                    onAdjustBalance={handleAdjustBalance}
+                  />
                 </TableBody>
               </Table>
             </div>
@@ -150,11 +225,47 @@ const AdminUsers = () => {
         </CardContent>
       </Card>
       
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={prevPage}
+              disabled={!hasPrevPage}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={nextPage}
+              disabled={!hasNextPage}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* Dialogs */}
       <EditRoleDialog
         open={isEditRoleDialogOpen}
         onOpenChange={setIsEditRoleDialogOpen}
         onConfirm={handleUpdateRole}
         isLoading={updateRoleMutation.isPending}
+        currentUser={currentUser}
+      />
+      
+      <AdjustBalanceDialog
+        open={isAdjustBalanceDialogOpen}
+        onOpenChange={setIsAdjustBalanceDialogOpen}
+        onConfirm={handleAdjustBalanceConfirm}
+        isLoading={adjustBalanceMutation.isPending}
         currentUser={currentUser}
       />
     </div>
