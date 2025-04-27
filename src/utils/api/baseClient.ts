@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
@@ -107,7 +108,7 @@ export class BaseApiClient {
         details: {
           params: safeParams,
           error: errorMessage,
-          proxy: getStoredProxy()
+          proxy: 'allorigins' // Using fixed value instead of getStoredProxy()
         }
       });
     } catch (error) {
