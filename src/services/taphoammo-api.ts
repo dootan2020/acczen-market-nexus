@@ -56,13 +56,19 @@ export class TaphoammoApiService {
 
   private async recordFailure(error: Error): Promise<void> {
     try {
+      // First, get the values from the RPC functions
+      const { data: errorCountData } = await supabase.rpc('increment_error_count');
+      const { data: shouldOpenCircuit } = await supabase.rpc('check_if_should_open_circuit');
+      const { data: openedAtValue } = await supabase.rpc('update_opened_at_if_needed');
+      
+      // Then use those values in the update
       const { data, error: updateError } = await supabase
         .from('api_health')
         .update({
-          error_count: await supabase.rpc('increment_error_count'),
+          error_count: errorCountData || 1, // Fallback to incrementing by 1
           last_error: error.message,
-          is_open: await supabase.rpc('check_if_should_open_circuit'),
-          opened_at: await supabase.rpc('update_opened_at_if_needed')
+          is_open: shouldOpenCircuit || false, // Fallback to not opening circuit
+          opened_at: openedAtValue || null // Fallback to null
         })
         .eq('api_name', 'taphoammo');
 
