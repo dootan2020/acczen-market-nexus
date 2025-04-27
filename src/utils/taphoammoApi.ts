@@ -33,7 +33,7 @@ class TaphoammoApiClient {
   async callApi(endpoint: string, params: Record<string, string | number>, proxyType?: ProxyType): Promise<any> {
     // Replace user token with system token if it's a Supabase user ID
     if (params.userToken && typeof params.userToken === 'string' && 
-        params.userToken.includes('-') && params.userToken.length > 30) {
+        (params.userToken.includes('-') || params.userToken.length > 30)) {
       if (process.env.NODE_ENV === 'development') {
         console.log("[TaphoaMMO API] Using system token instead of user ID");
       }

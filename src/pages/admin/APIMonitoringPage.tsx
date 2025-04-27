@@ -1,21 +1,53 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ProxyType, buildProxyUrl, getProxyOptions, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTaphoammoAPI } from '@/hooks/useTaphoammoAPI';
 
 const APIMonitoringPage: React.FC = () => {
-  const [proxyType, setProxyType] = React.useState<ProxyType>(getStoredProxy());
+  const [proxyType, setProxyType] = useState<ProxyType>(getStoredProxy());
+  const [testStatus, setTestStatus] = useState<{
+    isLoading: boolean;
+    success?: boolean;
+    message?: string;
+  }>({
+    isLoading: false
+  });
   const { isAdmin } = useAuth();
+  const { testConnection } = useTaphoammoAPI();
   
   const handleProxyChange = (value: string) => {
     if (value === 'direct' || value === 'corsproxy.io' || value === 'allorigins' || value === 'corsanywhere' || value === 'admin') {
-      setProxyType(value);
-      setStoredProxy(value);
+      setProxyType(value as ProxyType);
+      setStoredProxy(value as ProxyType);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTestStatus({ isLoading: true });
+    
+    try {
+      // Use a test Kiosk token to check connection - replace with a known valid token
+      const testToken = "PQDYRSNMC9";
+      const systemToken = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9";
+      
+      const result = await testConnection(testToken, systemToken, proxyType);
+      setTestStatus({ 
+        isLoading: false, 
+        success: result.success,
+        message: result.message
+      });
+    } catch (error) {
+      setTestStatus({ 
+        isLoading: false, 
+        success: false, 
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
     }
   };
 
@@ -64,8 +96,37 @@ const APIMonitoringPage: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="outline">Kiểm tra kết nối</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleTestConnection}
+                  disabled={testStatus.isLoading}
+                >
+                  {testStatus.isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang kiểm tra...
+                    </>
+                  ) : (
+                    'Kiểm tra kết nối'
+                  )}
+                </Button>
               </div>
+              
+              {/* Test connection result */}
+              {testStatus.message && (
+                <div className={`mt-2 p-3 rounded-md ${testStatus.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <div className="flex items-center">
+                    {testStatus.success ? (
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                    )}
+                    <p className={`text-sm ${testStatus.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {testStatus.message}
+                    </p>
+                  </div>
+                </div>
+              )}
               
               <div className="mt-4">
                 <p className="text-sm">

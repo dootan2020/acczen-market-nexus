@@ -12,6 +12,35 @@ export const setStoredProxy = (proxy: ProxyType): void => {
   localStorage.setItem('taphoammo_proxy', proxy);
 };
 
+// Get available proxy options with descriptions
+export const getProxyOptions = () => [
+  {
+    value: 'admin',
+    label: 'Edge Function',
+    description: 'Sử dụng hàm phía máy chủ (an toàn nhất)'
+  },
+  {
+    value: 'allorigins',
+    label: 'AllOrigins',
+    description: 'api.allorigins.win - Proxy miễn phí, đáng tin cậy'
+  },
+  {
+    value: 'corsproxy.io',
+    label: 'CORSProxy.io',
+    description: 'corsproxy.io - Proxy thay thế'
+  },
+  {
+    value: 'corsanywhere',
+    label: 'CORS-Anywhere',
+    description: 'cors-anywhere.herokuapp.com - Yêu cầu đăng ký'
+  },
+  {
+    value: 'direct',
+    label: 'Direct',
+    description: 'Kết nối trực tiếp (có thể gặp lỗi CORS)'
+  }
+];
+
 // Build URL with the appropriate proxy
 export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
   switch (proxyType) {
