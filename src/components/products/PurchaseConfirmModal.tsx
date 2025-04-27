@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -8,14 +7,13 @@ import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { taphoammoApi } from "@/utils/taphoammoApi";
+import { useTaphoammoAPI } from "@/hooks/useTaphoammoAPI";
+import { PurchaseModalHeader } from "./purchase/PurchaseModalHeader";
+import { PurchaseModalProduct } from "./purchase/PurchaseModalProduct";
+import { PurchaseModalInfo } from "./purchase/PurchaseModalInfo";
+import { PurchaseModalActions } from "./purchase/PurchaseModalActions";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -42,7 +40,8 @@ export const PurchaseConfirmModal = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+  const { buyProducts, getProducts } = useTaphoammoAPI();
 
   const sendOrderConfirmationEmail = async (userId: string, orderData: any) => {
     try {
@@ -78,7 +77,6 @@ export const PurchaseConfirmModal = ({
       }
     } catch (error) {
       console.error("Error sending confirmation email:", error);
-      // Don't throw here - we don't want to break the purchase flow if email fails
     }
   };
 
@@ -104,14 +102,6 @@ export const PurchaseConfirmModal = ({
 
     try {
       setIsProcessing(true);
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Bắt đầu xử lý mua hàng");
-      }
-      
-      // 1. Check user balance
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Kiểm tra số dư người dùng:", user.id);
-      }
       
       const { data: userData, error: userError } = await supabase
         .from('profiles')
@@ -124,35 +114,17 @@ export const PurchaseConfirmModal = ({
       }
       
       const totalCost = productPrice * quantity;
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Chi phí:", totalCost, "Số dư:", userData.balance);
-      }
       
       if (userData.balance < totalCost) {
-        // Convert amounts to USD for display in error message
         const totalCostUSD = convertVNDtoUSD(totalCost);
         const balanceUSD = convertVNDtoUSD(userData.balance);
-        
         throw new Error(`Số dư không đủ. Bạn cần ${formatUSD(totalCostUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}`);
       }
       
-      // 2. Make purchase request directly without stock check
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Thực hiện mua hàng trực tiếp");
-      }
-      
-      const orderData = await taphoammoApi.buyProducts(kioskToken, quantity);
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Kết quả mua hàng:", orderData);
-      }
+      const orderData = await buyProducts(kioskToken, user.id, quantity, 'direct');
       
       if (!orderData.order_id) {
         throw new Error("Không nhận được mã đơn hàng từ API");
-      }
-      
-      // 3. Create order record in database
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Lưu thông tin đơn hàng vào database");
       }
       
       const { data: order, error: orderError } = await supabase
@@ -166,13 +138,7 @@ export const PurchaseConfirmModal = ({
         .single();
       
       if (orderError) {
-        console.error("Lỗi tạo đơn hàng:", orderError);
         throw new Error("Lỗi khi lưu thông tin đơn hàng");
-      }
-      
-      // 4. Add order items
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Lưu chi tiết đơn hàng:", order.id);
       }
       
       const orderItemData = {
@@ -188,77 +154,39 @@ export const PurchaseConfirmModal = ({
         }
       };
       
-      const { error: itemError } = await supabase
-        .from('order_items')
-        .insert(orderItemData);
-      
-      if (itemError) {
-        console.error("Lỗi lưu chi tiết đơn hàng:", itemError);
-      }
-      
-      // 5. Update user balance
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Cập nhật số dư người dùng");
-      }
+      await supabase.from('order_items').insert(orderItemData);
       
       const newBalance = userData.balance - totalCost;
-      const { error: balanceError } = await supabase
+      await supabase
         .from('profiles')
         .update({ balance: newBalance })
         .eq('id', user.id);
       
-      if (balanceError) {
-        console.error("Lỗi cập nhật số dư:", balanceError);
-      }
-      
-      // 6. Log transaction
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Lưu lịch sử giao dịch");
-      }
-      
-      const { error: transactionError } = await supabase
+      await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
           type: 'purchase',
-          amount: -totalCost, // Use negative amount for purchases
+          amount: -totalCost,
           description: `Mua ${quantity} x ${productName}`,
           reference_id: order.id
         });
       
-      if (transactionError) {
-        console.error("Lỗi lưu giao dịch:", transactionError);
-      }
-      
-      // 7. Check for product keys if needed
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Kiểm tra trạng thái đơn hàng:", orderData.order_id);
-      }
-      
       let productKeys = orderData.product_keys || [];
       
       if (orderData.status === "processing" || !productKeys.length) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Đơn hàng đang xử lý, kiểm tra product keys");
-        }
+        const checkResult = await getProducts(orderData.order_id, user.id);
         
-        const checkResult = await taphoammoApi.checkOrderUntilComplete(orderData.order_id);
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Kết quả kiểm tra đơn hàng:", checkResult);
-        }
-        
-        if (checkResult.success && checkResult.product_keys?.length) {
-          productKeys = checkResult.product_keys;
+        if (checkResult.success === "true" && checkResult.data?.length) {
+          productKeys = checkResult.data.map(item => item.product);
           
-          // Update product keys in database
-          const { data: orderItem, error: fetchError } = await supabase
+          const { data: orderItem } = await supabase
             .from('order_items')
             .select('id, data')
             .eq('order_id', order.id)
             .single();
           
-          if (!fetchError && orderItem) {
-            // Fix: Type check and access data properties safely
+          if (orderItem) {
             const itemData = orderItem.data as Record<string, any> || {};
             
             const updatedData = {
@@ -275,24 +203,17 @@ export const PurchaseConfirmModal = ({
         }
       }
       
-      // 8. Send confirmation email
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Sending order confirmation email");
-      }
-      
       await sendOrderConfirmationEmail(user.id, {
         order_id: orderData.order_id,
         total_amount: totalCost,
         product_keys: productKeys
       });
       
-      // 9. Show success message
       toast({
         title: "Đặt hàng thành công",
         description: `Mã đơn hàng: ${orderData.order_id}`,
       });
       
-      // 10. Navigate to order details page
       setTimeout(() => {
         navigate(`/dashboard/purchases`);
       }, 1000);
@@ -312,76 +233,31 @@ export const PurchaseConfirmModal = ({
     }
   };
 
-  // Calculate USD price for display
   const totalPriceVND = productPrice * quantity;
   const totalPriceUSD = convertVNDtoUSD(totalPriceVND);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Xác nhận mua hàng</DialogTitle>
-          <DialogDescription>
-            Vui lòng xác nhận thông tin mua hàng dưới đây
-          </DialogDescription>
-        </DialogHeader>
+        <PurchaseModalHeader />
         
         <div className="grid gap-4 py-4">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border">
-              <img
-                src={productImage}
-                alt={productName}
-                className="h-full w-full object-cover object-center"
-              />
-            </div>
-            <div>
-              <h3 className="font-medium leading-tight">{productName}</h3>
-              <p className="text-sm text-muted-foreground">
-                Số lượng: {quantity}
-              </p>
-              <p className="font-medium text-primary">
-                {formatUSD(totalPriceUSD)}
-              </p>
-            </div>
-          </div>
+          <PurchaseModalProduct
+            productName={productName}
+            productImage={productImage}
+            quantity={quantity}
+            totalPriceUSD={totalPriceUSD}
+            formatUSD={formatUSD}
+          />
           
-          <div className="rounded-lg bg-muted p-3 text-sm">
-            <p className="mb-2 text-muted-foreground">Thông tin quan trọng:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Đơn hàng sẽ được xử lý ngay sau khi xác nhận</li>
-              <li>Số dư tài khoản của bạn sẽ bị trừ tương ứng</li>
-              <li>Bạn sẽ nhận được email xác nhận kèm thông tin sản phẩm</li>
-            </ul>
-          </div>
+          <PurchaseModalInfo />
         </div>
         
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          <Button
-            type="button" 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            disabled={isProcessing}
-          >
-            Hủy bỏ
-          </Button>
-          
-          <Button 
-            type="button" 
-            onClick={handleConfirmPurchase}
-            disabled={isProcessing}
-            className="bg-[#F97316] hover:bg-[#EA580C]"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang xử lý...
-              </>
-            ) : (
-              'Xác nhận mua'
-            )}
-          </Button>
-        </DialogFooter>
+        <PurchaseModalActions
+          isProcessing={isProcessing}
+          onCancel={() => onOpenChange(false)}
+          onConfirm={handleConfirmPurchase}
+        />
       </DialogContent>
     </Dialog>
   );

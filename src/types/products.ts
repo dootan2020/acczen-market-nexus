@@ -1,4 +1,3 @@
-
 export type ProductStatus = 'active' | 'inactive' | 'out_of_stock';
 
 export interface ProductFormData {
@@ -13,4 +12,11 @@ export interface ProductFormData {
   subcategory_id: string;
   status: ProductStatus;
   sku: string;
+}
+
+export interface TaphoammoProduct {
+  kiosk_token: string;
+  name: string;
+  stock_quantity: number;
+  price: number;
 }
