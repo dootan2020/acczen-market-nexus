@@ -18,22 +18,13 @@ const HeroSection = () => {
               instant delivery and 24/7 customer support.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                asChild 
-                size="lg" 
-                className="text-base font-medium bg-primary hover:bg-primary/90 text-white"
-              >
+              <Button asChild size="lg" className="text-base">
                 <Link to="/products">
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Browse Products
                 </Link>
               </Button>
-              <Button 
-                asChild 
-                size="lg" 
-                variant="outline" 
-                className="text-base font-medium bg-white/10 text-white border-white/30 hover:bg-white/20"
-              >
+              <Button asChild size="lg" variant="outline" className="text-base">
                 <Link to="/register">Create Account</Link>
               </Button>
             </div>

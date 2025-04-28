@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/utils/formatters';
-import { RefreshCw, Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ArrowLeft, RefreshCw, Save } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ExchangeRate {
   id: string;
@@ -149,11 +152,17 @@ const AdminExchangeRates = () => {
     }));
   };
 
-  // Remove back button and instead rely on breadcrumbs for navigation
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-medium">Manage exchange rates for different currencies</h2>
+        <div className="flex items-center gap-4">
+          <Link to="/admin">
+            <Button variant="outline" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Exchange Rates Management</h1>
+        </div>
         
         <div className="flex gap-2">
           <Button 
@@ -165,7 +174,7 @@ const AdminExchangeRates = () => {
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Rates
+            Refresh
           </Button>
           
           <Button 
