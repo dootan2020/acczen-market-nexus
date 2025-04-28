@@ -21,6 +21,8 @@ export interface StockInfo {
   name: string;
   stock_quantity: number;
   price: number;
+  cached?: boolean;
+  last_checked_at?: string;
 }
 
 export interface OrderResponse {
@@ -36,3 +38,21 @@ export interface ProductsResponse {
   data?: any[];
   description?: string;
 }
+
+// Cache configuration
+export const CACHE_TTL = {
+  STOCK: 5 * 60 * 1000, // 5 minutes in ms
+  PRODUCTS: 30 * 60 * 1000 // 30 minutes in ms
+};
+
+// Circuit breaker configuration
+export const CIRCUIT_BREAKER = {
+  FAILURE_THRESHOLD: 5,
+  RESET_TIMEOUT: 5 * 60 * 1000 // 5 minutes in ms
+};
+
+// Retry configuration
+export const RETRY_CONFIG = {
+  MAX_RETRIES: 3,
+  DELAY: [1000, 3000, 5000] // ms
+};

@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_circuit_breakers: {
+        Row: {
+          api_name: string
+          created_at: string
+          failure_count: number
+          id: string
+          is_open: boolean
+          last_failure_time: string | null
+          reset_timeout: number
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          api_name: string
+          created_at?: string
+          failure_count?: number
+          id?: string
+          is_open?: boolean
+          last_failure_time?: string | null
+          reset_timeout?: number
+          threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          api_name?: string
+          created_at?: string
+          failure_count?: number
+          id?: string
+          is_open?: boolean
+          last_failure_time?: string | null
+          reset_timeout?: number
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_health: {
         Row: {
           api_name: string
@@ -240,6 +276,142 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_cache: {
+        Row: {
+          cached_until: string
+          created_at: string
+          id: string
+          kiosk_token: string
+          last_checked_at: string
+          last_sync_status: string
+          price: number
+          product_id: string | null
+          retry_count: number
+          source: string
+          stock_quantity: number
+          sync_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          cached_until?: string
+          created_at?: string
+          id?: string
+          kiosk_token: string
+          last_checked_at?: string
+          last_sync_status?: string
+          price?: number
+          product_id?: string | null
+          retry_count?: number
+          source?: string
+          stock_quantity?: number
+          sync_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cached_until?: string
+          created_at?: string
+          id?: string
+          kiosk_token?: string
+          last_checked_at?: string
+          last_sync_status?: string
+          price?: number
+          product_id?: string | null
+          retry_count?: number
+          source?: string
+          stock_quantity?: number
+          sync_message?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_cache_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sync_history: {
+        Row: {
+          created_at: string
+          id: string
+          kiosk_token: string
+          message: string | null
+          new_price: number | null
+          new_quantity: number
+          old_price: number | null
+          old_quantity: number
+          product_id: string | null
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kiosk_token: string
+          message?: string | null
+          new_price?: number | null
+          new_quantity: number
+          old_price?: number | null
+          old_quantity: number
+          product_id?: string | null
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kiosk_token?: string
+          message?: string | null
+          new_price?: number | null
+          new_quantity?: number
+          old_price?: number | null
+          old_quantity?: number
+          product_id?: string | null
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sync_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notification_type: string
+          recipient_roles: string[]
+          threshold_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type: string
+          recipient_roles?: string[]
+          threshold_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type?: string
+          recipient_roles?: string[]
+          threshold_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -456,6 +628,44 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_notifications: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_notified: boolean
+          product_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_notified?: boolean
+          product_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_notified?: boolean
+          product_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subcategories: {
         Row: {
           category_id: string
@@ -496,6 +706,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sync_configuration: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          schedule_interval: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          schedule_interval?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          schedule_interval?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_job_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          data: Json
+          id: string
+          job_type: string
+          max_attempts: number
+          next_attempt_at: string
+          priority: number
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          job_type: string
+          max_attempts?: number
+          next_attempt_at?: string
+          priority?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          job_type?: string
+          max_attempts?: number
+          next_attempt_at?: string
+          priority?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       taphoammo_mock_orders: {
         Row: {
