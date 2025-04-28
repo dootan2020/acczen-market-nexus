@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +45,7 @@ const AdminProducts = () => {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -140,6 +142,24 @@ const AdminProducts = () => {
     setIsProductDialogOpen(false);
   };
 
+  const handleToggleSelect = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId) 
+        : [...prev, productId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (filteredProducts) {
+      if (selectedProducts.length === filteredProducts.length) {
+        setSelectedProducts([]);
+      } else {
+        setSelectedProducts(filteredProducts.map(p => p.id));
+      }
+    }
+  };
+
   const filteredProducts = products?.filter(product => 
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -171,6 +191,9 @@ const AdminProducts = () => {
             <div className="overflow-x-auto">
               <ProductsTable 
                 products={filteredProducts || []}
+                selectedProducts={selectedProducts}
+                onToggleSelect={handleToggleSelect}
+                onToggleSelectAll={handleToggleSelectAll}
                 onEditProduct={handleEditProduct}
                 onDeleteProduct={handleDeleteProduct}
               />

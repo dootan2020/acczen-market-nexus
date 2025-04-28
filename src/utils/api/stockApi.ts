@@ -1,16 +1,17 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CircuitBreaker } from './circuitBreaker/CircuitBreaker';
-import { fetchTaphoammo } from '@/services/taphoammo-api';
+import { taphoammoApi } from '@/services/taphoammo-api';
+import { toast } from 'sonner';
 
 interface StockCacheItem {
   id: string;
-  cacheId: string;
+  cacheId: string; // Added required property
   product_id: string;
   kiosk_token: string;
   stock_quantity: number;
   price: number;
-  name: string;
+  name: string; // Added required property
   last_checked_at: string;
   cached_until: string;
 }
@@ -34,7 +35,13 @@ export async function getStockForItem(
         .single();
       
       if (cacheData) {
-        const typedCacheData = cacheData as StockCacheItem;
+        // Convert the cache data to StockCacheItem with required properties
+        const typedCacheData = {
+          ...cacheData,
+          cacheId: cacheData.id, // Use id as cacheId
+          name: cacheData.name || 'Unknown Product' // Provide default name
+        } as StockCacheItem;
+        
         return {
           quantity: typedCacheData.stock_quantity,
           price: typedCacheData.price,
@@ -48,32 +55,24 @@ export async function getStockForItem(
     
     // Circuit is closed, try live API
     try {
-      const response = await fetchTaphoammo(`stock/${kioskToken}`, {}, false);
+      const response = await taphoammoApi.stock.getStock(kioskToken);
       
-      if (response && Array.isArray(response)) {
-        const stockData = response.find(item => item.id === productId);
+      if (response) {
+        const stockData = response;
         
         // Update the cache with latest data
         if (stockData) {
-          const typedStockData = stockData as {
-            id: string;
-            stock_quantity: number;
-            price: number;
-            name: string;
-            cacheId?: string;
-          };
-          
           await updateStockCache(
             productId,
             kioskToken,
-            typedStockData.stock_quantity,
-            typedStockData.price,
-            typedStockData.name
+            stockData.stock_quantity,
+            stockData.price,
+            stockData.name || 'Unknown Product'
           );
           
           return {
-            quantity: typedStockData.stock_quantity,
-            price: typedStockData.price,
+            quantity: stockData.stock_quantity,
+            price: stockData.price,
             lastUpdated: new Date().toISOString(),
           };
         }
@@ -93,7 +92,13 @@ export async function getStockForItem(
         .single();
       
       if (cacheData) {
-        const typedCacheData = cacheData as StockCacheItem;
+        // Convert the cache data to StockCacheItem with required properties
+        const typedCacheData = {
+          ...cacheData,
+          cacheId: cacheData.id, // Use id as cacheId
+          name: cacheData.name || 'Unknown Product' // Provide default name
+        } as StockCacheItem;
+        
         return {
           quantity: typedCacheData.stock_quantity,
           price: typedCacheData.price,

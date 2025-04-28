@@ -96,29 +96,9 @@ export class TaphoammoApiService {
 
   public async fetchTaphoammo<T>(
     endpoint: string, 
-    params: Record<string, any>,
-    options: {
-      forceFresh?: boolean;
-      cacheKey?: string;
-      cacheTTL?: number;  // in milliseconds
-    } = {}
+    params: Record<string, any> = {},
+    forceFresh: boolean = false
   ): Promise<T> {
-    const { forceFresh = false, cacheKey, cacheTTL = 1800000 } = options; // Default 30 min TTL
-    
-    // Check cache first if we have a cache key and aren't forcing fresh data
-    if (cacheKey && !forceFresh) {
-      try {
-        const cachedData = await DatabaseCache.get(cacheKey);
-        if (cachedData.cached && cachedData.data) {
-          console.log(`[TaphoaMMO API] Using cached data for ${endpoint}:`, cachedData.data);
-          return cachedData.data as T;
-        }
-      } catch (cacheError) {
-        console.warn('[TaphoaMMO API] Cache check failed:', cacheError);
-        // Continue to API call if cache check fails
-      }
-    }
-    
     return this.retryWithBackoff(async () => {
       const startTime = Date.now();
       
@@ -151,16 +131,6 @@ export class TaphoammoApiService {
           0, 
           responseTime
         );
-      }
-      
-      // Update cache with new data if we have a cache key
-      if (cacheKey) {
-        try {
-          await DatabaseCache.set(cacheKey, data, cacheTTL);
-        } catch (cacheError) {
-          console.warn('[TaphoaMMO API] Failed to update cache:', cacheError);
-          // Continue without caching if it fails
-        }
       }
       
       return data as T;
