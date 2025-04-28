@@ -31,6 +31,14 @@ interface PurchaseResult {
   productKeys?: string[];
 }
 
+// Define a simple interface for order item data to prevent deep recursion
+interface OrderItemData {
+  kiosk_token?: string;
+  taphoammo_order_id?: string;
+  product_keys?: string[];
+  [key: string]: any;
+}
+
 export const PurchaseConfirmModal = ({
   open,
   onOpenChange,
@@ -240,25 +248,34 @@ export const PurchaseConfirmModal = ({
         
         // Update order item in database if user is logged in
         if (user) {
-          const { data: orderItems } = await supabase
+          // Use typed query to avoid deep instantiation
+          const { data: orderItemsData } = await supabase
             .from('order_items')
             .select('id, data')
-            .eq('data->taphoammo_order_id', orderId)
+            .eq('data->>taphoammo_order_id', orderId)
             .maybeSingle();
           
-          if (orderItems) {
-            // Handle data safely to avoid type errors
-            const itemData = typeof orderItems.data === 'object' ? orderItems.data : {};
+          if (orderItemsData) {
+            // Safely extract data without causing deep instantiation
+            const itemData: OrderItemData = {};
             
-            const updatedData = {
-              ...itemData,
-              product_keys: productKeys
-            };
+            // Copy existing properties if data is an object
+            if (orderItemsData.data && typeof orderItemsData.data === 'object') {
+              Object.keys(orderItemsData.data).forEach(key => {
+                // Use type assertion to avoid TypeScript errors
+                const dataObj = orderItemsData.data as Record<string, any>;
+                itemData[key] = dataObj[key];
+              });
+            }
             
+            // Add product keys
+            itemData.product_keys = productKeys;
+            
+            // Update the database
             await supabase
               .from('order_items')
-              .update({ data: updatedData })
-              .eq('id', orderItems.id);
+              .update({ data: itemData })
+              .eq('id', orderItemsData.id);
           }
         }
       }
