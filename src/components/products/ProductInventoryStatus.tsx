@@ -202,7 +202,7 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
       );
     } else {
       return (
-        <Badge variant="outline" className="bg-green-500 hover:bg-green-600 text-white mb-2">
+        <Badge variant="secondary" className="bg-green-500 hover:bg-green-600 text-white mb-2">
           <CheckCircle2 className="w-3 h-3 mr-1" /> Còn hàng ({stock > 99 ? '99+' : stock})
         </Badge>
       );
@@ -246,16 +246,24 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
                 <DialogClose asChild>
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
-                <DialogClose>
-                  {(props) => (
-                    <Button 
-                      onClick={() => handleSubscribeToNotifications(props.onClick)}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Đăng ký thông báo
-                    </Button>
-                  )}
+                <DialogClose asChild>
+                  <Button 
+                    onClick={(e) => {
+                      // Get the close function from DialogClose context
+                      const closeDialog = () => {
+                        // This function will be called after subscription is complete
+                        const closeButton = e.currentTarget.closest('[data-state="open"]')?.querySelector('button[data-state="closed"]');
+                        if (closeButton instanceof HTMLButtonElement) {
+                          closeButton.click();
+                        }
+                      };
+                      handleSubscribeToNotifications(closeDialog);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Đăng ký thông báo
+                  </Button>
                 </DialogClose>
               </DialogFooter>
             </DialogContent>
@@ -315,4 +323,3 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
 };
 
 export default ProductInventoryStatus;
-
