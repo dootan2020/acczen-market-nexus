@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
@@ -8,7 +7,7 @@ import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 const ALLORIGINS_PROXY = "https://api.allorigins.win/raw?url=";
 
 export class BaseApiClient {
-  protected async callApi(endpoint: string, params: Record<string, string | number>, proxyType?: ProxyType): Promise<any> {
+  protected async callApi(endpoint: string, params: Record<string, string | number>): Promise<any> {
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log(`[TaphoaMMO API] Calling ${endpoint} with params:`, params);
@@ -20,18 +19,15 @@ export class BaseApiClient {
         queryParams.append(key, String(value));
       });
       
-      // Construct API URL
+      // Construct API URL with AllOrigins proxy
       const apiUrl = `${API_CONFIG.baseUrl}/${endpoint}?${queryParams.toString()}`;
-      
-      // Luôn sử dụng AllOrigins proxy
-      const finalUrl = ALLORIGINS_PROXY + encodeURIComponent(apiUrl);
+      const proxyUrl = ALLORIGINS_PROXY + encodeURIComponent(apiUrl);
       
       // Add timeout to avoid hanging requests
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
       
-      const startTime = performance.now();
-      const response = await fetch(finalUrl, {
+      const response = await fetch(proxyUrl, {
         signal: controller.signal,
         headers: {
           "User-Agent": API_CONFIG.userAgent,
@@ -40,7 +36,6 @@ export class BaseApiClient {
       });
       
       clearTimeout(timeoutId);
-      const responseTime = performance.now() - startTime;
       
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
@@ -54,79 +49,30 @@ export class BaseApiClient {
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
       }
       
+      // Handle specific error cases
       if (data.success === "false") {
-        // Xử lý đặc biệt cho trường hợp "Order in processing!"
-        if (data.description === "Order in processing!") {
-          console.log("[TaphoaMMO API] Order in processing, returning data");
-          await this.logApiCall(endpoint, params, true, responseTime);
-          return data;
+        if (data.description === "Order in processing!" || 
+            data.message === "Order in processing!") {
+          return data; // Return as-is for processing orders
         }
         
-        // Xử lý các trường hợp lỗi đặc biệt của Kiosk
         if (data.message === "Kiosk is pending!" || 
             data.description === "Kiosk is pending!" ||
             data.message?.includes("pending") ||
             data.description?.includes("pending")) {
-          
-          // Ném lỗi đặc biệt để ngăn thử lại
           throw new TaphoammoError(
             "Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.",
-            TaphoammoErrorCodes.API_TEMP_DOWN,
-            3, // Set số lần thử lại bằng max để không thử lại nữa
-            responseTime
+            TaphoammoErrorCodes.KIOSK_PENDING
           );
         }
         
         throw new Error(data.message || data.description || 'API returned an error');
       }
       
-      await this.logApiCall(endpoint, params, true, responseTime);
-      
       return data;
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, errorMessage);
-      
-      await this.logApiCall(endpoint, params, false, 0, errorMessage);
-      
-      // Nếu lỗi là TaphoammoError, ném lại với thông tin đầy đủ
-      if (error instanceof TaphoammoError) {
-        throw error;
-      }
-      
+      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, error);
       throw error;
-    }
-  }
-
-  private async logApiCall(
-    endpoint: string,
-    params: Record<string, string | number>,
-    success: boolean,
-    responseTime: number,
-    errorMessage?: string
-  ): Promise<void> {
-    try {
-      const safeParams = { ...params };
-      if (safeParams.userToken) {
-        const token = String(safeParams.userToken);
-        safeParams.userToken = token.substring(0, 5) + '...';
-      }
-      
-      await supabase.from('api_logs').insert({
-        api: 'taphoammo',
-        endpoint,
-        status: success ? 'success' : 'error',
-        response_time: responseTime,
-        details: {
-          params: safeParams,
-          error: errorMessage,
-          proxy: 'allorigins' 
-        }
-      });
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[TaphoaMMO API] Error logging API call:', error);
-      }
     }
   }
 }
