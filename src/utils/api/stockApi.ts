@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 
 interface StockCacheItem {
   id: string;
-  cacheId: string; // Added required property
+  cacheId: string;
   product_id: string;
   kiosk_token: string;
   stock_quantity: number;
   price: number;
-  name: string; // Added required property
+  name: string;
   last_checked_at: string;
   cached_until: string;
 }
@@ -29,18 +29,18 @@ export async function getStockForItem(
       console.log("Circuit is open, using cached data");
       const { data: cacheData } = await supabase
         .from('inventory_cache')
-        .select('*')
+        .select('*, products(name)')
         .eq('product_id', productId)
         .eq('kiosk_token', kioskToken)
         .single();
       
       if (cacheData) {
         // Convert the cache data to StockCacheItem with required properties
-        const typedCacheData = {
+        const typedCacheData: StockCacheItem = {
           ...cacheData,
           cacheId: cacheData.id, // Use id as cacheId
-          name: cacheData.name || 'Unknown Product' // Provide default name
-        } as StockCacheItem;
+          name: cacheData.products?.name || 'Unknown Product' // Provide default name
+        };
         
         return {
           quantity: typedCacheData.stock_quantity,
@@ -55,7 +55,7 @@ export async function getStockForItem(
     
     // Circuit is closed, try live API
     try {
-      const response = await taphoammoApi.stock.getStock(kioskToken);
+      const response = await taphoammoApi.fetchTaphoammo('stock', { kioskToken });
       
       if (response) {
         const stockData = response;
@@ -86,18 +86,18 @@ export async function getStockForItem(
       
       const { data: cacheData } = await supabase
         .from('inventory_cache')
-        .select('*')
+        .select('*, products(name)')
         .eq('product_id', productId)
         .eq('kiosk_token', kioskToken)
         .single();
       
       if (cacheData) {
         // Convert the cache data to StockCacheItem with required properties
-        const typedCacheData = {
+        const typedCacheData: StockCacheItem = {
           ...cacheData,
           cacheId: cacheData.id, // Use id as cacheId
-          name: cacheData.name || 'Unknown Product' // Provide default name
-        } as StockCacheItem;
+          name: cacheData.products?.name || 'Unknown Product' // Provide default name
+        };
         
         return {
           quantity: typedCacheData.stock_quantity,

@@ -2,7 +2,7 @@
 import { useApiCommon } from './useApiCommon';
 import { useStockCache } from './useStockCache';
 import { useStockSync } from './useStockSync';
-import { toast } from 'sonner';  // Add this import to fix the error
+import { toast } from 'sonner';  
 import { taphoammoApi } from '@/utils/api/taphoammoApi';
 import type { TaphoammoProduct } from '@/types/products';
 import type { StockCacheInfo } from './useStockCache';
@@ -38,9 +38,9 @@ export const useStockOperations = () => {
             name: apiStock.name,
             stock_quantity: apiStock.stock_quantity,
             price: apiStock.price,
-            cached: apiStock.cached,
-            cacheId: apiStock.cacheId,
-            emergency: apiStock.emergency
+            cached: false,
+            cacheId: '',
+            emergency: false
           };
           
         } catch (apiError) {

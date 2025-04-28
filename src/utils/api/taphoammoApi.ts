@@ -3,9 +3,8 @@ import { orderApi } from './orderApi';
 import { SYSTEM_TOKEN } from './config';
 import type { ProxyType } from '@/utils/corsProxy';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { getStockForItem } from './stockApi';
 
-// Create stockApi object with necessary methods
+// Define a stock API object
 const stockApi = {
   getStock: async (kioskToken: string, options = {}) => {
     try {
