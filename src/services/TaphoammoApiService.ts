@@ -128,10 +128,13 @@ export class TaphoammoApiService {
       );
     }
     
+    // Fix: Add type assertion to data
+    const responseData = data as { order_id?: string };
+    
     this.logApiCall('buyProducts', {
       kioskToken,
       quantity,
-      order_id: data.order_id
+      order_id: responseData.order_id
     });
     
     return data;

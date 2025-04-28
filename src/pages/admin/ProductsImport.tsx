@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,7 +59,8 @@ const ProductsImport = () => {
 
   const handleFetchProduct = async (kioskToken: string, proxyType: 'direct' | 'corsproxy.io' | 'admin') => {
     try {
-      const productData = await getStock(kioskToken, { proxyType });
+      // Fix: Pass forceFresh boolean instead of an object
+      const productData = await getStock(kioskToken, true);
       
       // Create extended product with additional fields
       const extendedProduct: ExtendedProduct = {

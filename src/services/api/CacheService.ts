@@ -31,31 +31,25 @@ export class CacheService {
     // If not in memory or expired, check database
     try {
       const { data, error } = await supabase
-        .from('cache_items')
-        .select('data, expires_at')
-        .eq('cache_key', key)
+        .from('product_cache')
+        .select('*')
+        .eq('product_id', key)
         .single();
       
       if (error || !data) {
         return null;
       }
       
-      // Check if database cache is still valid
-      const expiresAt = new Date(data.expires_at).getTime();
+      // Update memory cache with database data
+      const expiresAt = now + this.defaultTTL; // Use default TTL for db items
       
-      if (now < expiresAt) {
-        // Update memory cache with database data
-        memoryCache.set(key, {
-          data: data.data,
-          expiresAt,
-          createdAt: now
-        });
-        
-        return data.data as T;
-      }
+      memoryCache.set(key, {
+        data: data,
+        expiresAt,
+        createdAt: now
+      });
       
-      // Cache expired in database too
-      return null;
+      return data as T;
     } catch (err) {
       console.error('Error getting from database cache:', err);
       return null;
@@ -79,14 +73,14 @@ export class CacheService {
     // Also store in database for persistence
     try {
       await supabase
-        .from('cache_items')
+        .from('product_cache')
         .upsert({
-          cache_key: key,
+          product_id: key,
+          kiosk_token: key,
           data,
-          expires_at: new Date(expiresAt).toISOString(),
-          created_at: new Date(now).toISOString()
+          updated_at: new Date(now).toISOString()
         }, {
-          onConflict: 'cache_key'
+          onConflict: 'product_id'
         });
     } catch (err) {
       console.error('Error saving to database cache:', err);
@@ -103,9 +97,9 @@ export class CacheService {
     // Remove from database
     try {
       await supabase
-        .from('cache_items')
+        .from('product_cache')
         .delete()
-        .eq('cache_key', key);
+        .eq('product_id', key);
     } catch (err) {
       console.error('Error invalidating database cache:', err);
     }
@@ -124,14 +118,7 @@ export class CacheService {
       }
     }
     
-    // Clean database cache
-    try {
-      await supabase
-        .from('cache_items')
-        .delete()
-        .lt('expires_at', new Date(now).toISOString());
-    } catch (err) {
-      console.error('Error cleaning up database cache:', err);
-    }
+    // We don't need to actively clean database cache as it will be
+    // overwritten when new cache items are set
   }
 }

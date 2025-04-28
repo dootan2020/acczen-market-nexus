@@ -121,7 +121,9 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${formatUSD(totalCostUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}`);
       }
       
-      const orderData = await buyProducts(kioskToken, user.id, quantity, 'direct');
+      // Fix: Correct parameter order for buyProducts function
+      // userToken should be the second param and quantity should be third
+      const orderData = await buyProducts(kioskToken, quantity, user.id);
       
       if (!orderData.order_id) {
         throw new Error("Không nhận được mã đơn hàng từ API");
@@ -175,8 +177,8 @@ export const PurchaseConfirmModal = ({
       let productKeys = orderData.product_keys || [];
       
       if (orderData.status === "processing" || !productKeys.length) {
-        // Fix: Added the missing 'direct' proxyType parameter
-        const checkResult = await getProducts(orderData.order_id, user.id, 'direct');
+        // Fix: Remove the third parameter
+        const checkResult = await getProducts(orderData.order_id, user.id);
         
         if (checkResult.success === "true" && checkResult.data?.length) {
           productKeys = checkResult.data.map(item => item.product);
