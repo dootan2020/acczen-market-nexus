@@ -135,9 +135,12 @@ export const PaymentProvider = ({ children }: PaymentProviderProps) => {
           schema: 'public',
           table: 'payment_verifications'
         }, (payload) => {
-          const depositId = payload.new?.deposit_id;
-          if (depositId && deposits.some(d => d.id === depositId)) {
-            refreshDeposits();
+          // Check if the payload and payload.new exist and have the deposit_id property
+          if (payload && payload.new && 'deposit_id' in payload.new) {
+            const depositId = payload.new.deposit_id;
+            if (depositId && deposits.some(d => d.id === depositId)) {
+              refreshDeposits();
+            }
           }
         })
         .subscribe();
