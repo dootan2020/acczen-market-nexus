@@ -23,7 +23,7 @@ export class DatabaseCache {
           cached: true,
           data: {
             kiosk_token: data.kiosk_token,
-            name: data.product_name || '',
+            name: data.product_id ? `Product ${data.product_id.substring(0, 8)}` : '', // Use product_id as fallback
             stock_quantity: data.stock_quantity,
             price: data.price,
             cached: true,
@@ -39,7 +39,7 @@ export class DatabaseCache {
     }
   }
 
-  static async set(data: any, expiryMinutes = 15) {
+  static async set(kioskToken: string, data: any, expiryMinutes = 15) {
     try {
       const expiryDate = new Date();
       expiryDate.setMinutes(expiryDate.getMinutes() + expiryMinutes);
@@ -47,8 +47,7 @@ export class DatabaseCache {
       const { error } = await supabase
         .from('inventory_cache')
         .upsert({
-          kiosk_token: data.kiosk_token,
-          product_name: data.name,
+          kiosk_token: kioskToken,
           stock_quantity: data.stock_quantity,
           price: data.price,
           cached_until: expiryDate.toISOString(),

@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -12,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ArrowRight, Clipboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { OrderData } from "@/types/orders";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -24,10 +24,9 @@ interface PurchaseConfirmModalProps {
   kioskToken: string | null;
 }
 
-interface OrderData {
-  order_id: string;
-  product_keys?: string[];
-  status?: string;
+interface PurchaseResult {
+  orderId?: string;
+  productKeys?: string[];
 }
 
 export const PurchaseConfirmModal = ({
@@ -40,10 +39,7 @@ export const PurchaseConfirmModal = ({
   quantity,
   kioskToken
 }: PurchaseConfirmModalProps) => {
-  const [purchaseResult, setPurchaseResult] = useState<{
-    orderId?: string;
-    productKeys?: string[];
-  }>({});
+  const [purchaseResult, setPurchaseResult] = useState<PurchaseResult>({});
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
@@ -117,24 +113,25 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toLocaleString()} VND nhưng chỉ có ${userData.balance.toLocaleString()} VND`);
       }
 
-      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+      const { data: orderData, error } = await supabase.functions.invoke('taphoammo-api', {
         body: JSON.stringify({
           endpoint: 'buyProducts',
           kioskToken,
           userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
           quantity
         })
-      }) as { data: OrderData | null, error: Error | null };
+      });
       
       if (error) {
         throw new Error(error.message);
       }
       
-      if (!data || data.success === "false") {
-        throw new Error(data?.message || data?.description || "Đã xảy ra lỗi khi mua sản phẩm");
+      if (!orderData || (orderData as any).success === "false") {
+        throw new Error((orderData as any)?.message || (orderData as any)?.description || "Đã xảy ra lỗi khi mua sản phẩm");
       }
       
-      setPurchaseResult({ orderId: data.order_id });
+      const typedOrderData = orderData as OrderData;
+      setPurchaseResult({ orderId: typedOrderData.order_id });
       
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -158,7 +155,7 @@ export const PurchaseConfirmModal = ({
         total: totalCost,
         data: {
           kiosk_token: kioskToken,
-          taphoammo_order_id: data.order_id
+          taphoammo_order_id: typedOrderData.order_id
         }
       };
       
@@ -180,7 +177,7 @@ export const PurchaseConfirmModal = ({
           reference_id: order.id
         });
       
-      await checkOrderStatus(data.order_id);
+      await checkOrderStatus(typedOrderData.order_id);
       
       toast.success("Đặt hàng thành công!");
 
@@ -212,7 +209,7 @@ export const PurchaseConfirmModal = ({
         throw new Error(error.message);
       }
       
-      if (data.success === "true" && data.data && data.data.length > 0) {
+      if (data && typeof data === 'object' && 'success' in data && data.success === "true" && 'data' in data && Array.isArray(data.data) && data.data.length > 0) {
         const productKeys = data.data.map((item: any) => item.product);
         
         setPurchaseResult(prev => ({ 

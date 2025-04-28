@@ -37,16 +37,17 @@ export class StockApi extends BaseApiClient {
   ): Promise<TaphoammoProduct> {
     let cachedData = null;
     
-    // Kiểm tra cache trước khi gọi API nếu không yêu cầu dữ liệu mới
+    // Check cache before calling API if fresh data not required
     if (!options.forceFresh) {
       try {
-        const { cached, data, cacheId } = await this.checkDatabaseCache(kioskToken);
-        if (cached && data) {
-          console.log('[TaphoaMMO API] Using cached data:', data);
+        const cacheResult = await DatabaseCache.get(kioskToken);
+        if (cacheResult.cached && cacheResult.data) {
+          console.log('[TaphoaMMO API] Using cached data:', cacheResult.data);
           return {
-            ...data,
+            ...cacheResult.data,
+            kiosk_token: kioskToken, // Ensure kiosk_token is set
             cached: true,
-            cacheId
+            cacheId: cacheResult.data.cacheId
           };
         }
       } catch (cacheError) {
@@ -56,10 +57,10 @@ export class StockApi extends BaseApiClient {
     }
     
     try {
-      // Gọi API để lấy dữ liệu mới
+      // Call API to get fresh data
       const stockInfo = await this.getStock(kioskToken);
       
-      // Cập nhật cache với dữ liệu mới
+      // Update cache with new data
       await DatabaseCache.set(kioskToken, {
         stock_quantity: stockInfo.stock_quantity,
         price: stockInfo.price,
@@ -67,6 +68,7 @@ export class StockApi extends BaseApiClient {
       });
       
       return {
+        kiosk_token: kioskToken,
         stock_quantity: stockInfo.stock_quantity,
         price: stockInfo.price,
         name: stockInfo.name,
@@ -74,24 +76,25 @@ export class StockApi extends BaseApiClient {
       };
       
     } catch (error: any) {
-      // Nếu API fails, thử dùng cache nếu có
+      // If API fails, try to use cache if available
       if (!options.forceFresh) {
         try {
-          const { cached, data } = await this.checkDatabaseCache(kioskToken);
-          if (cached && data) {
+          const cacheResult = await DatabaseCache.get(kioskToken);
+          if (cacheResult.cached && cacheResult.data) {
             console.log('[TaphoaMMO API] API call failed, using cached data as fallback');
             return {
-              ...data,
+              ...cacheResult.data,
+              kiosk_token: kioskToken, // Ensure kiosk_token is set
               cached: true,
               emergency: true
             };
           }
         } catch (secondaryCacheError) {
-          // Bỏ qua lỗi kiểm tra cache
+          // Ignore secondary cache check errors
         }
       }
       
-      // Nếu không có dữ liệu cache hoặc cache check cũng lỗi, ném ra lỗi gốc
+      // If no cache data or cache check fails, throw original error
       if (error instanceof TaphoammoError) {
         throw error;
       } else {

@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 // Define order status type based on the database enum
@@ -49,4 +48,14 @@ export interface OrderDetailsData {
     username?: string;
     full_name?: string;
   };
+}
+
+// Define the OrderData interface for API responses
+export interface OrderData {
+  order_id: string;
+  product_keys?: string[];
+  success?: string;   // Added to match API response structure
+  message?: string;   // Added to match API response structure
+  description?: string; // Added to match API response structure
+  status?: string;
 }

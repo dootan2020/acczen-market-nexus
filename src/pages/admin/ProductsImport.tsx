@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaphoammoAPI } from '@/hooks/useTaphoammoAPI';
 import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
-import { TaphoammoProduct } from '@/types/products';
+import { TaphoammoProduct as ImportedProduct } from '@/types/products';
 
 // Product type from the TaphoaMMO API
 export interface TaphoammoProduct {
@@ -62,10 +62,12 @@ const ProductsImport = () => {
       // Create extended product with additional fields
       const extendedProduct: ExtendedProduct = {
         ...productData,
+        kiosk_token: kioskToken, // Ensure kiosk_token is always set
+        name: productData.name || '',
         selling_price: productData.price,
         status: 'active',
         sku: generateSKU(),
-        slug: generateSlug(productData.name)
+        slug: generateSlug(productData.name || 'product')
       };
       
       setProduct(extendedProduct);
