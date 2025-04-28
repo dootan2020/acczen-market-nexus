@@ -5,66 +5,65 @@
 
 @layer base {
   :root {
-    /* New Color Design System */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 217 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 217 100% 50%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 217 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 144.9 80.4% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 85.7% 97.3%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
   }
 }
 
@@ -73,20 +72,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
-  }
-  
-  h1 { @apply text-4xl; }
-  h2 { @apply text-3xl; }
-  h3 { @apply text-2xl; }
-  h4 { @apply text-xl; }
-  h5 { @apply text-lg; }
-  h6 { @apply text-base; }
   
   /* Improve text readability across the site */
   p, span, a, button, input, textarea, label, li {
@@ -120,106 +108,6 @@
   }
 }
 
-/* Design system components */
-@layer components {
-  /* Button Variants */
-  .btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
-  }
-  
-  .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-600;
-  }
-  
-  .btn-secondary {
-    @apply bg-white text-neutral-800 border border-neutral-300 hover:bg-neutral-50;
-  }
-  
-  .btn-tertiary {
-    @apply text-primary bg-transparent border-transparent hover:bg-primary-50;
-  }
-  
-  .btn-ghost {
-    @apply text-neutral-600 bg-transparent border-transparent hover:bg-neutral-100 hover:text-neutral-800;
-  }
-  
-  .btn-danger {
-    @apply bg-destructive text-white hover:opacity-90;
-  }
-  
-  /* Button Sizes */
-  .btn-sm {
-    @apply px-2 py-1 text-sm rounded;
-  }
-  
-  .btn-md {
-    @apply px-3 py-2;
-  }
-  
-  .btn-lg {
-    @apply px-4 py-3 text-lg rounded-lg;
-  }
-  
-  /* Cards */
-  .card {
-    @apply bg-white border border-neutral-200 rounded-lg shadow-sm transition-shadow hover:shadow;
-  }
-  
-  .card-header {
-    @apply p-4 border-b border-neutral-200 flex justify-between items-center;
-  }
-  
-  .card-body {
-    @apply p-4 flex-1;
-  }
-  
-  .card-footer {
-    @apply p-4 bg-neutral-50 border-t border-neutral-200;
-  }
-  
-  /* Card Variants */
-  .card-elevated {
-    @apply shadow-md hover:shadow-lg;
-  }
-  
-  .card-flat {
-    @apply shadow-none;
-  }
-  
-  .card-interactive {
-    @apply cursor-pointer hover:translate-y-[-4px] transition-transform;
-  }
-  
-  /* KPI Card */
-  .kpi-card {
-    @apply text-center p-4;
-  }
-  
-  .kpi-card-icon {
-    @apply inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 bg-primary-50 text-primary;
-  }
-  
-  .kpi-card-value {
-    @apply text-3xl font-bold m-0 leading-tight text-neutral-800;
-  }
-  
-  .kpi-card-label {
-    @apply text-sm text-neutral-600 mt-1;
-  }
-  
-  .kpi-card-trend {
-    @apply inline-flex items-center mt-2 text-sm font-medium;
-  }
-  
-  .kpi-card-trend.positive {
-    @apply text-success;
-  }
-  
-  .kpi-card-trend.negative {
-    @apply text-destructive;
-  }
-}
-
 @layer utilities {
   /* Subtle pulse animation for deposit button */
   .animate-pulse-subtle {
@@ -248,15 +136,15 @@
   }
   
   .product-badge-featured {
-    @apply bg-info text-white;
+    @apply bg-blue-600 text-white dark:bg-blue-500;
   }
   
   .product-badge-sale {
-    @apply bg-destructive text-white;
+    @apply bg-red-600 text-white dark:bg-red-500;
   }
   
   .product-badge-new {
-    @apply bg-success text-white;
+    @apply bg-green-600 text-white dark:bg-green-500;
   }
   
   /* High contrast text on dark backgrounds */
@@ -266,23 +154,6 @@
   
   /* Better button contrast on dark backgrounds */
   .button-high-contrast {
-    @apply bg-white text-neutral-900 hover:bg-neutral-100 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100;
-  }
-  
-  /* Breadcrumb styles */
-  .breadcrumb-container {
-    @apply flex items-center py-2 px-4 bg-transparent;
-  }
-  
-  .breadcrumb-item {
-    @apply text-neutral-600 no-underline text-sm font-medium transition-colors hover:text-primary;
-  }
-  
-  .breadcrumb-separator {
-    @apply mx-2 text-neutral-400;
-  }
-  
-  .breadcrumb-active {
-    @apply text-neutral-800 font-semibold pointer-events-none;
+    @apply bg-white text-black hover:bg-gray-200 dark:bg-white dark:text-black dark:hover:bg-gray-200;
   }
 }

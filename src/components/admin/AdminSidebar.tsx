@@ -20,72 +20,12 @@ import {
   BarChart,
   ActivitySquare,
   Import,
-  CurrencyIcon,
-  ChevronDown,
-  ChevronRight
+  CurrencyIcon
 } from 'lucide-react';
 
 interface AdminSidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-}
-
-interface NavItemProps {
-  href: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  isActive?: boolean;
-  subItems?: { name: string; href: string }[];
-}
-
-const NavItem = ({ href, icon, children, isActive, subItems }: NavItemProps) => {
-  const [expanded, setExpanded] = React.useState(false);
-  const hasSubItems = subItems && subItems.length > 0;
-  
-  return (
-    <div className="space-y-1">
-      <Link
-        to={href}
-        className={cn(
-          "group flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-          isActive && !hasSubItems ? "bg-accent text-accent-foreground" : "text-foreground"
-        )}
-        onClick={(e) => {
-          if (hasSubItems) {
-            e.preventDefault();
-            setExpanded(!expanded);
-          }
-        }}
-      >
-        <div className="flex items-center">
-          <span className="mr-3">{icon}</span>
-          <span>{children}</span>
-        </div>
-        {hasSubItems && (
-          <span>
-            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </span>
-        )}
-      </Link>
-      
-      {hasSubItems && expanded && (
-        <div className="pl-10 space-y-1">
-          {subItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-                location.pathname === item.href ? "bg-accent/70 text-accent-foreground" : "text-muted-foreground"
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps) => {
@@ -101,11 +41,12 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
     { 
       name: 'Products', 
       href: '/admin/products', 
-      icon: <Package className="h-5 w-5" />,
-      subItems: [
-        { name: 'All Products', href: '/admin/products' },
-        { name: 'Import Products', href: '/admin/products-import' }
-      ]
+      icon: <Package className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Import Products', 
+      href: '/admin/products-import', 
+      icon: <Import className="h-5 w-5" /> 
     },
     { 
       name: 'Categories', 
@@ -165,32 +106,31 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 transform bg-background border-r shadow-lg transition-transform duration-200 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 w-64 transform bg-background shadow-lg transition-transform duration-200 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-16 items-center border-b px-6">
           <Link to="/admin" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-primary">Digital Deals</span>
+            <span className="text-xl font-bold text-primary">Digital Deals Hub</span>
           </Link>
         </div>
         
-        <ScrollArea className="flex-1 py-4 h-[calc(100vh-4rem)]">
+        <ScrollArea className="flex-1 py-4">
           <div className="px-3 py-2">
             <div className="space-y-1">
               {navItems.map((item) => (
-                <NavItem
+                <Link
                   key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  isActive={
-                    item.subItems 
-                      ? location.pathname === item.href || item.subItems.some(sub => location.pathname === sub.href)
-                      : location.pathname === item.href
-                  }
-                  subItems={item.subItems}
+                  to={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                    location.pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground"
+                  )}
                 >
-                  {item.name}
-                </NavItem>
+                  {item.icon}
+                  <span className="ml-3">{item.name}</span>
+                </Link>
               ))}
             </div>
           </div>

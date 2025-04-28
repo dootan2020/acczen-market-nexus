@@ -6,17 +6,16 @@ import Footer from "./Footer";
 
 interface LayoutProps {
   children?: React.ReactNode;
-  hideFooter?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main className="flex-1">
         {children || <Outlet />}
       </main>
-      {!hideFooter && <Footer />}
+      <Footer />
     </div>
   );
 };

@@ -1,83 +1,73 @@
 
-import React, { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { UserToken } from '@/types/tokens';
-import { useToast } from '@/components/ui/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteTokenDialogProps {
+  token: UserToken;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  token: UserToken | null;
 }
 
-export function DeleteTokenDialog({ open, onOpenChange, token }: DeleteTokenDialogProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
+export function DeleteTokenDialog({ token, open, onOpenChange }: DeleteTokenDialogProps) {
   const queryClient = useQueryClient();
 
-  const handleDelete = async () => {
-    if (!token) return;
-    
-    setIsDeleting(true);
-    
-    try {
+  const deleteTokenMutation = useMutation({
+    mutationFn: async () => {
       const { error } = await supabase
         .from('user_tokens')
         .delete()
         .eq('id', token.id);
-        
+      
       if (error) throw error;
-      
-      toast({
-        title: 'Token deleted',
-        description: `Token "${token.name}" has been deleted successfully.`
-      });
-      
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-tokens'] });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete token',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsDeleting(false);
+      toast.success('Token đã được xóa');
       onOpenChange(false);
+    },
+    onError: () => {
+      toast.error('Không thể xóa token');
     }
+  });
+
+  const handleDelete = () => {
+    deleteTokenMutation.mutate();
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action will permanently delete the token "{token?.name}". 
-            Any applications or services using this token will stop working immediately.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleDelete} 
-            className="bg-destructive hover:bg-destructive/90"
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Deleting...' : 'Delete Token'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Xóa Token</DialogTitle>
+          <DialogDescription>
+            Bạn có chắc chắn muốn xóa token "<strong>{token.name}</strong>"? 
+            Hành động này không thể hoàn tác.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <div className="flex justify-end gap-2 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Hủy
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteTokenMutation.isPending}
+            >
+              {deleteTokenMutation.isPending ? 'Đang xóa...' : 'Xóa Token'}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

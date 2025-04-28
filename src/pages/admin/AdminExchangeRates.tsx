@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ const AdminExchangeRates = () => {
   const fetchRates = async () => {
     setLoading(true);
     try {
+      // Mock data for now
       const mockRates = [
         { id: '1', currency_code: 'USD', rate: 1, previous_rate: 1, updated_at: new Date().toISOString(), updated_by: { email: 'admin@example.com' } },
         { id: '2', currency_code: 'EUR', rate: 0.85, previous_rate: 0.84, updated_at: new Date().toISOString(), updated_by: { email: 'admin@example.com' } },
@@ -71,8 +73,10 @@ const AdminExchangeRates = () => {
   const saveRates = async () => {
     setSaving(true);
     try {
+      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Update previous_rate and updated_at
       const updatedRates = rates.map(rate => ({
         ...rate,
         previous_rate: rate.rate,
@@ -86,6 +90,7 @@ const AdminExchangeRates = () => {
         description: "Exchange rates updated successfully",
       });
       
+      // Add to history
       const historyEntries = updatedRates.map(rate => ({
         id: `hist-${Date.now()}-${rate.id}`,
         currency_code: rate.currency_code,
@@ -109,6 +114,7 @@ const AdminExchangeRates = () => {
 
   const fetchHistory = async () => {
     if (history.length === 0) {
+      // Mock history data
       const mockHistory = [];
       for (let i = 0; i < 20; i++) {
         const date = new Date();
@@ -143,6 +149,7 @@ const AdminExchangeRates = () => {
     }));
   };
 
+  // Remove back button and instead rely on breadcrumbs for navigation
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -179,7 +186,7 @@ const AdminExchangeRates = () => {
       </div>
       
       {!showHistory ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle>Current Exchange Rates</CardTitle>
           </CardHeader>
@@ -222,7 +229,7 @@ const AdminExchangeRates = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Exchange Rate History</CardTitle>
             <Button variant="outline" onClick={() => setShowHistory(false)}>

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
 import {
@@ -11,15 +11,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home } from 'lucide-react';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // All available navigation items for breadcrumb generation
   const navItems = [
     { name: 'Digital Deals Hub', href: '/' },
     { name: 'Admin', href: '/admin' },
@@ -36,7 +35,6 @@ const AdminLayout = () => {
     { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
 
-  // Generate breadcrumb items based on current path
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     
@@ -88,32 +86,23 @@ const AdminLayout = () => {
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
         <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {/* Breadcrumb navigation - replaces the area that was circled in red */}
-        <div className="bg-background/80 backdrop-blur-sm">
+        {/* Remove the bg-background, py-4, px-6, and border-b classes - only have breadcrumbs here */}
+        <div className="border-b">
           {breadcrumbs && (
-            <Breadcrumb>
+            <Breadcrumb className="py-4 px-6">
               <BreadcrumbList>
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.path}>
                     <BreadcrumbItem>
-                      {idx === 0 ? (
-                        <BreadcrumbLink href={crumb.path} className="flex items-center" asChild>
-                          <Link to={crumb.path}>
-                            <Home className="h-3.5 w-3.5 mr-1" />
-                            <span>{crumb.name}</span>
-                          </Link>
-                        </BreadcrumbLink>
-                      ) : crumb.isCurrentPage ? (
-                        <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
+                      {crumb.isCurrentPage ? (
+                        <BreadcrumbPage className="font-medium">{crumb.name}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink href={crumb.path} asChild>
+                        <BreadcrumbLink href={crumb.path} className="cursor-pointer" asChild>
                           <Link to={crumb.path}>{crumb.name}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
-                    {idx < breadcrumbs.length - 1 && (
-                      <BreadcrumbSeparator />
-                    )}
+                    {idx < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
                   </React.Fragment>
                 ))}
               </BreadcrumbList>
@@ -121,7 +110,11 @@ const AdminLayout = () => {
           )}
         </div>
         
-        <main className="flex-1 overflow-y-auto p-6 bg-background/50">
+        <div className="bg-background py-3 px-6 border-b">
+          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()}</h1>
+        </div>
+        
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>
@@ -129,7 +122,6 @@ const AdminLayout = () => {
   );
 };
 
-// Get the page title based on the current path
 const getCurrentPageTitle = () => {
   const location = useLocation();
   
@@ -144,7 +136,7 @@ const getCurrentPageTitle = () => {
     '/admin/reports': 'Reports & Analytics',
     '/admin/integrations': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
-    '/admin/exchange-rates': 'Exchange Rates Management',
+    '/admin/exchange-rates': 'Exchange Rates',
   };
 
   return titles[location.pathname] || 'Dashboard';

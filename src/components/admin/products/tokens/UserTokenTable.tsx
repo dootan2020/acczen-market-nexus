@@ -1,14 +1,23 @@
 
-import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Star, Edit, Trash, Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2, Star, StarOff, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { UserToken } from '@/types/tokens';
 import { EditTokenDialog } from './EditTokenDialog';
 import { DeleteTokenDialog } from './DeleteTokenDialog';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserTokenTableProps {
   tokens: UserToken[];
@@ -16,147 +25,149 @@ interface UserTokenTableProps {
 }
 
 export function UserTokenTable({ tokens, isLoading }: UserTokenTableProps) {
-  const [selectedToken, setSelectedToken] = useState<UserToken | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [showToken, setShowToken] = React.useState<Record<string, boolean>>({});
+  const [editToken, setEditToken] = React.useState<UserToken | null>(null);
+  const [deleteToken, setDeleteToken] = React.useState<UserToken | null>(null);
+  const queryClient = useQueryClient();
 
-  const handleEditToken = (token: UserToken) => {
-    setSelectedToken(token);
-    setIsEditDialogOpen(true);
-  };
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (token: UserToken) => {
+      const { error } = await supabase
+        .from('user_tokens')
+        .update({ is_favorite: !token.is_favorite })
+        .eq('id', token.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-tokens'] });
+      toast.success('Cập nhật thành công');
+    },
+    onError: () => {
+      toast.error('Không thể cập nhật token');
+    }
+  });
 
-  const handleDeleteToken = (token: UserToken) => {
-    setSelectedToken(token);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const copyTokenPreview = (token: UserToken) => {
-    // Only copy first 8 chars followed by ***
-    const previewToken = `${token.token.substring(0, 8)}***`;
-    navigator.clipboard.writeText(previewToken);
-    
-    setCopiedToken(token.id);
-    toast({
-      title: "Copied to clipboard",
-      description: "Token preview copied. For security reasons, only a partial token is shown.",
-    });
-    
-    setTimeout(() => setCopiedToken(null), 2000);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'inactive':
+        return 'bg-gray-500';
+      case 'expired':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (tokens.length === 0) {
-    return (
-      <div className="text-center py-8 border rounded-lg">
-        <p className="text-muted-foreground">No tokens found. Create a new token to get started.</p>
-      </div>
-    );
+    return <div className="flex justify-center py-8">Đang tải...</div>;
   }
 
   return (
     <>
-      <div className="rounded-md border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Token</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tokens.map((token) => (
-              <TableRow key={token.id}>
-                <TableCell>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[30px]"></TableHead>
+            <TableHead>Tên Token</TableHead>
+            <TableHead>Mã Token</TableHead>
+            <TableHead>Mô tả</TableHead>
+            <TableHead>Ngày tạo</TableHead>
+            <TableHead>Hết hạn</TableHead>
+            <TableHead>Trạng thái</TableHead>
+            <TableHead className="w-[100px]">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tokens.map((token) => (
+            <TableRow key={token.id}>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => toggleFavoriteMutation.mutate(token)}
+                >
+                  {token.is_favorite ? (
+                    <Star className="h-4 w-4 text-yellow-400" />
+                  ) : (
+                    <StarOff className="h-4 w-4" />
+                  )}
+                </Button>
+              </TableCell>
+              <TableCell>{token.name}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {showToken[token.id] ? token.token : '••••••••'}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={token.is_favorite ? 'text-yellow-500' : 'text-muted-foreground'}
+                    onClick={() => setShowToken(prev => ({ 
+                      ...prev, 
+                      [token.id]: !prev[token.id] 
+                    }))}
                   >
-                    <Star className="h-4 w-4" />
+                    {showToken[token.id] ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
-                </TableCell>
-                <TableCell className="font-medium">{token.name}</TableCell>
-                <TableCell className="font-mono">
-                  <div className="flex items-center">
-                    {`${token.token.substring(0, 8)}***`}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="ml-2"
-                      onClick={() => copyTokenPreview(token)}
-                    >
-                      {copiedToken === token.id ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </TableCell>
-                <TableCell className="max-w-md truncate">
-                  {token.description || "-"}
-                </TableCell>
-                <TableCell>
-                  {token.created_at
-                    ? format(new Date(token.created_at), 'MMM d, yyyy')
-                    : '-'}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={token.status === 'active' ? 'default' : 'secondary'}
+                </div>
+              </TableCell>
+              <TableCell>{token.description}</TableCell>
+              <TableCell>
+                {format(new Date(token.created_at), 'dd/MM/yyyy')}
+              </TableCell>
+              <TableCell>
+                {token.expires_at ? 
+                  format(new Date(token.expires_at), 'dd/MM/yyyy') : 
+                  'Không giới hạn'}
+              </TableCell>
+              <TableCell>
+                <Badge className={getStatusColor(token.status)}>
+                  {token.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditToken(token)}
                   >
-                    {token.status || 'active'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditToken(token)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteToken(token)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteToken(token)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
-      <EditTokenDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        token={selectedToken}
-      />
+      {editToken && (
+        <EditTokenDialog
+          token={editToken}
+          open={!!editToken}
+          onOpenChange={(open) => !open && setEditToken(null)}
+        />
+      )}
 
-      <DeleteTokenDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        token={selectedToken}
-      />
+      {deleteToken && (
+        <DeleteTokenDialog
+          token={deleteToken}
+          open={!!deleteToken}
+          onOpenChange={(open) => !open && setDeleteToken(null)}
+        />
+      )}
     </>
   );
 }
