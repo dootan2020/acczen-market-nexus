@@ -1,15 +1,14 @@
 
 import { BaseApiClient } from './baseClient';
 import { SYSTEM_TOKEN, StockInfo } from './config';
-import { ProxyType } from '@/utils/corsProxy';
 
 export class StockApi extends BaseApiClient {
-  async getStock(kioskToken: string, userToken: string = SYSTEM_TOKEN): Promise<StockInfo> {
+  async getStock(kioskToken: string): Promise<StockInfo> {
     try {
-      // Always use SYSTEM_TOKEN regardless of provided userToken
+      // Always use SYSTEM_TOKEN
       const data = await this.callApi('getStock', { 
         kioskToken, 
-        userToken: SYSTEM_TOKEN 
+        userToken: SYSTEM_TOKEN // Luôn sử dụng token cố định
       });
       
       return {
@@ -19,9 +18,7 @@ export class StockApi extends BaseApiClient {
         price: data.price ? parseFloat(data.price) : 0
       };
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[TaphoaMMO API] Error getting stock:', error);
-      }
+      console.error('[TaphoaMMO API] Error getting stock:', error);
       throw error;
     }
   }

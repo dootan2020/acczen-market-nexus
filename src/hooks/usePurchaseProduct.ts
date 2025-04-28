@@ -74,11 +74,15 @@ export function usePurchaseProduct() {
 
       const totalCost = product.price * product.quantity;
 
-      // Buy products from TaphoaMMO
+      // Buy products from TaphoaMMO - gọi trực tiếp từ API, không qua Edge Function
       const purchaseData = await taphoammoApi.order.buyProducts(
         product.kioskToken!, 
         product.quantity
       );
+
+      if (!purchaseData || !purchaseData.order_id) {
+        throw new Error("Không nhận được order_id sau khi mua hàng");
+      }
 
       // Create order in database
       const { data: order, error: orderError } = await supabase
@@ -140,7 +144,7 @@ export function usePurchaseProduct() {
 
       return order.id;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Lỗi mua hàng:", error);
       toast({
         title: "Lỗi đặt hàng",

@@ -13,7 +13,7 @@ export class OrderApi extends BaseApiClient {
       // Always use SYSTEM_TOKEN regardless of provided userToken
       const params: Record<string, string | number> = {
         kioskToken,
-        userToken: SYSTEM_TOKEN,
+        userToken: SYSTEM_TOKEN, // Luôn sử dụng token cố định
         quantity
       };
       
@@ -23,9 +23,7 @@ export class OrderApi extends BaseApiClient {
       
       return await this.callApi('buyProducts', params);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[TaphoaMMO API] Error buying products:', error);
-      }
+      console.error('[TaphoaMMO API] Error buying products:', error);
       throw error;
     }
   }
@@ -35,19 +33,16 @@ export class OrderApi extends BaseApiClient {
       // Always use SYSTEM_TOKEN regardless of provided userToken
       return await this.callApi('getProducts', { 
         orderId, 
-        userToken: SYSTEM_TOKEN 
+        userToken: SYSTEM_TOKEN // Luôn sử dụng token cố định
       });
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[TaphoaMMO API] Error getting products:', error);
-      }
+      console.error('[TaphoaMMO API] Error getting products:', error);
       throw error;
     }
   }
 
   async checkOrderUntilComplete(
     orderId: string, 
-    userToken: string = SYSTEM_TOKEN, 
     maxTries: number = 3
   ): Promise<{
     success: boolean;
@@ -59,7 +54,7 @@ export class OrderApi extends BaseApiClient {
     
     while (tries < maxTries) {
       try {
-        const result = await this.getProducts(orderId, SYSTEM_TOKEN);
+        const result = await this.getProducts(orderId);
         
         if (result.success === "true" && result.data && result.data.length > 0) {
           return {

@@ -3,13 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
 
+// Luôn sử dụng AllOrigins làm proxy mặc định
 const ALLORIGINS_PROXY = "https://api.allorigins.win/raw?url=";
 
 export class BaseApiClient {
   protected async callApi(endpoint: string, params: Record<string, string | number>, proxyType?: ProxyType): Promise<any> {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[TaphoaMMO API] Calling ${endpoint}`);
+        console.log(`[TaphoaMMO API] Calling ${endpoint} with params:`, params);
       }
       
       // Build query string
@@ -21,7 +22,7 @@ export class BaseApiClient {
       // Construct API URL
       const apiUrl = `${API_CONFIG.baseUrl}/${endpoint}?${queryParams.toString()}`;
       
-      // Use AllOrigins proxy by default
+      // Luôn sử dụng AllOrigins proxy
       const finalUrl = ALLORIGINS_PROXY + encodeURIComponent(apiUrl);
       
       // Add timeout to avoid hanging requests
@@ -60,29 +61,12 @@ export class BaseApiClient {
       
       return data;
     } catch (error: any) {
-      await this.logApiCall(endpoint, params, false, 0, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[TaphoaMMO API] Error in ${endpoint}:`, errorMessage);
       
-      // If AllOrigins proxy failed, try Edge Function as fallback
-      return this.tryWithEdgeFunction(endpoint, params);
-    }
-  }
-
-  private async tryWithEdgeFunction(
-    endpoint: string, 
-    params: Record<string, string | number>
-  ): Promise<any> {
-    console.log('[TaphoaMMO API] AllOrigins failed, trying Edge Function');
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
-        body: { endpoint, params }
-      });
+      await this.logApiCall(endpoint, params, false, 0, errorMessage);
       
-      if (error) throw error;
-      return data;
-    } catch (serverError) {
-      console.error(`[TaphoaMMO API] Edge function call failed:`, serverError);
-      throw new Error('All connection methods failed');
+      throw error;
     }
   }
 
@@ -108,7 +92,7 @@ export class BaseApiClient {
         details: {
           params: safeParams,
           error: errorMessage,
-          proxy: 'allorigins' // Using fixed value instead of getStoredProxy()
+          proxy: 'allorigins' 
         }
       });
     } catch (error) {
