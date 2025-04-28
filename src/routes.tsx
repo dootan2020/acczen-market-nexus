@@ -1,3 +1,4 @@
+
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -16,21 +17,21 @@ import Deposit from './pages/Deposit';
 import DepositPending from './pages/DepositPending';
 import DepositSuccess from './pages/DepositSuccess';
 import AdminApiMonitoring from './pages/admin/AdminApiMonitoring';
-import AdminProductImport from './pages/admin/ProductsImport';
-import AdminProductIntegration from './pages/admin/ProductIntegration';
+import ProductsImport from './pages/admin/ProductsImport';
+import ProductIntegration from './pages/admin/ProductIntegration';
 
 import { lazy, Suspense } from 'react';
 
 // Use lazy loading for the missing components
-const DashboardPage = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.default })));
-const ProductsPage = lazy(() => import('./pages/Products').then(module => ({ default: module.default })));
-const ProductDetailPage = lazy(() => import('./pages/ProductDetail').then(module => ({ default: module.default })));
-const CheckoutPage = lazy(() => import('./pages/Checkout').then(module => ({ default: module.default })));
-const OrderCompletePage = lazy(() => import('./pages/OrderComplete').then(module => ({ default: module.default })));
-const OrderDetailsPage = lazy(() => import('./pages/OrderDetail').then(module => ({ default: module.default })));
-const PurchasesPage = lazy(() => import('./pages/PurchasesPage').then(module => ({ default: module.default })));
-const AccountPage = lazy(() => import('./pages/AccountPage').then(module => ({ default: module.default })));
-const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(module => ({ default: module.default })));
+const DashboardPage = lazy(() => import('./pages/Dashboard'));
+const ProductsPage = lazy(() => import('./pages/Products'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetail'));
+const CheckoutPage = lazy(() => import('./pages/Checkout'));
+const OrderCompletePage = lazy(() => import('./pages/OrderComplete'));
+const OrderDetailsPage = lazy(() => import('./pages/OrderDetail'));
+const PurchasesPage = lazy(() => import('./pages/PurchasesPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
 
 // Loading fallback component
 const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
@@ -155,10 +156,10 @@ const AppRoutes = () => {
         <Route index element={<AdminHome />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="products" element={<AdminProducts />} />
-        <Route path="products/import" element={<AdminProductImport />} />
+        <Route path="products/import" element={<ProductsImport />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="deposits" element={<AdminDeposits />} />
-        <Route path="integration" element={<AdminProductIntegration />} />
+        <Route path="integration" element={<ProductIntegration />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
       </Route>
     </Routes>

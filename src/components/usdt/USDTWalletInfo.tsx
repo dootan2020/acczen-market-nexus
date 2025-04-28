@@ -1,68 +1,55 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { Copy, Check, QrCode } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { QRCodeSVG } from 'qrcode.react'; // Fixed import
 
 interface USDTWalletInfoProps {
   walletAddress: string;
 }
 
-export const USDTWalletInfo = ({ walletAddress }: USDTWalletInfoProps) => {
+export function USDTWalletInfo({ walletAddress }: USDTWalletInfoProps) {
   const [copied, setCopied] = useState(false);
-  
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(walletAddress);
+  const [showQR, setShowQR] = useState(false);
+
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(walletAddress);
     setCopied(true);
-    toast.success("Wallet address copied to clipboard");
-    
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    setTimeout(() => setCopied(false), 2000);
   };
-  
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="grid md:grid-cols-2 items-stretch">
-          <div className="bg-primary/5 p-4 flex justify-center items-center">
-            <div className="bg-white p-2 rounded-md">
-              <QRCodeSVG 
-                value={`tron:${walletAddress}`}
-                size={150}
-                level="M"
-                includeMargin={true}
-              />
-            </div>
-          </div>
-          
-          <div className="p-4 flex flex-col justify-center">
-            <p className="text-sm font-medium mb-1">TRC20 Wallet Address</p>
-            <p className="font-mono text-xs bg-muted p-2 rounded overflow-x-auto break-all mb-2">
-              {walletAddress}
-            </p>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              className="mt-1"
-              onClick={copyToClipboard}
-            >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 mr-1.5 text-green-600" /> Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-1.5" /> Copy Address
-                </>
-              )}
-            </Button>
+    <div className="space-y-4">
+      <h3 className="font-medium">Địa chỉ ví USDT (TRC20):</h3>
+      <div className="flex items-center gap-2 bg-muted/50 p-3 rounded-md break-all">
+        <code className="text-sm font-mono flex-1">{walletAddress}</code>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={copyToClipboard}
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          <span className="sr-only">Copy address</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setShowQR(!showQR)}
+        >
+          <QrCode className="h-4 w-4" />
+          <span className="sr-only">Show QR code</span>
+        </Button>
+      </div>
+
+      {showQR && (
+        <div className="flex justify-center p-4 bg-white rounded-md">
+          <div className="border border-border p-2 rounded">
+            <QRCodeSVG value={walletAddress} size={200} />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
-};
+}
