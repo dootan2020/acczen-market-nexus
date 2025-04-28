@@ -9,4 +9,7 @@ export interface UserProfile {
   role: UserRole;
   balance: number;
   created_at: string;
+  // Add the missing properties
+  avatar_url?: string;
+  updated_at?: string;
 }

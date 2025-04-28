@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { UserProfile } from '@/hooks/admin/useUserManagement';
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 import { Pencil, Wallet, Eye } from 'lucide-react';
 import { 
   Avatar,
