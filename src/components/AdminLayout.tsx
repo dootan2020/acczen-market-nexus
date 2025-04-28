@@ -135,8 +135,15 @@ const AdminLayout = () => {
   
   const breadcrumbs = getBreadcrumbs();
 
+  // Get the current page title
+  const getCurrentPageTitle = () => {
+    const currentPath = location.pathname;
+    const navItem = navItems.find(item => item.href === currentPath);
+    return navItem ? navItem.name : 'Dashboard';
+  };
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       {/* Mobile sidebar toggle button */}
       <div className="lg:hidden fixed top-4 left-4 z-40">
         <Button
@@ -154,7 +161,7 @@ const AdminLayout = () => {
         "fixed inset-y-0 left-0 z-30 w-64 transform bg-background shadow-lg transition-transform duration-200 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-16 items-center justify-center border-b px-4">
+        <div className="flex h-16 items-center border-b px-6">
           <Link to="/admin" className="flex items-center gap-2">
             <span className="text-xl font-bold text-primary">Digital Deals Hub</span>
           </Link>
@@ -169,8 +176,8 @@ const AdminLayout = () => {
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                    location.pathname === item.href ? "bg-accent text-accent-foreground" : "transparent"
+                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                    location.pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground"
                   )}
                 >
                   {item.icon}
@@ -200,13 +207,13 @@ const AdminLayout = () => {
       {/* Main content */}
       <div className={cn(
         "flex flex-1 flex-col lg:pl-64",
-        sidebarOpen ? "lg:ml-0" : ""
       )}>
         {/* Admin Navbar */}
         <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b shadow-sm">
           <div className="px-4 h-16 flex items-center justify-between">
-            {/* Left side - Breadcrumbs */}
+            {/* Left side - Breadcrumbs and page title */}
             <div className="flex items-center space-x-4">
+              <div className="font-semibold text-lg hidden md:block">Admin</div>
               {breadcrumbs && (
                 <Breadcrumb className="hidden md:flex">
                   <BreadcrumbList>
@@ -214,7 +221,7 @@ const AdminLayout = () => {
                       <React.Fragment key={crumb.path}>
                         <BreadcrumbItem>
                           {crumb.isCurrentPage ? (
-                            <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
+                            <BreadcrumbPage className="font-medium">{crumb.name}</BreadcrumbPage>
                           ) : (
                             <BreadcrumbLink href={crumb.path} className="cursor-pointer" asChild>
                               <Link to={crumb.path}>{crumb.name}</Link>
@@ -231,7 +238,7 @@ const AdminLayout = () => {
             
             {/* Right side - Search bar, notification and user menu */}
             <div className="flex items-center gap-4">
-              <div className="relative hidden md:block w-64">
+              <div className="relative hidden md:block">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type="search"
@@ -257,7 +264,7 @@ const AdminLayout = () => {
                   <AvatarFallback>AD</AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium">Admin: {userDisplayName}</p>
+                  <p className="text-sm font-medium">Admin: {userDisplayName || 'Administrator'}</p>
                   <p className="text-xs text-muted-foreground">Administrator</p>
                 </div>
               </div>
@@ -265,7 +272,12 @@ const AdminLayout = () => {
           </div>
         </header>
         
-        <main className="flex-1 overflow-y-auto p-4">
+        {/* Page header with title */}
+        <div className="border-b bg-background py-4 px-6">
+          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()} {location.pathname === '/admin/products' && 'Management'}</h1>
+        </div>
+        
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

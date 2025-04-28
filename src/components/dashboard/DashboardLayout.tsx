@@ -19,9 +19,9 @@ export function DashboardLayout() {
             <DashboardSidebar />
           </Sidebar>
           
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 bg-background">
             <DashboardHeader />
-            <div className="container p-4">
+            <div className="container p-6">
               <Outlet />
             </div>
           </main>

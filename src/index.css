@@ -81,6 +81,11 @@
     @apply text-foreground;
   }
   
+  /* Ensure placeholder text has good contrast */
+  ::placeholder {
+    @apply text-muted-foreground opacity-80;
+  }
+  
   /* Improved transitions for smoother theme toggling */
   button, 
   a, 
@@ -100,11 +105,6 @@
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 300ms;
-  }
-  
-  /* Ensure placeholder text has good contrast */
-  ::placeholder {
-    @apply text-muted-foreground opacity-70;
   }
 }
 
@@ -136,24 +136,24 @@
   }
   
   .product-badge-featured {
-    @apply bg-blue-600 text-white;
+    @apply bg-blue-600 text-white dark:bg-blue-500;
   }
   
   .product-badge-sale {
-    @apply bg-red-600 text-white;
+    @apply bg-red-600 text-white dark:bg-red-500;
   }
   
   .product-badge-new {
-    @apply bg-green-600 text-white;
+    @apply bg-green-600 text-white dark:bg-green-500;
   }
   
   /* High contrast text on dark backgrounds */
   .text-high-contrast {
-    @apply text-white;
+    @apply text-white dark:text-white;
   }
   
   /* Better button contrast on dark backgrounds */
   .button-high-contrast {
-    @apply bg-white text-black hover:bg-gray-200;
+    @apply bg-white text-black hover:bg-gray-200 dark:bg-white dark:text-black dark:hover:bg-gray-200;
   }
 }
