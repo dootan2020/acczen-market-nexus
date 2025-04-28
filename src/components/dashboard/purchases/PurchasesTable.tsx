@@ -9,9 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, ExternalLink, Mail, Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Copy, ExternalLink, Mail, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/utils/formatters";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useOrderConfirmation } from "@/hooks/useOrderConfirmation";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -52,6 +53,7 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
   const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
   const { user } = useAuth();
   const { resendOrderConfirmationEmail } = useOrderConfirmation();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
 
   const handleOrderClick = (orderId: string) => {
     setOpenOrderId(orderId === openOrderId ? null : orderId);
@@ -63,12 +65,12 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+    toast.success("Đã sao chép vào clipboard");
   };
 
   const handleResendConfirmationEmail = async (orderId: string) => {
     if (!user) {
-      toast.error("You must be logged in to resend confirmation emails");
+      toast.error("Bạn cần đăng nhập để gửi lại email xác nhận");
       return;
     }
 
@@ -80,7 +82,7 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
       }
     } catch (error) {
       console.error("Error resending email:", error);
-      toast.error("Failed to resend confirmation email");
+      toast.error("Không thể gửi lại email xác nhận");
     } finally {
       setResendingEmailId(null);
     }
@@ -111,7 +113,9 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
                   {order.order_items[0]?.product?.name || "Multiple Products"}
                   {order.order_items.length > 1 && ` + ${order.order_items.length - 1} more`}
                 </TableCell>
-                <TableCell>{formatCurrency(order.total_amount, 'USD')}</TableCell>
+                <TableCell>
+                  {formatUSD(convertVNDtoUSD(order.total_amount))}
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     order.status === 'completed' ? 'bg-green-100 text-green-800' : 
@@ -159,36 +163,63 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
                         <div key={item.id} className="mb-4 last:mb-0">
                           <div className="flex justify-between border-b py-2">
                             <span className="font-medium">{item.product?.name}</span>
-                            <span>{formatCurrency(item.price, 'USD')} × {item.quantity}</span>
+                            <span>
+                              {formatUSD(convertVNDtoUSD(item.price))} × {item.quantity}
+                            </span>
                           </div>
                           
-                          {/* Display digital products keys if available */}
+                          {/* Improved Product Keys Display */}
                           {item.data?.product_keys && item.data.product_keys.length > 0 && (
-                            <div className="mt-2 bg-slate-50 p-3 rounded-md">
-                              <p className="text-xs font-medium text-slate-700 mb-2">Product Keys:</p>
-                              {item.data.product_keys.map((key, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-white p-2 rounded mb-1 text-xs font-mono">
-                                  <span className="truncate mr-2 flex-1">{key}</span>
+                            <Card className="mt-2 p-3">
+                              <div className="flex flex-col space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <p className="text-sm font-medium text-muted-foreground">
+                                    Product Keys ({item.data.product_keys.length})
+                                  </p>
                                   <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-6 w-6"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleCopyToClipboard(key);
+                                      handleCopyToClipboard(item.data.product_keys.join('\n'));
                                     }}
                                   >
-                                    <Copy className="h-3 w-3" />
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy All
                                   </Button>
                                 </div>
-                              ))}
-                            </div>
+                                
+                                {item.data.product_keys.map((key, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="flex items-center justify-between p-2 bg-muted/50 rounded-md hover:bg-muted transition-colors"
+                                  >
+                                    <code className="text-xs font-mono truncate">
+                                      {key}
+                                    </code>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCopyToClipboard(key);
+                                      }}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </Card>
                           )}
                           
                           {/* Display external order reference if available */}
                           {item.data?.taphoammo_order_id && (
-                            <div className="mt-2 text-xs text-slate-500">
-                              <span>External Order: {item.data.taphoammo_order_id}</span>
+                            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>External Order:</span>
+                              <code className="px-2 py-1 bg-muted rounded">
+                                {item.data.taphoammo_order_id}
+                              </code>
                             </div>
                           )}
                         </div>
@@ -196,7 +227,7 @@ export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
                       
                       <div className="flex justify-between font-medium mt-4 pt-2 border-t">
                         <span>Total:</span>
-                        <span>{formatCurrency(order.total_amount, 'USD')}</span>
+                        <span>{formatUSD(convertVNDtoUSD(order.total_amount))}</span>
                       </div>
                     </div>
                   </TableCell>
