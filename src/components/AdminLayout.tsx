@@ -22,6 +22,7 @@ const AdminLayout = () => {
   const navItems = [
     { name: 'Digital Deals Hub', href: '/' },
     { name: 'Admin', href: '/admin' },
+    { name: 'Dashboard', href: '/admin' },
     { name: 'Products', href: '/admin/products' },
     { name: 'Import Products', href: '/admin/products-import' },
     { name: 'Categories', href: '/admin/categories' },
@@ -42,14 +43,14 @@ const AdminLayout = () => {
     const breadcrumbs = [];
     let currentPath = '';
     
-    // First add Digital Deals Hub
+    // Always add Digital Deals Hub as first item
     breadcrumbs.push({
       name: 'Digital Deals Hub',
       path: '/',
       isCurrentPage: false
     });
     
-    // Then add Admin if we're in the admin section
+    // Add Admin as second item if we're in admin section
     if (pathSegments[0] === 'admin') {
       currentPath = `/${pathSegments[0]}`;
       breadcrumbs.push({
@@ -58,7 +59,7 @@ const AdminLayout = () => {
         isCurrentPage: pathSegments.length === 1
       });
       
-      // Then add additional path segments
+      // Add additional path segments
       for (let i = 1; i < pathSegments.length; i++) {
         currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
         const navItem = navItems.find(item => item.href === currentPath);
@@ -77,12 +78,6 @@ const AdminLayout = () => {
   };
   
   const breadcrumbs = getBreadcrumbs();
-
-  const getCurrentPageTitle = () => {
-    const currentPath = location.pathname;
-    const navItem = navItems.find(item => item.href === currentPath);
-    return navItem ? navItem.name : 'Dashboard';
-  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -112,7 +107,7 @@ const AdminLayout = () => {
               </BreadcrumbList>
             </Breadcrumb>
           )}
-          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()} {location.pathname === '/admin/products' && 'Management'}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()}</h1>
         </div>
         
         <main className="flex-1 overflow-y-auto p-6">
@@ -121,6 +116,26 @@ const AdminLayout = () => {
       </div>
     </div>
   );
+};
+
+const getCurrentPageTitle = () => {
+  const location = useLocation();
+  
+  const titles = {
+    '/admin': 'Dashboard',
+    '/admin/products': 'Products Management',
+    '/admin/products-import': 'Import Products',
+    '/admin/categories': 'Categories Management',
+    '/admin/orders': 'Orders Management',
+    '/admin/users': 'Users Management',
+    '/admin/deposits': 'Deposits Management',
+    '/admin/reports': 'Reports & Analytics',
+    '/admin/integrations': 'Integrations',
+    '/admin/api-monitoring': 'API Monitoring',
+    '/admin/exchange-rates': 'Exchange Rates',
+  };
+
+  return titles[location.pathname] || 'Dashboard';
 };
 
 export default AdminLayout;
