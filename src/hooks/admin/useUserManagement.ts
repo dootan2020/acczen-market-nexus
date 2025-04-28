@@ -53,7 +53,9 @@ export const useUserManagement = () => {
   // Handler functions that use the mutations
   const handleUpdateRole = (role: UserProfile['role']) => {
     if (currentUser) {
-      updateRoleMutation.mutate({ id: currentUser.id, role });
+      updateRoleMutation.mutate({ id: currentUser.id, role }, {
+        onSuccess: () => setIsEditRoleDialogOpen(false)
+      });
     }
   };
 
@@ -64,6 +66,8 @@ export const useUserManagement = () => {
         amount, 
         operation, 
         notes 
+      }, {
+        onSuccess: () => setIsAdjustBalanceDialogOpen(false)
       });
     }
   };
