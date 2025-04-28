@@ -43,7 +43,7 @@ const AdminLayout = () => {
     const breadcrumbs = [];
     let currentPath = '';
     
-    // Always add Digital Deals Hub as first item
+    // Add Digital Deals Hub as first item
     breadcrumbs.push({
       name: 'Digital Deals Hub',
       path: '/',
@@ -86,9 +86,10 @@ const AdminLayout = () => {
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
         <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        <div className="bg-background py-4 px-6 border-b">
+        {/* Remove the bg-background, py-4, px-6, and border-b classes - only have breadcrumbs here */}
+        <div className="border-b">
           {breadcrumbs && (
-            <Breadcrumb className="mb-2">
+            <Breadcrumb className="py-4 px-6">
               <BreadcrumbList>
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.path}>
@@ -107,6 +108,9 @@ const AdminLayout = () => {
               </BreadcrumbList>
             </Breadcrumb>
           )}
+        </div>
+        
+        <div className="bg-background py-3 px-6 border-b">
           <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()}</h1>
         </div>
         
