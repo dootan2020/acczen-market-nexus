@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 // Define order status type based on the database enum
@@ -66,4 +67,41 @@ export interface OrderItemData {
   kiosk_token?: string;
   taphoammo_order_id?: string;
   [key: string]: any;  // Allow for additional dynamic properties
+}
+
+// OrderEmailPayload interface for order confirmation emails
+export interface OrderEmailPayload {
+  order_id: string;
+  date: string;
+  total: number;
+  payment_method?: string;
+  transaction_id?: string;
+  items: OrderEmailItem[];
+  digital_items?: DigitalEmailItem[];
+  customer_name?: string;
+}
+
+// OrderEmailItem interface for items in order confirmation emails
+export interface OrderEmailItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+// DigitalEmailItem interface for digital products in emails
+export interface DigitalEmailItem {
+  name: string;
+  keys?: string[];
+}
+
+// Type guard for order data
+export function isOrderRow(data: any): data is OrderRow {
+  return data && 
+         typeof data === 'object' && 
+         'id' in data && 
+         'total_amount' in data && 
+         'status' in data && 
+         'created_at' in data && 
+         Array.isArray(data.order_items);
 }

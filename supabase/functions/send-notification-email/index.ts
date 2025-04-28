@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.1"
 import { sendEmail } from "./emailSender.ts"
@@ -8,11 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface EmailData {
+  [key: string]: any;
+}
+
+interface EmailRequest {
+  user_id: string;
+  template: string;
+  data: EmailData;
+}
+
 // Email template definitions
 const emailTemplates = {
   deposit_success: {
     subject: "Deposit Confirmation - Digital Deals Hub",
-    getHtml: (data: any) => `
+    getHtml: (data: EmailData) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #2ECC71; padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">Deposit Successful</h1>
@@ -49,7 +58,7 @@ const emailTemplates = {
   },
   usdt_deposit_admin_notification: {
     subject: "New USDT Deposit Requires Verification",
-    getHtml: (data: any) => `
+    getHtml: (data: EmailData) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #3498DB; padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">New USDT Deposit</h1>
@@ -78,7 +87,7 @@ const emailTemplates = {
   },
   order_confirmation: {
     subject: "Order Confirmation - Digital Deals Hub",
-    getHtml: (data: any) => `
+    getHtml: (data: EmailData) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #2ECC71; padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">Your Order is Confirmed!</h1>
@@ -167,7 +176,7 @@ const emailTemplates = {
   },
   order_status_update: {
     subject: "Order Status Update - Digital Deals Hub",
-    getHtml: (data: any) => `
+    getHtml: (data: EmailData) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #3498DB; padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">Order Status Update</h1>
@@ -219,20 +228,20 @@ export const handler = async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Parse request body
-    const { user_id, template, data } = await req.json();
+    // Parse request body with type safety
+    const { user_id, template, data } = await req.json() as EmailRequest;
     
     if (!user_id || !template || !data) {
       throw new Error('Missing required parameters: user_id, template, or data');
     }
     
-    // Get template
-    const emailTemplate = emailTemplates[template];
+    // Get template with type safety
+    const emailTemplate = emailTemplates[template as keyof typeof emailTemplates];
     if (!emailTemplate) {
       throw new Error(`Email template "${template}" not found`);
     }
     
-    // Get user email
+    // Get user email with type safety
     const { data: userData, error: userError } = await supabaseClient
       .from('profiles')
       .select('email, full_name, username')
@@ -243,7 +252,7 @@ export const handler = async (req: Request) => {
       throw new Error(`Failed to retrieve user information: ${userError?.message || 'User not found'}`);
     }
     
-    // Generate email content
+    // Generate email content with proper typing
     const subject = emailTemplate.subject;
     
     // Add user name to data for personalization if needed
@@ -281,7 +290,7 @@ export const handler = async (req: Request) => {
             status: 200,
           }
         );
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Email sending attempt ${attempts + 1} failed:`, error.message);
         lastError = error;
         attempts++;
@@ -295,7 +304,7 @@ export const handler = async (req: Request) => {
     
     // If we get here, all attempts failed
     throw new Error(`Failed to send email after ${maxAttempts} attempts: ${lastError?.message}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending notification email:', error.message);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),

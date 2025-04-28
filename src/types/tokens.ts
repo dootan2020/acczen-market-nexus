@@ -11,3 +11,11 @@ export interface UserToken {
   updated_at: string;
   status: 'active' | 'inactive' | 'expired';
 }
+
+export interface UserTokenResponse {
+  token: UserToken;
+}
+
+export interface UserTokensResponse {
+  tokens: UserToken[];
+}

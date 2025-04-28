@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
+import { OrderStatus } from '@/types/orders';
 
 interface StatusBadgeProps {
-  status: string;
+  status: OrderStatus | string;
 }
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {

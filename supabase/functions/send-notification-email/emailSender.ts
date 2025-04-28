@@ -5,6 +5,11 @@ export async function sendEmail(to: string, subject: string, htmlContent: string
   const fromEmail = Deno.env.get('EMAIL_FROM_ADDRESS') || 'noreply@digitaldealshub.com';
   const fromName = 'Digital Deals Hub';
   
+  interface SendgridResponse {
+    success: boolean;
+    message?: string;
+  }
+  
   // Check if we're using SendGrid
   if (Deno.env.get('EMAIL_PROVIDER') === 'sendgrid' && emailApiKey) {
     try {
@@ -35,8 +40,8 @@ export async function sendEmail(to: string, subject: string, htmlContent: string
         throw new Error(`SendGrid API error: ${response.status} ${errorText}`);
       }
       
-      return { success: true };
-    } catch (error) {
+      return { success: true } as SendgridResponse;
+    } catch (error: any) {
       console.error('Error sending email via SendGrid:', error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
@@ -45,6 +50,6 @@ export async function sendEmail(to: string, subject: string, htmlContent: string
     console.log(`Email would be sent to: ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(`From: ${fromName} <${fromEmail}>`);
-    return { success: true };
+    return { success: true } as SendgridResponse;
   }
 }

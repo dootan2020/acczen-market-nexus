@@ -1,6 +1,7 @@
 
 import { BaseApiClient } from './baseClient';
 import { SYSTEM_TOKEN, OrderResponse, ProductsResponse } from './config';
+import { OrderItemData } from '@/types/orders';
 
 export class OrderApi extends BaseApiClient {
   async buyProducts(

@@ -4,6 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { toast } from 'sonner';
 import { Json } from '@/types/supabase';
+import { 
+  OrderEmailPayload, 
+  OrderEmailItem, 
+  DigitalEmailItem,
+  isOrderRow 
+} from '@/types/orders';
 
 // Define types for order data
 export interface OrderItem {
@@ -98,19 +104,22 @@ export const useOrderConfirmation = () => {
         total: convertVNDtoUSD(item.price * item.quantity)
       }));
       
+      // Create properly typed email payload
+      const emailPayload: OrderEmailPayload = {
+        order_id: orderData.id,
+        date: new Date().toISOString(),
+        total: convertVNDtoUSD(orderData.total),
+        payment_method: orderData.payment_method || 'Account Balance',
+        transaction_id: orderData.transaction_id,
+        items: processedItems,
+        digital_items: orderData.digital_items || []
+      };
+      
       const response = await supabase.functions.invoke('send-notification-email', {
         body: {
           user_id: userId,
           template: 'order_confirmation',
-          data: {
-            order_id: orderData.id,
-            date: new Date().toISOString(),
-            total: convertVNDtoUSD(orderData.total),
-            payment_method: orderData.payment_method || 'Account Balance',
-            transaction_id: orderData.transaction_id,
-            items: processedItems,
-            digital_items: orderData.digital_items || []
-          }
+          data: emailPayload
         }
       });
 
@@ -198,21 +207,25 @@ export const useOrderConfirmation = () => {
         return { success: false, error: orderError || new Error("Order not found") };
       }
       
-      // Type assertion to ensure we have the right structure
-      const typedOrderData = orderData as OrderRow;
+      // Use type guard to ensure we have the right structure
+      if (!isOrderRow(orderData)) {
+        console.error("Invalid order data structure:", orderData);
+        toast.error("Failed to process order details. Invalid data format.");
+        return { success: false, error: new Error("Invalid order data structure") };
+      }
       
       // Process the order data for email sending
       const confirmationData: OrderConfirmationData = {
-        id: typedOrderData.id,
-        items: typedOrderData.order_items.map(item => ({
+        id: orderData.id,
+        items: orderData.order_items.map(item => ({
           name: item.product?.name || "Unknown Product",
           quantity: item.quantity,
           price: item.price,
           product_id: item.product?.id
         })),
-        total: typedOrderData.total_amount,
+        total: orderData.total_amount,
         payment_method: "Account Balance", // Default value
-        digital_items: typedOrderData.order_items
+        digital_items: orderData.order_items
           .filter(item => {
             const productKeys = safeGetProductKeys(item.data);
             return productKeys && productKeys.length > 0;
