@@ -8,13 +8,17 @@ import { AddTokenDialog } from './tokens/AddTokenDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { UserToken } from '@/types/tokens';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function TokenManagementTab() {
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+  const { user } = useAuth();
   
   const { data: tokens, isLoading } = useQuery({
     queryKey: ['user-tokens'],
     queryFn: async () => {
+      if (!user?.id) return [];
+      
       const { data, error } = await supabase
         .from('user_tokens')
         .select('*')
@@ -23,7 +27,8 @@ export function TokenManagementTab() {
       
       if (error) throw error;
       return data as UserToken[];
-    }
+    },
+    enabled: !!user?.id
   });
 
   return (

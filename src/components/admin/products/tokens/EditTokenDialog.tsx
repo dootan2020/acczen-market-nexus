@@ -8,61 +8,58 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import { UserToken } from '@/types/tokens';
 
-interface AddTokenDialogProps {
+interface EditTokenDialogProps {
+  token: UserToken;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddTokenDialog({ open, onOpenChange }: AddTokenDialogProps) {
-  const [name, setName] = React.useState('');
-  const [token, setToken] = React.useState('');
-  const [description, setDescription] = React.useState('');
+export function EditTokenDialog({ token, open, onOpenChange }: EditTokenDialogProps) {
+  const [name, setName] = React.useState(token.name);
+  const [description, setDescription] = React.useState(token.description || '');
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
-  const addTokenMutation = useMutation({
+  React.useEffect(() => {
+    if (token) {
+      setName(token.name);
+      setDescription(token.description || '');
+    }
+  }, [token]);
+
+  const updateTokenMutation = useMutation({
     mutationFn: async () => {
-      // Make sure we have a user ID
-      if (!user?.id) {
-        throw new Error("Bạn cần đăng nhập để thêm token");
-      }
-      
       const { error } = await supabase
         .from('user_tokens')
-        .insert({
+        .update({
           name,
-          token,
           description,
-          user_id: user.id
-        });
+        })
+        .eq('id', token.id);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-tokens'] });
-      toast.success('Token đã được thêm thành công');
+      toast.success('Token đã được cập nhật');
       onOpenChange(false);
-      setName('');
-      setToken('');
-      setDescription('');
     },
     onError: () => {
-      toast.error('Không thể thêm token');
+      toast.error('Không thể cập nhật token');
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addTokenMutation.mutate();
+    updateTokenMutation.mutate();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Thêm Token Mới</DialogTitle>
+          <DialogTitle>Chỉnh Sửa Token</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -79,11 +76,11 @@ export function AddTokenDialog({ open, onOpenChange }: AddTokenDialogProps) {
             <Label htmlFor="token">Mã Token</Label>
             <Input
               id="token"
-              required
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Nhập mã token"
+              value={token.token}
+              disabled
+              className="bg-muted"
             />
+            <p className="text-xs text-muted-foreground">Mã token không thể thay đổi</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>
@@ -104,9 +101,9 @@ export function AddTokenDialog({ open, onOpenChange }: AddTokenDialogProps) {
             </Button>
             <Button 
               type="submit"
-              disabled={addTokenMutation.isPending}
+              disabled={updateTokenMutation.isPending}
             >
-              {addTokenMutation.isPending ? 'Đang thêm...' : 'Thêm Token'}
+              {updateTokenMutation.isPending ? 'Đang cập nhật...' : 'Cập Nhật Token'}
             </Button>
           </div>
         </form>

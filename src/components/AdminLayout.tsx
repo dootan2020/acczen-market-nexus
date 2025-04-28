@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
@@ -41,19 +42,23 @@ const AdminLayout = () => {
     const breadcrumbs = [];
     let currentPath = '';
     
+    // First add Digital Deals Hub
     breadcrumbs.push({
       name: 'Digital Deals Hub',
       path: '/',
       isCurrentPage: false
     });
     
+    // Then add Admin if we're in the admin section
     if (pathSegments[0] === 'admin') {
+      currentPath = `/${pathSegments[0]}`;
       breadcrumbs.push({
         name: 'Admin',
-        path: '/admin',
+        path: currentPath,
         isCurrentPage: pathSegments.length === 1
       });
       
+      // Then add additional path segments
       for (let i = 1; i < pathSegments.length; i++) {
         currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
         const navItem = navItems.find(item => item.href === currentPath);
