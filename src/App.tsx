@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
 import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './components/ThemeProvider';
+import { ThemeProvider } from '@/components/ui/theme-provider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { Toaster } from 'sonner';

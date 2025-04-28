@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface USDTWalletInfoProps {
   walletAddress: string;
@@ -29,12 +29,11 @@ export const USDTWalletInfo = ({ walletAddress }: USDTWalletInfoProps) => {
         <div className="grid md:grid-cols-2 items-stretch">
           <div className="bg-primary/5 p-4 flex justify-center items-center">
             <div className="bg-white p-2 rounded-md">
-              <QRCode 
+              <QRCodeSVG 
                 value={`tron:${walletAddress}`}
                 size={150}
                 level="M"
                 includeMargin={true}
-                renderAs="svg"
               />
             </div>
           </div>

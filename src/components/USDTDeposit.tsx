@@ -30,6 +30,24 @@ export interface DepositResponse {
   };
 }
 
+interface VerificationResult {
+  success?: boolean;
+  depositId?: string;
+  error?: any;
+  message?: string;
+  data?: {
+    deposit: {
+      id: string;
+      amount: number;
+      status: string;
+    };
+    transaction: {
+      id: string;
+      amount: number;
+    };
+  };
+}
+
 const USDTDeposit = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +61,7 @@ const USDTDeposit = () => {
   const walletAddress = "TPmnvx4m1AgrNUvj5dCrAkL5aNbN61FGAs";
 
   const depositMutation = useMutation({
-    mutationFn: async (txid: string) => {
+    mutationFn: async (txid: string): Promise<VerificationResult> => {
       if (!user) throw new Error('User not authenticated');
 
       // Create deposit record first
@@ -78,24 +96,42 @@ const USDTDeposit = () => {
         });
 
         if (verifyResponse.error) {
-          throw new Error(verifyResponse.error.message || 'Transaction verification failed');
+          return {
+            success: false,
+            depositId: depositData.id, 
+            error: verifyResponse.error,
+            message: verifyResponse.error.message || 'Transaction verification failed'
+          };
         }
 
         if (!verifyResponse.data?.success) {
-          throw new Error(verifyResponse.data?.message || 'Transaction verification failed');
+          return {
+            success: false,
+            depositId: depositData.id,
+            message: verifyResponse.data?.message || 'Transaction verification failed'
+          };
         }
         
         await refreshDeposits(); // Refresh deposits to get updated status
-        return verifyResponse.data;
-      } catch (error) {
+        return {
+          success: true,
+          data: verifyResponse.data.data,
+          message: verifyResponse.data.message
+        };
+      } catch (error: any) {
         // We still return the deposit ID for tracking even if verification failed
-        return { depositId: depositData.id, error };
+        return { 
+          success: false,
+          depositId: depositData.id, 
+          error: error,
+          message: error.message || 'Transaction verification failed'
+        };
       } finally {
         setIsVerifying(false);
       }
     },
-    onSuccess: (data) => {
-      if (data.success) {
+    onSuccess: (result) => {
+      if (result.success && result.data) {
         toast.success('USDT Deposit Successful', {
           description: `$${amount} USDT has been added to your balance`
         });
@@ -103,17 +139,17 @@ const USDTDeposit = () => {
         setTxid('');
         navigate('/deposit/success', { 
           state: { 
-            deposit: data.data?.deposit,
-            transaction: data.data?.transaction
+            deposit: result.data.deposit,
+            transaction: result.data.transaction
           } 
         });
-      } else if (data.depositId) {
+      } else if (result.depositId) {
         // If we have a deposit ID but verification failed, show a message and redirect
         // to the transaction status page where they can track the status
         toast.info('Deposit is being verified', {
           description: 'Your transaction has been submitted and is being verified. This may take a few minutes.'
         });
-        navigate('/deposit/pending', { state: { depositId: data.depositId } });
+        navigate('/deposit/pending', { state: { depositId: result.depositId } });
       }
     },
     onError: (error) => {

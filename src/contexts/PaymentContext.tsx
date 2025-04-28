@@ -82,10 +82,22 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (verificationsError) throw verificationsError;
         
-        setVerifications(verificationsData || []);
+        // Cast the status to PaymentStatus type
+        setVerifications(
+          (verificationsData || []).map(verification => ({
+            ...verification,
+            status: verification.status as PaymentStatus
+          }))
+        );
       }
       
-      setDeposits(depositsData || []);
+      // Cast the status to PaymentStatus type
+      setDeposits(
+        (depositsData || []).map(deposit => ({
+          ...deposit,
+          status: deposit.status as PaymentStatus
+        }))
+      );
     } catch (error) {
       console.error('Error fetching payment data:', error);
       toast.error('Could not load payment history');
@@ -105,20 +117,28 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             { event: '*', schema: 'public', table: 'deposits', filter: `user_id=eq.${user.id}` }, 
             (payload) => {
               if (payload.eventType === 'INSERT') {
-                setDeposits(prev => [payload.new as Deposit, ...prev]);
+                const newDeposit = {
+                  ...payload.new as any,
+                  status: payload.new.status as PaymentStatus
+                };
+                setDeposits(prev => [newDeposit, ...prev]);
               } else if (payload.eventType === 'UPDATE') {
+                const updatedDeposit = {
+                  ...payload.new as any,
+                  status: payload.new.status as PaymentStatus
+                };
+                
                 setDeposits(prev => 
                   prev.map(deposit => 
-                    deposit.id === payload.new.id ? (payload.new as Deposit) : deposit
+                    deposit.id === payload.new.id ? updatedDeposit : deposit
                   )
                 );
                 
                 // Show status notification
-                const newDeposit = payload.new as Deposit;
-                if (newDeposit.status === 'completed') {
-                  toast.success(`Deposit of ${newDeposit.amount} ${newDeposit.payment_method} has been completed!`);
-                } else if (newDeposit.status === 'failed') {
-                  toast.error(`Deposit of ${newDeposit.amount} ${newDeposit.payment_method} has failed.`);
+                if (updatedDeposit.status === 'completed') {
+                  toast.success(`Deposit of ${updatedDeposit.amount} ${updatedDeposit.payment_method} has been completed!`);
+                } else if (updatedDeposit.status === 'failed') {
+                  toast.error(`Deposit of ${updatedDeposit.amount} ${updatedDeposit.payment_method} has failed.`);
                 }
               }
             }
@@ -133,14 +153,23 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               if (payload.eventType === 'INSERT') {
                 // Check if this verification belongs to current user's deposit
                 const depositIds = deposits.map(d => d.id);
-                const newVerification = payload.new as PaymentVerification;
+                const newVerification = {
+                  ...payload.new as any,
+                  status: payload.new.status as PaymentStatus
+                };
+                
                 if (depositIds.includes(newVerification.deposit_id)) {
                   setVerifications(prev => [newVerification, ...prev]);
                 }
               } else if (payload.eventType === 'UPDATE') {
+                const updatedVerification = {
+                  ...payload.new as any,
+                  status: payload.new.status as PaymentStatus
+                };
+                
                 setVerifications(prev => 
                   prev.map(verification => 
-                    verification.id === payload.new.id ? (payload.new as PaymentVerification) : verification
+                    verification.id === payload.new.id ? updatedVerification : verification
                   )
                 );
               }

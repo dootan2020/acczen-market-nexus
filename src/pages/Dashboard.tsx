@@ -1,28 +1,13 @@
 
-import { useLocation } from "react-router-dom";
-import DashboardComponent from "../components/dashboard/Dashboard";
-import PurchasesPage from "../components/dashboard/PurchasesPage";
-import DepositHistoryPage from "../components/dashboard/DepositHistoryPage";
-import SettingsPage from "../components/dashboard/SettingsPage";
+import React from 'react';
 
 const Dashboard = () => {
-  const location = useLocation();
-  const path = location.pathname;
-
-  // Render the appropriate component based on the current path
-  const renderDashboardContent = () => {
-    if (path.includes("/dashboard/purchases")) {
-      return <PurchasesPage />;
-    } else if (path.includes("/dashboard/history")) {
-      return <DepositHistoryPage />;
-    } else if (path.includes("/dashboard/settings")) {
-      return <SettingsPage />;
-    } else {
-      return <DashboardComponent />;
-    }
-  };
-
-  return renderDashboardContent();
+  return (
+    <div className="container mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <p>Welcome to your dashboard.</p>
+    </div>
+  );
 };
 
 export default Dashboard;
