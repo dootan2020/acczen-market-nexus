@@ -1,18 +1,31 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ReportOverview from "@/components/admin/reports/ReportOverview";
-import BestSellingProducts from "@/components/admin/reports/BestSellingProducts";
-import OrdersReport from "@/components/admin/reports/OrdersReport";
-import DepositsReport from "@/components/admin/reports/DepositsReport";
+import { ReportOverview } from "@/components/admin/reports/ReportOverview";
+import { BestSellingProducts } from "@/components/admin/reports/BestSellingProducts";
+import { OrdersReport } from "@/components/admin/reports/OrdersReport";
+import { DepositsReport } from "@/components/admin/reports/DepositsReport";
+import { useReportsData } from "@/hooks/useReportsData";
 
 const AdminHome = () => {
+  // Get report data from the hook
+  const { 
+    statsData, 
+    paymentMethodData, 
+    isLoading,
+    dateRange
+  } = useReportsData();
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
       
       <div className="grid gap-6">
-        <ReportOverview />
+        <ReportOverview 
+          statsData={statsData} 
+          paymentMethodData={paymentMethodData} 
+          isLoading={isLoading} 
+        />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -21,7 +34,7 @@ const AdminHome = () => {
             <CardTitle>Best Selling Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <BestSellingProducts />
+            <BestSellingProducts dateRange={dateRange} />
           </CardContent>
         </Card>
         
@@ -30,7 +43,7 @@ const AdminHome = () => {
             <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <OrdersReport />
+            <OrdersReport ordersChartData={[]} isLoading={isLoading} />
           </CardContent>
         </Card>
       </div>
@@ -40,7 +53,7 @@ const AdminHome = () => {
           <CardTitle>Recent Deposits</CardTitle>
         </CardHeader>
         <CardContent>
-          <DepositsReport />
+          <DepositsReport depositsChartData={[]} isLoading={isLoading} depositsData={[]} />
         </CardContent>
       </Card>
     </div>
