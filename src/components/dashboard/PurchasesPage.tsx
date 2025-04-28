@@ -60,7 +60,7 @@ const PurchasesPage = () => {
           <CardDescription>View and manage your order history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p>You haven't made any purchases yet. Browse our products to get started!</p>
+          <p>You haven't made any purchases yet.</p>
         </CardContent>
       </Card>
     );
@@ -74,13 +74,15 @@ const PurchasesPage = () => {
           <CardDescription>View and manage your order history</CardDescription>
         </CardHeader>
         <CardContent>
-          <PurchasesFilter search={search} setSearch={setSearch} />
-          <PurchasesTable orders={orders} />
-          <PurchasesPagination 
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
+          <div className="max-w-[1200px] mx-auto">
+            <PurchasesFilter search={search} setSearch={setSearch} />
+            <PurchasesTable orders={orders} />
+            <PurchasesPagination 
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

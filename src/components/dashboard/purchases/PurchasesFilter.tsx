@@ -11,13 +11,13 @@ interface PurchasesFilterProps {
 
 export const PurchasesFilter = ({ search, setSearch }: PurchasesFilterProps) => {
   return (
-    <div className="flex items-center mb-4">
+    <div className="flex flex-col sm:flex-row gap-2 mb-6">
       <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
           placeholder="Search products..."
-          className="pl-8"
+          className="pl-8 w-full"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -25,7 +25,7 @@ export const PurchasesFilter = ({ search, setSearch }: PurchasesFilterProps) => 
       <Button
         variant="outline"
         onClick={() => setSearch("")}
-        className="ml-2"
+        className="w-full sm:w-auto"
       >
         Clear
       </Button>
