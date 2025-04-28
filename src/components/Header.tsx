@@ -10,7 +10,7 @@ import { DepositButton } from "@/components/deposit-button"
 
 export function Header() {
   return (
-    <header className="bg-background sticky top-0 z-40 w-full border-b shadow-sm">
+    <header className="supports-backdrop-blur:bg-background/60 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center">
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">
