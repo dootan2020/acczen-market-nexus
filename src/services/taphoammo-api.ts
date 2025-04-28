@@ -1,21 +1,29 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { DatabaseCache } from '@/utils/api/cache/DatabaseCache';
+import { CircuitBreaker } from '@/utils/api/circuitBreaker/CircuitBreaker';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { toast } from 'sonner';
 
 interface CircuitBreakerOptions {
   failureThreshold?: number;
   recoveryTime?: number;
+  maxRetries?: number;
 }
 
 export class TaphoammoApiService {
   private static instance: TaphoammoApiService;
   private failureThreshold: number;
   private recoveryTime: number;
+  private maxRetries: number;
+  private retryDelays: number[];
 
   private constructor(options: CircuitBreakerOptions = {}) {
     this.failureThreshold = options.failureThreshold || 3;
     this.recoveryTime = options.recoveryTime || 120000; // 2 minutes
+    this.maxRetries = options.maxRetries || 5;
+    // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+    this.retryDelays = Array.from({ length: this.maxRetries }, (_, i) => Math.pow(2, i + 1) * 1000);
   }
 
   public static getInstance(options?: CircuitBreakerOptions): TaphoammoApiService {
@@ -25,82 +33,28 @@ export class TaphoammoApiService {
     return this.instance;
   }
 
-  private async checkCircuitBreakerState(): Promise<{ isOpen: boolean }> {
-    const { data, error } = await supabase
-      .from('api_health')
-      .select('is_open, opened_at')
-      .eq('api_name', 'taphoammo')
-      .single();
-
-    if (error) {
-      console.error('Error checking circuit breaker:', error);
-      return { isOpen: false };
-    }
-
-    if (data.is_open) {
-      const openedAt = new Date(data.opened_at);
-      const now = new Date();
-      const timeSinceOpen = now.getTime() - openedAt.getTime();
-
-      if (timeSinceOpen > this.recoveryTime) {
-        // Auto-close circuit after recovery time
-        await this.resetCircuitBreaker();
-        return { isOpen: false };
-      }
-
-      return { isOpen: true };
-    }
-
-    return { isOpen: false };
+  private async checkCircuitBreakerState(): Promise<boolean> {
+    return CircuitBreaker.isOpen();
   }
 
   private async recordFailure(error: Error): Promise<void> {
-    try {
-      // First, get the values from the RPC functions
-      const { data: errorCountData } = await supabase.rpc('increment_error_count');
-      const { data: shouldOpenCircuit } = await supabase.rpc('check_if_should_open_circuit');
-      const { data: openedAtValue } = await supabase.rpc('update_opened_at_if_needed');
-      
-      // Then use those values in the update
-      const { data, error: updateError } = await supabase
-        .from('api_health')
-        .update({
-          error_count: errorCountData || 1, // Fallback to incrementing by 1
-          last_error: error.message,
-          is_open: shouldOpenCircuit || false, // Fallback to not opening circuit
-          opened_at: openedAtValue || null // Fallback to null
-        })
-        .eq('api_name', 'taphoammo');
-
-      if (updateError) {
-        console.error('Failed to record API failure:', updateError);
-      }
-    } catch (err) {
-      console.error('Error in recordFailure:', err);
-    }
+    await CircuitBreaker.recordFailure(error);
   }
 
   private async resetCircuitBreaker(): Promise<void> {
-    await supabase
-      .from('api_health')
-      .update({
-        is_open: false,
-        error_count: 0,
-        opened_at: null
-      })
-      .eq('api_name', 'taphoammo');
+    await CircuitBreaker.reset();
   }
 
   private async retryWithBackoff<T>(
     fn: () => Promise<T>, 
-    maxRetries = 5
+    maxRetries = this.maxRetries
   ): Promise<T> {
     let retryCount = 0;
     const startTime = Date.now();
 
     while (retryCount < maxRetries) {
       try {
-        const { isOpen } = await this.checkCircuitBreakerState();
+        const isOpen = await this.checkCircuitBreakerState();
         
         if (isOpen) {
           throw new TaphoammoError(
@@ -123,7 +77,14 @@ export class TaphoammoApiService {
           throw error;
         }
 
-        const backoffDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        const backoffDelay = this.retryDelays[retryCount] || 32000; // Max 32s delay
+        console.log(`Retrying in ${backoffDelay/1000} seconds...`);
+        
+        if (retryCount > 0) {
+          // Only show toast notifications after the first retry
+          toast.info(`API request failed. Retrying in ${backoffDelay/1000}s (${retryCount+1}/${maxRetries})...`);
+        }
+        
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         
         retryCount++;
@@ -135,36 +96,73 @@ export class TaphoammoApiService {
 
   public async fetchTaphoammo<T>(
     endpoint: string, 
-    params: Record<string, any>
+    params: Record<string, any>,
+    options: {
+      forceFresh?: boolean;
+      cacheKey?: string;
+      cacheTTL?: number;  // in milliseconds
+    } = {}
   ): Promise<T> {
-    return this.retryWithBackoff(async () => {
-      const response = await fetch(`https://taphoammo.net/api/${endpoint}?${new URLSearchParams(params)}`, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_TAPHOAMMO_API_KEY}`,
-          'Content-Type': 'application/json'
+    const { forceFresh = false, cacheKey, cacheTTL = 1800000 } = options; // Default 30 min TTL
+    
+    // Check cache first if we have a cache key and aren't forcing fresh data
+    if (cacheKey && !forceFresh) {
+      try {
+        const cachedData = await DatabaseCache.get(cacheKey);
+        if (cachedData.cached && cachedData.data) {
+          console.log(`[TaphoaMMO API] Using cached data for ${endpoint}:`, cachedData.data);
+          return cachedData.data as T;
         }
+      } catch (cacheError) {
+        console.warn('[TaphoaMMO API] Cache check failed:', cacheError);
+        // Continue to API call if cache check fails
+      }
+    }
+    
+    return this.retryWithBackoff(async () => {
+      const startTime = Date.now();
+      
+      // Use edge function instead of calling API directly
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: JSON.stringify({
+          endpoint,
+          ...params
+        })
       });
 
-      if (!response.ok) {
+      const responseTime = Date.now() - startTime;
+      
+      if (error) {
+        console.error(`[TaphoaMMO API] Error calling ${endpoint}:`, error);
         throw new TaphoammoError(
-          `API Error: ${response.statusText}`, 
+          `API Error: ${error.message}`, 
           TaphoammoErrorCodes.UNEXPECTED_RESPONSE, 
           0, 
-          0
+          responseTime
         );
       }
-
-      const data = await response.json();
       
-      if (data.success === 'false') {
+      // If API response indicates failure
+      if (data && data.success === "false") {
+        console.error(`[TaphoaMMO API] ${endpoint} returned failure:`, data.message);
         throw new TaphoammoError(
           data.message || 'Unknown API error', 
           TaphoammoErrorCodes.UNEXPECTED_RESPONSE, 
           0, 
-          0
+          responseTime
         );
       }
-
+      
+      // Update cache with new data if we have a cache key
+      if (cacheKey) {
+        try {
+          await DatabaseCache.set(cacheKey, data, cacheTTL);
+        } catch (cacheError) {
+          console.warn('[TaphoaMMO API] Failed to update cache:', cacheError);
+          // Continue without caching if it fails
+        }
+      }
+      
       return data as T;
     });
   }
