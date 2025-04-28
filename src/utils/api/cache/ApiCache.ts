@@ -1,34 +1,42 @@
 
 type CacheItem<T> = {
-  data: T;
+  value: T;
   expiry: number;
 };
 
 export class ApiCache {
-  private static memoryCache: Map<string, CacheItem<any>> = new Map();
+  private static cache: Map<string, CacheItem<any>> = new Map();
 
   static get<T>(key: string): T | null {
-    const item = this.memoryCache.get(key);
-    const now = Date.now();
-    
-    if (item && item.expiry > now) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Cache] Hit for ${key}`);
-      }
-      return item.data;
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return null;
     }
-    
-    return null;
+
+    return item.value;
   }
 
-  static set<T>(key: string, data: T, ttl: number): void {
-    this.memoryCache.set(key, {
-      data,
-      expiry: Date.now() + ttl
-    });
+  static set<T>(key: string, value: T, ttl: number): void {
+    const expiry = Date.now() + ttl;
+    this.cache.set(key, { value, expiry });
   }
 
   static clear(): void {
-    this.memoryCache.clear();
+    this.cache.clear();
+  }
+
+  static has(key: string): boolean {
+    if (!this.cache.has(key)) return false;
+    
+    const item = this.cache.get(key);
+    if (item && Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return false;
+    }
+    
+    return true;
   }
 }

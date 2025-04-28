@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaphoammoAPI } from '@/hooks/useTaphoammoAPI';
 import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
+import { TaphoammoProduct } from '@/types/products';
 
 // Product type from the TaphoaMMO API
 export interface TaphoammoProduct {
@@ -17,7 +18,8 @@ export interface TaphoammoProduct {
 }
 
 // Extended product type with additional fields for our database
-export interface ExtendedProduct extends TaphoammoProduct {
+export interface ExtendedProduct extends Omit<TaphoammoProduct, 'kiosk_token'> {
+  kiosk_token: string; // Make this required
   category_id?: string;
   subcategory_id?: string;
   description?: string;

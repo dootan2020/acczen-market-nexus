@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -21,6 +22,12 @@ interface PurchaseConfirmModalProps {
   productImage: string;
   quantity: number;
   kioskToken: string | null;
+}
+
+interface OrderData {
+  order_id: string;
+  product_keys?: string[];
+  status?: string;
 }
 
 export const PurchaseConfirmModal = ({
@@ -117,14 +124,14 @@ export const PurchaseConfirmModal = ({
           userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
           quantity
         })
-      });
+      }) as { data: OrderData | null, error: Error | null };
       
       if (error) {
         throw new Error(error.message);
       }
       
-      if (data.success === "false") {
-        throw new Error(data.message || data.description || "Đã xảy ra lỗi khi mua sản phẩm");
+      if (!data || data.success === "false") {
+        throw new Error(data?.message || data?.description || "Đã xảy ra lỗi khi mua sản phẩm");
       }
       
       setPurchaseResult({ orderId: data.order_id });
