@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
@@ -8,7 +7,9 @@ import {
   OrderEmailPayload, 
   OrderEmailItem, 
   DigitalEmailItem,
-  isOrderRow 
+  isOrderRow,
+  OrderRow,
+  OrderItemRow
 } from '@/types/orders';
 
 // Define types for order data
@@ -38,36 +39,6 @@ export interface OrderStatusUpdateData {
   status: string;
   updated_at: string;
   message?: string;
-}
-
-// Define the interface for order data from the database
-interface OrderRow {
-  id: string;
-  total_amount: number;
-  status: string;
-  created_at: string;
-  order_items: OrderItemRow[];
-}
-
-interface OrderItemRow {
-  id: string;
-  quantity: number;
-  price: number;
-  total: number;
-  data: Json | null;
-  product?: ProductInfo | null;
-}
-
-interface ProductInfo {
-  id: string;
-  name: string;
-}
-
-interface OrderItemData {
-  product_keys?: string[];
-  kiosk_token?: string;
-  taphoammo_order_id?: string;
-  [key: string]: any;  // Allow for other properties
 }
 
 // Type guard to check if a value is a non-null object

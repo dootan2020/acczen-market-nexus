@@ -95,6 +95,28 @@ export interface DigitalEmailItem {
   keys?: string[];
 }
 
+// Define the OrderRow interface for database order data
+export interface OrderRow {
+  id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItemRow[];
+}
+
+// Define the OrderItemRow interface for order item data from the database
+export interface OrderItemRow {
+  id: string;
+  quantity: number;
+  price: number;
+  total: number;
+  data: any;
+  product?: {
+    id: string;
+    name: string;
+  };
+}
+
 // Type guard for order data
 export function isOrderRow(data: any): data is OrderRow {
   return data && 
