@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
@@ -19,19 +18,19 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Navigation items for breadcrumb generation
   const navItems = [
-    { name: 'Dashboard', href: '/admin', },
-    { name: 'Products', href: '/admin/products', },
-    { name: 'Import Products', href: '/admin/products-import', },
-    { name: 'Categories', href: '/admin/categories', },
-    { name: 'Orders', href: '/admin/orders', },
-    { name: 'Users', href: '/admin/users', },
-    { name: 'Deposits', href: '/admin/deposits', },
-    { name: 'Reports', href: '/admin/reports', },
-    { name: 'Integrations', href: '/admin/integrations', },
-    { name: 'API Monitoring', href: '/admin/api-monitoring', },
-    { name: 'Exchange Rates', href: '/admin/exchange-rates', },
+    { name: 'Digital Deals Hub', href: '/' },
+    { name: 'Admin', href: '/admin' },
+    { name: 'Products', href: '/admin/products' },
+    { name: 'Import Products', href: '/admin/products-import' },
+    { name: 'Categories', href: '/admin/categories' },
+    { name: 'Orders', href: '/admin/orders' },
+    { name: 'Users', href: '/admin/users' },
+    { name: 'Deposits', href: '/admin/deposits' },
+    { name: 'Reports', href: '/admin/reports' },
+    { name: 'Integrations', href: '/admin/integrations' },
+    { name: 'API Monitoring', href: '/admin/api-monitoring' },
+    { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
 
   const getBreadcrumbs = () => {
@@ -39,27 +38,33 @@ const AdminLayout = () => {
     
     if (pathSegments.length === 0) return null;
     
-    if (pathSegments[0] !== 'admin') return null;
-
     const breadcrumbs = [];
     let currentPath = '';
     
     breadcrumbs.push({
-      name: 'Admin',
-      path: '/admin',
-      isCurrentPage: pathSegments.length === 1
+      name: 'Digital Deals Hub',
+      path: '/',
+      isCurrentPage: false
     });
     
-    for (let i = 1; i < pathSegments.length; i++) {
-      currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
-      const navItem = navItems.find(item => item.href === currentPath);
+    if (pathSegments[0] === 'admin') {
+      breadcrumbs.push({
+        name: 'Admin',
+        path: '/admin',
+        isCurrentPage: pathSegments.length === 1
+      });
       
-      if (navItem) {
-        breadcrumbs.push({
-          name: navItem.name,
-          path: currentPath,
-          isCurrentPage: i === pathSegments.length - 1
-        });
+      for (let i = 1; i < pathSegments.length; i++) {
+        currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
+        const navItem = navItems.find(item => item.href === currentPath);
+        
+        if (navItem) {
+          breadcrumbs.push({
+            name: navItem.name,
+            path: currentPath,
+            isCurrentPage: i === pathSegments.length - 1
+          });
+        }
       }
     }
     
@@ -68,7 +73,6 @@ const AdminLayout = () => {
   
   const breadcrumbs = getBreadcrumbs();
 
-  // Get the current page title
   const getCurrentPageTitle = () => {
     const currentPath = location.pathname;
     const navItem = navItems.find(item => item.href === currentPath);
@@ -77,15 +81,11 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      {/* Main content */}
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
-        {/* Admin Navbar */}
         <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {/* Breadcrumbs and Page Title */}
         <div className="bg-background py-4 px-6 border-b">
           {breadcrumbs && (
             <Breadcrumb className="mb-2">
