@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 // Define order status type based on the database enum
@@ -59,4 +58,12 @@ export interface OrderData {
   message?: string;   // Added to match API response structure
   description?: string; // Added to match API response structure
   status?: string;
+}
+
+// Add the OrderItemData interface for order item data
+export interface OrderItemData {
+  product_keys?: string[];
+  kiosk_token?: string;
+  taphoammo_order_id?: string;
+  [key: string]: any;  // Allow for additional dynamic properties
 }
