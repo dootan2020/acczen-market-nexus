@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
@@ -10,7 +11,7 @@ import { toast } from "sonner";
 import { taphoammoApi } from "@/utils/api/taphoammoApi";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowPathIcon, ArrowRightIcon, ClipboardIcon } from "lucide-react";
+import { RefreshCw, ArrowRight, Clipboard } from "lucide-react";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -74,8 +75,6 @@ export const PurchaseConfirmModal = ({
     }
 
     try {
-      setIsProcessing(true);
-
       // Check kiosk status first
       const isActive = await taphoammoApi.checkKioskActive(kioskToken);
       if (!isActive) {
@@ -97,8 +96,6 @@ export const PurchaseConfirmModal = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý đơn hàng';
       toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -141,9 +138,10 @@ export const PurchaseConfirmModal = ({
               <PurchaseModalInfo />
               
               <PurchaseModalActions
-                isProcessing={isProcessing}
+                isProcessing={isProcessing || isCheckingKiosk}
                 onCancel={() => onOpenChange(false)}
                 onConfirm={handleConfirmPurchase}
+                disabled={kioskActive === false}
               />
             </>
           ) : (
@@ -164,7 +162,7 @@ export const PurchaseConfirmModal = ({
                       size="sm"
                       onClick={() => copyToClipboard(purchaseResult.productKeys?.join('\n') || '')}
                     >
-                      <ClipboardIcon className="w-4 h-4 mr-2" />
+                      <Clipboard className="w-4 h-4 mr-2" />
                       Sao chép tất cả
                     </Button>
                   </div>
@@ -181,7 +179,7 @@ export const PurchaseConfirmModal = ({
                     variant="outline"
                     onClick={() => checkOrderStatus(purchaseResult.orderId!)}
                   >
-                    <ArrowPathIcon className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-4 h-4 mr-2" />
                     Kiểm tra đơn hàng
                   </Button>
                 </div>
@@ -197,7 +195,7 @@ export const PurchaseConfirmModal = ({
                 <Button 
                   onClick={() => navigate('/dashboard/purchases')}
                 >
-                  <ArrowRightIcon className="w-4 h-4 mr-2" />
+                  <ArrowRight className="w-4 h-4 mr-2" />
                   Xem đơn hàng
                 </Button>
               </div>
