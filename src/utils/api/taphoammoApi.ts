@@ -5,11 +5,18 @@ import type { ProxyType } from '@/utils/corsProxy';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { taphoammoApi as apiService } from '@/services/taphoammo-api';
 
+// Define response interface to fix TypeScript errors
+interface TaphoammoApiResponse {
+  success: boolean;
+  message: string;
+  [key: string]: any; // Allow for other properties
+}
+
 // Define a stock API object
 const stockApi = {
   getStock: async (kioskToken: string, options = {}) => {
     try {
-      const data = await apiService.fetchTaphoammo('stock', { kioskToken });
+      const data = await apiService.fetchTaphoammo<TaphoammoApiResponse>('stock', { kioskToken });
       if (!data.success) {
         throw new TaphoammoError(
           data.message || 'Failed to get stock information',

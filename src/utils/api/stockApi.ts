@@ -16,6 +16,14 @@ interface StockCacheItem {
   cached_until: string;
 }
 
+// Define expected type for stock API response
+interface StockResponse {
+  stock_quantity: number;
+  price: number;
+  name: string;
+  [key: string]: any; // Allow for other properties
+}
+
 export async function getStockForItem(
   productId: string,
   kioskToken: string,
@@ -54,15 +62,7 @@ export async function getStockForItem(
     }
     
     // Circuit is closed, try live API
-    try {
-      // Define expected type for the response
-      interface StockResponse {
-        stock_quantity: number;
-        price: number;
-        name: string;
-        [key: string]: any; // Allow for other properties
-      }
-      
+    try {      
       const response = await taphoammoApi.fetchTaphoammo<StockResponse>('stock', { kioskToken });
       
       if (response) {
