@@ -4,7 +4,7 @@ import AdminUsers from '@/components/admin/users/AdminUsers';
 
 const UsersPage: React.FC = () => {
   return (
-    <div>
+    <div className="container mx-auto py-6">
       <AdminUsers />
     </div>
   );
