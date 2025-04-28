@@ -37,9 +37,6 @@ interface PurchasesTableProps {
 }
 
 export const PurchasesTable = ({ orders }: PurchasesTableProps) => {
-  const { user } = useAuth();
-  const { resendOrderConfirmationEmail } = useOrderConfirmation();
-
   return (
     <div className="space-y-4">
       {orders.map((order) => (
