@@ -196,13 +196,13 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
       );
     } else if (stock < 5) {
       return (
-        <Badge variant="warning" className="bg-yellow-500 hover:bg-yellow-600 mb-2">
+        <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 mb-2">
           <AlertCircle className="w-3 h-3 mr-1" /> Sắp hết hàng (còn {stock})
         </Badge>
       );
     } else {
       return (
-        <Badge variant="success" className="bg-green-500 hover:bg-green-600 mb-2">
+        <Badge variant="outline" className="bg-green-500 hover:bg-green-600 text-white mb-2">
           <CheckCircle2 className="w-3 h-3 mr-1" /> Còn hàng ({stock > 99 ? '99+' : stock})
         </Badge>
       );
@@ -247,9 +247,9 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
                 <DialogClose>
-                  {close => (
+                  {(props) => (
                     <Button 
-                      onClick={() => handleSubscribeToNotifications(close)} 
+                      onClick={() => handleSubscribeToNotifications(props.onClick)}
                       disabled={isSubmitting}
                     >
                       {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -315,3 +315,4 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
 };
 
 export default ProductInventoryStatus;
+

@@ -149,7 +149,7 @@ const ProductIntegration = () => {
     mutationFn: async ({ kioskToken }: { kioskToken: string }) => {
       try {
         const proxyType = getStoredProxy() as 'direct' | 'corsproxy.io' | 'admin';
-        const product = await getStock(kioskToken, proxyType);
+        const product = await getStock(kioskToken, { proxyType });
         
         const { error: mockError } = await supabase
           .from('taphoammo_mock_products')

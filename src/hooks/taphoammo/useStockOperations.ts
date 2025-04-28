@@ -12,6 +12,24 @@ interface StockCacheInfo extends TaphoammoProduct {
   cacheExpiresAt?: Date;
 }
 
+// Thêm interface cho response từ inventory_cache table
+interface InventoryCacheData {
+  id: string;
+  product_id: string;
+  kiosk_token: string;
+  stock_quantity: number;
+  price: number;
+  source: string;
+  last_checked_at: string;
+  last_sync_status: string;
+  sync_message: string;
+  cached_until: string;
+  retry_count: number;
+  created_at: string;
+  updated_at: string;
+  name?: string; // Thêm trường name vào interface
+}
+
 export const useStockOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry } = useApiCommon();
   const [cacheInfo, setCacheInfo] = useState<{
@@ -33,7 +51,7 @@ export const useStockOperations = () => {
       // Kiểm tra cache
       const { data: cacheData } = await supabase
         .from('inventory_cache')
-        .select('*')
+        .select('*, products(name)')
         .eq('kiosk_token', kioskToken)
         .single();
 
@@ -41,9 +59,10 @@ export const useStockOperations = () => {
       
       // Nếu có cache và chưa hết hạn
       if (cacheData && new Date(cacheData.cached_until) > new Date()) {
+        const productName = cacheData.products?.name || 'Sản phẩm';
         stockInfo = {
           kiosk_token: kioskToken,
-          name: cacheData.name || 'Sản phẩm',
+          name: productName,
           stock_quantity: cacheData.stock_quantity,
           price: cacheData.price,
           cached: true,
@@ -73,9 +92,10 @@ export const useStockOperations = () => {
           if (cacheData) {
             console.warn('Using expired cache due to API error');
             
+            const productName = cacheData.products?.name || 'Sản phẩm (cache)';
             stockInfo = {
               kiosk_token: kioskToken,
-              name: cacheData.name || 'Sản phẩm (cache)',
+              name: productName,
               stock_quantity: cacheData.stock_quantity,
               price: cacheData.price,
               cached: true,

@@ -55,7 +55,7 @@ const ProductsImport = () => {
 
   const handleFetchProduct = async (kioskToken: string, proxyType: 'direct' | 'corsproxy.io' | 'admin') => {
     try {
-      const productData = await getStock(kioskToken, proxyType);
+      const productData = await getStock(kioskToken, { proxyType });
       
       // Create extended product with additional fields
       const extendedProduct: ExtendedProduct = {

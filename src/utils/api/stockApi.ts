@@ -27,14 +27,15 @@ export class StockApi extends BaseApiClient {
       if (apiHealth?.is_open && !options.forceFresh) {
         const { data: cache } = await supabase
           .from('inventory_cache')
-          .select('*')
+          .select('*, products(name)')
           .eq('kiosk_token', kioskToken)
           .single();
           
         if (cache) {
+          const productName = cache.products?.name || 'Sản phẩm';
           return {
             kiosk_token: kioskToken,
-            name: cache.name || 'Sản phẩm',
+            name: productName,
             stock_quantity: cache.stock_quantity,
             price: cache.price,
             cached: true,

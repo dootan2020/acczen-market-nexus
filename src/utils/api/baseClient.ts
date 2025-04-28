@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
@@ -69,7 +68,7 @@ export class BaseApiClient {
       // Kiểm tra cache trong database
       const { data: cache } = await supabase
         .from('inventory_cache')
-        .select('*')
+        .select('*, products(name)')
         .eq('kiosk_token', kioskToken)
         .single();
       
@@ -79,7 +78,7 @@ export class BaseApiClient {
           data: {
             stock_quantity: cache.stock_quantity,
             price: cache.price,
-            name: cache.name
+            name: cache.products?.name // Lấy tên từ quan hệ products
           },
           cacheId: cache.id
         };
