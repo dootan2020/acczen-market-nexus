@@ -3,12 +3,13 @@ import { orderApi } from './orderApi';
 import { SYSTEM_TOKEN } from './config';
 import type { ProxyType } from '@/utils/corsProxy';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
+import { taphoammoApi as apiService } from '@/services/taphoammo-api';
 
 // Define a stock API object
 const stockApi = {
   getStock: async (kioskToken: string, options = {}) => {
     try {
-      const data = await taphoammoApi.testConnection(kioskToken);
+      const data = await apiService.fetchTaphoammo('stock', { kioskToken });
       if (!data.success) {
         throw new TaphoammoError(
           data.message || 'Failed to get stock information',
@@ -88,6 +89,11 @@ class TaphoammoApiClient {
       // Nếu là lỗi khác, vẫn ném ra để gọi hàm xử lý
       throw err;
     }
+  }
+  
+  // Add fetchTaphoammo method to pass through to apiService
+  async fetchTaphoammo<T>(endpoint: string, params: Record<string, any> = {}, forceFresh: boolean = false): Promise<T> {
+    return await apiService.fetchTaphoammo<T>(endpoint, params, forceFresh);
   }
 }
 

@@ -55,7 +55,15 @@ export async function getStockForItem(
     
     // Circuit is closed, try live API
     try {
-      const response = await taphoammoApi.fetchTaphoammo('stock', { kioskToken });
+      // Define expected type for the response
+      interface StockResponse {
+        stock_quantity: number;
+        price: number;
+        name: string;
+        [key: string]: any; // Allow for other properties
+      }
+      
+      const response = await taphoammoApi.fetchTaphoammo<StockResponse>('stock', { kioskToken });
       
       if (response) {
         const stockData = response;
