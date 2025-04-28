@@ -7,6 +7,8 @@ import { CartButton } from "@/components/cart-button"
 import { UserMenu } from "@/components/user-menu"
 import { MobileNav } from "@/components/mobile-nav"
 import { DepositButton } from "@/components/deposit-button"
+import { Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 export function Header() {
   return (
@@ -19,9 +21,17 @@ export function Header() {
           </Link>
         </div>
         
-        <MainNav className="mx-6" />
+        <MainNav className="mx-6 hidden md:flex" />
         
-        <div className="flex flex-1 items-center justify-end gap-2">
+        <div className="hidden md:flex relative mx-4 flex-1 max-w-md">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Tìm kiếm sản phẩm..." 
+            className="pl-8 bg-background border-input focus-visible:ring-1"
+          />
+        </div>
+        
+        <div className="flex flex-1 md:flex-none items-center justify-end gap-2">
           <div className="hidden md:block">
             <DepositButton />
           </div>
