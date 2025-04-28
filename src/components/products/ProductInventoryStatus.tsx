@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Clock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStockOperations } from '@/hooks/taphoammo/useStockOperations';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -16,10 +16,17 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getProxyOptions, setStoredProxy, getStoredProxy, ProxyType } from '@/utils/corsProxy';
 
 interface ProductInventoryStatusProps {
   kioskToken: string;
@@ -36,6 +43,10 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { user } = useAuth();
   const [subscribed, setSubscribed] = useState<boolean>(false);
+  const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
+  const [responseTime, setResponseTime] = useState<number | null>(null);
+  
+  const proxyOptions = getProxyOptions();
 
   useEffect(() => {
     // Format the last checked time
@@ -79,9 +90,19 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
     }
   }, [stock, user?.id, productId]);
 
+  // Update current proxy when it changes in localStorage
+  useEffect(() => {
+    const handler = () => setCurrentProxy(getStoredProxy());
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
+
   const handleSyncStock = async () => {
     try {
+      const startTime = Date.now();
       const result = await syncProductStock(kioskToken);
+      const endTime = Date.now();
+      setResponseTime(endTime - startTime);
       
       if (result.success) {
         toast.success(result.message);
@@ -92,6 +113,12 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
       console.error('Sync error:', error);
       toast.error('Đã xảy ra lỗi khi đồng bộ tồn kho');
     }
+  };
+  
+  const handleChangeProxy = (proxy: ProxyType) => {
+    setStoredProxy(proxy);
+    setCurrentProxy(proxy);
+    toast.success(`Đã chuyển sang sử dụng proxy: ${proxy}`);
   };
 
   const checkSubscriptionStatus = async () => {
@@ -246,25 +273,23 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
                 <DialogClose asChild>
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
-                <DialogClose asChild>
-                  <Button 
-                    onClick={(e) => {
-                      // Get the close function from DialogClose context
-                      const closeDialog = () => {
-                        // This function will be called after subscription is complete
-                        const closeButton = e.currentTarget.closest('[data-state="open"]')?.querySelector('button[data-state="closed"]');
-                        if (closeButton instanceof HTMLButtonElement) {
-                          closeButton.click();
-                        }
-                      };
-                      handleSubscribeToNotifications(closeDialog);
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Đăng ký thông báo
-                  </Button>
-                </DialogClose>
+                <Button 
+                  onClick={(e) => {
+                    // Get the close function from DialogClose context
+                    const closeDialog = () => {
+                      // This function will be called after subscription is complete
+                      const closeButton = e.currentTarget.closest('[data-state="open"]')?.querySelector('button[data-state="closed"]');
+                      if (closeButton instanceof HTMLButtonElement) {
+                        closeButton.click();
+                      }
+                    };
+                    handleSubscribeToNotifications(closeDialog);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Đăng ký thông báo
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -286,6 +311,35 @@ const ProductInventoryStatus = ({ kioskToken, stock, productId, productName }: P
             'Chưa có dữ liệu cập nhật'
           )}
         </span>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              title="Tùy chọn kết nối API"
+            >
+              <Settings className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <div className="px-2 py-1.5 text-xs font-semibold">Kết nối API qua</div>
+            {proxyOptions.map(option => (
+              <DropdownMenuItem 
+                key={option.value}
+                className={currentProxy === option.value ? 'bg-muted' : ''}
+                onClick={() => handleChangeProxy(option.value as ProxyType)}
+              >
+                <span className="font-medium">{option.label}</span>
+                {currentProxy === option.value && <CheckCircle2 className="ml-2 h-3 w-3" />}
+              </DropdownMenuItem>
+            ))}
+            <div className="px-2 py-1 text-xs text-muted-foreground border-t">
+              {responseTime ? `Thời gian phản hồi: ${responseTime}ms` : 'Chưa có dữ liệu tốc độ'}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button
           variant="ghost"

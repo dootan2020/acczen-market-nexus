@@ -1,10 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { ProxyType } from '@/utils/corsProxy';
+import { ProxyType, getStoredProxy, buildProxyUrl } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-
-// Luôn sử dụng AllOrigins làm proxy mặc định
-const ALLORIGINS_PROXY = "https://api.allorigins.win/raw?url=";
 
 export class BaseApiClient {
   // Cache lưu trữ tạm thời kết quả API
@@ -65,7 +63,7 @@ export class BaseApiClient {
     cacheId?: string;
   }> {
     try {
-      // Kiểm tra cache trong database
+      // Kiểm tra cache trong database, lấy thêm thông tin tên sản phẩm
       const { data: cache } = await supabase
         .from('inventory_cache')
         .select('*, products(name)')
@@ -73,12 +71,15 @@ export class BaseApiClient {
         .single();
       
       if (cache && new Date(cache.cached_until) > new Date()) {
+        // Đảm bảo có thông tin tên sản phẩm
+        const productName = cache.products?.name || 'Sản phẩm';
+        
         return {
           cached: true,
           data: {
             stock_quantity: cache.stock_quantity,
             price: cache.price,
-            name: cache.products?.name // Lấy tên từ quan hệ products
+            name: productName
           },
           cacheId: cache.id
         };
@@ -92,7 +93,7 @@ export class BaseApiClient {
   }
 
   /**
-   * Core API call method
+   * Core API call method with improved error handling and proxy selection
    */
   protected async callApi(endpoint: string, params: Record<string, string | number>): Promise<any> {
     try {
@@ -106,13 +107,22 @@ export class BaseApiClient {
         queryParams.append(key, String(value));
       });
       
-      // Construct API URL with AllOrigins proxy
+      // Construct API URL
       const apiUrl = `${API_CONFIG.baseUrl}/${endpoint}?${queryParams.toString()}`;
-      const proxyUrl = ALLORIGINS_PROXY + encodeURIComponent(apiUrl);
+      
+      // Get current proxy type from localStorage
+      const proxyType = getStoredProxy();
+      
+      // Apply proxy based on configuration
+      const proxyUrl = buildProxyUrl(apiUrl, proxyType);
+      
+      console.log(`[TaphoaMMO API] Using proxy: ${proxyType} for ${endpoint}`);
       
       // Add timeout to avoid hanging requests
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+      
+      const startTime = Date.now();
       
       const response = await fetch(proxyUrl, {
         signal: controller.signal,
@@ -124,7 +134,19 @@ export class BaseApiClient {
       
       clearTimeout(timeoutId);
       
+      // Calculate response time for monitoring
+      const responseTime = Date.now() - startTime;
+      console.log(`[TaphoaMMO API] ${endpoint} responded in ${responseTime}ms`);
+      
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new TaphoammoError(
+            "API rate limit exceeded. Please try again later.",
+            TaphoammoErrorCodes.RATE_LIMIT,
+            0,
+            responseTime
+          );
+        }
         throw new Error(`API request failed with status ${response.status}`);
       }
       
@@ -149,7 +171,9 @@ export class BaseApiClient {
             data.description?.includes("pending")) {
           throw new TaphoammoError(
             "Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.",
-            TaphoammoErrorCodes.KIOSK_PENDING
+            TaphoammoErrorCodes.KIOSK_PENDING,
+            0,
+            responseTime
           );
         }
         
@@ -165,6 +189,25 @@ export class BaseApiClient {
         await this.recordApiFailure(error);
       } catch (circuitError) {
         console.error('Error updating circuit breaker:', circuitError);
+      }
+      
+      // Bổ sung thông tin retry cho các lỗi mạng
+      if (error.name === 'AbortError') {
+        throw new TaphoammoError(
+          "API request timed out. Please try again later.",
+          TaphoammoErrorCodes.TIMEOUT,
+          0,
+          API_CONFIG.timeout
+        );
+      } else if (error instanceof TaphoammoError) {
+        throw error;
+      } else if (error.message?.includes('fetch')) {
+        throw new TaphoammoError(
+          "Network error while calling API. Please check your connection.",
+          TaphoammoErrorCodes.NETWORK_ERROR,
+          0,
+          0
+        );
       }
       
       throw error;

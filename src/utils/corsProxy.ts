@@ -1,11 +1,11 @@
 
 // Types of CORS proxies we can use
-export type ProxyType = 'direct' | 'allorigins' | 'corsproxy.io' | 'corsanywhere' | 'admin';
+export type ProxyType = 'direct' | 'allorigins' | 'corsproxy.io' | 'corsanywhere' | 'codetabs' | 'admin';
 
 // Store the current proxy type in localStorage
 export const getStoredProxy = (): ProxyType => {
   const storedProxy = localStorage.getItem('taphoammo_proxy');
-  return (storedProxy as ProxyType) || 'allorigins';
+  return (storedProxy as ProxyType) || 'corsproxy.io'; // Default to corsproxy.io instead of allorigins
 };
 
 export const setStoredProxy = (proxy: ProxyType): void => {
@@ -20,19 +20,24 @@ export const getProxyOptions = () => [
     description: 'Sử dụng hàm phía máy chủ (an toàn nhất)'
   },
   {
-    value: 'allorigins',
-    label: 'AllOrigins',
-    description: 'api.allorigins.win - Proxy miễn phí, đáng tin cậy'
-  },
-  {
     value: 'corsproxy.io',
     label: 'CORSProxy.io',
-    description: 'corsproxy.io - Proxy thay thế'
+    description: 'corsproxy.io - Proxy miễn phí, đáng tin cậy'
+  },
+  {
+    value: 'codetabs',
+    label: 'CodeTabs',
+    description: 'api.codetabs.com - Proxy thay thế'
   },
   {
     value: 'corsanywhere',
     label: 'CORS-Anywhere',
     description: 'cors-anywhere.herokuapp.com - Yêu cầu đăng ký'
+  },
+  {
+    value: 'allorigins',
+    label: 'AllOrigins',
+    description: 'api.allorigins.win - Có thể không ổn định'
   },
   {
     value: 'direct',
@@ -53,6 +58,9 @@ export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
     case 'corsanywhere':
       return `https://cors-anywhere.herokuapp.com/${url}`;
       
+    case 'codetabs':
+      return `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+      
     case 'admin':
       // This means use server-side Edge Function - handled separately
       return url;
@@ -62,3 +70,4 @@ export const buildProxyUrl = (url: string, proxyType: ProxyType): string => {
       return url;
   }
 };
+

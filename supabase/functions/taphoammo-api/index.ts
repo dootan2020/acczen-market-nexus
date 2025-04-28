@@ -10,26 +10,34 @@ const corsHeaders = {
 // TaphoaMMO API base URL
 const API_BASE_URL = "https://taphoammo.net/api";
 
-// Timeout for fetch requests in milliseconds
-const FETCH_TIMEOUT = 15000;
+// Timeout for fetch requests in milliseconds (reduced for better UX)
+const FETCH_TIMEOUT = 10000;
 
 /**
  * Fetch with timeout function
  */
-async function fetchWithTimeout(url, options, timeout = FETCH_TIMEOUT) {
+async function fetchWithTimeout(url: string, options: RequestInit, timeout = FETCH_TIMEOUT) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   
   try {
+    console.log(`[TaphoaMMO API] Fetching ${url}`);
+    const startTime = Date.now();
+    
     const response = await fetch(url, {
       ...options,
       signal: controller.signal
     });
+    
     clearTimeout(id);
+    const endTime = Date.now();
+    console.log(`[TaphoaMMO API] Response received in ${endTime - startTime}ms`);
+    
     return response;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(id);
     if (error.name === 'AbortError') {
+      console.error(`[TaphoaMMO API] Request timeout after ${timeout}ms`);
       throw new Error(`Request timeout after ${timeout}ms`);
     }
     throw error;
@@ -43,6 +51,8 @@ serve(async (req) => {
   }
 
   try {
+    // Capture request start time for performance monitoring
+    const requestStartTime = Date.now();
     let requestBody = {};
     
     try {
@@ -101,19 +111,42 @@ serve(async (req) => {
     
     console.log(`[TaphoaMMO API] Calling external API: ${apiUrl}`);
     
-    // Call TaphoaMMO API with timeout
-    const response = await fetchWithTimeout(
-      apiUrl, 
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "Digital-Deals-Hub/1.0",
-          "Accept": "application/json",
-        },
-      },
-      FETCH_TIMEOUT
-    );
+    // Call TaphoaMMO API with timeout and retry logic
+    let response;
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        response = await fetchWithTimeout(
+          apiUrl, 
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "User-Agent": "Digital-Deals-Hub/1.0",
+              "Accept": "application/json",
+            },
+          },
+          FETCH_TIMEOUT
+        );
+        
+        // If successful, break the retry loop
+        break;
+      } catch (error) {
+        retryCount++;
+        console.error(`[TaphoaMMO API] Attempt ${retryCount}/${maxRetries + 1} failed:`, error);
+        
+        if (retryCount > maxRetries) {
+          throw error; // Reached max retries, propagate the error
+        }
+        
+        // Wait before retrying (exponential backoff)
+        const delay = 500 * Math.pow(2, retryCount - 1);
+        console.log(`[TaphoaMMO API] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -123,7 +156,7 @@ serve(async (req) => {
     
     // Attempt to read and parse the response as text first
     const responseText = await response.text();
-    console.log(`[TaphoaMMO API] Raw response: ${responseText}`);
+    console.log(`[TaphoaMMO API] Raw response: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
     
     let data;
     try {
@@ -141,19 +174,36 @@ serve(async (req) => {
     }
     
     // Check for API-level error
-    if (data.success === "false") {
-      throw new Error(data.message || "API returned an error");
+    if (data.success === "false" && 
+        data.description !== "Order in processing!" && 
+        data.message !== "Order in processing!") {
+      throw new Error(data.message || data.description || "API returned an error");
     }
     
-    return new Response(JSON.stringify(data), {
+    // Calculate total response time
+    const totalTime = Date.now() - requestStartTime;
+    
+    // Add performance metadata to the response
+    const responseWithMetadata = {
+      ...data,
+      _metadata: {
+        responseTime: totalTime,
+        endpoint,
+        timestamp: new Date().toISOString(),
+        retries: retryCount
+      }
+    };
+    
+    return new Response(JSON.stringify(responseWithMetadata), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[TaphoaMMO API] Error:", error.message);
     return new Response(
       JSON.stringify({
         success: "false",
         message: error.message || "Internal server error",
+        timestamp: new Date().toISOString()
       }),
       {
         status: 400, // Using 400 instead of 500 to make it easier for the client to handle
