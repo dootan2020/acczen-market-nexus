@@ -1,122 +1,138 @@
 
-import { BaseApiClient } from './baseClient';
-import { SYSTEM_TOKEN, StockResponse } from './config';
-import { DatabaseCache } from './cache/DatabaseCache';
-import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { TaphoammoProduct } from '@/types/products';
+import { supabase } from '@/integrations/supabase/client';
+import { CircuitBreaker } from './circuitBreaker/CircuitBreaker';
+import { fetchTaphoammo } from '@/services/taphoammo-api';
 
-export class StockApi extends BaseApiClient {
-  async getStock(
-    kioskToken: string,
-    userToken: string = SYSTEM_TOKEN
-  ): Promise<StockResponse> {
-    try {
-      // Use Edge Function instead of direct API call
-      const { data, error } = await this.callEdgeFunction('taphoammo-api', {
-        endpoint: 'getStock',
-        kioskToken,
-        userToken: SYSTEM_TOKEN // Always use system token
-      });
+interface StockCacheItem {
+  id: string;
+  cacheId: string;
+  product_id: string;
+  kiosk_token: string;
+  stock_quantity: number;
+  price: number;
+  name: string;
+  last_checked_at: string;
+  cached_until: string;
+}
+
+export async function getStockForItem(
+  productId: string,
+  kioskToken: string,
+): Promise<{ quantity: number; price: number; lastUpdated: string }> {
+  try {
+    // Check if circuit is open
+    const isCircuitOpen = await CircuitBreaker.isOpen();
+    
+    if (isCircuitOpen) {
+      // If circuit is open, try to get from cache
+      console.log("Circuit is open, using cached data");
+      const { data: cacheData } = await supabase
+        .from('inventory_cache')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('kiosk_token', kioskToken)
+        .single();
       
-      if (error) {
-        throw error;
+      if (cacheData) {
+        const typedCacheData = cacheData as StockCacheItem;
+        return {
+          quantity: typedCacheData.stock_quantity,
+          price: typedCacheData.price,
+          lastUpdated: typedCacheData.last_checked_at,
+        };
       }
       
-      return data;
-    } catch (error) {
-      console.error('[TaphoaMMO API] Error fetching stock:', error);
-      throw error;
+      // If no cache, return zeros
+      return { quantity: 0, price: 0, lastUpdated: new Date().toISOString() };
     }
-  }
-
-  async getStockWithCache(
-    kioskToken: string, 
-    options: { 
-      forceFresh?: boolean; 
-      proxyType?: 'direct' | 'corsproxy.io' | 'admin';
-    } = {}
-  ): Promise<TaphoammoProduct> {
-    let cachedData = null;
     
-    // Check cache before calling API if fresh data not required
-    if (!options.forceFresh) {
-      try {
-        const cacheResult = await DatabaseCache.get(kioskToken);
-        if (cacheResult.cached && cacheResult.data) {
-          console.log('[TaphoaMMO API] Using cached data:', cacheResult.data);
-          const product: TaphoammoProduct = {
-            kiosk_token: kioskToken,
-            stock_quantity: cacheResult.data.stock_quantity,
-            price: cacheResult.data.price,
-            name: cacheResult.data.name,
-            cached: true,
-            cacheId: cacheResult.data.cacheId
+    // Circuit is closed, try live API
+    try {
+      const response = await fetchTaphoammo(`stock/${kioskToken}`, {}, false);
+      
+      if (response && Array.isArray(response)) {
+        const stockData = response.find(item => item.id === productId);
+        
+        // Update the cache with latest data
+        if (stockData) {
+          const typedStockData = stockData as {
+            id: string;
+            stock_quantity: number;
+            price: number;
+            name: string;
+            cacheId?: string;
           };
-          return product;
-        }
-      } catch (cacheError) {
-        console.warn('[TaphoaMMO API] Cache check failed:', cacheError);
-        // Continue to API call if cache check fails
-      }
-    }
-    
-    try {
-      // Call API to get fresh data
-      const stockInfo = await this.getStock(kioskToken);
-      
-      // Update cache with new data
-      await DatabaseCache.set(kioskToken, {
-        stock_quantity: stockInfo.stock_quantity,
-        price: stockInfo.price,
-        name: stockInfo.name
-      });
-      
-      // Create a properly typed TaphoammoProduct object
-      const product: TaphoammoProduct = {
-        kiosk_token: kioskToken,
-        stock_quantity: stockInfo.stock_quantity,
-        price: stockInfo.price,
-        name: stockInfo.name,
-        cached: false
-      };
-      
-      return product;
-      
-    } catch (error: any) {
-      // If API fails, try to use cache if available
-      if (!options.forceFresh) {
-        try {
-          const cacheResult = await DatabaseCache.get(kioskToken);
-          if (cacheResult.cached && cacheResult.data) {
-            console.log('[TaphoaMMO API] API call failed, using cached data as fallback');
-            const emergencyProduct: TaphoammoProduct = {
-              kiosk_token: kioskToken,
-              stock_quantity: cacheResult.data.stock_quantity,
-              price: cacheResult.data.price,
-              name: cacheResult.data.name,
-              cached: true,
-              emergency: true
-            };
-            return emergencyProduct;
-          }
-        } catch (secondaryCacheError) {
-          // Ignore secondary cache check errors
+          
+          await updateStockCache(
+            productId,
+            kioskToken,
+            typedStockData.stock_quantity,
+            typedStockData.price,
+            typedStockData.name
+          );
+          
+          return {
+            quantity: typedStockData.stock_quantity,
+            price: typedStockData.price,
+            lastUpdated: new Date().toISOString(),
+          };
         }
       }
       
-      // If no cache data or cache check fails, throw original error
-      if (error instanceof TaphoammoError) {
-        throw error;
-      } else {
-        throw new TaphoammoError(
-          error.message || "Could not get stock information",
-          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
-          0,
-          0
-        );
+      return { quantity: 0, price: 0, lastUpdated: new Date().toISOString() };
+    } catch (error) {
+      // If API call fails, try to get from cache
+      console.error("API call failed, falling back to cache:", error);
+      await CircuitBreaker.recordFailure(error as Error);
+      
+      const { data: cacheData } = await supabase
+        .from('inventory_cache')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('kiosk_token', kioskToken)
+        .single();
+      
+      if (cacheData) {
+        const typedCacheData = cacheData as StockCacheItem;
+        return {
+          quantity: typedCacheData.stock_quantity,
+          price: typedCacheData.price,
+          lastUpdated: typedCacheData.last_checked_at,
+        };
       }
+      
+      // If no cache, return zeros
+      return { quantity: 0, price: 0, lastUpdated: new Date().toISOString() };
     }
+  } catch (error) {
+    console.error("Error in getStockForItem:", error);
+    return { quantity: 0, price: 0, lastUpdated: new Date().toISOString() };
   }
 }
 
-export const stockApi = new StockApi();
+async function updateStockCache(
+  productId: string,
+  kioskToken: string,
+  quantity: number,
+  price: number,
+  name: string
+) {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_cache')
+      .upsert({
+        product_id: productId,
+        kiosk_token: kioskToken,
+        stock_quantity: quantity,
+        price: price,
+        name: name,
+        last_checked_at: new Date().toISOString(),
+        cached_until: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
+      });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error updating stock cache:", error);
+  }
+}

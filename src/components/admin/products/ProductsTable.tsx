@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,21 +20,55 @@ import {
 import { MoreVertical, Eye, Edit, Trash2, Package } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  category?: { name: string };
+  subcategory?: { name: string };
+  status: string;
+  price: number;
+  sale_price?: number;
+  stock_quantity: number;
+  image_url?: string;
+}
+
 interface ProductsTableProps {
-  products: any[];
-  onEditProduct: (product: any) => void;
-  onDeleteProduct: (product: any) => void;
+  products: Product[];
+  selectedProducts: string[];
+  onToggleSelect: (productId: string) => void;
+  onToggleSelectAll: () => void;
+  onEditProduct: (product: Product) => void;
+  onDeleteProduct: (product: Product) => void;
 }
 
 const ProductsTable: React.FC<ProductsTableProps> = ({
   products,
+  selectedProducts,
+  onToggleSelect,
+  onToggleSelectAll,
   onEditProduct,
   onDeleteProduct,
 }) => {
+  const isAllSelected = 
+    products.length > 0 &&
+    selectedProducts.length === products.length;
+  
+  const isIndeterminate = 
+    selectedProducts.length > 0 && 
+    selectedProducts.length < products.length;
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-12">
+            <Checkbox 
+              checked={isAllSelected}
+              data-state={isIndeterminate ? "indeterminate" : undefined}
+              onCheckedChange={onToggleSelectAll}
+            />
+          </TableHead>
           <TableHead>Product</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Subcategory</TableHead>
@@ -47,6 +82,12 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         {products.length ? (
           products.map((product) => (
             <TableRow key={product.id}>
+              <TableCell>
+                <Checkbox 
+                  checked={selectedProducts.includes(product.id)}
+                  onCheckedChange={() => onToggleSelect(product.id)}
+                />
+              </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-3">
                   {product.image_url ? (
@@ -113,7 +154,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-6">
+            <TableCell colSpan={8} className="text-center py-6">
               No products found
             </TableCell>
           </TableRow>

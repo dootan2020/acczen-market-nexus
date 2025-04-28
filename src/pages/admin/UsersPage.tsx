@@ -1,10 +1,11 @@
 
 import React from 'react';
+import AdminUsers from '@/components/admin/users/AdminUsers';
 
 const UsersPage: React.FC = () => {
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Users Management</h1>
+      <AdminUsers />
     </div>
   );
 };
