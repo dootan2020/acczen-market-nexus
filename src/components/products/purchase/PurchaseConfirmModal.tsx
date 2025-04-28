@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ArrowRight, Clipboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { OrderData } from "@/types/orders";
+import type { OrderData } from "@/types/orders";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -126,10 +126,12 @@ export const PurchaseConfirmModal = ({
         throw new Error(error.message);
       }
       
-      if (!orderData || (orderData as any).success === "false") {
-        throw new Error((orderData as any)?.message || (orderData as any)?.description || "Đã xảy ra lỗi khi mua sản phẩm");
-      }
+      const apiResponse = orderData as unknown as { success: string; message?: string; description?: string; order_id?: string };
       
+      if (!apiResponse || apiResponse.success === "false") {
+        throw new Error(apiResponse?.message || apiResponse?.description || "Đã xảy ra lỗi khi mua sản phẩm");
+      }
+
       const typedOrderData = orderData as OrderData;
       setPurchaseResult({ orderId: typedOrderData.order_id });
       

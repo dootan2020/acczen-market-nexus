@@ -6,7 +6,7 @@ export class DatabaseCache {
     try {
       const { data, error } = await supabase
         .from('inventory_cache')
-        .select('*')
+        .select('*, products(name)')
         .eq('kiosk_token', kioskToken)
         .single();
 
@@ -19,11 +19,13 @@ export class DatabaseCache {
       const now = new Date();
 
       if (cachedUntil > now) {
+        const productName = data.products?.name || `Product ${data.product_id?.substring(0, 8) || ''}`;
+        
         return {
           cached: true,
           data: {
             kiosk_token: data.kiosk_token,
-            name: data.product_id ? `Product ${data.product_id.substring(0, 8)}` : '', // Use product_id as fallback
+            name: productName,
             stock_quantity: data.stock_quantity,
             price: data.price,
             cached: true,

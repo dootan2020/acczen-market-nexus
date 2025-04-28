@@ -1,8 +1,9 @@
 
 import { BaseApiClient } from './baseClient';
-import { SYSTEM_TOKEN, StockResponse, TaphoammoProduct } from './config';
+import { SYSTEM_TOKEN, StockResponse } from './config';
 import { DatabaseCache } from './cache/DatabaseCache';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
+import { TaphoammoProduct } from '@/types/products';
 
 export class StockApi extends BaseApiClient {
   async getStock(
@@ -43,12 +44,15 @@ export class StockApi extends BaseApiClient {
         const cacheResult = await DatabaseCache.get(kioskToken);
         if (cacheResult.cached && cacheResult.data) {
           console.log('[TaphoaMMO API] Using cached data:', cacheResult.data);
-          return {
-            ...cacheResult.data,
-            kiosk_token: kioskToken, // Ensure kiosk_token is set
+          const product: TaphoammoProduct = {
+            kiosk_token: kioskToken,
+            stock_quantity: cacheResult.data.stock_quantity,
+            price: cacheResult.data.price,
+            name: cacheResult.data.name,
             cached: true,
             cacheId: cacheResult.data.cacheId
           };
+          return product;
         }
       } catch (cacheError) {
         console.warn('[TaphoaMMO API] Cache check failed:', cacheError);
@@ -67,13 +71,16 @@ export class StockApi extends BaseApiClient {
         name: stockInfo.name
       });
       
-      return {
+      // Create a properly typed TaphoammoProduct object
+      const product: TaphoammoProduct = {
         kiosk_token: kioskToken,
         stock_quantity: stockInfo.stock_quantity,
         price: stockInfo.price,
         name: stockInfo.name,
         cached: false
       };
+      
+      return product;
       
     } catch (error: any) {
       // If API fails, try to use cache if available
@@ -82,12 +89,15 @@ export class StockApi extends BaseApiClient {
           const cacheResult = await DatabaseCache.get(kioskToken);
           if (cacheResult.cached && cacheResult.data) {
             console.log('[TaphoaMMO API] API call failed, using cached data as fallback');
-            return {
-              ...cacheResult.data,
-              kiosk_token: kioskToken, // Ensure kiosk_token is set
+            const emergencyProduct: TaphoammoProduct = {
+              kiosk_token: kioskToken,
+              stock_quantity: cacheResult.data.stock_quantity,
+              price: cacheResult.data.price,
+              name: cacheResult.data.name,
               cached: true,
               emergency: true
             };
+            return emergencyProduct;
           }
         } catch (secondaryCacheError) {
           // Ignore secondary cache check errors
