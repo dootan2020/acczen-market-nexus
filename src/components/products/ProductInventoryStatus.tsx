@@ -1,9 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useStockOperations } from '@/hooks/taphoammo/useStockOperations';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getStoredProxy, setStoredProxy, ProxyType } from '@/utils/corsProxy';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import StockBadge from './inventory/StockBadge';
 import StockNotification from './inventory/StockNotification';
 import StockUpdateButton from './inventory/StockUpdateButton';
@@ -29,6 +32,7 @@ const ProductInventoryStatus = ({
   const [subscribed, setSubscribed] = useState<boolean>(false);
   const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (cacheInfo.lastChecked) {
