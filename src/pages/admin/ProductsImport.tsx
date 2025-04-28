@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductImportForm from '@/components/admin/products/ProductImportForm';
 import ImportPreview from '@/components/admin/products/ImportPreview';
 import ImportConfirmation from '@/components/admin/products/ImportConfirmation';
-import { TokenManagementTab } from '@/components/admin/products/TokenManagementTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaphoammoAPI } from '@/hooks/useTaphoammoAPI';
 import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
@@ -100,82 +99,67 @@ const ProductsImport = () => {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Import Sản Phẩm từ TaphoaMMO</h1>
       
-      <Tabs defaultValue="import" className="w-full mb-8">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="import">Import Sản Phẩm</TabsTrigger>
-          <TabsTrigger value="tokens">Quản lý Token</TabsTrigger>
+      <Tabs value={activeTab} className="w-full mb-8" onValueChange={(value) => {
+        // Only allow changing tabs to previous steps
+        if ((value === 'step1' && ['connect', 'preview', 'confirm'].includes(step)) || 
+           (value === 'step2' && ['preview', 'confirm'].includes(step)) || 
+           (value === 'step3' && step === 'confirm')) {
+          setStep(value === 'step1' ? 'connect' : value === 'step2' ? 'preview' : 'confirm');
+        }
+      }}>
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="step1" disabled={!['connect', 'preview', 'confirm'].includes(step)}>
+            1. Kết nối API
+          </TabsTrigger>
+          <TabsTrigger value="step2" disabled={!['preview', 'confirm'].includes(step)}>
+            2. Xem trước và chỉnh sửa
+          </TabsTrigger>
+          <TabsTrigger value="step3" disabled={step !== 'confirm'}>
+            3. Xác nhận và import
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="import">
-          <Tabs value={activeTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger 
-                value="step1" 
-                disabled={!['connect', 'preview', 'confirm'].includes(step)}
-              >
-                1. Kết nối API
-              </TabsTrigger>
-              <TabsTrigger 
-                value="step2" 
-                disabled={!['preview', 'confirm'].includes(step)}
-              >
-                2. Xem trước và chỉnh sửa
-              </TabsTrigger>
-              <TabsTrigger 
-                value="step3" 
-                disabled={step !== 'confirm'}
-              >
-                3. Xác nhận và import
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="step1">
-              <Card>
-                <CardContent className="pt-6">
-                  <ProductImportForm 
-                    onFetchProduct={handleFetchProduct}
-                    isLoading={loading}
-                    error={error}
-                    onTestConnection={testConnection}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="step2">
-              {product && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <ImportPreview 
-                      product={product} 
-                      onPrevious={() => setStep('connect')}
-                      onNext={handleUpdateProduct}
-                      categories={categories || []}
-                      categoriesLoading={categoriesLoading}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="step3">
-              {product && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <ImportConfirmation 
-                      product={product} 
-                      onPrevious={() => setStep('preview')}
-                      onComplete={handleResetForm}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
+        <TabsContent value="step1">
+          <Card>
+            <CardContent className="pt-6">
+              <ProductImportForm 
+                onFetchProduct={handleFetchProduct}
+                isLoading={loading}
+                error={error}
+                onTestConnection={testConnection}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
-
-        <TabsContent value="tokens">
-          <TokenManagementTab />
+        
+        <TabsContent value="step2">
+          {product && (
+            <Card>
+              <CardContent className="pt-6">
+                <ImportPreview 
+                  product={product} 
+                  onPrevious={() => setStep('connect')}
+                  onNext={handleUpdateProduct}
+                  categories={categories || []}
+                  categoriesLoading={categoriesLoading}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="step3">
+          {product && (
+            <Card>
+              <CardContent className="pt-6">
+                <ImportConfirmation 
+                  product={product} 
+                  onPrevious={() => setStep('preview')}
+                  onComplete={handleResetForm}
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
