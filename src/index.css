@@ -76,7 +76,12 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Thêm transitions cho các thành phần khác để mượt mà khi chuyển đổi theme */
+  /* Improve text readability across the site */
+  p, span, a, button, input, textarea, label, li {
+    @apply text-foreground;
+  }
+  
+  /* Improved transitions for smoother theme toggling */
   button, 
   a, 
   input, 
@@ -95,6 +100,11 @@
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 300ms;
+  }
+  
+  /* Ensure placeholder text has good contrast */
+  ::placeholder {
+    @apply text-muted-foreground opacity-70;
   }
 }
 
@@ -118,5 +128,32 @@
   /* Active nav highlight */
   .nav-link-active {
     @apply bg-accent/50;
+  }
+  
+  /* Improved contrast for product badges */
+  .product-badge {
+    @apply px-2 py-0.5 rounded text-xs font-medium;
+  }
+  
+  .product-badge-featured {
+    @apply bg-blue-600 text-white;
+  }
+  
+  .product-badge-sale {
+    @apply bg-red-600 text-white;
+  }
+  
+  .product-badge-new {
+    @apply bg-green-600 text-white;
+  }
+  
+  /* High contrast text on dark backgrounds */
+  .text-high-contrast {
+    @apply text-white;
+  }
+  
+  /* Better button contrast on dark backgrounds */
+  .button-high-contrast {
+    @apply bg-white text-black hover:bg-gray-200;
   }
 }

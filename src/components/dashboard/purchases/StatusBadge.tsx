@@ -14,9 +14,10 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
   return (
     <Badge 
       className={`${
-        status === 'completed' ? 'bg-green-100 text-green-800' : 
-        status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-        'bg-gray-100 text-gray-800'
+        status === 'completed' ? 'bg-green-600 text-white dark:bg-green-500' : 
+        status === 'pending' ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-black' : 
+        status === 'featured' ? 'bg-blue-600 text-white dark:bg-blue-500' : 
+        'bg-gray-600 text-white dark:bg-gray-500'
       }`}
     >
       {formatStatus(status)}
