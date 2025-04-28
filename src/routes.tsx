@@ -1,7 +1,7 @@
 
-import { Route, Routes } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
+import Index from './pages/Index';
 import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -39,8 +39,8 @@ const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
+      <Route element={<Layout />}>
+        <Route index element={<Index />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="products" element={
