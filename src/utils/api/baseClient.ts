@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
+import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 
 // Luôn sử dụng AllOrigins làm proxy mặc định
 const ALLORIGINS_PROXY = "https://api.allorigins.win/raw?url=";
@@ -53,7 +54,24 @@ export class BaseApiClient {
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
       }
       
-      if (data.success === "false" && data.description !== "Order in processing!") {
+      if (data.success === "false") {
+        // Xử lý đặc biệt cho trường hợp "Order in processing!"
+        if (data.description === "Order in processing!") {
+          console.log("[TaphoaMMO API] Order in processing, returning data");
+          await this.logApiCall(endpoint, params, true, responseTime);
+          return data;
+        }
+        
+        // Xử lý đặc biệt cho trường hợp "Kiosk is pending!"
+        if (data.message === "Kiosk is pending!" || data.description === "Kiosk is pending!") {
+          throw new TaphoammoError(
+            "Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.",
+            TaphoammoErrorCodes.API_TEMP_DOWN,
+            0,
+            responseTime
+          );
+        }
+        
         throw new Error(data.message || data.description || 'API returned an error');
       }
       

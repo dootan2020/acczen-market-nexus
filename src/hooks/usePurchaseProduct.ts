@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { taphoammoApi } from "@/utils/api/taphoammoApi";
+import { toast } from "sonner";
 
 interface PurchaseProduct {
   id: string;
@@ -35,6 +36,22 @@ export function usePurchaseProduct() {
         variant: "destructive",
       });
       return false;
+    }
+
+    try {
+      // Kiểm tra trạng thái kiosk trước khi mua
+      const isKioskActive = await taphoammoApi.checkKioskActive(product.kioskToken);
+      if (!isKioskActive) {
+        toast({
+          title: "Sản phẩm tạm thời không khả dụng",
+          description: "Sản phẩm này hiện không thể mua. Vui lòng thử lại sau hoặc chọn sản phẩm khác.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (err) {
+      console.error("Lỗi kiểm tra kiosk:", err);
+      // Tiếp tục quy trình nếu không thể kiểm tra kiosk
     }
 
     const { data: userData, error: userError } = await supabase
@@ -70,7 +87,10 @@ export function usePurchaseProduct() {
 
     try {
       const userData = await validatePurchase(product);
-      if (!userData) return;
+      if (!userData) {
+        setIsProcessing(false);
+        return;
+      }
 
       const totalCost = product.price * product.quantity;
 

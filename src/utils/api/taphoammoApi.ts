@@ -25,6 +25,22 @@ class TaphoammoApiClient {
       };
     }
   }
+  
+  async checkKioskActive(kioskToken: string): Promise<boolean> {
+    try {
+      await this.stock.getStock(kioskToken);
+      return true;
+    } catch (err: any) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      // Kiểm tra nếu lỗi liên quan đến kiosk pending
+      if (errorMessage.includes('Kiosk is pending') || 
+          errorMessage.includes('tạm thời không khả dụng')) {
+        return false;
+      }
+      // Ném lại lỗi nếu không phải do kiosk pending
+      throw err;
+    }
+  }
 }
 
 export const taphoammoApi = new TaphoammoApiClient();
