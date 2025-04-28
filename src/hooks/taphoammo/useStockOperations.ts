@@ -2,7 +2,7 @@
 import { useApiCommon } from './useApiCommon';
 import { useStockCache } from './useStockCache';
 import { useStockSync } from './useStockSync';
-import { toast } from 'sonner';
+import { toast } from 'sonner';  // Add this import to fix the error
 import { taphoammoApi } from '@/utils/api/taphoammoApi';
 import type { TaphoammoProduct } from '@/types/products';
 import type { StockCacheInfo } from './useStockCache';
@@ -28,9 +28,21 @@ export const useStockOperations = () => {
         stockInfo = cachedData;
       } else {
         try {
-          stockInfo = await taphoammoApi.stock.getStockWithCache(kioskToken, {
+          const apiStock = await taphoammoApi.stock.getStockWithCache(kioskToken, {
             forceFresh: true
           });
+          
+          // Convert TaphoammoProduct to StockCacheInfo
+          stockInfo = {
+            kiosk_token: kioskToken,
+            name: apiStock.name,
+            stock_quantity: apiStock.stock_quantity,
+            price: apiStock.price,
+            cached: apiStock.cached,
+            cacheId: apiStock.cacheId,
+            emergency: apiStock.emergency
+          };
+          
         } catch (apiError) {
           if (cachedData) {
             console.warn('Using expired cache due to API error');
@@ -80,7 +92,12 @@ export const useStockOperations = () => {
 
     try {
       const data = await withRetry(async () => {
-        return await taphoammoApi.stock.getStockWithCache(kioskToken, options);
+        const result = await taphoammoApi.stock.getStockWithCache(kioskToken, options);
+        // Ensure kiosk_token is set
+        return {
+          ...result,
+          kiosk_token: kioskToken
+        };
       });
 
       return data;

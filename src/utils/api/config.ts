@@ -1,4 +1,3 @@
-
 // API configuration settings
 export const API_CONFIG = {
   baseUrl: "https://taphoammo.net/api",
@@ -24,6 +23,7 @@ export interface OrderResponse {
   product_keys?: string[];
   message?: string;
   description?: string;
+  status?: string; // Adding this field to fix the error
 }
 
 export interface ProductsResponse {

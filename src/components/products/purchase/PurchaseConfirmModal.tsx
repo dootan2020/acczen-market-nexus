@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -46,14 +45,12 @@ export const PurchaseConfirmModal = ({
   const [isCheckingOrder, setIsCheckingOrder] = useState<boolean>(false);
   const { user } = useAuth();
 
-  // Kiểm tra trạng thái kiosk khi modal mở
   useEffect(() => {
     const checkKioskStatus = async () => {
       if (open && kioskToken) {
         try {
           setIsCheckingKiosk(true);
           
-          // Use Edge Function instead of direct API call
           const { data, error } = await supabase.functions.invoke('taphoammo-api', {
             body: JSON.stringify({
               endpoint: 'getStock',
@@ -72,7 +69,6 @@ export const PurchaseConfirmModal = ({
           }
         } catch (error) {
           console.error("Lỗi kiểm tra kiosk:", error);
-          // Không đặt lỗi ở đây để vẫn có thể tiếp tục mua hàng nếu có lỗi
         } finally {
           setIsCheckingKiosk(false);
         }
@@ -98,7 +94,6 @@ export const PurchaseConfirmModal = ({
       setIsProcessing(true);
       setPurchaseError(null);
       
-      // Kiểm tra số dư người dùng
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('balance')
@@ -115,7 +110,6 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toLocaleString()} VND nhưng chỉ có ${userData.balance.toLocaleString()} VND`);
       }
 
-      // Gọi Edge Function thay vì gọi API trực tiếp
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: JSON.stringify({
           endpoint: 'buyProducts',
@@ -133,10 +127,8 @@ export const PurchaseConfirmModal = ({
         throw new Error(data.message || data.description || "Đã xảy ra lỗi khi mua sản phẩm");
       }
       
-      // Lưu trữ ID đơn hàng và hiển thị kết quả
       setPurchaseResult({ orderId: data.order_id });
       
-      // Cập nhật số dư người dùng và lưu đơn hàng vào cơ sở dữ liệu
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -181,7 +173,6 @@ export const PurchaseConfirmModal = ({
           reference_id: order.id
         });
       
-      // Kiểm tra trạng thái đơn hàng sau khi đặt hàng
       await checkOrderStatus(data.order_id);
       
       toast.success("Đặt hàng thành công!");
@@ -202,7 +193,6 @@ export const PurchaseConfirmModal = ({
     try {
       setIsCheckingOrder(true);
       
-      // Gọi Edge Function thay vì gọi API trực tiếp
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: JSON.stringify({
           endpoint: 'getProducts',
@@ -218,13 +208,11 @@ export const PurchaseConfirmModal = ({
       if (data.success === "true" && data.data && data.data.length > 0) {
         const productKeys = data.data.map((item: any) => item.product);
         
-        // Cập nhật state với danh sách mã sản phẩm
         setPurchaseResult(prev => ({ 
           ...prev, 
           productKeys 
         }));
         
-        // Nếu người dùng đã đăng nhập, cập nhật thông tin đơn hàng trong cơ sở dữ liệu
         if (user) {
           const { data: orderItems } = await supabase
             .from('order_items')
