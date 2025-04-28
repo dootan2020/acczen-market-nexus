@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
 import {
@@ -11,7 +11,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const AdminLayout = () => {
@@ -19,6 +18,7 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // All available navigation items for breadcrumb generation
   const navItems = [
     { name: 'Digital Deals Hub', href: '/' },
     { name: 'Admin', href: '/admin' },
@@ -35,6 +35,7 @@ const AdminLayout = () => {
     { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
 
+  // Generate breadcrumb items based on current path
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     
@@ -86,23 +87,25 @@ const AdminLayout = () => {
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
         <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {/* Remove the bg-background, py-4, px-6, and border-b classes - only have breadcrumbs here */}
-        <div className="border-b">
+        {/* Breadcrumb navigation */}
+        <div className="border-b bg-background/80 backdrop-blur-sm">
           {breadcrumbs && (
             <Breadcrumb className="py-4 px-6">
-              <BreadcrumbList>
+              <BreadcrumbList className="flex items-center space-x-2">
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.path}>
-                    <BreadcrumbItem>
+                    <BreadcrumbItem className="text-sm">
                       {crumb.isCurrentPage ? (
-                        <BreadcrumbPage className="font-medium">{crumb.name}</BreadcrumbPage>
+                        <BreadcrumbPage className="font-medium text-primary">{crumb.name}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink href={crumb.path} className="cursor-pointer" asChild>
+                        <BreadcrumbLink href={crumb.path} className="text-muted-foreground hover:text-foreground transition-colors" asChild>
                           <Link to={crumb.path}>{crumb.name}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
-                    {idx < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                    {idx < breadcrumbs.length - 1 && (
+                      <BreadcrumbSeparator className="text-muted-foreground/50" />
+                    )}
                   </React.Fragment>
                 ))}
               </BreadcrumbList>
@@ -110,11 +113,11 @@ const AdminLayout = () => {
           )}
         </div>
         
-        <div className="bg-background py-3 px-6 border-b">
-          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()}</h1>
+        <div className="bg-background py-4 px-6 border-b">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{getCurrentPageTitle()}</h1>
         </div>
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 bg-background/50">
           <Outlet />
         </main>
       </div>
@@ -122,6 +125,7 @@ const AdminLayout = () => {
   );
 };
 
+// Get the page title based on the current path
 const getCurrentPageTitle = () => {
   const location = useLocation();
   
@@ -136,7 +140,7 @@ const getCurrentPageTitle = () => {
     '/admin/reports': 'Reports & Analytics',
     '/admin/integrations': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
-    '/admin/exchange-rates': 'Exchange Rates',
+    '/admin/exchange-rates': 'Exchange Rates Management',
   };
 
   return titles[location.pathname] || 'Dashboard';

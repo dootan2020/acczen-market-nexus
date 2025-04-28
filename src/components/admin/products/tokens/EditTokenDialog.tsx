@@ -1,109 +1,111 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { UserToken } from '@/types/tokens';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EditTokenDialogProps {
-  token: UserToken;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  token: UserToken | null;
 }
 
-export function EditTokenDialog({ token, open, onOpenChange }: EditTokenDialogProps) {
-  const [name, setName] = React.useState(token.name);
-  const [description, setDescription] = React.useState(token.description || '');
+export function EditTokenDialog({ open, onOpenChange, token }: EditTokenDialogProps) {
+  const [name, setName] = useState(token?.name || '');
+  const [description, setDescription] = useState(token?.description || '');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    if (token) {
+    if (open && token) {
       setName(token.name);
       setDescription(token.description || '');
     }
-  }, [token]);
+  }, [open, token]);
 
-  const updateTokenMutation = useMutation({
-    mutationFn: async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!token) return;
+    
+    setIsLoading(true);
+    
+    try {
       const { error } = await supabase
         .from('user_tokens')
         .update({
           name,
           description,
+          updated_at: new Date().toISOString()
         })
         .eq('id', token.id);
-      
+        
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-tokens'] });
-      toast.success('Token đã được cập nhật');
+      
+      toast({
+        title: 'Token updated',
+        description: `Token "${name}" has been updated successfully.`
+      });
+      
       onOpenChange(false);
-    },
-    onError: () => {
-      toast.error('Không thể cập nhật token');
+      queryClient.invalidateQueries({ queryKey: ['user-tokens'] });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update token',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
     }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateTokenMutation.mutate();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Chỉnh Sửa Token</DialogTitle>
+          <DialogTitle>Edit Token</DialogTitle>
+          <DialogDescription>
+            Update the details of your API token.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Tên Token</Label>
+            <Label htmlFor="name">Token Name</Label>
             <Input
               id="name"
-              required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nhập tên cho token"
+              placeholder="Enter token name"
+              required
             />
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="token">Mã Token</Label>
-            <Input
-              id="token"
-              value={token.token}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">Mã token không thể thay đổi</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
+            <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Thêm mô tả cho token (không bắt buộc)"
+              placeholder="What is this token used for?"
+              rows={3}
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Hủy
+          
+          <div className="pt-4 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-            <Button 
-              type="submit"
-              disabled={updateTokenMutation.isPending}
-            >
-              {updateTokenMutation.isPending ? 'Đang cập nhật...' : 'Cập Nhật Token'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update Token'}
             </Button>
           </div>
         </form>
