@@ -12,6 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { cn } from '@/lib/utils';
+import { Home } from 'lucide-react';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -87,34 +88,37 @@ const AdminLayout = () => {
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
         <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {/* Breadcrumb navigation */}
-        <div className="border-b bg-background/80 backdrop-blur-sm">
+        {/* Breadcrumb navigation - replaces the area that was circled in red */}
+        <div className="bg-background/80 backdrop-blur-sm">
           {breadcrumbs && (
-            <Breadcrumb className="py-4 px-6">
-              <BreadcrumbList className="flex items-center space-x-2">
+            <Breadcrumb>
+              <BreadcrumbList>
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.path}>
-                    <BreadcrumbItem className="text-sm">
-                      {crumb.isCurrentPage ? (
-                        <BreadcrumbPage className="font-medium text-primary">{crumb.name}</BreadcrumbPage>
+                    <BreadcrumbItem>
+                      {idx === 0 ? (
+                        <BreadcrumbLink href={crumb.path} className="flex items-center" asChild>
+                          <Link to={crumb.path}>
+                            <Home className="h-3.5 w-3.5 mr-1" />
+                            <span>{crumb.name}</span>
+                          </Link>
+                        </BreadcrumbLink>
+                      ) : crumb.isCurrentPage ? (
+                        <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink href={crumb.path} className="text-muted-foreground hover:text-foreground transition-colors" asChild>
+                        <BreadcrumbLink href={crumb.path} asChild>
                           <Link to={crumb.path}>{crumb.name}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
                     {idx < breadcrumbs.length - 1 && (
-                      <BreadcrumbSeparator className="text-muted-foreground/50" />
+                      <BreadcrumbSeparator />
                     )}
                   </React.Fragment>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>
           )}
-        </div>
-        
-        <div className="bg-background py-4 px-6 border-b">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{getCurrentPageTitle()}</h1>
         </div>
         
         <main className="flex-1 overflow-y-auto p-6 bg-background/50">

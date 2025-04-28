@@ -1,6 +1,7 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { ChevronRight, Home, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -9,7 +10,14 @@ const Breadcrumb = React.forwardRef<
   React.ComponentPropsWithoutRef<"nav"> & {
     separator?: React.ReactNode
   }
->(({ ...props }, ref) => <nav ref={ref} aria-label="breadcrumb" {...props} />)
+>(({ className, separator, ...props }, ref) => (
+  <nav 
+    ref={ref} 
+    aria-label="breadcrumb" 
+    className={cn("py-4 px-6 border-b bg-background/80 backdrop-blur-sm", className)} 
+    {...props} 
+  />
+))
 Breadcrumb.displayName = "Breadcrumb"
 
 const BreadcrumbList = React.forwardRef<
@@ -50,7 +58,7 @@ const BreadcrumbLink = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("text-neutral-600 hover:text-primary transition-colors", className)}
       {...props}
     />
   )
@@ -66,7 +74,7 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn("font-medium text-foreground", className)}
     {...props}
   />
 ))
@@ -80,7 +88,7 @@ const BreadcrumbSeparator = ({
   <li
     role="presentation"
     aria-hidden="true"
-    className={cn("[&>svg]:size-3.5", className)}
+    className={cn("text-muted-foreground [&>svg]:size-3.5", className)}
     {...props}
   >
     {children ?? <ChevronRight />}
