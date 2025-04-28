@@ -11,23 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface UserProfile {
-  id: string;
-  email: string;
-  username?: string;
-  full_name?: string;
-  balance: number;
-}
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
+import { CurrencyTabs } from './balance/CurrencyTabs';
+import { BalanceSummary } from './balance/BalanceSummary';
 
 interface AdjustBalanceDialogProps {
   open: boolean;
@@ -48,7 +35,7 @@ export const AdjustBalanceDialog = ({
   const [operation, setOperation] = useState<'add' | 'subtract'>('add');
   const [notes, setNotes] = useState('');
   const [currencyTab, setCurrencyTab] = useState<'usd' | 'vnd'>('usd');
-  const { convertUSDtoVND, convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext();
+  const { convertUSDtoVND, convertVNDtoUSD } = useCurrencyContext();
 
   const handleConfirm = () => {
     const numAmount = parseFloat(amount);
@@ -79,13 +66,8 @@ export const AdjustBalanceDialog = ({
       : Math.max(0, currentUser.balance - vndAmount);
   };
   
-  // Convert calculated balance to USD and VND for display
+  // Calculate new balance
   const newBalance = calculateNewBalance();
-  const newBalanceUSD = convertVNDtoUSD(newBalance);
-  const formattedCurrentUSD = formatUSD(convertVNDtoUSD(currentUser?.balance || 0));
-  const formattedCurrentVND = formatVND(currentUser?.balance || 0);
-  const formattedNewUSD = formatUSD(newBalanceUSD);
-  const formattedNewVND = formatVND(newBalance);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,68 +80,14 @@ export const AdjustBalanceDialog = ({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <Tabs value={currencyTab} onValueChange={(v) => setCurrencyTab(v as 'usd' | 'vnd')}>
-            <TabsList className="w-full">
-              <TabsTrigger value="usd" className="flex-1">USD</TabsTrigger>
-              <TabsTrigger value="vnd" className="flex-1">VND</TabsTrigger>
-            </TabsList>
-            <TabsContent value="usd" className="mt-2">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="amount-usd">Amount (USD)</Label>
-                  <Input
-                    id="amount-usd"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="operation">Operation</Label>
-                  <Select value={operation} onValueChange={(value) => setOperation(value as 'add' | 'subtract')}>
-                    <SelectTrigger id="operation" className="w-[130px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="add">Add</SelectItem>
-                      <SelectItem value="subtract">Subtract</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="vnd" className="mt-2">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="amount-vnd">Amount (VND)</Label>
-                  <Input
-                    id="amount-vnd"
-                    type="number"
-                    min="1000"
-                    step="1000"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="operation-vnd">Operation</Label>
-                  <Select value={operation} onValueChange={(value) => setOperation(value as 'add' | 'subtract')}>
-                    <SelectTrigger id="operation-vnd" className="w-[130px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="add">Add</SelectItem>
-                      <SelectItem value="subtract">Subtract</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          <CurrencyTabs 
+            amount={amount}
+            setAmount={setAmount}
+            operation={operation}
+            setOperation={setOperation}
+            currencyTab={currencyTab}
+            setCurrencyTab={setCurrencyTab}
+          />
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
@@ -171,22 +99,10 @@ export const AdjustBalanceDialog = ({
             />
           </div>
           
-          <div className="rounded-md bg-muted p-4 text-sm space-y-3">
-            <div className="flex justify-between">
-              <span>Current Balance:</span>
-              <div className="text-right">
-                <div>{formattedCurrentUSD}</div>
-                <div className="text-xs text-muted-foreground">{formattedCurrentVND}</div>
-              </div>
-            </div>
-            <div className="flex justify-between">
-              <span>New Balance:</span>
-              <div className="text-right">
-                <div>{formattedNewUSD}</div>
-                <div className="text-xs text-muted-foreground">{formattedNewVND}</div>
-              </div>
-            </div>
-          </div>
+          <BalanceSummary 
+            currentUser={currentUser}
+            newBalance={newBalance}
+          />
         </div>
         
         <DialogFooter>
