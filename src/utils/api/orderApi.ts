@@ -21,7 +21,17 @@ export class OrderApi extends BaseApiClient {
         params.promotion = promotion;
       }
       
-      return await this.callApi('buyProducts', params);
+      // Use Supabase Edge Function instead of direct API call
+      const { data, error } = await this.callEdgeFunction('taphoammo-api', {
+        endpoint: 'buyProducts',
+        ...params
+      });
+      
+      if (error) {
+        throw new Error(error.message || 'API request failed');
+      }
+      
+      return data;
     } catch (error) {
       console.error('[TaphoaMMO API] Error buying products:', error);
       throw error;
@@ -31,10 +41,18 @@ export class OrderApi extends BaseApiClient {
   async getProducts(orderId: string, userToken: string = SYSTEM_TOKEN): Promise<ProductsResponse> {
     try {
       // Always use SYSTEM_TOKEN regardless of provided userToken
-      return await this.callApi('getProducts', { 
-        orderId, 
-        userToken: SYSTEM_TOKEN // Luôn sử dụng token cố định
+      // Use Supabase Edge Function instead of direct API call
+      const { data, error } = await this.callEdgeFunction('taphoammo-api', {
+        endpoint: 'getProducts',
+        orderId,
+        userToken: SYSTEM_TOKEN
       });
+      
+      if (error) {
+        throw new Error(error.message || 'API request failed');
+      }
+      
+      return data;
     } catch (error) {
       console.error('[TaphoaMMO API] Error getting products:', error);
       throw error;

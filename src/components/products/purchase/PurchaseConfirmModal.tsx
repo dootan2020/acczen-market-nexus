@@ -1,17 +1,17 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { PurchaseModalHeader } from "./PurchaseModalHeader";
 import { PurchaseModalProduct } from "./PurchaseModalProduct";
 import { PurchaseModalInfo } from "./PurchaseModalInfo";
 import { PurchaseModalActions } from "./PurchaseModalActions";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { taphoammoApi } from "@/utils/api/taphoammoApi";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ArrowRight, Clipboard } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -39,11 +39,12 @@ export const PurchaseConfirmModal = ({
     productKeys?: string[];
   }>({});
   const navigate = useNavigate();
-  const { isProcessing, executePurchase } = usePurchaseProduct();
+  const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isCheckingKiosk, setIsCheckingKiosk] = useState<boolean>(false);
   const [kioskActive, setKioskActive] = useState<boolean | null>(null);
   const [isCheckingOrder, setIsCheckingOrder] = useState<boolean>(false);
+  const { user } = useAuth();
 
   // Kiểm tra trạng thái kiosk khi modal mở
   useEffect(() => {
@@ -51,7 +52,19 @@ export const PurchaseConfirmModal = ({
       if (open && kioskToken) {
         try {
           setIsCheckingKiosk(true);
-          const isActive = await taphoammoApi.checkKioskActive(kioskToken);
+          
+          // Use Edge Function instead of direct API call
+          const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+            body: JSON.stringify({
+              endpoint: 'getStock',
+              kioskToken,
+              userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+            })
+          });
+          
+          if (error) throw new Error(error.message);
+          
+          const isActive = data?.stock_quantity > 0;
           setKioskActive(isActive);
           
           if (!isActive) {
@@ -74,35 +87,112 @@ export const PurchaseConfirmModal = ({
       toast.error("Sản phẩm không có mã kiosk để mua");
       return;
     }
+    
+    if (!user) {
+      toast.error("Bạn cần đăng nhập để mua sản phẩm");
+      navigate("/login");
+      return;
+    }
 
     try {
-      // Kiểm tra lại trạng thái kiosk trước khi mua
-      const isActive = await taphoammoApi.checkKioskActive(kioskToken);
-      if (!isActive) {
-        toast.error("Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.");
-        return;
+      setIsProcessing(true);
+      setPurchaseError(null);
+      
+      // Kiểm tra số dư người dùng
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+      
+      if (userError) {
+        throw new Error("Không thể kiểm tra số dư: " + userError.message);
+      }
+      
+      const totalCost = productPrice * quantity;
+      
+      if (userData.balance < totalCost) {
+        throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toLocaleString()} VND nhưng chỉ có ${userData.balance.toLocaleString()} VND`);
       }
 
-      // Gọi trực tiếp API mua hàng thay vì sử dụng executePurchase 
-      // để có thể xử lý đơn hàng theo logic mới
-      const orderData = await taphoammoApi.order.buyProducts(kioskToken, quantity);
+      // Gọi Edge Function thay vì gọi API trực tiếp
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: JSON.stringify({
+          endpoint: 'buyProducts',
+          kioskToken,
+          userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
+          quantity
+        })
+      });
       
-      if (!orderData.order_id) {
-        throw new Error("Không nhận được mã đơn hàng");
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data.success === "false") {
+        throw new Error(data.message || data.description || "Đã xảy ra lỗi khi mua sản phẩm");
       }
       
       // Lưu trữ ID đơn hàng và hiển thị kết quả
-      setPurchaseResult({ orderId: orderData.order_id });
+      setPurchaseResult({ orderId: data.order_id });
       
-      // Kiểm tra trạng thái đơn hàng ngay sau khi đặt hàng
-      await checkOrderStatus(orderData.order_id);
+      // Cập nhật số dư người dùng và lưu đơn hàng vào cơ sở dữ liệu
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          status: 'completed',
+          total_amount: totalCost
+        })
+        .select('id')
+        .single();
+      
+      if (orderError) {
+        throw new Error("Lỗi khi lưu thông tin đơn hàng");
+      }
+      
+      const orderItemData = {
+        order_id: order.id,
+        product_id: productId,
+        quantity: quantity,
+        price: productPrice,
+        total: totalCost,
+        data: {
+          kiosk_token: kioskToken,
+          taphoammo_order_id: data.order_id
+        }
+      };
+      
+      await supabase.from('order_items').insert(orderItemData);
+      
+      const newBalance = userData.balance - totalCost;
+      await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('id', user.id);
+      
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'purchase',
+          amount: -totalCost,
+          description: `Mua ${quantity} x ${productName}`,
+          reference_id: order.id
+        });
+      
+      // Kiểm tra trạng thái đơn hàng sau khi đặt hàng
+      await checkOrderStatus(data.order_id);
       
       toast.success("Đặt hàng thành công!");
 
     } catch (error) {
+      console.error("Lỗi mua hàng:", error);
       const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý đơn hàng';
       toast.error(errorMessage);
       setPurchaseError(errorMessage);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -112,15 +202,50 @@ export const PurchaseConfirmModal = ({
     try {
       setIsCheckingOrder(true);
       
-      // Sử dụng hàm checkOrderUntilComplete để kiểm tra đơn hàng nhiều lần
-      const result = await taphoammoApi.order.checkOrderUntilComplete(orderId, 5, 2000);
+      // Gọi Edge Function thay vì gọi API trực tiếp
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: JSON.stringify({
+          endpoint: 'getProducts',
+          orderId,
+          userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+        })
+      });
       
-      if (result.success && result.product_keys && result.product_keys.length > 0) {
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data.success === "true" && data.data && data.data.length > 0) {
+        const productKeys = data.data.map((item: any) => item.product);
+        
         // Cập nhật state với danh sách mã sản phẩm
         setPurchaseResult(prev => ({ 
           ...prev, 
-          productKeys: result.product_keys 
+          productKeys 
         }));
+        
+        // Nếu người dùng đã đăng nhập, cập nhật thông tin đơn hàng trong cơ sở dữ liệu
+        if (user) {
+          const { data: orderItems } = await supabase
+            .from('order_items')
+            .select('id, data')
+            .eq('data->taphoammo_order_id', orderId)
+            .maybeSingle();
+          
+          if (orderItems) {
+            const itemData = orderItems.data as Record<string, any> || {};
+            
+            const updatedData = {
+              ...itemData,
+              product_keys: productKeys
+            };
+            
+            await supabase
+              .from('order_items')
+              .update({ data: updatedData })
+              .eq('id', orderItems.id);
+          }
+        }
       }
     } catch (error) {
       console.error("Lỗi khi kiểm tra trạng thái đơn hàng:", error);

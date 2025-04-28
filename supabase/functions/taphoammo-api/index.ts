@@ -10,6 +10,9 @@ const corsHeaders = {
 // TaphoaMMO API base URL
 const API_BASE_URL = "https://taphoammo.net/api";
 
+// Default user token for all requests (system token)
+const SYSTEM_TOKEN = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9";
+
 // Timeout for fetch requests in milliseconds (reduced for better UX)
 const FETCH_TIMEOUT = 10000;
 
@@ -76,17 +79,16 @@ serve(async (req) => {
     let apiUrl = `${API_BASE_URL}/${endpoint}`;
     
     // Format request data based on endpoint
-    let requestData = {};
+    let requestData: Record<string, string | number> = {};
     
     // Extract common parameters
-    const { kioskToken, userToken, quantity, orderId, promotion } = requestBody;
+    const { kioskToken, userToken = SYSTEM_TOKEN, quantity, orderId, promotion } = requestBody;
     
     // Validate required parameters based on endpoint
     if (endpoint === 'getStock' || endpoint === 'buyProducts') {
       if (!kioskToken) throw new Error("Missing 'kioskToken' parameter");
-      if (!userToken) throw new Error("Missing 'userToken' parameter");
       
-      requestData = { kioskToken, userToken };
+      requestData = { kioskToken, userToken: SYSTEM_TOKEN };
       
       if (endpoint === 'buyProducts') {
         if (!quantity) throw new Error("Missing 'quantity' parameter");
@@ -95,9 +97,8 @@ serve(async (req) => {
       }
     } else if (endpoint === 'getProducts') {
       if (!orderId) throw new Error("Missing 'orderId' parameter");
-      if (!userToken) throw new Error("Missing 'userToken' parameter");
       
-      requestData = { orderId, userToken };
+      requestData = { orderId, userToken: SYSTEM_TOKEN };
     }
     
     // Build query string for GET requests
@@ -171,13 +172,6 @@ serve(async (req) => {
     // Validate response format
     if (typeof data !== "object") {
       throw new Error("Invalid API response format");
-    }
-    
-    // Check for API-level error
-    if (data.success === "false" && 
-        data.description !== "Order in processing!" && 
-        data.message !== "Order in processing!") {
-      throw new Error(data.message || data.description || "API returned an error");
     }
     
     // Calculate total response time

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { API_CONFIG } from './config';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ApiCache } from './cache/ApiCache';
-import { CircuitBreaker } from './circuitBreaker/CircuitBreaker';
+import { CircuitBreaker } from './cache/CircuitBreaker';
 import { DatabaseCache } from './cache/DatabaseCache';
 
 export class BaseApiClient {
@@ -36,12 +36,73 @@ export class BaseApiClient {
     return DatabaseCache.get(kioskToken);
   }
 
+  protected async callEdgeFunction(
+    functionName: string,
+    params: Record<string, any>
+  ): Promise<{ data: any; error: any }> {
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Edge Function] Calling ${functionName} with params:`, params);
+      }
+      
+      const startTime = Date.now();
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: JSON.stringify(params)
+      });
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`[Edge Function] ${functionName} responded in ${responseTime}ms`);
+      
+      if (error) {
+        throw new TaphoammoError(
+          error.message || "Edge function call failed",
+          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+          0,
+          responseTime
+        );
+      }
+      
+      return { data, error: null };
+    } catch (error: any) {
+      console.error(`[Edge Function] Error in ${functionName}:`, error);
+      await CircuitBreaker.recordFailure(error);
+      
+      return { 
+        data: null, 
+        error: error instanceof TaphoammoError ? error : 
+          new TaphoammoError(
+            error.message || "Edge function error",
+            TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+            0,
+            0
+          )
+      };
+    }
+  }
+
   protected async callApi(endpoint: string, params: Record<string, string | number>): Promise<any> {
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log(`[TaphoaMMO API] Calling ${endpoint} with params:`, params);
       }
       
+      // First, try to call via Edge Function to avoid CORS issues
+      try {
+        const { data, error } = await this.callEdgeFunction('taphoammo-api', {
+          endpoint,
+          ...params
+        });
+        
+        if (!error) {
+          return data;
+        }
+      } catch (edgeError) {
+        console.warn(`[TaphoaMMO API] Edge Function failed, falling back to direct API call:`, edgeError);
+        // Continue with direct API call as fallback
+      }
+      
+      // Direct API call as fallback, which may fail due to CORS
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         queryParams.append(key, String(value));
@@ -123,7 +184,7 @@ export class BaseApiClient {
         );
       } else if (error instanceof TaphoammoError) {
         throw error;
-      } else if (error.message?.includes('fetch')) {
+      } else if (error.message?.includes('fetch') || error.message?.includes('CORS')) {
         throw new TaphoammoError(
           "Network error while calling API. Please check your connection.",
           TaphoammoErrorCodes.NETWORK_ERROR,
