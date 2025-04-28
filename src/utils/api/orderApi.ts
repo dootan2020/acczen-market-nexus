@@ -43,7 +43,8 @@ export class OrderApi extends BaseApiClient {
 
   async checkOrderUntilComplete(
     orderId: string, 
-    maxTries: number = 3
+    maxTries: number = 5,
+    delay: number = 2000
   ): Promise<{
     success: boolean;
     product_keys?: string[];
@@ -56,6 +57,7 @@ export class OrderApi extends BaseApiClient {
       try {
         const result = await this.getProducts(orderId);
         
+        // Nếu đơn hàng đã hoàn thành và có dữ liệu
         if (result.success === "true" && result.data && result.data.length > 0) {
           return {
             success: true,
@@ -64,23 +66,25 @@ export class OrderApi extends BaseApiClient {
           };
         }
         
+        // Nếu đơn hàng vẫn đang xử lý
         if (result.success === "false" && result.description === "Order in processing!") {
           tries++;
           
           if (tries >= maxTries) {
             return {
               success: false,
-              message: `Order still processing after ${maxTries} attempts`
+              message: `Đơn hàng vẫn đang xử lý sau ${maxTries} lần thử`
             };
           }
           
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Chờ một khoảng thời gian trước khi thử lại
+          await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
         
         return {
           success: result.success === "true",
-          message: result.description || "Order status checked",
+          message: result.description || "Đã kiểm tra trạng thái đơn hàng",
           data: result.data || []
         };
         
@@ -90,17 +94,17 @@ export class OrderApi extends BaseApiClient {
         if (tries >= maxTries) {
           return {
             success: false,
-            message: error.message || `Could not check order after ${maxTries} attempts`
+            message: error.message || `Không thể kiểm tra đơn hàng sau ${maxTries} lần thử`
           };
         }
         
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
     return {
       success: false,
-      message: "Could not check order status"
+      message: "Không thể kiểm tra trạng thái đơn hàng"
     };
   }
 }

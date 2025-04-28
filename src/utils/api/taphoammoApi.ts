@@ -36,9 +36,12 @@ class TaphoammoApiClient {
       }
       return true;
     } catch (err: any) {
-      // Kiểm tra xem lỗi có phải là do kiosk pending không
-      if (err instanceof TaphoammoError && err.code === TaphoammoErrorCodes.API_TEMP_DOWN) {
-        return false;
+      // Kiểm tra xem lỗi có phải là do kiosk không khả dụng không
+      if (err instanceof TaphoammoError) {
+        if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN || 
+            err.code === TaphoammoErrorCodes.KIOSK_PENDING) {
+          return false;
+        }
       }
 
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -49,7 +52,8 @@ class TaphoammoApiClient {
         return false;
       }
       
-      // Ném lại lỗi nếu không phải do kiosk pending
+      console.error("Lỗi kiểm tra kiosk:", err);
+      // Nếu là lỗi khác, vẫn ném ra để gọi hàm xử lý
       throw err;
     }
   }

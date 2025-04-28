@@ -43,6 +43,7 @@ export const PurchaseConfirmModal = ({
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isCheckingKiosk, setIsCheckingKiosk] = useState<boolean>(false);
   const [kioskActive, setKioskActive] = useState<boolean | null>(null);
+  const [isCheckingOrder, setIsCheckingOrder] = useState<boolean>(false);
 
   // Kiểm tra trạng thái kiosk khi modal mở
   useEffect(() => {
@@ -75,40 +76,56 @@ export const PurchaseConfirmModal = ({
     }
 
     try {
-      // Check kiosk status first
+      // Kiểm tra lại trạng thái kiosk trước khi mua
       const isActive = await taphoammoApi.checkKioskActive(kioskToken);
       if (!isActive) {
         toast.error("Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.");
         return;
       }
 
+      // Gọi trực tiếp API mua hàng thay vì sử dụng executePurchase 
+      // để có thể xử lý đơn hàng theo logic mới
       const orderData = await taphoammoApi.order.buyProducts(kioskToken, quantity);
       
       if (!orderData.order_id) {
         throw new Error("Không nhận được mã đơn hàng");
       }
-
+      
+      // Lưu trữ ID đơn hàng và hiển thị kết quả
       setPurchaseResult({ orderId: orderData.order_id });
+      
+      // Kiểm tra trạng thái đơn hàng ngay sau khi đặt hàng
       await checkOrderStatus(orderData.order_id);
-
+      
       toast.success("Đặt hàng thành công!");
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý đơn hàng';
       toast.error(errorMessage);
+      setPurchaseError(errorMessage);
     }
   };
 
   const checkOrderStatus = async (orderId: string) => {
+    if (!orderId) return;
+    
     try {
-      const result = await taphoammoApi.order.getProducts(orderId);
+      setIsCheckingOrder(true);
       
-      if (result.success === "true" && Array.isArray(result.data)) {
-        const keys = result.data.map(item => item.product);
-        setPurchaseResult(prev => ({ ...prev, productKeys: keys }));
+      // Sử dụng hàm checkOrderUntilComplete để kiểm tra đơn hàng nhiều lần
+      const result = await taphoammoApi.order.checkOrderUntilComplete(orderId, 5, 2000);
+      
+      if (result.success && result.product_keys && result.product_keys.length > 0) {
+        // Cập nhật state với danh sách mã sản phẩm
+        setPurchaseResult(prev => ({ 
+          ...prev, 
+          productKeys: result.product_keys 
+        }));
       }
     } catch (error) {
       console.error("Lỗi khi kiểm tra trạng thái đơn hàng:", error);
+    } finally {
+      setIsCheckingOrder(false);
     }
   };
 
@@ -119,6 +136,11 @@ export const PurchaseConfirmModal = ({
     } catch (err) {
       toast.error("Không thể sao chép. Vui lòng thử lại.");
     }
+  };
+
+  const handleReset = () => {
+    setPurchaseResult({});
+    setPurchaseError(null);
   };
 
   return (
@@ -143,6 +165,12 @@ export const PurchaseConfirmModal = ({
                 onConfirm={handleConfirmPurchase}
                 disabled={kioskActive === false}
               />
+              
+              {purchaseError && (
+                <div className="text-sm text-red-500 mt-2">
+                  {purchaseError}
+                </div>
+              )}
             </>
           ) : (
             <Card className="p-4">
@@ -160,7 +188,7 @@ export const PurchaseConfirmModal = ({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => copyToClipboard(purchaseResult.productKeys?.join('\n') || '')}
+                      onClick={() => copyToClipboard(purchaseResult.productKeys?.join('\n\n') || '')}
                     >
                       <Clipboard className="w-4 h-4 mr-2" />
                       Sao chép tất cả
@@ -169,35 +197,50 @@ export const PurchaseConfirmModal = ({
                   
                   <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-wrap break-all">
                     {purchaseResult.productKeys.map((key, index) => (
-                      <div key={index} className="mb-2">{key}</div>
+                      <div key={index} className="mb-2 pb-2 border-b border-gray-200 last:border-0">{key}</div>
                     ))}
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 py-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => checkOrderStatus(purchaseResult.orderId!)}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Kiểm tra đơn hàng
-                  </Button>
+                  {isCheckingOrder ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Đang kiểm tra đơn hàng...</p>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      onClick={() => checkOrderStatus(purchaseResult.orderId!)}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Kiểm tra đơn hàng
+                    </Button>
+                  )}
                 </div>
               )}
 
               <div className="flex justify-between mt-4 pt-4 border-t">
                 <Button 
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={handleReset}
                 >
-                  Đóng
+                  Đặt lại
                 </Button>
-                <Button 
-                  onClick={() => navigate('/dashboard/purchases')}
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Xem đơn hàng
-                </Button>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Đóng
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/dashboard/purchases')}
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Xem đơn hàng
+                  </Button>
+                </div>
               </div>
             </Card>
           )}

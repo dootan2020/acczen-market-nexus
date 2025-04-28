@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ProxyType } from '@/utils/corsProxy';
 import { API_CONFIG } from './config';
@@ -49,11 +50,11 @@ export class BaseApiClient {
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
       }
       
-      // Handle specific error cases
+      // Đặc biệt xử lý "Order in processing!" như một phản hồi hợp lệ
       if (data.success === "false") {
         if (data.description === "Order in processing!" || 
             data.message === "Order in processing!") {
-          return data; // Return as-is for processing orders
+          return data; // Trả về kết quả nguyên trạng cho các đơn hàng đang xử lý
         }
         
         if (data.message === "Kiosk is pending!" || 
