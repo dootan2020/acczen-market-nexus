@@ -8,7 +8,6 @@ export const useConnectionTest = () => {
 
   const testConnection = async (
     kioskToken: string, 
-    userToken: string,
     proxyType: ProxyType
   ): Promise<{ success: boolean; message: string }> => {
     setLoading(true);
@@ -16,7 +15,7 @@ export const useConnectionTest = () => {
 
     try {
       const result = await withRetry(async () => {
-        return await taphoammoApi.testConnection(kioskToken, userToken, proxyType);
+        return await taphoammoApi.testConnection(kioskToken, proxyType);
       });
 
       return result;

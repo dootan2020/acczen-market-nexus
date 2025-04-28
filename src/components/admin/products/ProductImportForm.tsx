@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,15 +20,14 @@ import { ProxyType } from '@/utils/corsProxy';
 
 const formSchema = z.object({
   kioskToken: z.string().min(1, { message: 'Kiosk Token không được để trống' }),
-  userToken: z.string().min(1, { message: 'User Token không được để trống' }),
   proxyType: z.enum(['direct', 'corsproxy.io', 'allorigins', 'corsanywhere', 'admin'])
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface ProductImportFormProps {
-  onFetchProduct: (kioskToken: string, userToken: string, proxyType: ProxyType) => Promise<void>;
-  onTestConnection?: (kioskToken: string, userToken: string, proxyType: ProxyType) => Promise<{success: boolean; message: string}>;
+  onFetchProduct: (kioskToken: string, proxyType: ProxyType) => Promise<void>;
+  onTestConnection?: (kioskToken: string, proxyType: ProxyType) => Promise<{success: boolean; message: string}>;
   isLoading: boolean;
   error: string | null;
 }
@@ -48,22 +46,21 @@ export default function ProductImportForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       kioskToken: '',
-      userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
       proxyType: 'admin' // Default to Edge Function as it should be more reliable with improvements
     }
   });
 
   const handleSubmit = async (values: FormValues) => {
     setConnectionStatus({});
-    await onFetchProduct(values.kioskToken, values.userToken, values.proxyType as ProxyType);
+    await onFetchProduct(values.kioskToken, values.proxyType as ProxyType);
   };
 
   const handleTestConnection = async () => {
     if (!onTestConnection) return;
     
     const values = form.getValues();
-    if (!values.kioskToken || !values.userToken) {
-      form.trigger(['kioskToken', 'userToken']);
+    if (!values.kioskToken) {
+      form.trigger(['kioskToken']);
       return;
     }
 
@@ -72,8 +69,7 @@ export default function ProductImportForm({
     
     try {
       const result = await onTestConnection(
-        values.kioskToken, 
-        values.userToken, 
+        values.kioskToken,
         values.proxyType as ProxyType
       );
       setConnectionStatus(result);
@@ -101,23 +97,6 @@ export default function ProductImportForm({
               </FormControl>
               <FormDescription>
                 Mã định danh sản phẩm từ TaphoaMMO
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="userToken"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>User Token</FormLabel>
-              <FormControl>
-                <Input placeholder="User Token" {...field} />
-              </FormControl>
-              <FormDescription>
-                Đây là token mặc định cho việc gọi API
               </FormDescription>
               <FormMessage />
             </FormItem>

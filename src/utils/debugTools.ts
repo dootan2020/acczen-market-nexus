@@ -1,5 +1,6 @@
 
 import { taphoammoApi } from './api/taphoammoApi';
+import { ProxyType } from './corsProxy';
 
 export const enableAPIDebugMode = () => {
   // Override fetch to monitor API calls
@@ -53,10 +54,10 @@ export const enableAPIDebugMode = () => {
 };
 
 // Test function for TaphoaMMO API
-export const testTaphoammoConnection = async (kioskToken: string, userToken: string) => {
+export const testTaphoammoConnection = async (kioskToken: string, proxyType?: ProxyType) => {
   try {
     console.log('🧪 Testing TaphoaMMO API connection...');
-    const result = await taphoammoApi.testConnection(kioskToken, userToken);
+    const result = await taphoammoApi.testConnection(kioskToken, proxyType);
     console.log('✅ Connection successful!', result);
     return {
       success: true,

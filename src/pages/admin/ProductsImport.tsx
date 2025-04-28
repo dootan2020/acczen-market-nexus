@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import ProductImportForm from '@/components/admin/products/ProductImportForm';
@@ -54,9 +53,9 @@ const ProductsImport = () => {
   const { getStock, testConnection, loading, error } = useTaphoammoAPI();
   const { categories, loading: categoriesLoading } = useCategories();
 
-  const handleFetchProduct = async (kioskToken: string, userToken: string, proxyType: 'direct' | 'corsproxy.io' | 'admin') => {
+  const handleFetchProduct = async (kioskToken: string, proxyType: 'direct' | 'corsproxy.io' | 'admin') => {
     try {
-      const productData = await getStock(kioskToken, userToken, proxyType);
+      const productData = await getStock(kioskToken, proxyType);
       
       // Create extended product with additional fields
       const extendedProduct: ExtendedProduct = {
