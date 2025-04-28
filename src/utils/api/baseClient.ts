@@ -62,12 +62,17 @@ export class BaseApiClient {
           return data;
         }
         
-        // Xử lý đặc biệt cho trường hợp "Kiosk is pending!"
-        if (data.message === "Kiosk is pending!" || data.description === "Kiosk is pending!") {
+        // Xử lý các trường hợp lỗi đặc biệt của Kiosk
+        if (data.message === "Kiosk is pending!" || 
+            data.description === "Kiosk is pending!" ||
+            data.message?.includes("pending") ||
+            data.description?.includes("pending")) {
+          
+          // Ném lỗi đặc biệt để ngăn thử lại
           throw new TaphoammoError(
             "Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác.",
             TaphoammoErrorCodes.API_TEMP_DOWN,
-            0,
+            3, // Set số lần thử lại bằng max để không thử lại nữa
             responseTime
           );
         }
@@ -83,6 +88,11 @@ export class BaseApiClient {
       console.error(`[TaphoaMMO API] Error in ${endpoint}:`, errorMessage);
       
       await this.logApiCall(endpoint, params, false, 0, errorMessage);
+      
+      // Nếu lỗi là TaphoammoError, ném lại với thông tin đầy đủ
+      if (error instanceof TaphoammoError) {
+        throw error;
+      }
       
       throw error;
     }
