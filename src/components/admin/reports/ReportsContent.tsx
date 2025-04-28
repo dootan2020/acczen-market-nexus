@@ -7,6 +7,7 @@ import { OrdersReport } from "./OrdersReport";
 import { BestSellingProducts } from "./BestSellingProducts";
 import { DateRange } from "react-day-picker";
 import { StatsData, ChartData } from "@/hooks/useReportsData";
+import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
 
 interface ReportsContentProps {
   activeTab: string;
@@ -41,8 +42,10 @@ export function ReportsContent({
       </TabsList>
       
       <TabsContent value="overview">
-        <ReportOverview
+        <DashboardOverview
           statsData={statsData}
+          revenueChartData={depositsChartData}
+          ordersChartData={ordersChartData}
           paymentMethodData={paymentMethodData}
           isLoading={isLoading}
         />

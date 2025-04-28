@@ -1,8 +1,10 @@
 
-import { ReportFilters } from "./ReportFilters";
-import { ExportButtons } from "./ExportButtons";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { StatsData } from "@/hooks/useReportsData";
+import { TimeRangeSelector } from "./TimeRangeSelector";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ReportsHeaderProps {
   dateRangeType: string;
@@ -16,6 +18,11 @@ interface ReportsHeaderProps {
   depositsChartData: any[];
 }
 
+// Helper function for dynamic class names
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
 export function ReportsHeader({
   dateRangeType,
   onDateRangeChange,
@@ -25,42 +32,57 @@ export function ReportsHeader({
   isLoading,
   formattedDateRange,
   statsData,
-  depositsChartData,
 }: ReportsHeaderProps) {
   return (
-    <>
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Reports & Analytics</h1>
-          <p className="text-muted-foreground">
-            Analyze user activity, deposits, and orders
-          </p>
-        </div>
+    <div className="space-y-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
         
-        <div className="flex flex-col sm:flex-row gap-2">
-          <ReportFilters 
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <TimeRangeSelector
             dateRangeType={dateRangeType}
+            formattedDateRange={formattedDateRange}
             onDateRangeChange={onDateRangeChange}
             dateRange={dateRange}
             onDateRangePickerChange={onDateRangePickerChange}
-            onRefresh={onRefresh}
-            isLoading={isLoading}
           />
           
-          <ExportButtons
-            statsData={statsData}
-            depositsChartData={depositsChartData}
-            formattedDateRange={formattedDateRange}
-            isLoading={isLoading}
-          />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={onRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
         </div>
       </div>
       
-      {formattedDateRange && (
-        <div className="text-sm text-muted-foreground mb-4">
-          Showing data for: <span className="font-medium">{formattedDateRange}</span>
-        </div>
-      )}
-    </>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">Total Revenue</div>
+              <div className="text-2xl font-bold mt-1">${statsData.totalDepositAmount.toFixed(2)}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">Orders</div>
+              <div className="text-2xl font-bold mt-1">{statsData.totalOrders}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">PayPal Deposits</div>
+              <div className="text-2xl font-bold mt-1">${statsData.paypalAmount.toFixed(2)}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">USDT Deposits</div>
+              <div className="text-2xl font-bold mt-1">${statsData.usdtAmount.toFixed(2)}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
