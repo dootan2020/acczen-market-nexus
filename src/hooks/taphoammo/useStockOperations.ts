@@ -6,13 +6,13 @@ import type { TaphoammoProduct } from '@/types/products';
 export const useStockOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry } = useApiCommon();
 
-  const checkStockAvailability = async (quantity = 1, kioskToken: string, userToken: string): Promise<{
+  const checkStockAvailability = async (quantity = 1, kioskToken: string): Promise<{
     available: boolean;
     message?: string;
     stockData?: TaphoammoProduct;
   }> => {
     try {
-      const stockInfo = await taphoammoApi.stock.getStock(kioskToken, userToken);
+      const stockInfo = await taphoammoApi.stock.getStock(kioskToken);
       
       if (!stockInfo || stockInfo.stock_quantity < quantity) {
         return {
@@ -36,8 +36,7 @@ export const useStockOperations = () => {
   };
 
   const getStock = async (
-    kioskToken: string, 
-    userToken: string,
+    kioskToken: string,
     proxyType: 'direct' | 'corsproxy.io' | 'admin'
   ): Promise<TaphoammoProduct> => {
     setLoading(true);
@@ -45,7 +44,7 @@ export const useStockOperations = () => {
 
     try {
       const data = await withRetry(async () => {
-        return await taphoammoApi.stock.getStock(kioskToken, userToken);
+        return await taphoammoApi.stock.getStock(kioskToken);
       });
 
       return data;

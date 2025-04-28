@@ -10,11 +10,10 @@ class TaphoammoApiClient {
 
   async testConnection(
     kioskToken: string, 
-    userToken: string = SYSTEM_TOKEN,
     proxyType?: ProxyType
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const data = await this.stock.getStock(kioskToken, userToken);
+      const data = await this.stock.getStock(kioskToken);
       return { 
         success: true, 
         message: `Connection successful - Found: ${data.name} (Stock: ${data.stock_quantity})` 
