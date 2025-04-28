@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -24,6 +25,7 @@ interface PurchaseConfirmModalProps {
   kioskToken: string | null;
 }
 
+// Define a simpler interface for purchase result to prevent circular references
 interface PurchaseResult {
   orderId?: string;
   productKeys?: string[];
@@ -113,6 +115,7 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toLocaleString()} VND nhưng chỉ có ${userData.balance.toLocaleString()} VND`);
       }
 
+      // Use explicit type casting to handle API response
       const { data: orderData, error } = await supabase.functions.invoke('taphoammo-api', {
         body: JSON.stringify({
           endpoint: 'buyProducts',
@@ -126,14 +129,20 @@ export const PurchaseConfirmModal = ({
         throw new Error(error.message);
       }
       
-      const apiResponse = orderData as unknown as { success: string; message?: string; description?: string; order_id?: string };
+      // Type safety check for API response
+      const apiResponse = orderData as { success?: string; message?: string; description?: string; order_id?: string };
       
       if (!apiResponse || apiResponse.success === "false") {
         throw new Error(apiResponse?.message || apiResponse?.description || "Đã xảy ra lỗi khi mua sản phẩm");
       }
 
-      const typedOrderData = orderData as OrderData;
-      setPurchaseResult({ orderId: typedOrderData.order_id });
+      // Safely extract order ID and set purchase result
+      const orderId = apiResponse.order_id;
+      if (!orderId) {
+        throw new Error("Không nhận được mã đơn hàng từ API");
+      }
+      
+      setPurchaseResult({ orderId });
       
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -157,7 +166,7 @@ export const PurchaseConfirmModal = ({
         total: totalCost,
         data: {
           kiosk_token: kioskToken,
-          taphoammo_order_id: typedOrderData.order_id
+          taphoammo_order_id: orderId
         }
       };
       
@@ -179,7 +188,7 @@ export const PurchaseConfirmModal = ({
           reference_id: order.id
         });
       
-      await checkOrderStatus(typedOrderData.order_id);
+      await checkOrderStatus(orderId);
       
       toast.success("Đặt hàng thành công!");
 
@@ -211,14 +220,25 @@ export const PurchaseConfirmModal = ({
         throw new Error(error.message);
       }
       
-      if (data && typeof data === 'object' && 'success' in data && data.success === "true" && 'data' in data && Array.isArray(data.data) && data.data.length > 0) {
+      // Safely check the API response structure
+      if (data && 
+          typeof data === 'object' && 
+          'success' in data && 
+          data.success === "true" && 
+          'data' in data && 
+          Array.isArray(data.data) && 
+          data.data.length > 0) {
+        
+        // Extract product keys from response
         const productKeys = data.data.map((item: any) => item.product);
         
+        // Update state with product keys
         setPurchaseResult(prev => ({ 
           ...prev, 
           productKeys 
         }));
         
+        // Update order item in database if user is logged in
         if (user) {
           const { data: orderItems } = await supabase
             .from('order_items')
@@ -227,7 +247,8 @@ export const PurchaseConfirmModal = ({
             .maybeSingle();
           
           if (orderItems) {
-            const itemData = orderItems.data as Record<string, any> || {};
+            // Handle data safely to avoid type errors
+            const itemData = typeof orderItems.data === 'object' ? orderItems.data : {};
             
             const updatedData = {
               ...itemData,
