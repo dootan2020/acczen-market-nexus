@@ -487,6 +487,50 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_verifications: {
+        Row: {
+          created_at: string | null
+          deposit_id: string | null
+          id: string
+          last_checked_at: string | null
+          status: string
+          transaction_hash: string | null
+          updated_at: string | null
+          verification_attempts: number | null
+          verification_data: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          deposit_id?: string | null
+          id?: string
+          last_checked_at?: string | null
+          status?: string
+          transaction_hash?: string | null
+          updated_at?: string | null
+          verification_attempts?: number | null
+          verification_data?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          deposit_id?: string | null
+          id?: string
+          last_checked_at?: string | null
+          status?: string
+          transaction_hash?: string | null
+          updated_at?: string | null
+          verification_attempts?: number | null
+          verification_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_verifications_deposit_id_fkey"
+            columns: ["deposit_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_cache: {
         Row: {
           kiosk_token: string
@@ -962,7 +1006,12 @@ export type Database = {
       }
     }
     Enums: {
-      order_status: "pending" | "completed" | "cancelled" | "refunded"
+      order_status:
+        | "pending"
+        | "completed"
+        | "cancelled"
+        | "refunded"
+        | "failed"
       product_status: "active" | "inactive" | "out_of_stock"
       transaction_type: "purchase" | "deposit" | "refund"
       user_role: "user" | "admin"
@@ -1081,7 +1130,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      order_status: ["pending", "completed", "cancelled", "refunded"],
+      order_status: ["pending", "completed", "cancelled", "refunded", "failed"],
       product_status: ["active", "inactive", "out_of_stock"],
       transaction_type: ["purchase", "deposit", "refund"],
       user_role: ["user", "admin"],

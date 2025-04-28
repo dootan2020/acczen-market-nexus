@@ -2,7 +2,10 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Coins, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface USDTTransactionFormProps {
   amount: string;
@@ -11,48 +14,81 @@ interface USDTTransactionFormProps {
   onTxidChange: (value: string) => void;
 }
 
-export const USDTTransactionForm: React.FC<USDTTransactionFormProps> = ({
+export const USDTTransactionForm = ({
   amount,
   txid,
   onAmountChange,
   onTxidChange,
-}) => {
+}: USDTTransactionFormProps) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+      onAmountChange(value);
+    }
+  };
+
+  const handleTxIDChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (value === '' || /^[0-9a-fA-F]+$/.test(value)) {
+      onTxidChange(value.trim());
+    }
+  };
+
+  const isValidTxid = txid.length === 64 || txid === '';
+  
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="amount" className="font-medium">Số tiền muốn nạp (USDT)</Label>
+        <Label htmlFor="amount" className="flex items-center">
+          <Coins className="h-4 w-4 mr-1.5" /> Amount (USDT)
+        </Label>
         <Input
           id="amount"
-          type="number"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
           value={amount}
-          onChange={(e) => onAmountChange(e.target.value)}
-          placeholder="Nhập số USDT..."
-          min="1"
-          step="0.01"
-          className="bg-white mt-1.5"
+          onChange={handleAmountChange}
         />
       </div>
 
-      <Card className="bg-muted/30 border-border/40">
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            <Label htmlFor="txid" className="text-muted-foreground">
-              Mã giao dịch (TXID)
-            </Label>
-            <Input
-              id="txid"
-              type="text"
-              value={txid}
-              onChange={(e) => onTxidChange(e.target.value)}
-              placeholder="Nhập mã giao dịch..."
-              className="font-mono text-sm bg-white mt-1.5"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Sau khi chuyển USDT, nhập mã giao dịch (TXID) từ ví hoặc sàn giao dịch của bạn
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="txid" className="flex items-center">
+            <FileText className="h-4 w-4 mr-1.5" /> Transaction Hash
+          </Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="text-xs text-muted-foreground underline underline-offset-2">
+                Where to find?
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm">
+                <p className="text-sm">
+                  After sending USDT from your wallet, you'll receive a transaction hash. 
+                  Copy and paste it here to verify your deposit.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <Textarea
+          id="txid"
+          placeholder="Enter your TRC20 transaction hash here..."
+          value={txid}
+          onChange={handleTxIDChange}
+          className={`font-mono ${!isValidTxid ? 'border-red-300' : ''}`}
+        />
+        {txid !== '' && !isValidTxid && (
+          <Alert variant="destructive" className="py-2 px-3">
+            <AlertDescription>
+              Transaction hash should be 64 characters long hexadecimal string.
+            </AlertDescription>
+          </Alert>
+        )}
+        <p className="text-xs text-muted-foreground mt-1.5">
+          Paste the TRC20 transaction hash from your wallet after sending USDT.
+        </p>
+      </div>
     </div>
   );
 };

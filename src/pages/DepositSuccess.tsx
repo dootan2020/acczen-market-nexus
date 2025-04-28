@@ -1,99 +1,84 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle, ArrowRight, History } from "lucide-react";
-import { format } from "date-fns";
+import { BadgeCheck, ArrowRight, ShieldCheck, ShoppingCart } from "lucide-react";
 
 const DepositSuccess = () => {
-  const location = useLocation();
+  const { state } = useLocation();
   const navigate = useNavigate();
-  const { balance } = useAuth();
   
-  const { deposit, transaction } = location.state || {};
+  const deposit = state?.deposit;
+  const transaction = state?.transaction;
   
   if (!deposit) {
-    // If there's no deposit data, redirect to the deposit page
-    return (
-      <div className="container mx-auto p-4 text-center">
-        <h1 className="text-2xl font-bold mb-4">No Transaction Data</h1>
-        <p>No transaction data was found. Please go back to the deposit page.</p>
-        <Button onClick={() => navigate('/deposit')} className="mt-4">
-          Go to Deposit Page
-        </Button>
-      </div>
-    );
+    navigate('/deposit');
+    return null;
   }
-
+  
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h1 className="text-2xl font-bold">Deposit Successful!</h1>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaction Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Transaction ID</p>
-              <p className="font-medium">{transaction?.id || deposit.id}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Date</p>
-              <p className="font-medium">
-                {format(new Date(deposit.updated_at), "PPP p")}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Payment Method</p>
-              <p className="font-medium">{deposit.payment_method}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <p className="font-medium capitalize">{deposit.status}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Amount</p>
-              <p className="font-medium text-xl text-primary">${deposit.amount.toFixed(2)}</p>
-            </div>
-            {deposit.transaction_hash && (
-              <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">Blockchain Transaction ID</p>
-                <p className="font-medium break-all">{deposit.transaction_hash}</p>
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-md mx-auto">
+        <Card className="border-green-200 shadow-lg">
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-2">
+              <div className="rounded-full bg-green-100 p-3">
+                <BadgeCheck className="h-8 w-8 text-green-600" />
               </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col items-center gap-4">
-          <div className="w-full text-center p-4 bg-muted rounded-md">
-            <p className="text-sm text-muted-foreground">Current Balance</p>
-            <p className="text-2xl font-bold text-primary">${balance?.toFixed(2)}</p>
-          </div>
-          <div className="w-full flex flex-col sm:flex-row gap-3">
+            </div>
+            <CardTitle className="text-2xl text-green-700">Deposit Successful!</CardTitle>
+            <CardDescription>Your funds have been added to your account</CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6 pt-2">
+            <div className="rounded-lg bg-green-50/50 p-4 border border-green-100">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-green-700">${deposit.amount.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">has been added to your balance</p>
+              </div>
+            </div>
+            
+            <div className="border-t border-dashed pt-4 grid gap-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Transaction ID:</span>
+                <span className="font-medium">{transaction?.id.substring(0, 8)}...</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Payment Method:</span>
+                <span className="font-medium">USDT (TRC20)</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Status:</span>
+                <span className="text-green-600 font-medium flex items-center">
+                  <BadgeCheck className="h-4 w-4 mr-1" /> Completed
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center space-x-1 pt-2">
+              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <span className="text-xs text-muted-foreground">Secured by Digital Deals Hub</span>
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex flex-col gap-2">
             <Button 
-              onClick={() => navigate('/')} 
-              className="flex-1"
+              className="w-full" 
+              onClick={() => navigate('/dashboard')}
             >
-              Continue Shopping <ArrowRight className="ml-2 h-4 w-4" />
+              Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button 
-              onClick={() => navigate('/dashboard')} 
               variant="outline" 
-              className="flex-1"
+              className="w-full" 
+              onClick={() => navigate('/products')}
             >
-              <History className="mr-2 h-4 w-4" /> View Transaction History
+              <ShoppingCart className="mr-2 h-4 w-4" /> Browse Products
             </Button>
-          </div>
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };
