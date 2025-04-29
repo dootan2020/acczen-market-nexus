@@ -13,6 +13,7 @@ interface InventoryStatusProps {
   isLoading?: boolean;
   onRefresh?: () => Promise<void>;
   kioskToken?: string | null;
+  variant?: string; // Add the variant prop
 }
 
 const formatTimeAgo = (date: Date | string) => {
@@ -39,7 +40,8 @@ export default function ProductInventoryStatus({
   lastChecked, 
   isLoading = false,
   onRefresh,
-  kioskToken
+  kioskToken,
+  variant = 'default' // Add default value for the variant prop
 }: InventoryStatusProps) {
   const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
@@ -68,6 +70,17 @@ export default function ProductInventoryStatus({
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+  
+  // Render different UI based on variant
+  if (variant === 'badge') {
+    return (
+      <Badge 
+        variant={stockQuantity > 0 ? "success" : "destructive"}
+      >
+        {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+      </Badge>
+    );
+  }
   
   return (
     <Card className="mt-6">
