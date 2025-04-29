@@ -81,10 +81,14 @@ const ProductCard = ({
     });
   };
 
+  const handleViewDetails = () => {
+    navigate(`/products/${id}`);
+  };
+
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
-        <Link to={`/product/${id}`} className="block">
+        <Link to={`/products/${id}`} className="block">
           <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-[180px] w-full flex items-center justify-center p-4">
             <img
               src={image || "/placeholder.svg"}
@@ -109,7 +113,7 @@ const ProductCard = ({
       </div>
       
       <CardContent className="p-4 flex-grow">
-        <Link to={`/product/${id}`}>
+        <Link to={`/products/${id}`}>
           <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
         </Link>
         
@@ -139,7 +143,7 @@ const ProductCard = ({
           variant="outline"
           className="w-full border-[#2ECC71] text-[#2ECC71] hover:bg-[#2ECC71]/10"
           disabled={stock === 0}
-          onClick={() => navigate(`/product/${id}`)}
+          onClick={handleViewDetails}
         >
           Chi tiết
         </Button>
