@@ -6,9 +6,10 @@ export type BadgeType = 'featured' | 'new' | 'bestSeller' | 'sale';
 
 interface ProductBadgeProps {
   type: BadgeType;
+  label?: string; // Add optional label prop
 }
 
-const ProductBadge: React.FC<ProductBadgeProps> = ({ type }) => {
+const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
   const getBadgeStyles = (): string => {
     switch (type) {
       case 'featured':
@@ -25,15 +26,19 @@ const ProductBadge: React.FC<ProductBadgeProps> = ({ type }) => {
   };
 
   const getBadgeText = (): string => {
+    if (label) {
+      return label;
+    }
+    
     switch (type) {
       case 'featured':
-        return 'Featured';
+        return 'Nổi bật';
       case 'new':
-        return 'New';
+        return 'Mới';
       case 'bestSeller':
-        return 'Best Seller';
+        return 'Bán chạy';
       case 'sale':
-        return 'Sale';
+        return 'Giảm giá';
       default:
         return '';
     }
