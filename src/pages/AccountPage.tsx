@@ -12,10 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { UserProfile as BaseUserProfile } from '@/hooks/admin/types/userManagement.types';
-
-// Define a profile interface that includes phone
-interface UserProfile extends BaseUserProfile {}
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 
 // Define the validation schema
 const accountSchema = z.object({
@@ -99,14 +96,17 @@ const AccountPage = () => {
           .single();
 
         if (error) throw error;
-        setUserProfile(data as UserProfile);
+        
+        // Explicitly cast the data to UserProfile to ensure TypeScript recognizes all properties
+        const profileData = data as UserProfile;
+        setUserProfile(profileData);
 
         // Set form values
-        if (data) {
+        if (profileData) {
           accountForm.reset({
-            username: data.username || '',
-            fullName: data.full_name || '',
-            phone: data.phone || '',
+            username: profileData.username || '',
+            fullName: profileData.full_name || '',
+            phone: profileData.phone || '',
           });
         }
       } catch (err) {
