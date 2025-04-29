@@ -27,6 +27,7 @@ export function Loading({
           spinnerSize[size]
         )}
         role="status" 
+        aria-label="Loading"
       />
       {text && <p className="text-muted-foreground text-sm">{text}</p>}
       <span className="sr-only">Đang tải...</span>

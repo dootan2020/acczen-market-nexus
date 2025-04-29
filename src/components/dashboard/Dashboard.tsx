@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountBalance } from "./AccountBalance";
 import { OrderStatistics } from "./OrderStatistics";
 import { RecentOrders } from "./RecentOrders";
+import { Loading } from "@/components/ui/loading";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ const Dashboard = () => {
             product:products(name)
           )
         `)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(5);
       
@@ -51,7 +53,11 @@ const Dashboard = () => {
   });
 
   if (isLoadingProfile || isLoadingOrders) {
-    return <div className="p-8 text-center">Loading your dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loading size="lg" text="Đang tải dữ liệu..." />
+      </div>
+    );
   }
 
   return (

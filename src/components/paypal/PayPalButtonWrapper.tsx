@@ -57,23 +57,23 @@ export const PayPalButtonWrapper: React.FC<PayPalButtonWrapperProps> = ({ amount
         } catch (error) {
           console.error("PayPal Capture Error:", error);
           setErrorDetails(error instanceof Error ? error.message : JSON.stringify(error));
-          toast.error('Payment Processing Error', {
-            description: 'There was an error capturing your payment'
+          toast.error('Lỗi xử lý thanh toán', {
+            description: 'Đã xảy ra lỗi khi xử lý thanh toán'
           });
         } finally {
           setIsProcessing(false);
         }
       }}
       onCancel={() => {
-        toast.info('Payment Cancelled', {
-          description: 'You cancelled the PayPal payment'
+        toast.info('Hủy thanh toán', {
+          description: 'Bạn đã hủy thanh toán PayPal'
         });
       }}
       onError={(err) => {
         console.error("PayPal Button Error:", err);
         setErrorDetails(err instanceof Error ? err.message : JSON.stringify(err));
-        toast.error('PayPal Error', {
-          description: 'An error occurred with PayPal payment. Please try again later.'
+        toast.error('Lỗi PayPal', {
+          description: 'Đã xảy ra lỗi với thanh toán PayPal. Vui lòng thử lại sau.'
         });
       }}
       disabled={isProcessing}

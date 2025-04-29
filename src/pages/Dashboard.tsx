@@ -1,13 +1,12 @@
 
 import React from 'react';
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import Dashboard from "@/components/dashboard/Dashboard";
 
-const Dashboard = () => {
+const DashboardPage = () => {
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      <p>Welcome to your dashboard.</p>
-    </div>
+    <Dashboard />
   );
 };
 
-export default Dashboard;
+export default DashboardPage;

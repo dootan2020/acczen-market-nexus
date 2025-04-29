@@ -30,7 +30,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild tooltip="Overview" isActive={currentPath === "/dashboard"}>
               <a href="/dashboard">
                 <LayoutDashboard className="w-4 h-4" />
-                <span>Overview</span>
+                <span>Tổng quan</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -39,7 +39,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild tooltip="Purchases" isActive={currentPath === "/dashboard/purchases"}>
               <a href="/dashboard/purchases">
                 <ShoppingCart className="w-4 h-4" />
-                <span>Purchases</span>
+                <span>Đơn hàng</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -48,7 +48,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild tooltip="Deposit History" isActive={currentPath === "/dashboard/history"}>
               <a href="/dashboard/history">
                 <History className="w-4 h-4" />
-                <span>Deposit History</span>
+                <span>Lịch sử nạp tiền</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -57,7 +57,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild tooltip="Settings" isActive={currentPath === "/dashboard/settings"}>
               <a href="/dashboard/settings">
                 <Settings className="w-4 h-4" />
-                <span>Settings</span>
+                <span>Cài đặt</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -4,6 +4,9 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
+import { PaymentProvider } from './contexts/PaymentContext';
+import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -26,9 +29,15 @@ createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
-        <TooltipProvider>
-          <App />
-        </TooltipProvider>
+        <ReactQueryProvider>
+          <CurrencyProvider>
+            <PaymentProvider>
+              <TooltipProvider>
+                <App />
+              </TooltipProvider>
+            </PaymentProvider>
+          </CurrencyProvider>
+        </ReactQueryProvider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>

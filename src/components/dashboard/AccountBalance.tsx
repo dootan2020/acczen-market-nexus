@@ -29,7 +29,7 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
+        <CardTitle className="text-sm font-medium">Số dư tài khoản</CardTitle>
         <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
@@ -51,7 +51,7 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
           </Tooltip>
         </TooltipProvider>
         <Link to="/deposit">
-          <Button className="mt-2 w-full">Deposit</Button>
+          <Button className="mt-2 w-full">Nạp tiền</Button>
         </Link>
       </CardContent>
     </Card>
