@@ -28,6 +28,64 @@ interface DepositsReportProps {
 }
 
 export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
+  // Ensure we have valid arrays to work with
+  const safeDepositsChartData = Array.isArray(depositsChartData) ? depositsChartData : [];
+  const safeDepositsData = Array.isArray(depositsData) ? depositsData : [];
+
+  // Safely process data for the PayPal chart
+  const processedPayPalData = !isLoading ? safeDepositsChartData.map(d => {
+    // Ensure 'd' is a valid object and has a date property
+    if (!d || typeof d !== 'object' || !d.date) {
+      return { ...d, paypalAmount: 0 };
+    }
+
+    // Safely process PayPal deposits
+    try {
+      const paypalAmount = safeDepositsData
+        .filter(deposit => 
+          deposit && 
+          typeof deposit === 'object' && 
+          deposit.payment_method === 'PayPal' && 
+          deposit.status === 'completed' &&
+          deposit.created_at && // Ensure created_at exists
+          format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+        )
+        .reduce((sum, deposit) => sum + (deposit.amount || 0), 0);
+      
+      return { ...d, paypalAmount };
+    } catch (error) {
+      console.error('Error processing PayPal data:', error);
+      return { ...d, paypalAmount: 0 };
+    }
+  }) : [];
+
+  // Safely process data for the USDT chart
+  const processedUsdtData = !isLoading ? safeDepositsChartData.map(d => {
+    // Ensure 'd' is a valid object and has a date property
+    if (!d || typeof d !== 'object' || !d.date) {
+      return { ...d, usdtAmount: 0 };
+    }
+
+    // Safely process USDT deposits
+    try {
+      const usdtAmount = safeDepositsData
+        .filter(deposit => 
+          deposit && 
+          typeof deposit === 'object' && 
+          deposit.payment_method === 'USDT' && 
+          deposit.status === 'completed' &&
+          deposit.created_at && // Ensure created_at exists
+          format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+        )
+        .reduce((sum, deposit) => sum + (deposit.amount || 0), 0);
+      
+      return { ...d, usdtAmount };
+    } catch (error) {
+      console.error('Error processing USDT data:', error);
+      return { ...d, usdtAmount: 0 };
+    }
+  }) : [];
+
   return (
     <>
       <Card>
@@ -43,7 +101,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           ) : (
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
-                data={depositsChartData}
+                data={safeDepositsChartData}
                 margin={{
                   top: 5,
                   right: 30,
@@ -54,12 +112,26 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="date" 
-                  tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                  tickFormatter={(date) => {
+                    try {
+                      return date ? format(new Date(date), 'MMM dd') : '';
+                    } catch (e) {
+                      console.error('Date formatting error:', e);
+                      return '';
+                    }
+                  }}
                 />
                 <YAxis />
                 <Tooltip 
                   formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                  labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                  labelFormatter={(date) => {
+                    try {
+                      return date ? format(new Date(date), 'MMMM d, yyyy') : '';
+                    } catch (e) {
+                      console.error('Date formatting error:', e);
+                      return '';
+                    }
+                  }}
                 />
                 <Legend />
                 <Line 
@@ -97,16 +169,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={depositsChartData.map(d => ({
-                    ...d,
-                    paypalAmount: (depositsData || [])
-                      .filter(deposit => 
-                        deposit.payment_method === 'PayPal' && 
-                        deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
-                      )
-                      .reduce((sum, d) => sum + (d.amount || 0), 0)
-                  }))}
+                  data={processedPayPalData}
                   margin={{
                     top: 5,
                     right: 30,
@@ -117,12 +180,24 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      try {
+                        return date ? format(new Date(date), 'MMM dd') : '';
+                      } catch (e) {
+                        return '';
+                      }
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      try {
+                        return date ? format(new Date(date), 'MMMM d, yyyy') : '';
+                      } catch (e) {
+                        return '';
+                      }
+                    }}
                   />
                   <Legend />
                   <Bar 
@@ -149,16 +224,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={depositsChartData.map(d => ({
-                    ...d,
-                    usdtAmount: (depositsData || [])
-                      .filter(deposit => 
-                        deposit.payment_method === 'USDT' && 
-                        deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
-                      )
-                      .reduce((sum, d) => sum + (d.amount || 0), 0)
-                  }))}
+                  data={processedUsdtData}
                   margin={{
                     top: 5,
                     right: 30,
@@ -169,12 +235,24 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      try {
+                        return date ? format(new Date(date), 'MMM dd') : '';
+                      } catch (e) {
+                        return '';
+                      }
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      try {
+                        return date ? format(new Date(date), 'MMMM d, yyyy') : '';
+                      } catch (e) {
+                        return '';
+                      }
+                    }}
                   />
                   <Legend />
                   <Bar 
