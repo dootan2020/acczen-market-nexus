@@ -1,8 +1,10 @@
 
 import { useState } from 'react';
-import { taphoammoApiService, TaphoammoProduct } from '@/services/TaphoammoApiService';
+import { taphoammoApiService } from '@/services/taphoammo';
+import { TaphoammoProduct, TaphoammoApiOptions } from '@/services/taphoammo';
 import { TaphoammoError } from '@/types/taphoammo-errors';
 import { toast } from 'sonner';
+import { ProxyType } from '@/utils/corsProxy';
 
 export interface UseTaphoammoOptions {
   autoRetry?: boolean;
@@ -23,15 +25,22 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   /**
    * Get stock information for a kiosk token
    */
-  const getStock = async (kioskToken: string, forceFresh: boolean = false): Promise<TaphoammoProduct> => {
+  const getStock = async (
+    kioskToken: string, 
+    forceFresh: boolean = false, 
+    proxyType: ProxyType = 'allorigins'
+  ): Promise<TaphoammoProduct> => {
     setLoading(true);
     setError(null);
     
     try {
-      const result = await taphoammoApiService.getStock(kioskToken, {
+      const apiOptions: TaphoammoApiOptions = {
+        proxyType,
         forceRefresh: forceFresh,
-        useCache: useCache
-      });
+        useCache
+      };
+      
+      const result = await taphoammoApiService.getStock(kioskToken, apiOptions);
       return result;
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -53,47 +62,21 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   /**
    * Check if stock is available for purchase
    */
-  const checkStockAvailability = async (kioskToken: string, quantity: number = 1): Promise<{
-    available: boolean;
-    message?: string;
-    stockData?: TaphoammoProduct;
-  }> => {
+  const checkStockAvailability = async (
+    kioskToken: string, 
+    quantity: number = 1, 
+    proxyType: ProxyType = 'allorigins'
+  ) => {
     setLoading(true);
     setError(null);
     
     try {
-      // First check if kiosk is active at all
-      const isActive = await taphoammoApiService.checkKioskActive(kioskToken);
-      if (!isActive) {
-        return {
-          available: false,
-          message: "Sản phẩm này tạm thời không khả dụng. Vui lòng thử lại sau hoặc chọn sản phẩm khác."
-        };
-      }
-      
-      // Then get stock data to check quantity
-      const stockData = await taphoammoApiService.getStock(kioskToken);
-      
-      const available = stockData.stock_quantity >= quantity;
-      
-      return {
-        available,
-        message: available ? 
-          `Sản phẩm sẵn có (${stockData.stock_quantity} sản phẩm)` : 
-          `Không đủ số lượng trong kho (yêu cầu: ${quantity}, có sẵn: ${stockData.stock_quantity})`,
-        stockData
-      };
+      return await taphoammoApiService.checkStockAvailability(kioskToken, quantity, proxyType);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       
-      if (err instanceof TaphoammoError) {
-        return {
-          available: false,
-          message: err.message
-        };
-      }
-      
+      // Return an error object
       return {
         available: false,
         message: "Không thể kiểm tra tồn kho: " + errorMsg
@@ -110,14 +93,15 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     kioskToken: string,
     quantity: number = 1,
     userToken: string = 'system',
-    promotion?: string
+    promotion?: string,
+    proxyType: ProxyType = 'allorigins'
   ) => {
     setLoading(true);
     setError(null);
     
     try {
       // First check availability to prevent failed purchases
-      const { available, message } = await checkStockAvailability(kioskToken, quantity);
+      const { available, message } = await checkStockAvailability(kioskToken, quantity, proxyType);
       
       if (!available) {
         if (showToasts) {
@@ -129,7 +113,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
         throw new Error(message);
       }
       
-      return await taphoammoApiService.buyProducts(kioskToken, quantity, userToken, promotion);
+      return await taphoammoApiService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType);
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
@@ -150,12 +134,16 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   /**
    * Get products from an order
    */
-  const getProducts = async (orderId: string, userToken: string = 'system') => {
+  const getProducts = async (
+    orderId: string, 
+    userToken: string = 'system',
+    proxyType: ProxyType = 'allorigins'
+  ) => {
     setLoading(true);
     setError(null);
     
     try {
-      return await taphoammoApiService.getProducts(orderId, userToken);
+      return await taphoammoApiService.getProducts(orderId, userToken, proxyType);
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
@@ -176,7 +164,10 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   /**
    * Test the connection to the API
    */
-  const testConnection = async (kioskToken: string): Promise<{
+  const testConnection = async (
+    kioskToken: string, 
+    proxyType: ProxyType = 'allorigins'
+  ): Promise<{
     success: boolean;
     message: string;
   }> => {
@@ -184,11 +175,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      const stockData = await taphoammoApiService.getStock(kioskToken);
-      return {
-        success: true,
-        message: `Kết nối thành công - Sản phẩm: ${stockData.name} (Số lượng: ${stockData.stock_quantity})`
-      };
+      return await taphoammoApiService.testConnection(kioskToken, proxyType);
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
@@ -202,12 +189,20 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     }
   };
   
+  /**
+   * Clear cache
+   */
+  const clearCache = () => {
+    taphoammoApiService.clearCache();
+  };
+  
   return {
     getStock,
     checkStockAvailability,
     buyProducts,
     getProducts,
     testConnection,
+    clearCache,
     loading,
     error
   };
