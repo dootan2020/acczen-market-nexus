@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
@@ -14,20 +14,48 @@ import {
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, isAdmin, isLoading } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Debug logs
-  console.log("AdminLayout: user =", !!user, "isAdmin =", isAdmin, "isLoading =", isLoading);
+  console.log("AdminLayout: rendering", {
+    user: !!user, 
+    isAdmin,
+    isLoading,
+    pathname: location.pathname
+  });
+  
+  useEffect(() => {
+    // Mark as initialized after a short delay to ensure auth state is stable
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 200);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // This is a fallback check in case AdminGuard fails
-  if (!isLoading && (!user || !isAdmin)) {
+  if (isInitialized && !isLoading && (!user || !isAdmin)) {
     console.log("AdminLayout fallback redirect: user absent or not admin");
     return <Navigate to="/" replace />;
+  }
+  
+  // Show loading state while initializing
+  if (isLoading || !isInitialized) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Đang tải trang quản trị...</p>
+        </div>
+      </div>
+    );
   }
   
   const navItems = [

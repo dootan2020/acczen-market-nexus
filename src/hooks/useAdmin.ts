@@ -27,18 +27,23 @@ const ADMIN_PERMISSIONS: Record<string, AdminPermission[]> = {
 export const useAdmin = () => {
   const { user, isAdmin } = useAuth();
   
-  console.log("useAdmin hook called, isAdmin:", isAdmin, "user:", user ? "exists" : "null");
+  console.log("useAdmin hook called", {
+    isAdmin,
+    userId: user?.id || 'no-user',
+    userEmail: user?.email || 'no-email',
+    userMetadata: user?.user_metadata || 'no-metadata'
+  });
   
   // Check for specific admin permission
   const hasPermission = (permission: AdminPermission): boolean => {
     if (!isAdmin || !user) {
-      console.log("Permission check failed: not admin or no user");
+      console.log(`Permission check failed for ${permission}: not admin or no user`);
       return false;
     }
     
     // Get admin type from metadata or default to 'admin'
     const adminType = user.user_metadata?.admin_type as string || 'admin';
-    console.log("Admin type:", adminType);
+    console.log(`Admin type for permission check: ${adminType}`);
     
     const permissions = ADMIN_PERMISSIONS[adminType] || [];
     const result = permissions.includes(permission);
@@ -49,11 +54,19 @@ export const useAdmin = () => {
 
   // Check if user has any of the provided permissions
   const hasAnyPermission = (permissions: AdminPermission[]): boolean => {
+    if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+      console.warn("hasAnyPermission called with invalid permissions array", permissions);
+      return false;
+    }
     return permissions.some(permission => hasPermission(permission));
   };
 
   // Check if user has all of the provided permissions
   const hasAllPermissions = (permissions: AdminPermission[]): boolean => {
+    if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+      console.warn("hasAllPermissions called with invalid permissions array", permissions);
+      return false;
+    }
     return permissions.every(permission => hasPermission(permission));
   };
 

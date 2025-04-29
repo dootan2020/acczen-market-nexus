@@ -39,6 +39,9 @@ const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
 const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
 
 const AppRoutes = () => {
+  // Debug log for route rendering
+  console.log("Rendering AppRoutes component");
+  
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -146,7 +149,7 @@ const AppRoutes = () => {
         />
       </Route>
 
-      {/* Admin routes */}
+      {/* Admin routes - ensure AdminGuard is properly used */}
       <Route
         path="/admin"
         element={
