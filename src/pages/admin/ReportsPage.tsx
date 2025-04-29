@@ -1,12 +1,9 @@
 
 import React from 'react';
+import AdminReports from './AdminReports';
 
 const ReportsPage: React.FC = () => {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Reports</h1>
-    </div>
-  );
+  return <AdminReports />;
 };
 
 export default ReportsPage;

@@ -5,6 +5,7 @@ import { DateRange } from "react-day-picker";
 import { StatsData } from "@/hooks/useReportsData";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { Card, CardContent } from "@/components/ui/card";
+import { ExportButtons } from "./ExportButtons";
 
 interface ReportsHeaderProps {
   dateRangeType: string;
@@ -15,7 +16,10 @@ interface ReportsHeaderProps {
   isLoading: boolean;
   formattedDateRange: string;
   statsData: StatsData;
-  depositsChartData: any[];
+  activeTab: string;
+  depositsData?: any[];
+  ordersData?: any[];
+  productsData?: any[];
 }
 
 // Helper function for dynamic class names
@@ -32,6 +36,10 @@ export function ReportsHeader({
   isLoading,
   formattedDateRange,
   statsData,
+  activeTab,
+  depositsData,
+  ordersData,
+  productsData
 }: ReportsHeaderProps) {
   return (
     <div className="space-y-4 mb-6">
@@ -47,14 +55,25 @@ export function ReportsHeader({
             onDateRangePickerChange={onDateRangePickerChange}
           />
           
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={onRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportButtons
+              activeTab={activeTab}
+              depositsData={depositsData}
+              ordersData={ordersData}
+              productsData={productsData}
+              isLoading={isLoading}
+              dateRange={dateRange}
+            />
+            
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+            </Button>
+          </div>
         </div>
       </div>
       

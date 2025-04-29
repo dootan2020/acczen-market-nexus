@@ -1,91 +1,124 @@
 
-import { FileDown } from "lucide-react";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import jsPDF from "jspdf";
-import Papa from "papaparse";
-import { saveAs } from "file-saver";
-import { format } from "date-fns";
-import { StatsData } from "@/hooks/useReportsData";
+import { Download, FileText } from "lucide-react";
+import { 
+  exportToCsv, 
+  formatDepositsForExport,
+  formatOrdersForExport,
+  formatProductsForExport
+} from "@/utils/export/csvExport";
+import { toast } from "sonner";
 
 interface ExportButtonsProps {
-  statsData: StatsData;
-  depositsChartData: any[];
-  formattedDateRange: string;
+  activeTab: string;
+  depositsData?: any[];
+  ordersData?: any[];
+  productsData?: any[];
   isLoading: boolean;
+  dateRange?: { from: Date; to: Date } | undefined;
 }
 
 export function ExportButtons({
-  statsData,
-  depositsChartData,
-  formattedDateRange,
-  isLoading
+  activeTab,
+  depositsData = [],
+  ordersData = [],
+  productsData = [],
+  isLoading,
+  dateRange
 }: ExportButtonsProps) {
-  // Export to PDF function
-  const exportToPDF = () => {
-    const doc = new jsPDF('landscape');
+  // Get date range string for file naming
+  const getDateRangeString = () => {
+    if (!dateRange?.from) return 'all';
     
-    // Title
-    doc.setFontSize(18);
-    doc.text("Digital Deals Hub - Financial Reports", 14, 22);
+    const fromDate = dateRange.from.toISOString().split('T')[0];
+    const toDate = dateRange.to ? dateRange.to.toISOString().split('T')[0] : 'now';
     
-    // Date range
-    doc.setFontSize(12);
-    doc.text(`Date range: ${formattedDateRange}`, 14, 30);
-    
-    // Summary data
-    doc.setFontSize(14);
-    doc.text("Summary", 14, 40);
-    
-    const summaryData = [
-      ['Total Deposits', `$${statsData.totalDepositAmount.toFixed(2)}`],
-      ['Total Deposits Count', statsData.totalDeposits.toString()],
-      ['PayPal Deposits', `$${statsData.paypalAmount.toFixed(2)}`],
-      ['USDT Deposits', `$${statsData.usdtAmount.toFixed(2)}`],
-      ['Total Orders', statsData.totalOrders.toString()],
-      ['Average Order Value', `$${statsData.averageOrderValue.toFixed(2)}`],
-      ['Active Users', `${statsData.activeUsers} / ${statsData.totalUsers}`],
-      ['Conversion Rate', `${statsData.conversionRate}%`]
-    ];
-    
-    (doc as any).autoTable({
-      startY: 45,
-      head: [['Metric', 'Value']],
-      body: summaryData,
-      theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 5 }
-    });
-    
-    // Export to file
-    const fileName = `financial-report-${new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(fileName);
+    return `${fromDate}_to_${toDate}`;
   };
   
-  // Export to CSV function
-  const exportToCSV = () => {
-    // Prepare deposits data
-    const depositsData = depositsChartData.map(day => ({
-      date: day.date,
-      depositsAmount: day.amount,
-      depositsCount: day.count,
-    }));
-    
-    // Convert to CSV
-    const csv = Papa.unparse(depositsData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const fileName = `financial-data-${new Date().toISOString().slice(0, 10)}.csv`;
-    saveAs(blob, fileName);
-  };
+  const handleExport = () => {
+    try {
+      // Get the appropriate data based on active tab
+      let exportData;
+      let fileName;
 
+      switch(activeTab) {
+        case 'deposits':
+          if (!depositsData?.length) {
+            toast.error("No deposit data to export");
+            return;
+          }
+          exportData = formatDepositsForExport(depositsData);
+          fileName = `deposits_${getDateRangeString()}`;
+          break;
+          
+        case 'orders':
+          if (!ordersData?.length) {
+            toast.error("No order data to export");
+            return;
+          }
+          exportData = formatOrdersForExport(ordersData);
+          fileName = `orders_${getDateRangeString()}`;
+          break;
+          
+        case 'products':
+          if (!productsData?.length) {
+            toast.error("No product data to export");
+            return;
+          }
+          exportData = formatProductsForExport(productsData);
+          fileName = `products_${getDateRangeString()}`;
+          break;
+          
+        default:
+          // For overview, export all data
+          if (!depositsData?.length && !ordersData?.length) {
+            toast.error("No data to export");
+            return;
+          }
+          
+          const combinedData = {
+            deposits: formatDepositsForExport(depositsData || []),
+            orders: formatOrdersForExport(ordersData || []),
+            products: formatProductsForExport(productsData || [])
+          };
+          
+          // Export each as separate files
+          if (depositsData?.length) {
+            exportToCsv(combinedData.deposits, { fileName: `deposits_${getDateRangeString()}` });
+          }
+          
+          if (ordersData?.length) {
+            exportToCsv(combinedData.orders, { fileName: `orders_${getDateRangeString()}` });
+          }
+          
+          if (productsData?.length) {
+            exportToCsv(combinedData.products, { fileName: `products_${getDateRangeString()}` });
+          }
+          
+          toast.success("Reports exported successfully");
+          return;
+      }
+      
+      exportToCsv(exportData, { fileName });
+      toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} data exported successfully`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export data. Please try again.");
+    }
+  };
+  
   return (
-    <div className="flex gap-2">
-      <Button variant="outline" onClick={exportToCSV} disabled={isLoading}>
-        <FileDown className="mr-2 h-4 w-4" />
-        Export CSV
-      </Button>
-      <Button variant="outline" onClick={exportToPDF} disabled={isLoading}>
-        <FileDown className="mr-2 h-4 w-4" />
-        Export PDF
-      </Button>
-    </div>
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-1"
+      onClick={handleExport}
+      disabled={isLoading}
+    >
+      <Download className="h-4 w-4 mr-1" />
+      Export CSV
+    </Button>
   );
 }

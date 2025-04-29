@@ -16,6 +16,7 @@ import { DateRange } from "react-day-picker";
 
 interface BestSellingProductsProps {
   dateRange: DateRange | undefined;
+  productsData?: any[];
 }
 
 interface ProductSales {
@@ -26,10 +27,14 @@ interface ProductSales {
   category_name: string | null;
 }
 
-export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
+export function BestSellingProducts({ dateRange, productsData }: BestSellingProductsProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['best-selling-products', dateRange],
     queryFn: async () => {
+      if (productsData && productsData.length > 0) {
+        return productsData;
+      }
+      
       // Format dates for the query
       const fromDate = dateRange?.from 
         ? new Date(dateRange.from).toISOString()
@@ -93,7 +98,9 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
       const productSales = Array.from(productSalesMap.values());
       return productSales.sort((a, b) => b.revenue - a.revenue);
     },
-    enabled: !!dateRange?.from // Only require from date to be present
+    enabled: !!dateRange?.from, // Only require from date to be present
+    staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
+    cacheTime: 10 * 60 * 1000, // Keep cache for 10 minutes
   });
 
   return (
@@ -119,6 +126,7 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
                   <TableHead>Category</TableHead>
                   <TableHead className="text-right">Units Sold</TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
+                  <TableHead className="text-right">Avg. Price</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,11 +137,14 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
                       <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
                       <TableCell className="text-right">{product.orders}</TableCell>
                       <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        ${(product.revenue / product.orders).toFixed(2)}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">No sales data available</TableCell>
+                    <TableCell colSpan={5} className="text-center py-4">No sales data available</TableCell>
                   </TableRow>
                 )}
               </TableBody>
