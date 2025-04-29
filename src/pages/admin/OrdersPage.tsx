@@ -7,11 +7,12 @@ import AdminOrdersEnhanced from '@/components/admin/orders/AdminOrdersEnhanced';
 import { exportOrdersToCsv } from '@/utils/exportUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { OrderStatus } from '@/types/orders';
 
 const OrdersPage: React.FC = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -22,8 +23,7 @@ const OrdersPage: React.FC = () => {
         .from('orders')
         .select(`
           *,
-          user:profiles(username, email),
-          items:order_items(name, quantity, price)
+          user:profiles(id, username, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -44,11 +44,6 @@ const OrdersPage: React.FC = () => {
         query = query.lte('created_at', toDate.toISOString());
       }
 
-      if (searchQuery) {
-        // Search is more complex and would require a more sophisticated approach
-        // For now, we'll just get all orders and filter client-side
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -57,22 +52,30 @@ const OrdersPage: React.FC = () => {
 
       // Filter by search query if needed (client-side)
       let filteredData = data;
-      if (searchQuery) {
+      if (searchQuery && filteredData) {
         const lowerQuery = searchQuery.toLowerCase();
         filteredData = data.filter(order => 
           order.id.toLowerCase().includes(lowerQuery) ||
-          order.user?.email?.toLowerCase().includes(lowerQuery) ||
-          order.user?.username?.toLowerCase().includes(lowerQuery)
+          (order.user?.email && order.user.email.toLowerCase().includes(lowerQuery)) ||
+          (order.user?.username && order.user.username.toLowerCase().includes(lowerQuery))
         );
       }
 
       // Export to CSV
-      exportOrdersToCsv(filteredData, `orders-export-${new Date().toISOString().split('T')[0]}`);
-      
-      toast({
-        title: "Export Successful",
-        description: `${filteredData.length} orders exported to CSV`,
-      });
+      if (filteredData && filteredData.length > 0) {
+        exportOrdersToCsv(filteredData, `orders-export-${new Date().toISOString().split('T')[0]}`);
+        
+        toast({
+          title: "Export Successful",
+          description: `${filteredData.length} orders exported to CSV`,
+        });
+      } else {
+        toast({
+          title: "No Data to Export",
+          description: "No orders match your filter criteria",
+          variant: "destructive"
+        });
+      }
     } catch (err) {
       console.error('Error exporting orders:', err);
       toast({
@@ -100,14 +103,7 @@ const OrdersPage: React.FC = () => {
         </Button>
       </div>
       
-      <AdminOrdersEnhanced
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
+      <AdminOrdersEnhanced />
     </div>
   );
 };
