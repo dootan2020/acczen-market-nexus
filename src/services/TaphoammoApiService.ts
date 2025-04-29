@@ -2,38 +2,136 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ApiService, ApiOptions } from './api/ApiService';
+import { toast } from 'sonner';
+
+// Local cache to prevent duplicate API calls with the same parameters
+const apiCache = new Map<string, {
+  data: any; 
+  timestamp: number;
+  expiresAt: number;
+}>();
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache validity
 
 export interface TaphoammoProduct {
   kiosk_token: string;
   name: string;
   stock_quantity: number;
   price: number;
+  description?: string;
+  slug?: string;
+  sku?: string;
 }
 
 export class TaphoammoApiService {
   private apiService: ApiService;
+  private apiRequestQueue = new Map<string, Promise<any>>();
   
   constructor() {
     this.apiService = ApiService.getInstance();
   }
   
   /**
-   * Get stock information for a product
+   * Generate cache key for API calls
    */
-  public async getStock(
-    kioskToken: string, 
+  private generateCacheKey(method: string, params: Record<string, any>): string {
+    return `${method}:${JSON.stringify(params)}`;
+  }
+  
+  /**
+   * Execute API call with caching, queue management, and retries
+   */
+  private async executeApiCall<T>(
+    method: string, 
+    params: Record<string, any>, 
     options: ApiOptions = {}
-  ): Promise<TaphoammoProduct> {
-    const { data, error, cached } = await this.apiService.callTaphoammoAPI<TaphoammoProduct>(
-      'stock', 
-      { kioskToken },
-      options
-    );
+  ): Promise<T> {
+    const cacheKey = this.generateCacheKey(method, params);
     
-    if (error) {
-      throw error;
+    // Check options for cache behavior
+    const useCache = options.useCache !== false;
+    const forceRefresh = options.forceRefresh === true;
+    
+    // Check if we should use cached data
+    if (useCache && !forceRefresh) {
+      const cachedData = apiCache.get(cacheKey);
+      if (cachedData && cachedData.expiresAt > Date.now()) {
+        console.log(`[TaphoammoApiService] Using cached data for ${method}`, { cached: true });
+        return cachedData.data;
+      }
     }
     
+    // Check if there's already a request in progress for this operation
+    // This prevents duplicate simultaneous requests
+    if (this.apiRequestQueue.has(cacheKey)) {
+      console.log(`[TaphoammoApiService] Reusing in-flight request for ${method}`);
+      return this.apiRequestQueue.get(cacheKey)!;
+    }
+    
+    // Create a new request promise
+    const requestPromise = new Promise<T>(async (resolve, reject) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+          body: { 
+            ...params,
+            action: method 
+          }
+        });
+        
+        if (error) {
+          console.error(`[TaphoammoApiService] Error in ${method}:`, error);
+          throw new TaphoammoError(
+            error.message || 'API request failed',
+            TaphoammoErrorCodes.NETWORK_ERROR,
+            0,
+            0
+          );
+        }
+        
+        // FIXED: Changed string check "false" to boolean check false
+        if (data && data.success === false) {
+          console.error(`[TaphoammoApiService] ${method} returned failure:`, data.message);
+          throw new TaphoammoError(
+            data.message || 'Unknown API error',
+            TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+            0,
+            0
+          );
+        }
+        
+        // Validate response data
+        this.validateResponse(method, data);
+        
+        // Cache the result
+        if (useCache) {
+          apiCache.set(cacheKey, {
+            data,
+            timestamp: Date.now(),
+            expiresAt: Date.now() + CACHE_TTL
+          });
+        }
+        
+        resolve(data as T);
+      } catch (error) {
+        reject(error);
+      } finally {
+        // Remove from queue once completed
+        setTimeout(() => {
+          this.apiRequestQueue.delete(cacheKey);
+        }, 0);
+      }
+    });
+    
+    // Add to queue
+    this.apiRequestQueue.set(cacheKey, requestPromise);
+    
+    return requestPromise;
+  }
+  
+  /**
+   * Validate API response
+   */
+  private validateResponse(method: string, data: any): void {
     if (!data) {
       throw new TaphoammoError(
         'Không nhận được dữ liệu từ API',
@@ -43,17 +141,66 @@ export class TaphoammoApiService {
       );
     }
     
-    // Log API call to database
-    this.logApiCall('getStock', {
-      kioskToken,
-      result: {
-        cached: !!cached,
-        name: data.name,
-        stock: data.stock_quantity
+    // Method-specific validations
+    if (method === 'get_product' && !data.product) {
+      throw new TaphoammoError(
+        'Không tìm thấy thông tin sản phẩm trong phản hồi API',
+        TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+        0,
+        0
+      );
+    }
+  }
+  
+  /**
+   * Get stock information for a product
+   */
+  public async getStock(
+    kioskToken: string, 
+    options: ApiOptions = {}
+  ): Promise<TaphoammoProduct> {
+    try {
+      const data = await this.executeApiCall<any>(
+        'get_product', 
+        { kiosk_token: kioskToken },
+        options
+      );
+      
+      if (!data.product) {
+        throw new TaphoammoError(
+          'Không nhận được thông tin sản phẩm từ API',
+          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+          0,
+          0
+        );
       }
-    });
-    
-    return data;
+      
+      // Log API call to database
+      await this.logApiCall('getStock', {
+        kioskToken,
+        result: {
+          cached: !!data.source && data.source === 'mock',
+          name: data.product.name,
+          stock: data.product.stock_quantity
+        }
+      });
+      
+      return data.product;
+    } catch (error) {
+      console.error('[TaphoammoApiService] getStock error:', error);
+      
+      // Rethrow as TaphoammoError if it isn't one already
+      if (!(error instanceof TaphoammoError)) {
+        throw new TaphoammoError(
+          error instanceof Error ? error.message : 'Unknown error getting stock',
+          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+          0,
+          0
+        );
+      }
+      
+      throw error;
+    }
   }
   
   /**
@@ -174,6 +321,47 @@ export class TaphoammoApiService {
     });
     
     return data;
+  }
+
+  /**
+   * Test connection to the API
+   */
+  public async testConnection(kioskToken: string, proxyType?: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      const response = await supabase.functions.invoke('taphoammo-api', {
+        body: {
+          action: 'test_connection',
+          kiosk_token: kioskToken,
+          proxy_type: proxyType
+        }
+      });
+
+      if (response.error) {
+        return {
+          success: false,
+          message: `Lỗi kết nối API: ${response.error.message}`
+        };
+      }
+
+      return response.data;
+    } catch (err) {
+      console.error('Test connection error:', err);
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Lỗi không xác định khi kiểm tra kết nối'
+      };
+    }
+  }
+  
+  /**
+   * Clear API cache
+   */
+  public clearCache(): void {
+    apiCache.clear();
+    toast.success('Đã xóa cache API thành công');
   }
   
   /**

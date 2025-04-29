@@ -4,6 +4,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'X-Environment': Deno.env.get('ENVIRONMENT') || 'development'
 }
 
 serve(async (req) => {
@@ -34,7 +35,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        message: error.message || 'Unexpected error occurred'
+        message: error.message || 'Unexpected error occurred',
+        error_details: error.stack || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
@@ -99,10 +101,12 @@ async function handleGetProduct(data) {
   try {
     // Check if we have mock data for this token
     if (mockProductData[kiosk_token]) {
+      console.log('[TaphoaMMO API] Using mock data for token:', kiosk_token);
       return new Response(
         JSON.stringify({
           success: true,
-          product: mockProductData[kiosk_token]
+          product: mockProductData[kiosk_token],
+          source: 'mock'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -111,17 +115,25 @@ async function handleGetProduct(data) {
     // For testing, use the real API with taphoammo.net
     const productInfo = await fetchFromTaphoaMMO('stock', { kioskToken: kiosk_token }, proxy_type);
     
+    if (!productInfo || !productInfo.message) {
+      throw new Error('API response does not contain product information');
+    }
+    
     // Extract product name from response
     const name = productInfo.message?.split('Found: ')?.[1]?.split(' (Stock:')?.[0] || 'Unknown Product';
     const stockStr = productInfo.message?.split('Stock: ')?.[1]?.split(')')?.[0] || '0';
     const stock = parseInt(stockStr, 10);
+    
+    if (isNaN(stock)) {
+      throw new Error(`Invalid stock quantity in API response: ${productInfo.message}`);
+    }
     
     const product = {
       name: name,
       description: `Imported from TaphoaMMO: ${name}`,
       price: 0, // Price will need to be set manually
       stock_quantity: stock,
-      slug: name.toLowerCase().replace(/\s+/g, '-'),
+      slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       sku: `TH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       kiosk_token: kiosk_token,
     };
@@ -129,7 +141,9 @@ async function handleGetProduct(data) {
     return new Response(
       JSON.stringify({
         success: true,
-        product: product
+        product: product,
+        source: 'api',
+        last_updated: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -138,7 +152,8 @@ async function handleGetProduct(data) {
     return new Response(
       JSON.stringify({
         success: false,
-        message: error.message || 'Không thể lấy thông tin sản phẩm'
+        message: error.message || 'Không thể lấy thông tin sản phẩm',
+        error_details: error.stack || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -161,7 +176,8 @@ async function handleDirectEndpoint(data) {
     return new Response(
       JSON.stringify({
         success: false,
-        message: error.message || `Lỗi khi gọi API endpoint ${endpoint}`
+        message: error.message || `Lỗi khi gọi API endpoint ${endpoint}`,
+        error_details: error.stack || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -215,9 +231,9 @@ async function fetchFromTaphoaMMO(endpoint, params, proxyType = 'cors-anywhere')
   
   console.log(`[TaphoaMMO] Fetching from: ${fetchUrl}`);
   
-  // For testing purposes return mock data while developing
-  if (Deno.env.get('ENVIRONMENT') !== 'production' || true) { // Always use mocks for now
-    console.log('Using mock data for development');
+  // FIXED: Removed "|| true" condition to actually make API calls in production
+  if (Deno.env.get('ENVIRONMENT') !== 'production') {
+    console.log('Using mock data for development environment');
     return {
       success: true, 
       message: "Found: Test Product (Stock: 150)",
@@ -226,13 +242,24 @@ async function fetchFromTaphoaMMO(endpoint, params, proxyType = 'cors-anywhere')
     };
   }
   
-  // Make the actual API call
-  const response = await fetch(fetchUrl, fetchOptions);
-  
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    // Make the actual API call
+    const response = await fetch(fetchUrl, fetchOptions);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}: ${await response.text()}`);
+    }
+    
+    const data = await response.json();
+    
+    // Validate API response
+    if (!data) {
+      throw new Error('Empty response from API');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('API fetch error:', error);
+    throw new Error(`API request failed: ${error.message}`);
   }
-  
-  const data = await response.json();
-  return data;
 }
