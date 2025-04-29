@@ -1,73 +1,93 @@
-# Welcome to your Lovable project
 
-## Project info
+# Digital Deals Hub - Nền tảng giao dịch sản phẩm số
 
-**URL**: https://lovable.dev/projects/3d5aa3be-de08-4b14-b438-ff0738b442b9
+Digital Deals Hub là một nền tảng thương mại điện tử chuyên về sản phẩm kỹ thuật số cho thị trường Make Money Online (MMO). Hệ thống cung cấp tài khoản email, tài khoản mạng xã hội, khóa phần mềm và các sản phẩm số khác cho khách hàng quốc tế.
 
-## How can I edit this code?
+## Tính năng chính
 
-There are several ways of editing your application.
+- Duyệt sản phẩm theo danh mục: Tài khoản Email, Tài khoản Mạng xã hội, và Phần mềm & Khóa
+- Tìm kiếm sản phẩm cụ thể
+- Thêm sản phẩm vào giỏ hàng, tiến hành thanh toán và hoàn tất mua hàng
+- Hiển thị thông tin chi tiết sản phẩm, giá, đánh giá và nhãn
 
-**Use Lovable**
+## Cài đặt và chạy dự án
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3d5aa3be-de08-4b14-b438-ff0738b442b9) and start prompting.
+### Yêu cầu hệ thống
+- Node.js (phiên bản 16.x trở lên)
+- npm hoặc yarn
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Cài đặt các gói phụ thuộc
+```bash
+npm install
+# hoặc
+yarn install
 ```
 
-**Edit a file directly in GitHub**
+### Khởi chạy môi trường phát triển
+```bash
+npm run dev
+# hoặc
+yarn dev
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build cho môi trường production
+```bash
+npm run build
+# hoặc
+yarn build
+```
 
-**Use GitHub Codespaces**
+## Cấu trúc dự án
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+digital-deals-hub/
+├── public/             # Tài nguyên tĩnh
+├── src/                # Mã nguồn
+│   ├── components/     # Components UI
+│   ├── contexts/       # Context API
+│   ├── hooks/          # Custom React hooks
+│   ├── pages/          # Các trang chính
+│   ├── providers/      # Providers (Cart, Auth, etc.)
+│   ├── utils/          # Utility functions
+│   ├── types/          # TypeScript type definitions
+│   ├── App.tsx         # Component gốc
+│   └── main.tsx        # Entry point
+├── .env                # Biến môi trường (không được commit)
+├── vite.config.ts      # Cấu hình Vite
+└── tailwind.config.ts  # Cấu hình Tailwind CSS
+```
 
-## What technologies are used for this project?
+## Triển khai
 
-This project is built with:
+### Các bước triển khai
+1. Build dự án: `npm run build`
+2. Kiểm tra build tại thư mục `dist/`
+3. Triển khai thư mục `dist/` lên dịch vụ web hosting hoặc CDN
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Cấu hình môi trường
+Tạo file `.env` với các biến môi trường cần thiết:
 
-## How can I deploy this project?
+```
+VITE_API_URL=https://api.example.com
+VITE_PAYPAL_CLIENT_ID=your-paypal-client-id
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_KEY=your-supabase-key
+```
 
-Simply open [Lovable](https://lovable.dev/projects/3d5aa3be-de08-4b14-b438-ff0738b442b9) and click on Share -> Publish.
+## Tối ưu hiệu suất
 
-## Can I connect a custom domain to my Lovable project?
+Dự án đã được tối ưu hiệu suất với nhiều kỹ thuật:
 
-Yes, you can!
+- Code splitting tự động với Vite
+- Lazy loading cho các components không quan trọng
+- Bundle analysis với rollup-plugin-visualizer
+- Service worker cho trải nghiệm offline và caching
+- Tối ưu hóa hình ảnh với lazy loading
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Đóng góp
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Vui lòng đọc [CONTRIBUTING.md](CONTRIBUTING.md) để biết chi tiết về quy trình đóng góp.
+
+## Giấy phép
+
+Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE.md](LICENSE.md) để biết chi tiết.

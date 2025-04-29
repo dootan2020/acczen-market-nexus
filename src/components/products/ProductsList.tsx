@@ -3,6 +3,7 @@ import React, { memo } from "react";
 import ProductCard from "@/components/ProductCard";
 import MobileProductCard from "@/components/mobile/MobileProductCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Product {
   id: string;
@@ -23,7 +24,7 @@ interface ProductsListProps {
   emptyMessage?: string;
 }
 
-// Use React.memo to prevent unnecessary re-renders
+// Sử dụng React.memo để ngăn re-render không cần thiết
 const MemoizedProductCard = memo(ProductCard);
 const MemoizedMobileProductCard = memo(MobileProductCard);
 
@@ -36,9 +37,9 @@ export const ProductsList: React.FC<ProductsListProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-lg bg-muted animate-pulse h-64 md:h-72"></div>
+          <Skeleton key={i} className="rounded-lg h-64 md:h-72" />
         ))}
       </div>
     );
@@ -53,7 +54,7 @@ export const ProductsList: React.FC<ProductsListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
       {products.map((product) => (
         isMobile ? (
           <MemoizedMobileProductCard key={product.id} {...product} />

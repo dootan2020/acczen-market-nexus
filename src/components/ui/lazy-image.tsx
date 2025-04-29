@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +8,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   placeholderSrc?: string;
   threshold?: number;
   rootMargin?: string;
+  loadImmediately?: boolean; // Thêm tùy chọn để load ngay
 }
 
 export const LazyImage = ({
@@ -15,6 +17,7 @@ export const LazyImage = ({
   placeholderSrc = '/placeholder.svg',
   threshold = 0.1,
   rootMargin = '200px 0px',
+  loadImmediately = false, // Mặc định không load ngay
   className,
   ...props
 }: LazyImageProps) => {
@@ -23,8 +26,34 @@ export const LazyImage = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // Hàm tải hình ảnh
+  const loadImage = () => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      setImageSrc(src);
+      setLoaded(true);
+      
+      // Khi đã load xong, không cần quan sát nữa
+      if (imgRef.current && observerRef.current) {
+        observerRef.current.unobserve(imgRef.current);
+        observerRef.current = null;
+      }
+    };
+    img.onerror = () => {
+      console.error(`Failed to load image: ${src}`);
+      // Giữ placeholder khi có lỗi
+    };
+  };
+
   useEffect(() => {
-    // Clean up previous observer if exists
+    // Load ngay lập tức nếu được yêu cầu (hình ảnh quan trọng)
+    if (loadImmediately) {
+      loadImage();
+      return;
+    }
+
+    // Dọn dẹp observer trước đó nếu có
     if (observerRef.current) {
       if (imgRef.current) {
         observerRef.current.unobserve(imgRef.current);
@@ -32,45 +61,30 @@ export const LazyImage = ({
       observerRef.current = null;
     }
 
-    // Skip if image is already loaded
+    // Bỏ qua nếu đã load hình ảnh
     if (loaded && imageSrc === src) return;
 
     const handleIntersection: IntersectionObserverCallback = (entries) => {
       const [entry] = entries;
       if (entry.isIntersecting) {
-        // Load the actual image
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-          setImageSrc(src);
-          setLoaded(true);
-          
-          // Once loaded, no need to observe anymore
-          if (imgRef.current && observerRef.current) {
-            observerRef.current.unobserve(imgRef.current);
-          }
-        };
-        img.onerror = () => {
-          console.error(`Failed to load image: ${src}`);
-          // Keep placeholder image on error
-        };
+        loadImage();
       }
     };
 
-    // Create observer
+    // Tạo observer mới
     observerRef.current = new IntersectionObserver(handleIntersection, {
       root: null,
       rootMargin,
       threshold,
     });
 
-    // Start observing
+    // Bắt đầu quan sát
     if (imgRef.current) {
       observerRef.current.observe(imgRef.current);
     }
 
     return () => {
-      // Clean up observer on component unmount
+      // Dọn dẹp observer khi unmount
       if (observerRef.current) {
         if (imgRef.current) {
           observerRef.current.unobserve(imgRef.current);
@@ -78,7 +92,7 @@ export const LazyImage = ({
         observerRef.current = null;
       }
     };
-  }, [src, loaded, imageSrc, threshold, rootMargin]);
+  }, [src, loaded, imageSrc, threshold, rootMargin, loadImmediately]);
 
   return (
     <img

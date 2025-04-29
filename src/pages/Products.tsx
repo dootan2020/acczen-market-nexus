@@ -8,6 +8,8 @@ import { Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Container } from '@/components/ui/container';
+import Layout from '@/components/Layout';
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,20 +36,19 @@ const Products = () => {
     return filteredProducts.map(product => ({
       id: product.id,
       name: product.name,
-      image: product.image_url || '', // Map image_url to image
+      image: product.image_url || '', 
       price: product.price,
       salePrice: product.sale_price || undefined,
       category: product.category?.name || '',
       subcategory: product.subcategory?.name,
-      stock: product.stock_quantity, // Map stock_quantity to stock
-      featured: false, // Default value
+      stock: product.stock_quantity,
+      featured: Boolean(product.featured),
       kioskToken: product.kiosk_token
     })) || [];
   }, [filteredProducts]);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    // Search is already handled through the filter above
   }, []);
 
   // Function for the mobile search button
@@ -59,9 +60,9 @@ const Products = () => {
   }, []);
 
   return (
-    <>
-      {isMobile && <MobileHeader title="Products" onSearchClick={openMobileSearch} />}
-      <div className="container mx-auto p-4 md:p-8">
+    <Layout>
+      {isMobile && <MobileHeader title="Sản phẩm" onSearchClick={openMobileSearch} />}
+      <Container className="py-4 md:py-8">
         <div className="mb-6">
           <h1 className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold mb-4`}>Sản phẩm</h1>
           
@@ -85,7 +86,7 @@ const Products = () => {
         
         {error ? (
           <div className="text-center py-8 text-destructive">
-            <p>Error loading products. Please try again later.</p>
+            <p>Lỗi tải sản phẩm. Vui lòng thử lại sau.</p>
           </div>
         ) : (
           <ProductsList 
@@ -94,8 +95,8 @@ const Products = () => {
             emptyMessage={searchTerm ? "Không có sản phẩm phù hợp" : "Chưa có sản phẩm nào"}
           />
         )}
-      </div>
-    </>
+      </Container>
+    </Layout>
   );
 };
 

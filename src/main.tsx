@@ -12,7 +12,7 @@ import { CartProvider } from './providers/CartProvider';
 import App from './App.tsx';
 import './index.css';
 
-// Measure the initial load performance
+// Đo lường hiệu suất tải trang ban đầu
 const reportWebVitals = () => {
   if (window.performance) {
     const metrics = window.performance.getEntriesByType('navigation');
@@ -22,7 +22,7 @@ const reportWebVitals = () => {
   }
 };
 
-// Register service worker for PWA support
+// Đăng ký service worker cho hỗ trợ PWA - chỉ trong môi trường production
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -35,9 +35,9 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   });
 }
 
-// Performance monitoring for Core Web Vitals
+// Đo lường Core Web Vitals - chỉ trong môi trường production
 if (import.meta.env.PROD) {
-  // Report FID and LCP
+  // Báo cáo FID và LCP
   const reportLCP = () => {
     const perfEntries = performance.getEntriesByType('navigation');
     if (perfEntries && perfEntries.length > 0) {
@@ -47,21 +47,24 @@ if (import.meta.env.PROD) {
     }
   };
 
-  new PerformanceObserver((entryList) => {
-    for (const entry of entryList.getEntries()) {
-      const fidEntry = entry as PerformanceEventTiming;
-      console.info(`FID: ${fidEntry.processingStart - fidEntry.startTime}ms`);
-    }
-  }).observe({ type: 'first-input', buffered: true });
+  // Sử dụng PerformanceObserver để theo dõi FID
+  if ('PerformanceObserver' in window) {
+    new PerformanceObserver((entryList) => {
+      for (const entry of entryList.getEntries()) {
+        const fidEntry = entry as PerformanceEventTiming;
+        console.info(`FID: ${fidEntry.processingStart - fidEntry.startTime}ms`);
+      }
+    }).observe({ type: 'first-input', buffered: true });
+  }
   
   window.addEventListener('load', reportLCP);
 }
 
-// Make sure the root element exists
+// Đảm bảo phần tử root tồn tại
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
-// Create the React root and render the app
+// Tạo root React và render ứng dụng
 createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -84,5 +87,5 @@ createRoot(rootElement).render(
   </React.StrictMode>
 );
 
-// If you want to measure performance
+// Nếu muốn đo lường hiệu suất
 reportWebVitals();

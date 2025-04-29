@@ -15,7 +15,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   
   // Check if we're on a page that has its own mobile header
-  const hasCustomMobileHeader = ['/cart', '/checkout', '/products'].includes(location.pathname);
+  const hasCustomMobileHeader = ['/cart', '/checkout', '/products'].some(path => 
+    location.pathname.startsWith(path)
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
