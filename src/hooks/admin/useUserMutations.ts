@@ -13,11 +13,11 @@ export const useUserMutations = () => {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string, role: UserRoleType }) => {
-      // We need to cast the role to string as the Supabase client expects
-      // This will allow all valid roles from our UserProfile type
+      // The issue is that Supabase expects a type that matches the database enum
+      // We need to ensure the role type is compatible with what Supabase expects
       const { error } = await supabase
         .from('profiles')
-        .update({ role: role as string })
+        .update({ role })  // Use the role directly without casting
         .eq('id', id);
       
       if (error) throw error;
