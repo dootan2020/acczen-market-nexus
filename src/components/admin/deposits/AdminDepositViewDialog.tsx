@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Deposit, getStatusBadgeVariant } from '@/hooks/useDeposits';
+import { Deposit } from '@/types/deposits';
 import { Separator } from '@/components/ui/separator';
 
 interface AdminDepositViewDialogProps {
@@ -12,6 +12,16 @@ interface AdminDepositViewDialogProps {
   open: boolean;
   onClose: () => void;
 }
+
+// Helper function for getting status badge variant
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'completed': return 'success';
+    case 'pending': return 'default';
+    case 'rejected': return 'destructive';
+    default: return 'secondary';
+  }
+};
 
 export function AdminDepositViewDialog({ deposit, open, onClose }: AdminDepositViewDialogProps) {
   if (!deposit) return null;

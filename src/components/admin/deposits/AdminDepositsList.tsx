@@ -7,9 +7,19 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Eye, Loader2, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Deposit, getStatusBadgeVariant } from '@/hooks/useDeposits';
+import { Deposit } from '@/types/deposits';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AdminDepositViewDialog } from './AdminDepositViewDialog';
+
+// Helper function for getting status badge variant
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'completed': return 'success';
+    case 'pending': return 'default';
+    case 'rejected': return 'destructive';
+    default: return 'secondary';
+  }
+};
 
 interface AdminDepositsListProps {
   deposits: Deposit[];
