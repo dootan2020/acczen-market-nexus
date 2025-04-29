@@ -34,7 +34,8 @@ const depositSchema = z.object({
     }, { message: "Số tiền không được vượt quá $10,000" })
     .refine(val => {
       const num = parseFloat(val);
-      return Number.isInteger(num * 100) / 100;
+      // Fixed: Convert num to number before multiplying, then check if it's an integer
+      return Number.isInteger(Math.round(num * 100) / 100);
     }, { message: "Số tiền chỉ được có tối đa 2 chữ số thập phân" })
 });
 

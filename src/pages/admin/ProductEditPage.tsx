@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ProductFormData } from '@/types/products';
+import { ProductFormData, ProductStatus } from '@/types/products';
 import ProductForm from '@/components/admin/products/ProductForm';
 
 const ProductEditPage: React.FC = () => {
@@ -45,7 +45,24 @@ const ProductEditPage: React.FC = () => {
           throw categoriesError;
         }
         
-        setProduct(productData as ProductFormData);
+        // Convert product data to ProductFormData type correctly
+        const formattedProduct: ProductFormData = {
+          id: productData.id,
+          name: productData.name,
+          description: productData.description,
+          price: productData.price.toString(),
+          sale_price: productData.sale_price ? productData.sale_price.toString() : '',
+          stock_quantity: productData.stock_quantity.toString(),
+          status: productData.status as ProductStatus,
+          category_id: productData.category_id,
+          subcategory_id: productData.subcategory_id || '',
+          image_url: productData.image_url || '',
+          slug: productData.slug,
+          sku: productData.sku || '',
+          kiosk_token: productData.kiosk_token || ''
+        };
+        
+        setProduct(formattedProduct);
         setCategories(categoriesData);
       } catch (err) {
         console.error('Error fetching data:', err);
