@@ -55,19 +55,19 @@ export default defineConfig(({ mode }) => ({
           ui: [
             '@/components/ui',
           ],
-          // Separate shadcn components for better caching
+          // Fix: Use absolute path for shadcn components
           shadcn: [
-            '/components/ui/button',
-            '/components/ui/dialog',
-            '/components/ui/input',
-            '/components/ui/toast',
+            '@/components/ui/button',
+            '@/components/ui/dialog',
+            '@/components/ui/input',
+            '@/components/ui/toast',
           ],
           // Separate API and utilities for better caching
           utils: [
-            '/utils', 
-            '/lib/utils',
-            '/hooks',
-            '/services',
+            '@/utils', 
+            '@/lib/utils',
+            '@/hooks',
+            '@/services',
           ],
           // Media handling in separate chunk
           media: [
@@ -79,17 +79,23 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: 'assets/js/[name].[hash].js',
         chunkFileNames: 'assets/js/[name].[hash].js',
         assetFileNames: (assetInfo) => {
+          if (!assetInfo.name) return `assets/[name].[hash].[ext]`;
+          
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
+          
           if (/\.(png|jpe?g|svg|gif|webp|avif)$/.test(assetInfo.name)) {
             return `assets/images/[name].[hash].[ext]`;
           }
+          
           if (/\.(css)$/.test(assetInfo.name)) {
             return `assets/css/[name].[hash].[ext]`;
           }
+          
           if (/\.(woff2?|ttf|eot|otf)$/.test(assetInfo.name)) {
             return `assets/fonts/[name].[hash].[ext]`;
           }
+          
           return `assets/[name].[hash].[ext]`;
         },
       }

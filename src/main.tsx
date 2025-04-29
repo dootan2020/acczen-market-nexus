@@ -41,7 +41,7 @@ if (import.meta.env.PROD) {
   const reportLCP = () => {
     const perfEntries = performance.getEntriesByType('navigation');
     if (perfEntries && perfEntries.length > 0) {
-      const navEntry = perfEntries[0];
+      const navEntry = perfEntries[0] as PerformanceNavigationTiming;
       const loadEventTime = navEntry.loadEventStart - navEntry.startTime;
       console.info(`Largest Contentful Paint: ${loadEventTime}ms`);
     }
@@ -49,7 +49,8 @@ if (import.meta.env.PROD) {
 
   new PerformanceObserver((entryList) => {
     for (const entry of entryList.getEntries()) {
-      console.info(`FID: ${entry.processingStart - entry.startTime}ms`);
+      const fidEntry = entry as PerformanceEventTiming;
+      console.info(`FID: ${fidEntry.processingStart - fidEntry.startTime}ms`);
     }
   }).observe({ type: 'first-input', buffered: true });
   
