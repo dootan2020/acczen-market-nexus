@@ -81,6 +81,15 @@ const ProductEditPage: React.FC = () => {
     setError(null);
     
     try {
+      // Ensure status is valid for database schema
+      let status = formData.status;
+      // If status is 'draft' or 'archived' but database only supports 'active', 'inactive', 'out_of_stock',
+      // we need to map it to a compatible value
+      if (status === 'draft' || status === 'archived') {
+        console.log(`Mapping status '${status}' to 'inactive' for database compatibility`);
+        status = 'inactive';
+      }
+      
       // Update product
       const { error: updateError } = await supabase
         .from('products')
@@ -91,7 +100,7 @@ const ProductEditPage: React.FC = () => {
           price: parseFloat(formData.price),
           sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
           stock_quantity: parseInt(formData.stock_quantity),
-          status: formData.status,
+          status: status,
           category_id: formData.category_id,
           subcategory_id: formData.subcategory_id || null,
           image_url: formData.image_url || null,
