@@ -63,18 +63,20 @@ const AdminCategories = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          {subcategoryFunctions.selectedCategoryId && (
-            <TabsTrigger value="subcategories">
-              Subcategories for {categories?.find(c => c.id === subcategoryFunctions.selectedCategoryId)?.name}
-            </TabsTrigger>
-          )}
-        </TabsList>
+    <div className="container px-4 sm:px-6 w-full max-w-full mx-auto overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="overflow-x-auto">
+          <TabsList className="mb-4">
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+            {subcategoryFunctions.selectedCategoryId && (
+              <TabsTrigger value="subcategories">
+                Subcategories for {categories?.find(c => c.id === subcategoryFunctions.selectedCategoryId)?.name}
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
-        <TabsContent value="categories">
+        <TabsContent value="categories" className="overflow-hidden">
           <CategoryTab 
             categories={categories}
             isLoading={isLoading}
@@ -97,7 +99,7 @@ const AdminCategories = () => {
           />
         </TabsContent>
 
-        <TabsContent value="subcategories">
+        <TabsContent value="subcategories" className="overflow-hidden">
           <SubcategoryTab 
             selectedCategoryId={subcategoryFunctions.selectedCategoryId}
             categoryList={categories}

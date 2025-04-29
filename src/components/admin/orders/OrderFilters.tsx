@@ -37,7 +37,7 @@ export const OrderFilters = ({
         value={statusFilter || 'all'}
         onValueChange={(value) => onStatusFilterChange(value === 'all' ? null : value)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
         <SelectContent>

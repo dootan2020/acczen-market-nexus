@@ -64,9 +64,9 @@ const AdminProducts = () => {
   const { data: categories } = useCategories();
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Products</h1>
+    <div className="container px-4 sm:px-6 w-full max-w-full mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Products</h1>
         <Button onClick={handleAddProduct}>
           <Plus className="h-4 w-4 mr-2" />
           Add Product
@@ -86,7 +86,7 @@ const AdminProducts = () => {
         onClearSelection={handleClearSelection}
       />
       
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
@@ -107,17 +107,19 @@ const AdminProducts = () => {
         </CardContent>
       </Card>
       
-      <ProductsPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        prevPage={prevPage}
-        nextPage={nextPage}
-        hasNextPage={hasNextPage}
-        hasPrevPage={hasPrevPage}
-      />
+      <div className="mt-4">
+        <ProductsPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          prevPage={prevPage}
+          nextPage={nextPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
+      </div>
       
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
             <DialogDescription>

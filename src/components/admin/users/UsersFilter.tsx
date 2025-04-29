@@ -27,7 +27,7 @@ export function UsersFilter({
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input 
-          className="pl-10" 
+          className="pl-10 w-full" 
           placeholder="Search users by email, username, or name..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -37,7 +37,7 @@ export function UsersFilter({
         value={roleFilter || 'all'}
         onValueChange={(value) => onRoleFilterChange(value === 'all' ? null : value)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Filter by role" />
         </SelectTrigger>
         <SelectContent>

@@ -40,9 +40,9 @@ const AdminOrders = () => {
   } = useOrderManagement();
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Orders</h1>
+    <div className="container px-4 sm:px-6 w-full max-w-full mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Orders</h1>
       </div>
       
       <OrderFilters
@@ -52,7 +52,7 @@ const AdminOrders = () => {
         onStatusFilterChange={setStatusFilter}
       />
       
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <OrdersTable 
@@ -65,14 +65,16 @@ const AdminOrders = () => {
         </CardContent>
       </Card>
       
-      <OrdersPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        prevPage={prevPage}
-        nextPage={nextPage}
-        hasNextPage={hasNextPage}
-        hasPrevPage={hasPrevPage}
-      />
+      <div className="mt-4">
+        <OrdersPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          prevPage={prevPage}
+          nextPage={nextPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
+      </div>
       
       <OrderDetailsDialog 
         isOpen={isViewDialogOpen}

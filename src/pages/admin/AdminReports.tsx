@@ -33,7 +33,7 @@ const AdminReports = () => {
   });
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Reports Header with Date Range and Summary Stats */}
       <ReportsHeader
         dateRangeType={dateRangeType}
@@ -48,7 +48,7 @@ const AdminReports = () => {
       />
       
       {isLoading ? (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <SkeletonStats />
           <Card>
             <CardContent className="py-6">
@@ -58,7 +58,7 @@ const AdminReports = () => {
         </div>
       ) : (
         <Suspense fallback={
-          <div className="space-y-8">
+          <div className="space-y-6">
             <SkeletonStats />
             <Card>
               <CardContent className="py-6">

@@ -7,10 +7,11 @@ import { BestSellingProducts } from "./BestSellingProducts";
 import { DateRange } from "react-day-picker";
 import { StatsData, ChartData } from "@/types/reports";
 import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { SkeletonTable } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReportsContentProps {
   activeTab: string;
@@ -38,16 +39,18 @@ export function ReportsContent({
   isLoading,
   depositsData,
 }: ReportsContentProps) {
+  const isMobile = useIsMobile();
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="grid w-full md:w-auto grid-cols-4">
+      <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2 mb-4' : 'md:w-auto grid-cols-4'}`}>
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="deposits">Deposits</TabsTrigger>
         <TabsTrigger value="orders">Orders</TabsTrigger>
         <TabsTrigger value="products">Products</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="overview">
+      <TabsContent value="overview" className="overflow-hidden">
         <DashboardOverview
           statsData={statsData}
           revenueChartData={depositsChartData}
@@ -57,7 +60,7 @@ export function ReportsContent({
         />
       </TabsContent>
       
-      <TabsContent value="deposits">
+      <TabsContent value="deposits" className="overflow-hidden">
         <DepositsReport 
           depositsChartData={depositsChartData} 
           isLoading={isLoading}
@@ -65,14 +68,14 @@ export function ReportsContent({
         />
       </TabsContent>
       
-      <TabsContent value="orders">
+      <TabsContent value="orders" className="overflow-hidden">
         <OrdersReport
           ordersChartData={ordersChartData}
           isLoading={isLoading}
         />
       </TabsContent>
       
-      <TabsContent value="products">
+      <TabsContent value="products" className="overflow-hidden">
         <Suspense fallback={
           <Card>
             <CardContent className="py-6">

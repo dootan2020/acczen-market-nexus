@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BestSellingProductsProps {
   dateRange: DateRange | undefined;
@@ -33,6 +34,7 @@ interface ProductSales {
 export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const isMobile = useIsMobile();
   
   const { data, isLoading } = useQuery({
     queryKey: ['best-selling-products', dateRange, page, pageSize],
@@ -136,9 +138,41 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
     setPage(1); // Reset to first page when changing page size
   };
 
+  // Mobile card view for product sales
+  const renderMobileCards = () => {
+    return (
+      <div className="space-y-4">
+        {data?.items && data.items.length > 0 ? (
+          data.items.map((product) => (
+            <Card key={product.id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="font-medium text-lg">{product.name}</div>
+                <div className="text-muted-foreground text-sm">{product.category_name || 'Uncategorized'}</div>
+                <div className="flex justify-between mt-3 pt-3 border-t">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Units Sold</div>
+                    <div className="font-medium">{product.orders}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Revenue</div>
+                    <div className="font-medium">${product.revenue.toFixed(2)}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="text-center py-4">No sales data available</CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <CardTitle>Best Selling Products</CardTitle>
         <Select
           value={pageSize.toString()}
@@ -155,46 +189,52 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {isLoading ? (
           <SkeletonTable rows={5} columns={4} />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Units Sold</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.items && data.items.length > 0 ? (
-                  data.items.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
-                      <TableCell className="text-right">{product.orders}</TableCell>
-                      <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+          <>
+            {isMobile ? (
+              renderMobileCards()
+            ) : (
+              <div className="overflow-x-auto -mx-6 px-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Units Sold</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">No sales data available</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.items && data.items.length > 0 ? (
+                      data.items.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
+                          <TableCell className="text-right">{product.orders}</TableCell>
+                          <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4">No sales data available</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
       {data && data.totalCount > 0 && (
-        <CardFooter className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4">
+          <div className="text-sm text-muted-foreground order-2 sm:order-1">
             Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, data.totalCount)} of {data.totalCount} items
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 order-1 sm:order-2">
             <Button 
               variant="outline" 
               size="icon" 

@@ -53,9 +53,9 @@ const AdminUsers = () => {
   };
 
   return (
-    <div className="container mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
+    <div className="container px-4 sm:px-6 w-full max-w-full mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Users Management</h1>
         <Button variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export
@@ -63,21 +63,21 @@ const AdminUsers = () => {
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 items-start">
-        <div className="relative flex-1">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search by email, username or name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
+            className="pl-8 w-full"
           />
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={roleFilter || "all"} onValueChange={(value) => setRoleFilter(value === "all" ? null : value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +89,7 @@ const AdminUsers = () => {
         </div>
       </div>
       
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
@@ -108,14 +108,16 @@ const AdminUsers = () => {
         </CardContent>
       </Card>
       
-      <UsersPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        prevPage={prevPage}
-        nextPage={nextPage}
-        hasNextPage={hasNextPage}
-        hasPrevPage={hasPrevPage}
-      />
+      <div>
+        <UsersPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          prevPage={prevPage}
+          nextPage={nextPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
+      </div>
       
       <EditRoleDialog
         open={isEditRoleDialogOpen}
