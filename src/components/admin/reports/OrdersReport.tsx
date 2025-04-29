@@ -25,6 +25,9 @@ interface OrdersReportProps {
 }
 
 export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) {
+  // Add fallback for empty data to prevent chart errors
+  const hasData = ordersChartData && ordersChartData.length > 0;
+  
   return (
     <Card>
       <CardHeader>
@@ -36,6 +39,10 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-80 w-full" />
+        ) : !hasData ? (
+          <div className="flex items-center justify-center h-80 text-muted-foreground">
+            No order data available for the selected period
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
@@ -52,8 +59,16 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
                 dataKey="date" 
                 tickFormatter={(date) => format(new Date(date), 'MMM dd')}
               />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
+              <YAxis 
+                yAxisId="left"
+                orientation="left"
+                label={{ value: 'Revenue', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right"
+                label={{ value: 'Orders', angle: 90, position: 'insideRight' }}
+              />
               <Tooltip 
                 formatter={(value: number, name) => {
                   if (name === 'amount') return [`$${value.toFixed(2)}`, 'Revenue'];

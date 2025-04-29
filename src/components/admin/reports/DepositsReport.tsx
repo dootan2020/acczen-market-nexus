@@ -28,6 +28,10 @@ interface DepositsReportProps {
 }
 
 export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
+  // Add fallback for empty data to prevent chart errors
+  const hasData = depositsChartData && depositsChartData.length > 0;
+  const hasDepositsData = depositsData && depositsData.length > 0;
+
   return (
     <>
       <Card>
@@ -40,6 +44,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-80 w-full" />
+          ) : !hasData ? (
+            <div className="flex items-center justify-center h-80 text-muted-foreground">
+              No deposit data available for the selected period
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
@@ -56,7 +64,14 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   dataKey="date" 
                   tickFormatter={(date) => format(new Date(date), 'MMM dd')}
                 />
-                <YAxis />
+                <YAxis 
+                  yAxisId="left"
+                  orientation="left"
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                />
                 <Tooltip 
                   formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
                   labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
@@ -68,14 +83,15 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   stroke="#2ECC71" 
                   name="Deposit Amount" 
                   strokeWidth={2}
+                  yAxisId="left"
                 />
                 <Line 
                   type="monotone" 
                   dataKey="count" 
                   stroke="#3498DB" 
                   name="Deposit Count"
-                  yAxisId={1}
                   strokeWidth={2}
+                  yAxisId="right"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -94,6 +110,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-60 w-full" />
+            ) : !hasData || !hasDepositsData ? (
+              <div className="flex items-center justify-center h-60 text-muted-foreground">
+                No PayPal deposit data available
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
@@ -146,6 +166,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-60 w-full" />
+            ) : !hasData || !hasDepositsData ? (
+              <div className="flex items-center justify-center h-60 text-muted-foreground">
+                No USDT deposit data available
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
