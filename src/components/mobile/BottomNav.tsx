@@ -34,6 +34,7 @@ export const BottomNav = () => {
             "flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1",
             isActive('/') ? "text-primary" : "text-muted-foreground"
           )}
+          aria-label="Home"
         >
           <Home size={20} />
           <span className="text-xs mt-1">Home</span>
@@ -45,6 +46,7 @@ export const BottomNav = () => {
             "flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1",
             isActive('/products') ? "text-primary" : "text-muted-foreground"
           )}
+          aria-label="Products"
         >
           <Search size={20} />
           <span className="text-xs mt-1">Products</span>
@@ -56,6 +58,7 @@ export const BottomNav = () => {
             "flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1 relative",
             isActive('/cart') ? "text-primary" : "text-muted-foreground"
           )}
+          aria-label="Cart"
         >
           <ShoppingCart size={20} />
           {cartItems.length > 0 && (
@@ -72,6 +75,7 @@ export const BottomNav = () => {
             "flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1",
             (isActive('/dashboard') || isActive('/login')) ? "text-primary" : "text-muted-foreground"
           )}
+          aria-label="Account"
         >
           <User size={20} />
           <span className="text-xs mt-1">{user ? "Account" : "Login"}</span>
@@ -80,6 +84,7 @@ export const BottomNav = () => {
         <button
           className="flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1 text-muted-foreground focus:outline-none"
           onClick={handleMenuClick}
+          aria-label="Menu"
         >
           <Menu size={20} />
           <span className="text-xs mt-1">More</span>

@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import CheckoutEmpty from '@/components/checkout/CheckoutEmpty';
 import OrderSummary from '@/components/checkout/OrderSummary';
 import CheckoutCard from '@/components/checkout/CheckoutCard';
+import MobileHeader from '@/components/mobile/MobileHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Checkout = () => {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ const Checkout = () => {
   const { cartItems, totalPrice, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [userBalance, setUserBalance] = useState<number>(0);
+  const isMobile = useIsMobile();
   
   // Check if we have a single product purchase instead of cart
   const singleProduct = location.state?.product;
@@ -137,42 +140,50 @@ const Checkout = () => {
 
   if (items.length === 0 && !singleProduct) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <CheckoutEmpty />
-      </div>
+      <>
+        {isMobile && <MobileHeader title="Checkout" showCart={false} />}
+        <div className="container mx-auto py-4 md:py-8 px-4">
+          <CheckoutEmpty />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-4 sm:mb-6"
-          size="sm"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Back
-        </Button>
+    <>
+      {isMobile && <MobileHeader title="Checkout" showCart={false} />}
+      <div className="container mx-auto py-4 md:py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          {!isMobile && (
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(-1)}
+              className="mb-4 sm:mb-6"
+              size="sm"
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back
+            </Button>
+          )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <CheckoutCard 
-              balanceUSD={balanceUSD}
-              totalUSD={totalUSD}
-              hasEnoughBalance={hasEnoughBalance}
-              isProcessing={isProcessing}
-              onPurchase={handlePurchase}
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <CheckoutCard 
+                balanceUSD={balanceUSD}
+                totalUSD={totalUSD}
+                hasEnoughBalance={hasEnoughBalance}
+                isProcessing={isProcessing}
+                onPurchase={handlePurchase}
+              />
+            </div>
 
-          <div className="order-first md:order-last">
-            <OrderSummary items={items} total={total} />
+            <div className={`${isMobile ? "order-first mb-4" : "order-first md:order-last"}`}>
+              <OrderSummary items={items} total={total} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

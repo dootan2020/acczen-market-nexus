@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNav from "./mobile/BottomNav";
@@ -12,10 +12,14 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
+  const location = useLocation();
+  
+  // Check if we're on a page that has its own mobile header
+  const hasCustomMobileHeader = ['/cart', '/checkout', '/products'].includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      {(!isMobile || !hasCustomMobileHeader) && <Header />}
       <main className={`flex-1 ${isMobile ? "pb-20" : ""}`}>
         {children || <Outlet />}
       </main>

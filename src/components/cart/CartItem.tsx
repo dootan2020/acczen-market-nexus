@@ -3,6 +3,7 @@ import React from 'react';
 import { X, MinusCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CartItem as CartItemType } from '@/types/cart';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type CartItemProps = {
   item: CartItemType;
@@ -12,11 +13,12 @@ type CartItemProps = {
 
 const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => {
   const { id, name, price, quantity, image } = item;
+  const isMobile = useIsMobile();
   const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
   const formattedTotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price * quantity);
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-6 border-b">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 pb-4 sm:pb-6 border-b">
       <div className="flex items-start sm:items-center w-full sm:w-auto">
         <div className="relative h-16 w-16 flex-shrink-0 bg-muted rounded-md overflow-hidden mr-3 sm:mr-4">
           {image ? (
@@ -24,6 +26,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
               src={image}
               alt={name}
               className="h-full w-full object-cover"
+              loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
               }}
@@ -48,9 +51,10 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-full text-primary"
+            className="h-9 w-9 rounded-full text-primary"
             onClick={() => onUpdateQuantity(id, Math.max(1, quantity - 1))}
             disabled={quantity <= 1}
+            aria-label="Decrease quantity"
           >
             <MinusCircle className="h-4 w-4" />
           </Button>
@@ -60,8 +64,9 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-full text-primary"
+            className="h-9 w-9 rounded-full text-primary"
             onClick={() => onUpdateQuantity(id, quantity + 1)}
+            aria-label="Increase quantity"
           >
             <PlusCircle className="h-4 w-4" />
           </Button>
@@ -77,8 +82,9 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-9 w-9"
           onClick={() => onRemove(id)}
+          aria-label="Remove"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Remove</span>
