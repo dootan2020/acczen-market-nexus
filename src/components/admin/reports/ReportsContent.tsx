@@ -1,13 +1,15 @@
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportOverview } from "./ReportOverview";
 import { DepositsReport } from "./DepositsReport";
 import { OrdersReport } from "./OrdersReport";
 import { BestSellingProducts } from "./BestSellingProducts";
 import { DateRange } from "react-day-picker";
-import { StatsData, ChartData } from "@/hooks/useReportsData";
+import { StatsData, ChartData } from "@/types/reports";
 import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
+import { Suspense, lazy } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface ReportsContentProps {
   activeTab: string;
@@ -20,6 +22,9 @@ interface ReportsContentProps {
   isLoading: boolean;
   depositsData: any[];
 }
+
+// Use lazy loading for heavy components
+const LazyBestSellingProducts = lazy(() => import("./BestSellingProducts").then(module => ({ default: module.BestSellingProducts })));
 
 export function ReportsContent({
   activeTab,
@@ -67,16 +72,16 @@ export function ReportsContent({
       </TabsContent>
       
       <TabsContent value="products">
-        <BestSellingProducts dateRange={dateRange} />
+        <Suspense fallback={
+          <Card>
+            <CardContent className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        }>
+          <LazyBestSellingProducts dateRange={dateRange} />
+        </Suspense>
       </TabsContent>
-      
-      {isLoading && (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <p className="text-muted-foreground">Loading data, please wait...</p>
-          </CardContent>
-        </Card>
-      )}
     </Tabs>
   );
 }

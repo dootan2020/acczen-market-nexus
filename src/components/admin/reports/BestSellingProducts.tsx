@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -13,6 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface BestSellingProductsProps {
   dateRange: DateRange | undefined;
@@ -27,8 +31,11 @@ interface ProductSales {
 }
 
 export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
   const { data, isLoading } = useQuery({
-    queryKey: ['best-selling-products', dateRange],
+    queryKey: ['best-selling-products', dateRange, page, pageSize],
     queryFn: async () => {
       // Format dates for the query
       const fromDate = dateRange?.from 
@@ -40,7 +47,7 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
         : new Date().toISOString();
         
       // Get order items with product info
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('order_items')
         .select(`
           id,
@@ -49,7 +56,7 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
           total,
           product:products(id, name, category_id),
           order:orders(created_at, status)
-        `)
+        `, { count: 'exact' })
         .gte('order.created_at', fromDate)
         .lte('order.created_at', toDate)
         .eq('order.status', 'completed');
@@ -91,15 +98,62 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
       
       // Convert to array and sort by revenue
       const productSales = Array.from(productSalesMap.values());
-      return productSales.sort((a, b) => b.revenue - a.revenue);
+      const sortedSales = productSales.sort((a, b) => b.revenue - a.revenue);
+      
+      // Total count for pagination
+      const totalCount = sortedSales.length;
+      
+      // Paginate results
+      const paginatedResults = sortedSales.slice((page - 1) * pageSize, page * pageSize);
+      
+      return {
+        items: paginatedResults,
+        totalCount,
+        pageCount: Math.ceil(totalCount / pageSize)
+      };
     },
-    enabled: !!dateRange?.from // Only require from date to be present
+    enabled: !!dateRange?.from, // Only require from date to be present
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  
+  const totalPages = data?.pageCount || 1;
+  
+  // Handlers for pagination
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
+  };
+  
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+  
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value));
+    setPage(1); // Reset to first page when changing page size
+  };
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Best Selling Products</CardTitle>
+        <Select
+          value={pageSize.toString()}
+          onValueChange={handlePageSizeChange}
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Select rows" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="5">5 rows</SelectItem>
+            <SelectItem value="10">10 rows</SelectItem>
+            <SelectItem value="20">20 rows</SelectItem>
+            <SelectItem value="50">50 rows</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -122,8 +176,8 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data && data.length > 0 ? (
-                  data.slice(0, 10).map((product) => (
+                {data?.items && data.items.length > 0 ? (
+                  data.items.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
@@ -141,6 +195,36 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
           </div>
         )}
       </CardContent>
+      {data && data.totalCount > 0 && (
+        <CardFooter className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, data.totalCount)} of {data.totalCount} items
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handlePrevPage} 
+              disabled={page === 1}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-sm">
+              Page {page} of {totalPages}
+            </span>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleNextPage} 
+              disabled={page >= totalPages}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }
+
+export default BestSellingProducts;

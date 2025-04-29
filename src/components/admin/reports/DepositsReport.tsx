@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -20,6 +23,14 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DepositsReportProps {
   depositsChartData: any[];
@@ -28,10 +39,31 @@ interface DepositsReportProps {
 }
 
 export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  
   // Add fallback for empty data to prevent chart errors
   const hasData = depositsChartData && depositsChartData.length > 0;
   const hasDepositsData = depositsData && depositsData.length > 0;
 
+  // Calculate total pages
+  const totalPages = Math.ceil(depositsData.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const paginatedDeposits = depositsData.slice(startIndex, startIndex + pageSize);
+  
+  // Handlers for pagination
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
+  };
+  
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+  
   return (
     <>
       <Card>
@@ -212,6 +244,89 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           </CardContent>
         </Card>
       </div>
+      
+      {/* Recent Deposits Table with Pagination */}
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Recent Deposits</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : !hasDepositsData ? (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              No deposit data available
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedDeposits.map((deposit) => (
+                  <TableRow key={deposit.id}>
+                    <TableCell>
+                      {format(new Date(deposit.created_at), 'yyyy-MM-dd HH:mm')}
+                    </TableCell>
+                    <TableCell>${deposit.amount?.toFixed(2)}</TableCell>
+                    <TableCell>{deposit.payment_method}</TableCell>
+                    <TableCell>
+                      <span 
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          deposit.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : deposit.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {deposit.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+        {depositsData.length > pageSize && (
+          <CardFooter className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1}-{Math.min(startIndex + pageSize, depositsData.length)} of {depositsData.length} deposits
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handlePrevPage} 
+                disabled={page === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm">
+                Page {page} of {totalPages}
+              </span>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleNextPage} 
+                disabled={page >= totalPages}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
     </>
   );
 }
