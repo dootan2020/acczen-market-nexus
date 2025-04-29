@@ -194,6 +194,7 @@ export type Database = {
           metadata: Json | null
           recipient_email: string
           sent_at: string
+          status: string | null
           user_id: string | null
         }
         Insert: {
@@ -203,6 +204,7 @@ export type Database = {
           metadata?: Json | null
           recipient_email: string
           sent_at?: string
+          status?: string | null
           user_id?: string | null
         }
         Update: {
@@ -212,6 +214,7 @@ export type Database = {
           metadata?: Json | null
           recipient_email?: string
           sent_at?: string
+          status?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -381,6 +384,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean
+          notification_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          notification_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          notification_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {

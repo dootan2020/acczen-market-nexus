@@ -1,11 +1,11 @@
 
 import React from 'react';
-import AdminOrders from '@/components/admin/orders/AdminOrders';
 
-const OrdersPage: React.FC = () => {
+const OrdersPage = () => {
   return (
     <div>
-      <AdminOrders />
+      <h1 className="text-2xl font-bold mb-4">Orders Management</h1>
+      <p>Manage orders here.</p>
     </div>
   );
 };
