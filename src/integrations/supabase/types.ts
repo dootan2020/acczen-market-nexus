@@ -391,77 +391,6 @@ export type Database = {
           },
         ]
       }
-      loyalty_points_transactions: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          points: number
-          reference_id: string | null
-          transaction_type: Database["public"]["Enums"]["loyalty_transaction_type"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          points: number
-          reference_id?: string | null
-          transaction_type: Database["public"]["Enums"]["loyalty_transaction_type"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          points?: number
-          reference_id?: string | null
-          transaction_type?: Database["public"]["Enums"]["loyalty_transaction_type"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loyalty_points_transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      loyalty_tiers: {
-        Row: {
-          created_at: string
-          discount_percentage: number
-          icon_url: string | null
-          id: string
-          min_points: number
-          name: string
-          special_perks: string[] | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          discount_percentage?: number
-          icon_url?: string | null
-          id?: string
-          min_points?: number
-          name: string
-          special_perks?: string[] | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          discount_percentage?: number
-          icon_url?: string | null
-          id?: string
-          min_points?: number
-          name?: string
-          special_perks?: string[] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       notification_preferences: {
         Row: {
           created_at: string | null
@@ -792,11 +721,9 @@ export type Database = {
           avatar_url: string | null
           balance: number
           created_at: string
-          current_tier_id: string | null
           email: string
           full_name: string | null
           id: string
-          loyalty_points: number
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           username: string
@@ -805,11 +732,9 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
-          current_tier_id?: string | null
           email: string
           full_name?: string | null
           id: string
-          loyalty_points?: number
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username: string
@@ -818,24 +743,14 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
-          current_tier_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
-          loyalty_points?: number
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_current_tier_id_fkey"
-            columns: ["current_tier_id"]
-            isOneToOne: false
-            referencedRelation: "loyalty_tiers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       stock_notifications: {
         Row: {
@@ -1137,16 +1052,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_loyalty_points: {
-        Args: {
-          p_user_id: string
-          p_points: number
-          p_transaction_type: Database["public"]["Enums"]["loyalty_transaction_type"]
-          p_reference_id: string
-          p_description: string
-        }
-        Returns: string
-      }
       admin_update_exchange_rate: {
         Args: {
           p_from_currency: string
@@ -1155,14 +1060,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      calculate_loyalty_discount: {
-        Args: { user_id: string; order_amount: number }
-        Returns: number
-      }
-      calculate_order_loyalty_points: {
-        Args: { order_amount: number }
-        Returns: number
-      }
       check_if_should_open_circuit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1170,20 +1067,6 @@ export type Database = {
       generate_random_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
-      }
-      get_user_loyalty_info: {
-        Args: { p_user_id: string }
-        Returns: {
-          user_id: string
-          loyalty_points: number
-          current_tier_name: string
-          current_tier_discount: number
-          current_tier_perks: string[]
-          current_tier_icon: string
-          next_tier_name: string
-          next_tier_min_points: number
-          points_to_next_tier: number
-        }[]
       }
       increment_error_count: {
         Args: Record<PropertyKey, never>
@@ -1201,13 +1084,8 @@ export type Database = {
         Args: { user_id: string; amount: number }
         Returns: undefined
       }
-      update_user_loyalty_tier: {
-        Args: { user_id: string }
-        Returns: string
-      }
     }
     Enums: {
-      loyalty_transaction_type: "earned" | "redeemed" | "expired" | "adjusted"
       order_status:
         | "pending"
         | "completed"
@@ -1332,7 +1210,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      loyalty_transaction_type: ["earned", "redeemed", "expired", "adjusted"],
       order_status: ["pending", "completed", "cancelled", "refunded", "failed"],
       product_status: ["active", "inactive", "out_of_stock"],
       transaction_type: ["purchase", "deposit", "refund"],

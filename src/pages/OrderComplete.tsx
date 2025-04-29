@@ -1,15 +1,13 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, ShoppingBag, ArrowRight, Download, Home, ClipboardList, Award } from 'lucide-react';
+import { CheckCircle, ShoppingBag, ArrowRight, Download, Home, ClipboardList } from 'lucide-react';
 import TrustBadges from '@/components/trust/TrustBadges';
 import { useOrderConfirmation } from '@/hooks/useOrderConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import { useLoyalty } from '@/hooks/useLoyalty';
-import { LoyaltyPointsResponse, TierUpgrade } from '@/types/loyalty';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -21,8 +19,6 @@ const OrderComplete = () => {
   const orderData = location.state?.orderData;
   const { sendOrderConfirmationEmail } = useOrderConfirmation();
   const pdfRef = useRef(null);
-  const [loyaltyPoints, setLoyaltyPoints] = useState<LoyaltyPointsResponse | null>(null);
-  const { awardPoints, isProcessingPoints } = useLoyalty();
 
   useEffect(() => {
     if (orderData?.id && user?.id) {
@@ -35,31 +31,6 @@ const OrderComplete = () => {
         transaction_id: orderData.transaction_id,
         digital_items: orderData.digital_items || []
       });
-      
-      // Award loyalty points for purchase
-      const awardLoyaltyPoints = async () => {
-        try {
-          if (orderData.total) {
-            // Calculate points based on order total (1 point per $1)
-            const points = Math.floor(orderData.total);
-            
-            if (points > 0) {
-              const result = await awardPoints({
-                points,
-                transactionType: 'earned',
-                referenceId: orderData.id,
-                description: `Đơn hàng #${orderData.id.substring(0, 8)}`
-              });
-              
-              setLoyaltyPoints(result);
-            }
-          }
-        } catch (error) {
-          console.error('Error awarding loyalty points:', error);
-        }
-      };
-      
-      awardLoyaltyPoints();
     }
   }, [orderData, user]);
 
@@ -136,30 +107,6 @@ const OrderComplete = () => {
     doc.save(`order-${orderData.id}.pdf`);
   };
 
-  // Get tier color
-  const getTierColor = (tierName: string | undefined): string => {
-    if (!tierName) return '#3498DB';
-    
-    switch (tierName) {
-      case 'Bronze':
-        return '#CD7F32';
-      case 'Silver':
-        return '#C0C0C0';
-      case 'Gold':
-        return '#FFD700';
-      case 'Platinum':
-        return '#E5E4E2';
-      default:
-        return '#3498DB'; // Default blue
-    }
-  };
-  
-  // Get text color for tier
-  const getTextColor = (tierName: string | undefined): string => {
-    if (!tierName) return '#000';
-    return ['Bronze', 'Gold'].includes(tierName) ? '#000' : '#fff';
-  };
-
   return (
     <div className="container mx-auto py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -214,64 +161,6 @@ const OrderComplete = () => {
                     <p className="font-bold">{formatUSD(orderData.total)}</p>
                   </div>
                 </div>
-                
-                {/* Loyalty points info */}
-                {loyaltyPoints && loyaltyPoints.loyaltyInfo && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="bg-primary/5 rounded-lg p-4 relative">
-                      <div className="absolute top-0 right-0 flex items-center px-2.5 py-0.5 rounded-bl rounded-tr text-xs font-medium"
-                        style={{ 
-                          backgroundColor: getTierColor(loyaltyPoints.loyaltyInfo.current_tier_name),
-                          color: getTextColor(loyaltyPoints.loyaltyInfo.current_tier_name)
-                        }}
-                      >
-                        {loyaltyPoints.loyaltyInfo.current_tier_name}
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Award className="h-5 w-5 text-primary" />
-                        <h3 className="font-medium">Điểm thành viên</h3>
-                      </div>
-                      
-                      <div className="mt-3 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Điểm nhận được:</span>
-                          <span className="font-bold text-lg text-primary">+{Math.floor(orderData.total)} điểm</span>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Tổng điểm hiện tại:</span>
-                          <span className="font-medium">{loyaltyPoints.loyaltyInfo.loyalty_points} điểm</span>
-                        </div>
-                        
-                        {loyaltyPoints.tierUpgrade && (
-                          <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-2">
-                            <div className="flex items-center">
-                              <div className="bg-amber-100 p-1.5 rounded-full mr-2">
-                                <Award className="h-4 w-4 text-amber-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-amber-800">Chúc mừng! Bạn đã lên cấp!</p>
-                                <p className="text-sm text-amber-700">
-                                  Bạn đã được nâng cấp từ {loyaltyPoints.tierUpgrade.previousTier} lên {loyaltyPoints.tierUpgrade.newTier}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-end mt-1">
-                          <Button variant="link" className="text-sm p-0" asChild>
-                            <a href="/dashboard/loyalty">
-                              Xem chi tiết 
-                              <ArrowRight className="h-3 w-3 ml-1" />
-                            </a>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 
                 {orderData.digital_items && orderData.digital_items.length > 0 && (
                   <div className="mt-6 pt-6 border-t">

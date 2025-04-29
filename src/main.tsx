@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { UIProvider } from './contexts/UIContext';
 import App from './App.tsx';
 import './index.css';
 
@@ -17,11 +16,9 @@ createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
-        <UIProvider>
-          <TooltipProvider>
-            <App />
-          </TooltipProvider>
-        </UIProvider>
+        <TooltipProvider>
+          <App />
+        </TooltipProvider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
