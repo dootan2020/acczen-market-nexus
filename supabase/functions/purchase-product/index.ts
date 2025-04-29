@@ -1,283 +1,332 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
+import { 
+  corsHeaders, 
+  createServerSupabaseClient, 
+  TAPHOAMMO_USER_TOKEN, 
+  withRetry,
+  callTaphoammoApi,
+  OrderResponse,
+  logApiRequest,
+  recordApiFailure,
+  resetApiHealth,
+  checkCircuitBreaker,
+  formatLogData,
+  TaphoammoError,
+  TAPHOAMMO_ERROR_CODES
+} from "../_shared/utils.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-serve(async (req: Request) => {
-  // Handle OPTIONS request for CORS
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the authorization header from the request
+    // Get auth header for user verification
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ success: false, message: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Get request data
+    const { kioskToken, quantity = 1, productId, promotion } = await req.json();
+    
+    // Validate required parameters
+    if (!kioskToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Missing kiosk token" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Get the current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
+    const supabase = createServerSupabaseClient();
+    
+    // Get current user from auth header
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Parse request body
-    const { items } = await req.json();
-    
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    // Check if circuit breaker is open
+    const isCircuitOpen = await checkCircuitBreaker(supabase, 'taphoammo');
+    if (isCircuitOpen) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Invalid items data' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          message: "API temporarily unavailable due to repeated failures. Please try again later." 
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Fetch product details for all items
-    const productIds = items.map(item => item.id);
-    const { data: products, error: productsError } = await supabase
-      .from('products')
-      .select('*')
-      .in('id', productIds);
-
-    if (productsError || !products) {
-      console.error('Error fetching products:', productsError);
-      return new Response(
-        JSON.stringify({ success: false, message: 'Error fetching product details' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create a map of products for easier lookup
-    const productsMap = new Map(products.map(p => [p.id, p]));
-
-    // Validate stock availability and calculate total
-    let totalAmount = 0;
-    const orderItems = [];
-
-    for (const item of items) {
-      const product = productsMap.get(item.id);
-      
-      if (!product) {
+    // Verify the product exists if productId is provided
+    if (productId) {
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('name, price, stock_quantity, kiosk_token')
+        .eq('id', productId)
+        .single();
+        
+      if (productError || !product) {
         return new Response(
-          JSON.stringify({ success: false, message: `Product not found: ${item.id}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: false, message: "Product not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      if (product.stock_quantity < item.quantity) {
+      // Verify kiosk token matches
+      if (product.kiosk_token !== kioskToken) {
+        return new Response(
+          JSON.stringify({ success: false, message: "Invalid kiosk token for this product" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Check stock quantity
+      if (product.stock_quantity < quantity) {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            message: `Insufficient stock for: ${product.name}. Available: ${product.stock_quantity}` 
+            message: `Insufficient stock. Requested: ${quantity}, Available: ${product.stock_quantity}` 
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
-      const itemPrice = product.sale_price || product.price;
-      const itemTotal = itemPrice * item.quantity;
-      totalAmount += itemTotal;
-      
-      orderItems.push({
-        product_id: product.id,
-        quantity: item.quantity,
-        price: itemPrice,
-        total: itemTotal,
-        data: { product_name: product.name }
-      });
     }
-
+    
     // Check user balance
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('balance')
       .eq('id', user.id)
       .single();
-
+      
     if (profileError || !profile) {
-      console.error('Error fetching user profile:', profileError);
       return new Response(
-        JSON.stringify({ success: false, message: 'Error fetching user balance' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: "User profile not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    // Calculate total price if product is provided
+    let totalPrice = 0;
+    let productName = '';
+    
+    if (productId) {
+      const { data: product } = await supabase
+        .from('products')
+        .select('name, price, sale_price')
+        .eq('id', productId)
+        .single();
+        
+      if (product) {
+        totalPrice = (product.sale_price || product.price) * quantity;
+        productName = product.name;
+        
+        // Check balance
+        if (profile.balance < totalPrice) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: `Insufficient balance. Required: ${totalPrice}, Available: ${profile.balance}` 
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
 
-    // Get exchange rate for display purposes only
-    const { data: exchangeRate } = await supabase
-      .from('exchange_rates')
-      .select('rate')
-      .eq('from_currency', 'VND')
-      .eq('to_currency', 'USD')
-      .single();
-      
-    const rate = exchangeRate?.rate || 0.000043; // Fallback rate if not found
+    console.log(`Processing purchase for product ${productId} with kiosk token: ${kioskToken}, quantity: ${quantity}`);
 
-    if (profile.balance < totalAmount) {
-      // Calculate USD values for the error message
-      const balanceUSD = profile.balance * rate;
-      const totalAmountUSD = totalAmount * rate;
+    try {
+      // Make API call with retry mechanism
+      const buyParams: Record<string, string | number> = {
+        kioskToken,
+        userToken: TAPHOAMMO_USER_TOKEN,
+        quantity
+      };
       
+      if (promotion) {
+        buyParams.promotion = promotion;
+      }
+
+      const { result: orderData, retries, responseTime } = await withRetry(async () => {
+        return await callTaphoammoApi<OrderResponse>('buyProducts', buyParams);
+      });
+
+      // Log successful API request
+      await logApiRequest(
+        supabase, 
+        'taphoammo', 
+        'buyProducts', 
+        'success', 
+        formatLogData({ 
+          kioskToken, 
+          quantity,
+          orderId: orderData.order_id,
+          status: orderData.status,
+          keysCount: orderData.product_keys?.length
+        }),
+        responseTime
+      );
+      
+      // Reset API health after successful request
+      await resetApiHealth(supabase, 'taphoammo');
+
+      // Create a transaction in a database
+      if (productId) {
+        // Start database transaction
+        // 1. Create order
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            total_amount: totalPrice,
+            status: 'completed'
+          })
+          .select('id')
+          .single();
+          
+        if (orderError) {
+          console.error("Failed to create order:", orderError);
+          // Continue anyway to not block the user, they already paid
+        }
+        
+        // 2. Create order item
+        if (order) {
+          await supabase
+            .from('order_items')
+            .insert({
+              order_id: order.id,
+              product_id: productId,
+              quantity: quantity,
+              price: totalPrice / quantity,
+              total: totalPrice,
+              data: {
+                taphoammo_order_id: orderData.order_id,
+                product_keys: orderData.product_keys || [],
+                status: orderData.status
+              }
+            });
+        }
+        
+        // 3. Deduct user balance
+        await supabase
+          .from('profiles')
+          .update({ balance: profile.balance - totalPrice })
+          .eq('id', user.id);
+          
+        // 4. Create transaction record
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: user.id,
+            type: 'purchase',
+            amount: -totalPrice,
+            description: `Purchase of ${quantity}x ${productName}`,
+            reference_id: order?.id
+          });
+          
+        // 5. Update product stock
+        await supabase
+          .from('products')
+          .update({ 
+            stock_quantity: supabase.rpc('decrement', { x: quantity }),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', productId);
+          
+        // 6. Create inventory sync history
+        const { data: productData } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', productId)
+          .single();
+          
+        if (productData) {
+          await supabase
+            .from('inventory_sync_history')
+            .insert({
+              product_id: productId,
+              kiosk_token: kioskToken,
+              old_quantity: productData.stock_quantity + quantity,
+              new_quantity: productData.stock_quantity,
+              sync_type: 'purchase',
+              status: 'success',
+              message: `Stock reduced by ${quantity} due to purchase`
+            });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Purchase successful",
+          order_id: orderData.order_id,
+          status: orderData.status || 'completed',
+          product_keys: orderData.product_keys || [],
+          retries
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+      
+    } catch (error) {
+      // Log API failure for circuit breaker
+      await recordApiFailure(supabase, 'taphoammo', error);
+      
+      // Log failed API request
+      await logApiRequest(
+        supabase, 
+        'taphoammo', 
+        'buyProducts', 
+        'error', 
+        formatLogData({ kioskToken, quantity, error: error.message || 'Unknown error' })
+      );
+
+      // Special handling for specific TaphoammoError types
+      if (error instanceof TaphoammoError) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: error.message,
+            code: error.code,
+            retries: error.retries
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Generic error response
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: `Insufficient balance. You need $${totalAmountUSD.toFixed(2)} but your balance is $${balanceUSD.toFixed(2)}` 
+          message: "Failed to process purchase",
+          error: error.message || 'Unknown error'
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Start transaction
-    // Note: We'll create an order, update stock, and update user balance
-    let createdOrder = null;
-
-    // 1. Create order
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        total_amount: totalAmount,
-        status: 'completed'
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      console.error('Error creating order:', orderError);
-      return new Response(
-        JSON.stringify({ success: false, message: 'Failed to create order' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    createdOrder = order;
-
-    // 2. Create order items
-    const orderItemsWithOrderId = orderItems.map(item => ({
-      ...item,
-      order_id: order.id
-    }));
-
-    const { error: orderItemsError } = await supabase
-      .from('order_items')
-      .insert(orderItemsWithOrderId);
-
-    if (orderItemsError) {
-      console.error('Error creating order items:', orderItemsError);
-      // Ideally we would rollback the order here
-      return new Response(
-        JSON.stringify({ success: false, message: 'Failed to create order items' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 3. Update product stock quantities
-    for (const item of items) {
-      const product = productsMap.get(item.id);
-      const newStockQuantity = product.stock_quantity - item.quantity;
-      
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({ 
-          stock_quantity: newStockQuantity,
-          status: newStockQuantity === 0 ? 'out_of_stock' : product.status
-        })
-        .eq('id', item.id);
-      
-      if (updateError) {
-        console.error(`Error updating stock for product ${item.id}:`, updateError);
-        // Ideally we would rollback the transaction here
-        return new Response(
-          JSON.stringify({ success: false, message: 'Failed to update product stock' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // 4. Update user balance
-    const newBalance = profile.balance - totalAmount;
-    const { error: updateBalanceError } = await supabase
-      .from('profiles')
-      .update({ balance: newBalance })
-      .eq('id', user.id);
-
-    if (updateBalanceError) {
-      console.error('Error updating user balance:', updateBalanceError);
-      // Ideally we would rollback the transaction here
-      return new Response(
-        JSON.stringify({ success: false, message: 'Failed to update your balance' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 5. Create a transaction record
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: user.id,
-        amount: -totalAmount, // Negative amount for purchases
-        type: 'purchase',
-        reference_id: order.id,
-        description: `Purchase of ${items.length} product(s)`
-      });
-
-    if (transactionError) {
-      console.error('Error creating transaction record:', transactionError);
-      // Not critical, so we don't return an error
-    }
-
-    // Return success response with order details
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Purchase completed successfully',
-        order: {
-          id: createdOrder.id,
-          total: totalAmount,
-          totalUSD: totalAmount * rate, // Include USD value for display
-          items: orderItems.length
-        }
-      }),
-      { 
-        status: 200, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error("Unexpected error:", error);
+    
     return new Response(
-      JSON.stringify({ success: false, message: 'An unexpected error occurred' }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
+      JSON.stringify({ 
+        success: false, 
+        message: "An unexpected error occurred",
+        error: error.message || 'Unknown error'
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
