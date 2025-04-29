@@ -29,6 +29,18 @@ interface OrdersReportProps {
   isLoading: boolean;
 }
 
+// Define a proper type for order with user profile information
+interface OrderWithProfile {
+  id: string;
+  created_at: string;
+  total_amount: number | null;
+  status: string;
+  user: {
+    username?: string | null;
+    email?: string | null;
+  } | null;
+}
+
 export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -53,7 +65,7 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
         .limit(100); // Fetch a larger number for client-side pagination
         
       if (error) throw error;
-      return data;
+      return data as OrderWithProfile[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
