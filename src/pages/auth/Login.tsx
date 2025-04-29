@@ -74,17 +74,17 @@ const Login = () => {
     
     try {
       console.log("Đang thực hiện đăng nhập với:", { email });
-      const result = await signIn(email, password, rememberMe);
+      const result = await signIn(email, password);
       
       if (result?.error) {
         console.error("Login error details:", result.error);
         setLoginAttempts(prev => prev + 1);
         
         // Handle specific error types
-        setErrorMessage(result.error);
+        setErrorMessage(result.error.message || "Đăng nhập thất bại");
         
         toast.error("Lỗi đăng nhập", {
-          description: result.error
+          description: result.error.message || "Đăng nhập thất bại"
         });
       } else {
         // Success is handled by AuthContext
@@ -92,13 +92,13 @@ const Login = () => {
         navigate(getPreviousPath());
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại";
+      const errorMsg = error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại";
       console.error("Login error:", error);
-      setErrorMessage(errorMessage);
+      setErrorMessage(errorMsg);
       setLoginAttempts(prev => prev + 1);
       
       toast.error("Lỗi đăng nhập", {
-        description: errorMessage
+        description: errorMsg
       });
     } finally {
       setIsLoading(false);

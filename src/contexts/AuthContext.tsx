@@ -17,6 +17,7 @@ export interface AuthContextType {
   balance: number;
   userDisplayName: string;
   updateUserEmail: (email: string) => Promise<{ user: User | null; error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   balance: 0,
   userDisplayName: '',
   updateUserEmail: async () => ({ user: null, error: null }),
+  resetPassword: async () => ({ success: false, error: null }),
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -189,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     balance,
     userDisplayName,
     updateUserEmail,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -5,10 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { DateRange } from '@/components/ui/date-range-picker';
+import { type DateRange } from '@/components/ui/date-range-picker';
 import { format } from 'date-fns';
 import ExportButtons from './ExportButtons';
-import DataPagination from './DataPagination';
+import { DataPagination } from './DataPagination';
 
 interface Product {
   id: string;

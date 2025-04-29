@@ -1,23 +1,45 @@
 
 import React from 'react';
 import { CalendarRange } from 'lucide-react';
-import { DateRange, DateRangePicker } from '@/components/ui/date-range-picker';
+import { type DateRange, DateRangePicker } from '@/components/ui/date-range-picker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { subDays, subMonths, startOfMonth, endOfMonth, startOfYear, format } from 'date-fns';
 
 interface ReportsHeaderProps {
-  dateRange: DateRange;
-  setDateRange: React.Dispatch<React.SetStateAction<DateRange>>;
+  dateRange: DateRange | undefined;
+  setDateRange?: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  onDateRangePickerChange?: (range: DateRange | undefined) => void;
+  onRefresh?: () => void;
+  isLoading: boolean;
+  formattedDateRange?: string;
+  statsData?: any;
 }
 
-export function ReportsHeader({ dateRange, setDateRange }: ReportsHeaderProps) {
+export function ReportsHeader({ 
+  dateRange, 
+  setDateRange,
+  onDateRangePickerChange,
+  onRefresh,
+  isLoading,
+  formattedDateRange,
+  statsData
+}: ReportsHeaderProps) {
   const today = new Date();
+  
+  const handleRangeChange = (range: DateRange | undefined) => {
+    if (setDateRange) {
+      setDateRange(range);
+    }
+    if (onDateRangePickerChange) {
+      onDateRangePickerChange(range);
+    }
+  };
 
   const presetRanges = [
     {
       name: 'Today',
-      onClick: () => setDateRange({
+      onClick: () => handleRangeChange({
         from: today,
         to: today
       })
@@ -79,7 +101,7 @@ export function ReportsHeader({ dateRange, setDateRange }: ReportsHeaderProps) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarRange size={16} />
             <span>
-              {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Start date'} - {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'End date'}
+              {dateRange?.from ? format(dateRange.from, 'MMM d, yyyy') : 'Start date'} - {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'End date'}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -98,17 +120,10 @@ export function ReportsHeader({ dateRange, setDateRange }: ReportsHeaderProps) {
             </div>
             <DateRangePicker 
               value={{
-                from: dateRange.from,
-                to: dateRange.to || dateRange.from
+                from: dateRange?.from as Date,
+                to: dateRange?.to as Date || dateRange?.from as Date
               }} 
-              onChange={(value) => {
-                if (value?.from) {
-                  setDateRange({ 
-                    from: value.from,
-                    to: value.to || value.from 
-                  });
-                }
-              }}
+              onChange={handleRangeChange}
               className="h-9"
               align="end"
             />

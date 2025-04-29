@@ -61,10 +61,11 @@ const Register = () => {
         console.error("Lỗi đăng ký:", result.error);
         
         // Xử lý các loại lỗi cụ thể
-        if (result.error.includes("User already registered")) {
+        const errorMsg = result.error instanceof Error ? result.error.message : String(result.error);
+        if (errorMsg.indexOf("User already registered") !== -1) {
           setErrorMessage("Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.");
         } else {
-          setErrorMessage(result.error);
+          setErrorMessage(errorMsg);
         }
       } else {
         toast.success("Đăng ký thành công", {

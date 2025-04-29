@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { 
@@ -67,10 +66,10 @@ export function UserMenu() {
 
   const handleLogoutConfirm = async () => {
     try {
-      await signOut(true)
-      setShowLogoutConfirm(false)
+      await signOut();
+      setShowLogoutConfirm(false);
     } catch (error) {
-      console.error("Lỗi đăng xuất:", error)
+      console.error("Lỗi đăng xuất:", error);
     }
   }
 

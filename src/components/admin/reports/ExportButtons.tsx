@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import { DateRange } from '@/components/ui/date-range-picker';
+import { type DateRange } from '@/components/ui/date-range-picker';
 import { format } from 'date-fns';
 import * as FileSaver from 'file-saver';
 import * as XLSX from 'xlsx';

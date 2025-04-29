@@ -1,11 +1,10 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportOverview } from "./ReportOverview";
 import { DepositsReport } from "./DepositsReport";
 import { OrdersReport } from "./OrdersReport";
-import { BestSellingProducts } from "./BestSellingProducts";
-import { DateRange } from "react-day-picker";
+import BestSellingProducts from "./BestSellingProducts";
+import { DateRange } from "@/components/ui/date-range-picker";
 import { StatsData, ChartData } from "@/hooks/useReportsData";
 import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
 import { ReportsHeader } from "./ReportsHeader";
@@ -81,18 +80,12 @@ export function ReportsContent({
   return (
     <div className="space-y-6">
       <ReportsHeader
-        dateRangeType={dateRangeType}
-        onDateRangeChange={onDateRangeChange}
         dateRange={dateRange}
         onDateRangePickerChange={onDateRangePickerChange}
         onRefresh={onRefresh}
         isLoading={isLoading}
         formattedDateRange={formattedDateRange}
         statsData={statsData}
-        activeTab={activeTab}
-        depositsData={depositsData}
-        ordersData={ordersData}
-        productsData={productsData}
       />
     
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
