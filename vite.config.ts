@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: mode !== 'production', // Only in dev and staging
-    minify: 'terser',
+    minify: mode === 'production' ? 'terser' : false, // Only use terser in production
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
