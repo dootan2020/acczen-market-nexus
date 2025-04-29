@@ -38,12 +38,14 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
     setError(null);
     
     try {
+      // Get the user profile information first
       const { data: profile } = await supabase
         .from('profiles')
         .select('username, avatar_url')
         .eq('id', user.id)
         .maybeSingle();
       
+      // Create the review record
       const reviewData = {
         product_id: productId,
         user_id: user.id,
@@ -59,8 +61,8 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
       
       if (error) throw error;
       
-      // Add profile info to the returned review for UI
-      const reviewWithProfile = {
+      // Add profile info to the returned review for UI consistency
+      const reviewWithProfile: Review = {
         ...data,
         user: {
           username: profile?.username || 'Anonymous',
@@ -68,7 +70,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
         },
       };
       
-      onReviewSubmitted(reviewWithProfile as Review);
+      onReviewSubmitted(reviewWithProfile);
       setRating(0);
       setComment('');
     } catch (err) {

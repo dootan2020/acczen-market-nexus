@@ -31,15 +31,19 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      // Modified query to correctly join with profiles table
+      // Fix the relationship query - use proper join format
       const { data, error } = await supabase
         .from('product_reviews')
         .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
+          id, 
+          user_id, 
+          product_id, 
+          rating, 
+          comment, 
+          created_at, 
+          helpful_count, 
+          is_verified_purchase,
+          profiles(username, avatar_url)
         `)
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
