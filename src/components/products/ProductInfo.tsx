@@ -49,14 +49,18 @@ const ProductInfo = ({
     setShowPurchaseModal(true);
   };
   
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(newQuantity);
+  };
+  
   return (
     <>
       <div className="space-y-6">
         <div className="flex space-x-4 items-center">
           <ProductQuantity 
             quantity={quantity} 
-            setQuantity={setQuantity} 
-            max={stockQuantity} 
+            stockQuantity={stockQuantity} 
+            onQuantityChange={handleQuantityChange} 
           />
           
           <div className="flex-grow">

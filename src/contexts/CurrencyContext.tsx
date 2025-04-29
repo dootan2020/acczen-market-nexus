@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode } from "react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { CurrencyContextType } from "@/types/currency";
@@ -25,13 +26,15 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }).format(amount);
   };
   
-  const value = {
-    exchangeRate: currency.exchangeRate,
-    setExchangeRate: currency.setExchangeRate,
+  const value: CurrencyContextType = {
     convertVNDtoUSD: currency.convertVNDtoUSD,
     convertUSDtoVND: currency.convertUSDtoVND,
     formatVND,
     formatUSD: currency.formatUSD,
+    isLoading: currency.isLoading,
+    error: currency.error,
+    getExchangeRate: currency.getExchangeRate,
+    convertCurrency: currency.convertCurrency
   };
   
   return (
