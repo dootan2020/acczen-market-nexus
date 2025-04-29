@@ -2,6 +2,7 @@
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
+import App from './App';
 import Layout from '@/components/Layout'; 
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
@@ -41,116 +42,122 @@ const CategoryCreatePage = () => <div>Category Create Page</div>;
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <App />,
     children: [
       {
         path: '/',
-        element: <HomePage />,
+        element: <MainLayout />,
+        children: [
+          {
+            path: '',
+            element: <HomePage />,
+          },
+          {
+            path: 'products',
+            element: <ProductsPage />,
+          },
+          {
+            path: 'products/:slug',
+            element: <ProductDetailsPage />,
+          },
+          {
+            path: 'categories',
+            element: <CategoriesPage />,
+          },
+          {
+            path: 'profile',
+            element: <ProfilePage />,
+          },
+        ],
       },
       {
-        path: '/products',
-        element: <ProductsPage />,
+        path: 'login',
+        element: <LoginPage />,
       },
       {
-        path: '/products/:slug',
-        element: <ProductDetailsPage />,
+        path: 'register',
+        element: <RegisterPage />,
       },
       {
-        path: '/categories',
-        element: <CategoriesPage />,
+        path: 'admin',
+        element: <AdminLayout />,
+        children: [
+          {
+            path: '',
+            element: <AdminProtectedRoute><AdminHomePage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'products',
+            element: <AdminProtectedRoute><AdminProductsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'products/edit/:id',
+            element: <AdminProtectedRoute><AdminProductEditPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'products/create',
+            element: <AdminProtectedRoute><AdminProductCreatePage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'products-import',
+            element: <AdminProtectedRoute><ProductsImportPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'categories',
+            element: <AdminProtectedRoute><AdminCategoriesPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'categories/edit/:id',
+            element: <AdminProtectedRoute><CategoryEditPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'categories/create',
+            element: <AdminProtectedRoute><CategoryCreatePage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'orders',
+            element: <AdminProtectedRoute><AdminOrdersPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'orders/:id',
+            element: <AdminProtectedRoute><AdminOrderDetailsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'users',
+            element: <AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'deposits',
+            element: <AdminProtectedRoute><AdminDepositsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'deposits/:id',
+            element: <AdminProtectedRoute><DepositDetailsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'reports',
+            element: <AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'integrations',
+            element: <AdminProtectedRoute><AdminIntegrationsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'api-monitoring',
+            element: <AdminProtectedRoute><AdminAPIMonitoringPage /></AdminProtectedRoute>,
+          },
+          {
+            path: 'exchange-rates',
+            element: <AdminProtectedRoute><AdminExchangeRatesPage /></AdminProtectedRoute>,
+          },
+          {
+            path: "discount-analytics",
+            element: <AdminProtectedRoute><DiscountAnalyticsPage /></AdminProtectedRoute>,
+          },
+        ],
       },
-      {
-        path: '/profile',
-        element: <ProfilePage />,
-      },
-    ],
-  },
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
-  {
-    path: '/admin',
-    element: <AdminLayout />,
-    children: [
-      {
-        path: '',
-        element: <AdminProtectedRoute><AdminHomePage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'products',
-        element: <AdminProtectedRoute><AdminProductsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'products/edit/:id',
-        element: <AdminProtectedRoute><AdminProductEditPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'products/create',
-        element: <AdminProtectedRoute><AdminProductCreatePage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'products-import',
-        element: <AdminProtectedRoute><ProductsImportPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'categories',
-        element: <AdminProtectedRoute><AdminCategoriesPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'categories/edit/:id',
-        element: <AdminProtectedRoute><CategoryEditPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'categories/create',
-        element: <AdminProtectedRoute><CategoryCreatePage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'orders',
-        element: <AdminProtectedRoute><AdminOrdersPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'orders/:id',
-        element: <AdminProtectedRoute><AdminOrderDetailsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'users',
-        element: <AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'deposits',
-        element: <AdminProtectedRoute><AdminDepositsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'deposits/:id',
-        element: <AdminProtectedRoute><DepositDetailsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'reports',
-        element: <AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'integrations',
-        element: <AdminProtectedRoute><AdminIntegrationsPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'api-monitoring',
-        element: <AdminProtectedRoute><AdminAPIMonitoringPage /></AdminProtectedRoute>,
-      },
-      {
-        path: 'exchange-rates',
-        element: <AdminProtectedRoute><AdminExchangeRatesPage /></AdminProtectedRoute>,
-      },
-      {
-        path: "discount-analytics",
-        element: <AdminProtectedRoute><DiscountAnalyticsPage /></AdminProtectedRoute>,
-      },
-    ],
-  },
+    ]
+  }
 ]);
 
 export default router;

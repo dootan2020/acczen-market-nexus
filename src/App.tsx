@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { RouterProvider } from 'react-router-dom'; 
-import router from './routes';
+import { Outlet } from 'react-router-dom'; 
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -18,7 +17,7 @@ function App() {
           <CurrencyProvider>
             <PaymentProvider>
               <CartProvider>
-                <RouterProvider router={router} />
+                <Outlet />
                 <Toaster />
               </CartProvider>
             </PaymentProvider>
