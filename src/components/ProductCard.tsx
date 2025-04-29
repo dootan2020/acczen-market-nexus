@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductBadge from "./products/ProductBadge";
 import StockSoldBadges from "./products/inventory/StockSoldBadges";
+import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 
 interface ProductCardProps {
   id: string;
@@ -65,6 +66,12 @@ const ProductCard = ({
     displaySalePrice ? formatUSD(displaySalePrice) : null, 
     [displaySalePrice, formatUSD]);
 
+  // Process the description to remove HTML tags and truncate
+  const cleanDescription = useMemo(() => 
+    truncateText(stripHtmlTags(description), 150), 
+    [description]
+  );
+
   const handleBuyNow = () => {
     navigate('/checkout', { 
       state: { 
@@ -121,7 +128,7 @@ const ProductCard = ({
         
         {description && (
           <p className="text-[#333333]/70 text-sm line-clamp-2 mb-3">
-            {description}
+            {cleanDescription}
           </p>
         )}
         

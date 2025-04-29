@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container } from "@/components/ui/container";
@@ -15,6 +14,7 @@ import RelatedProducts from "@/components/products/RelatedProducts";
 import TrustBadges from "@/components/trust/TrustBadges";
 import StockSoldBadges from "@/components/products/inventory/StockSoldBadges";
 import ProductBadge from "@/components/products/ProductBadge";
+import { stripHtmlTags } from '@/utils/htmlUtils';
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -141,13 +141,14 @@ const ProductDetail = () => {
             </div>
             
             <div className="prose prose-sm max-w-none text-[#333333]/70">
-              <p>{product.description || 'No description available.'}</p>
+              {/* Use stripHtmlTags for the short description in the detail page */}
+              <p>{stripHtmlTags(product.description || 'No description available.')}</p>
             </div>
             
             <ProductInfo 
               id={product.id}
               name={product.name}
-              description={product.description || ''}
+              description={stripHtmlTags(product.description || '')}
               price={product.price}
               salePrice={product.sale_price}
               stockQuantity={product.stock_quantity}
@@ -171,7 +172,7 @@ const ProductDetail = () => {
           </div>
         </div>
         
-        {/* Product Description */}
+        {/* Product Description - uses RichTextContent for rich html rendering */}
         <div className="grid grid-cols-1 gap-8 mb-12">
           <Card className="overflow-hidden">
             <CardContent className="p-6">
