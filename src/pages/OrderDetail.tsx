@@ -33,7 +33,7 @@ const OrderDetail = () => {
         setOrderProducts(result.products || []);
         setCachedData(!!result.cached);
         
-        // Get order info from the first API response if available
+        // Get order info from the API response if available
         if (result.orderInfo) {
           setOrderInfo(result.orderInfo);
         }

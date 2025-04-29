@@ -26,6 +26,11 @@ export interface OrderProductsResult {
   }>;
   cached?: boolean;
   error?: string;
+  orderInfo?: {
+    created_at: string;
+    status: string;
+    total_amount: number;
+  };
 }
 
 export function useTaphoammoApi() {

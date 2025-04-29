@@ -14,7 +14,8 @@ import {
   verifyOrderAccess, 
   fetchProductsFromTaphoammo,
   updateOrderWithProductKeys,
-  getLocalProductKeys
+  getLocalProductKeys,
+  extractOrderInfo
 } from "./order-service.ts";
 
 serve(async (req) => {
@@ -77,6 +78,9 @@ serve(async (req) => {
     }
 
     try {
+      // Extract order information
+      const orderInfo = extractOrderInfo(orderItem);
+
       // Fetch products from Taphoammo API
       const { productsData, retries } = await fetchProductsFromTaphoammo(
         orderId, 
@@ -94,19 +98,23 @@ serve(async (req) => {
         success: true, 
         message: "Order products retrieved successfully",
         products: productsData.data || [],
-        retries
+        retries,
+        orderInfo
       });
       
     } catch (error) {
       // If we have the product keys in our database, use them as fallback
       const localProductKeys = getLocalProductKeys(orderItem);
+      const orderInfo = extractOrderInfo(orderItem);
+      
       if (localProductKeys) {
         return createSuccessResponse({ 
           success: true, 
           message: "Using locally stored product keys due to API error",
           warning: error.message || 'API Error',
           products: localProductKeys,
-          cached: true
+          cached: true,
+          orderInfo
         });
       }
 

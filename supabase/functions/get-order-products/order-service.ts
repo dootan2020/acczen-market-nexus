@@ -22,7 +22,13 @@ export async function fetchOrderByTaphoammoId(supabase: any, taphoammoOrderId: s
       order_id,
       product_id,
       data,
-      orders!inner(user_id)
+      orders!inner(
+        id,
+        user_id,
+        status,
+        total_amount,
+        created_at
+      )
     `)
     .filter('data->taphoammo_order_id', 'eq', taphoammoOrderId)
     .single();
@@ -139,4 +145,18 @@ export function getLocalProductKeys(orderItem: any) {
     }));
   }
   return null;
+}
+
+/**
+ * Extracts order information from the order item
+ */
+export function extractOrderInfo(orderItem: any) {
+  if (!orderItem || !orderItem.orders) return null;
+  
+  return {
+    id: orderItem.orders.id,
+    created_at: orderItem.orders.created_at,
+    status: orderItem.orders.status,
+    total_amount: orderItem.orders.total_amount
+  };
 }
