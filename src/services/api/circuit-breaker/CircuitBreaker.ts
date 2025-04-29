@@ -133,5 +133,9 @@ export class CircuitBreaker {
   }
 }
 
-// Export enum trạng thái circuit để sử dụng bên ngoài
-export { CircuitState, CircuitBreakerOptions } from './types';
+// Export the CircuitState enum
+export { CircuitState } from './types';
+
+// Use export type for the options interface
+export type { CircuitBreakerOptions } from './types';
+
