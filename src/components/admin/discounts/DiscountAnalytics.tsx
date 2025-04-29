@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, Users, Percent, Calendar, ArrowDownTray } from 'lucide-react';
+import { Download, Users, Percent, Calendar } from 'lucide-react';
 
 export function DiscountAnalytics() {
   const {
@@ -78,7 +78,7 @@ export function DiscountAnalytics() {
                 Export Timeline Data
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportAllData}>
-                <ArrowDownTray className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4 mr-2" />
                 Export All Data
               </DropdownMenuItem>
             </DropdownMenuContent>
