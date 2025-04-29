@@ -21,10 +21,7 @@ const OrdersPage: React.FC = () => {
     try {
       let query = supabase
         .from('orders')
-        .select(`
-          *,
-          user:profiles(id, username, email)
-        `)
+        .select('*, profiles!orders_user_id_fkey(id, username, email)')
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -54,16 +51,28 @@ const OrdersPage: React.FC = () => {
       let filteredData = data;
       if (searchQuery && filteredData) {
         const lowerQuery = searchQuery.toLowerCase();
-        filteredData = data.filter(order => 
-          order.id.toLowerCase().includes(lowerQuery) ||
-          (order.user?.email && order.user.email.toLowerCase().includes(lowerQuery)) ||
-          (order.user?.username && order.user.username.toLowerCase().includes(lowerQuery))
-        );
+        filteredData = data.filter(order => {
+          const orderIdMatch = order.id.toLowerCase().includes(lowerQuery);
+          const emailMatch = order.profiles?.email 
+            ? order.profiles.email.toLowerCase().includes(lowerQuery)
+            : false;
+          const usernameMatch = order.profiles?.username 
+            ? order.profiles.username.toLowerCase().includes(lowerQuery)
+            : false;
+          
+          return orderIdMatch || emailMatch || usernameMatch;
+        });
       }
 
       // Export to CSV
       if (filteredData && filteredData.length > 0) {
-        exportOrdersToCsv(filteredData, `orders-export-${new Date().toISOString().split('T')[0]}`);
+        // Transform data for CSV export - map profiles to user field for compatibility
+        const exportData = filteredData.map(order => ({
+          ...order,
+          user: order.profiles // Map profiles to user field for compatibility with exportOrdersToCsv
+        }));
+        
+        exportOrdersToCsv(exportData, `orders-export-${new Date().toISOString().split('T')[0]}`);
         
         toast({
           title: "Export Successful",

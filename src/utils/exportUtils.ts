@@ -68,11 +68,14 @@ export const exportOrdersToCsv = (orders: any[], filename: string) => {
         `${item.name} (${item.quantity})`).join('; ');
     }
     
-    // Return formatted order
+    // Return formatted order - handle both user and profiles access patterns
+    const customerName = order.user?.username || order.user?.email || 
+                         order.profiles?.username || order.profiles?.email || 'Unknown';
+    
     return {
       'Order ID': order.id,
       'Date': orderDate,
-      'Customer': order.user?.username || order.user?.email || 'Unknown',
+      'Customer': customerName,
       'Items': itemsText,
       'Total': order.total_amount ? `$${order.total_amount.toFixed(2)}` : '$0.00',
       'Status': order.status.charAt(0).toUpperCase() + order.status.slice(1)
