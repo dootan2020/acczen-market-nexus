@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Index from './pages/Index';
@@ -43,7 +42,7 @@ const ProductsPage = lazy(() => import('./pages/Products'));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetail'));
 const CheckoutPage = lazy(() => import('./pages/Checkout'));
 const OrderCompletePage = lazy(() => import('./pages/OrderComplete'));
-const OrderDetailsPage = lazy(() => import('./pages/OrderDetail'));
+const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const PurchasesPage = lazy(() => import('./pages/PurchasesPage'));
 const AccountPage = lazy(() => import('./pages/AccountPage'));
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
@@ -148,7 +147,7 @@ const AppRoutes = () => {
             <PrivateRoute>
               <ErrorBoundary>
                 <Suspense fallback={<LoadingFallback />}>
-                  <OrderDetailsPage />
+                  <OrderDetail />
                 </Suspense>
               </ErrorBoundary>
             </PrivateRoute>

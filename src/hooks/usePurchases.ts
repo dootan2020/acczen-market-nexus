@@ -1,140 +1,94 @@
 
-import { useState } from 'react';
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { OrderRow, isOrderRow } from '@/types/orders';
 
-const PAGE_SIZE = 10;
-
-// Define types to match the structure from OrderItem in PurchasesTable
-interface OrderItemData {
-  product_keys?: string[];
-  kiosk_token?: string;
-  taphoammo_order_id?: string;
-  [key: string]: any; // Allow for any additional properties
-}
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: number;
-  total: number;
-  data: OrderItemData | null;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-  };
-}
-
-interface Order {
-  id: string;
-  total_amount: number;
-  status: string;
-  created_at: string;
-  order_items: OrderItem[];
-}
-
-export const usePurchases = () => {
+export function usePurchases() {
   const { user } = useAuth();
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  
+  const pageSize = 10;
 
-  // Fetch orders with pagination
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['purchases', page, search],
-    queryFn: async () => {
+  const fetchPurchases = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Fetch total count for pagination
+      const { count, error: countError } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      
+      if (countError) throw countError;
+      
+      if (count) {
+        setTotalPages(Math.ceil(count / pageSize));
+      }
+      
+      // Fetch orders with pagination
       let query = supabase
         .from('orders')
         .select(`
-          id,
-          total_amount,
-          status,
-          created_at,
-          order_items (
+          *,
+          order_items(
             id,
             quantity,
             price,
             total,
             data,
-            product:products(id, name, price)
+            product:product_id(
+              id,
+              name
+            )
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
-      if (search) {
-        query = query.or(`order_items.product.name.ilike.%${search}%`);
-      }
-
-      // Add pagination
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      
-      // First get the count - using the correct pattern for count queries
-      const countQuery = supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user?.id);
         
+      // Apply search filter if provided
       if (search) {
-        countQuery.or(`order_items.product.name.ilike.%${search}%`);
+        query = query.or(`id.ilike.%${search}%,order_items.product->>name.ilike.%${search}%`);
       }
       
-      const { count, error: countError } = await countQuery;
+      // Apply pagination
+      query = query.range((page - 1) * pageSize, page * pageSize - 1);
       
-      if (countError) throw countError;
+      const { data, error: fetchError } = await query;
       
-      // Then fetch the paginated data
-      const { data: ordersData, error } = await query.range(from, to);
+      if (fetchError) throw fetchError;
       
-      if (error) throw error;
+      const typedData = data?.filter(isOrderRow) || [];
+      setOrders(typedData);
       
-      // Process the data to ensure OrderItemData is correctly formatted
-      const orders: Order[] = ordersData?.map(order => ({
-        ...order,
-        order_items: order.order_items.map(item => ({
-          ...item,
-          // Properly transform JSON data to match OrderItemData type
-          data: item.data ? safeTransformData(item.data) : null
-        }))
-      })) || [];
-      
-      return { orders, count: count ?? 0 };
-    },
-    enabled: !!user,
-  });
-
-  // Helper function to safely transform JSON data to OrderItemData
-  const safeTransformData = (data: Json): OrderItemData | null => {
-    if (!data) return null;
-    
-    // If it's an object, we can work with it
-    if (typeof data === 'object' && data !== null) {
-      // If it's an array, we can't transform it to OrderItemData
-      if (Array.isArray(data)) return null;
-      
-      // Return the object as OrderItemData
-      return data as OrderItemData;
+    } catch (err) {
+      console.error('Error fetching purchases:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch purchases');
+    } finally {
+      setIsLoading(false);
     }
-    
-    // If it's a primitive (string, number, boolean), we can't transform it
-    return null;
   };
-
-  const totalPages = data?.count ? Math.ceil(data.count / PAGE_SIZE) : 0;
-
+  
+  useEffect(() => {
+    fetchPurchases();
+  }, [user, page, search]);
+  
   return {
-    orders: data?.orders ?? [],
-    count: data?.count ?? 0,
-    page,
-    setPage,
-    search, 
-    setSearch,
+    orders,
     isLoading,
     error,
+    page,
+    setPage,
     totalPages,
-    PAGE_SIZE,
+    search,
+    setSearch,
+    refresh: fetchPurchases
   };
-};
+}
