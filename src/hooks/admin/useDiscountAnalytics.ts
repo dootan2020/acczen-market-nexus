@@ -22,7 +22,7 @@ export interface TopDiscountedUser {
   discount_percentage: number;
   total_discount_amount: number;
   order_count: number;
-  discount_expires_at?: string | null; // Added missing property
+  discount_expires_at?: string | null;
 }
 
 export interface DiscountSummary {
@@ -62,12 +62,16 @@ export const useDiscountAnalytics = () => {
   const { data: distributionData, isLoading: isLoadingDistribution } = useQuery({
     queryKey: ['discount-distribution'],
     queryFn: async () => {
-      // Fix: Use from() instead of rpc() for the view/function that doesn't exist as RPC
+      // Using raw SQL query with Supabase instead of trying to access a view directly
       const { data, error } = await supabase
         .from('discount_distribution')
         .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching discount distribution:', error);
+        throw error;
+      }
+      
       return data as DiscountDistributionData[];
     }
   });

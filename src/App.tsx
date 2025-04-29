@@ -1,6 +1,7 @@
 
 import React from 'react';
-import AppRoutes from './routes';
+import { RouterProvider } from 'react-router-dom'; 
+import router from './routes';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -17,7 +18,7 @@ function App() {
           <CurrencyProvider>
             <PaymentProvider>
               <CartProvider>
-                <AppRoutes />
+                <RouterProvider router={router} />
                 <Toaster />
               </CartProvider>
             </PaymentProvider>
