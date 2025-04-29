@@ -13,9 +13,11 @@ export const useUserMutations = () => {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string, role: UserRoleType }) => {
+      // Cast the role to string to avoid TypeScript errors when sending to Supabase
+      // This is necessary if the database enum type is different than our TypeScript type
       const { error } = await supabase
         .from('profiles')
-        .update({ role })
+        .update({ role: role as string })
         .eq('id', id);
       
       if (error) throw error;
