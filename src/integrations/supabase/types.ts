@@ -1180,6 +1180,13 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_distribution: {
+        Row: {
+          discount_range: string | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_loyalty_points: {
@@ -1234,6 +1241,13 @@ export type Database = {
       generate_random_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_discount_distribution: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          discount_range: string
+          user_count: number
+        }[]
       }
       get_user_loyalty_info: {
         Args: { p_user_id: string }
