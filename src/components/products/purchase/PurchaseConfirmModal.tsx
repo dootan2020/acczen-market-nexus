@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseModalHeader } from "./PurchaseModalHeader";
@@ -11,6 +11,7 @@ import { PurchaseModalActions } from "./PurchaseModalActions";
 import { PurchaseResultCard } from "./PurchaseResultCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchaseConfirmation } from "@/hooks/usePurchaseConfirmation";
+import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -19,8 +20,11 @@ interface PurchaseConfirmModalProps {
   productName: string;
   productPrice: number;
   productImage: string;
+  productDescription?: string;
   quantity: number;
   kioskToken: string | null;
+  stock?: number;
+  soldCount?: number;
 }
 
 export const PurchaseConfirmModal = ({
@@ -30,16 +34,21 @@ export const PurchaseConfirmModal = ({
   productName,
   productPrice,
   productImage,
+  productDescription = "",
   quantity,
-  kioskToken
+  kioskToken,
+  stock = 0,
+  soldCount = 0
 }: PurchaseConfirmModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isProcessing, validatePurchase, executePurchase } = usePurchaseProduct();
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const [totalPrice] = useState(productPrice * quantity);
+  
   const { 
     purchaseResult,
     setPurchaseResult,
-    isProcessing,
-    setIsProcessing,
     purchaseError,
     setPurchaseError,
     isCheckingKiosk,
@@ -50,123 +59,81 @@ export const PurchaseConfirmModal = ({
     resetPurchase,
   } = usePurchaseConfirmation();
 
+  // Check kiosk status when dialog opens
   useEffect(() => {
     if (open && kioskToken) {
       checkKioskStatus(kioskToken);
+      
+      // Check balance when dialog opens
+      validateBalance();
     }
   }, [open, kioskToken]);
 
-  const handleConfirmPurchase = async () => {
-    if (!kioskToken) {
-      toast.error("Sản phẩm không có mã kiosk để mua");
+  // Validate user balance
+  const validateBalance = async () => {
+    if (!user) return;
+    
+    const { data: userData, error } = await supabase
+      .from('profiles')
+      .select('balance')
+      .eq('id', user.id)
+      .single();
+      
+    if (error) {
+      console.error("Error fetching user balance:", error);
       return;
     }
     
-    if (!user) {
-      toast.error("Bạn cần đăng nhập để mua sản phẩm");
-      navigate("/login");
-      return;
-    }
+    setInsufficientBalance(userData.balance < totalPrice);
+  };
 
+  const handleConfirmPurchase = async () => {
     try {
-      setIsProcessing(true);
-      setPurchaseError(null);
-      
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('balance')
-        .eq('id', user.id)
-        .single();
-      
-      if (userError) {
-        throw new Error("Không thể kiểm tra số dư: " + userError.message);
-      }
-      
-      const totalCost = productPrice * quantity;
-      
-      if (userData.balance < totalCost) {
-        throw new Error(`Số dư không đủ. Bạn cần ${totalCost.toLocaleString()} VND nhưng chỉ có ${userData.balance.toLocaleString()} VND`);
-      }
-
-      const { data: orderData, error } = await supabase.functions.invoke('taphoammo-api', {
-        body: JSON.stringify({
-          endpoint: 'buyProducts',
-          kioskToken,
-          userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
-          quantity
-        })
+      const orderId = await executePurchase({
+        id: productId,
+        name: productName,
+        price: productPrice,
+        kioskToken,
+        quantity
       });
       
-      if (error) {
-        throw new Error(error.message);
+      if (orderId) {
+        setPurchaseResult({ orderId });
+        await checkOrderStatus(orderId);
       }
-      
-      const apiResponse = orderData as { success?: string; message?: string; description?: string; order_id?: string };
-      
-      if (!apiResponse || apiResponse.success === "false") {
-        throw new Error(apiResponse?.message || apiResponse?.description || "Đã xảy ra lỗi khi mua sản phẩm");
-      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      setPurchaseError(error instanceof Error ? error.message : "Unknown error occurred");
+    }
+  };
 
-      const orderId = apiResponse.order_id;
-      if (!orderId) {
-        throw new Error("Không nhận được mã đơn hàng từ API");
-      }
-      
-      setPurchaseResult({ orderId });
-      
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          status: 'completed',
-          total_amount: totalCost
-        })
-        .select('id')
-        .single();
-      
-      if (orderError) {
-        throw new Error("Lỗi khi lưu thông tin đơn hàng");
-      }
-      
-      await supabase.from('order_items').insert({
-        order_id: order.id,
-        product_id: productId,
-        quantity: quantity,
-        price: productPrice,
-        total: totalCost,
-        data: {
-          kiosk_token: kioskToken,
-          taphoammo_order_id: orderId
+  const handleOrderComplete = () => {
+    if (purchaseResult.orderId) {
+      // Navigate to order complete page with order data
+      navigate('/order-complete', {
+        state: {
+          orderData: {
+            id: purchaseResult.orderId,
+            items: [
+              {
+                name: productName,
+                quantity: quantity,
+                price: productPrice,
+                total: totalPrice
+              }
+            ],
+            total: totalPrice,
+            digital_items: purchaseResult.productKeys ? [
+              {
+                name: productName,
+                keys: purchaseResult.productKeys
+              }
+            ] : []
+          }
         }
       });
-      
-      const newBalance = userData.balance - totalCost;
-      await supabase
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', user.id);
-      
-      await supabase
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          type: 'purchase',
-          amount: -totalCost,
-          description: `Mua ${quantity} x ${productName}`,
-          reference_id: order.id
-        });
-      
-      await checkOrderStatus(orderId);
-      
-      toast.success("Đặt hàng thành công!");
-
-    } catch (error) {
-      console.error("Lỗi mua hàng:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý đơn hàng';
-      toast.error(errorMessage);
-      setPurchaseError(errorMessage);
-    } finally {
-      setIsProcessing(false);
+      onOpenChange(false);
+      resetPurchase();
     }
   };
 
@@ -182,15 +149,23 @@ export const PurchaseConfirmModal = ({
                 productName={productName}
                 productImage={productImage}
                 quantity={quantity}
-                totalPrice={productPrice * quantity}
+                totalPrice={totalPrice}
               />
-              <PurchaseModalInfo />
+              
+              <PurchaseModalInfo
+                stock={stock}
+                soldCount={soldCount}
+                totalPrice={totalPrice}
+                description={productDescription}
+                insufficientBalance={insufficientBalance}
+              />
               
               <PurchaseModalActions
                 isProcessing={isProcessing || isCheckingKiosk}
                 onCancel={() => onOpenChange(false)}
                 onConfirm={handleConfirmPurchase}
-                disabled={kioskActive === false}
+                disabled={kioskActive === false || stock <= 0}
+                insufficientBalance={insufficientBalance}
               />
               
               {purchaseError && (
@@ -204,9 +179,9 @@ export const PurchaseConfirmModal = ({
               orderId={purchaseResult.orderId}
               productKeys={purchaseResult.productKeys}
               isCheckingOrder={isCheckingOrder}
-              onCheckOrder={checkOrderStatus}
+              onCheckOrder={() => checkOrderStatus(purchaseResult.orderId)}
               onReset={resetPurchase}
-              onClose={() => onOpenChange(false)}
+              onClose={handleOrderComplete}
             />
           )}
         </div>

@@ -1,49 +1,42 @@
 
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
+
 interface PurchaseModalProductProps {
   productName: string;
   productImage: string;
   quantity: number;
-  totalPrice?: number;
-  totalPriceUSD?: number;
-  formatPrice?: (amount: number) => string;
-  formatUSD?: (amount: number) => string;
+  totalPrice: number;
 }
 
 export function PurchaseModalProduct({
   productName,
   productImage,
   quantity,
-  totalPrice,
-  totalPriceUSD,
-  formatPrice,
-  formatUSD
+  totalPrice
 }: PurchaseModalProductProps) {
-  // Format price using provided function or fallback to default Vietnamese format
-  const formattedPrice = totalPrice && formatPrice 
-    ? formatPrice(totalPrice) 
-    : totalPrice 
-      ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)
-      : totalPriceUSD && formatUSD 
-        ? formatUSD(totalPriceUSD)
-        : '';
+  const { formatVND } = useCurrencyContext();
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border">
+    <div className="space-y-4">
+      {/* Product Image with Gradient Background */}
+      <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] p-4 rounded-md flex items-center justify-center">
         <img
           src={productImage}
           alt={productName}
-          className="h-full w-full object-cover object-center"
+          className="h-32 w-auto max-w-full object-contain"
         />
       </div>
-      <div>
-        <h3 className="font-medium leading-tight">{productName}</h3>
-        <p className="text-sm text-muted-foreground">
-          Số lượng: {quantity}
-        </p>
-        <p className="font-medium text-primary">
-          {formattedPrice}
-        </p>
+      
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium leading-tight">{productName}</h3>
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">
+            Số lượng: {quantity}
+          </p>
+          <p className="font-semibold text-[#2ECC71] text-lg">
+            {formatVND(totalPrice)}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,10 @@
-
 import { createContext, useContext, ReactNode } from "react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { CurrencyContextType } from "@/types/currency";
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
+export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const currency = useCurrency();
   
   if (process.env.NODE_ENV === 'development') {
@@ -16,8 +15,27 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     });
   }
   
+  // Add the formatVND function
+  const formatVND = (amount: number): string => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+  
+  const value = {
+    exchangeRate: currency.exchangeRate,
+    setExchangeRate: currency.setExchangeRate,
+    convertVNDtoUSD: currency.convertVNDtoUSD,
+    convertUSDtoVND: currency.convertUSDtoVND,
+    formatVND,
+    formatUSD: currency.formatUSD,
+  };
+  
   return (
-    <CurrencyContext.Provider value={currency}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );

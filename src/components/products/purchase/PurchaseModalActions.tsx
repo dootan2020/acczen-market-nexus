@@ -7,13 +7,15 @@ interface PurchaseModalActionsProps {
   onCancel: () => void;
   onConfirm: () => void;
   disabled?: boolean;
+  insufficientBalance?: boolean;
 }
 
 export const PurchaseModalActions = ({
   isProcessing,
   onCancel,
   onConfirm,
-  disabled = false
+  disabled = false,
+  insufficientBalance = false
 }: PurchaseModalActionsProps) => {
   return (
     <div className="flex justify-end gap-4">
@@ -29,7 +31,8 @@ export const PurchaseModalActions = ({
       <Button
         type="button"
         onClick={onConfirm}
-        disabled={isProcessing || disabled}
+        disabled={isProcessing || disabled || insufficientBalance}
+        className="bg-[#2ECC71] hover:bg-[#27AE60] text-white"
       >
         {isProcessing ? (
           <>
@@ -53,4 +56,4 @@ export const PurchaseModalActions = ({
       </Button>
     </div>
   );
-};
+}
