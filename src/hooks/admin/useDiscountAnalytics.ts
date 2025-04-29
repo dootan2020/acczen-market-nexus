@@ -62,17 +62,17 @@ export const useDiscountAnalytics = () => {
   const { data: distributionData, isLoading: isLoadingDistribution } = useQuery({
     queryKey: ['discount-distribution'],
     queryFn: async () => {
-      // Using raw SQL query with Supabase to directly get the data
+      // Using raw SQL query with Supabase
       const { data, error } = await supabase
-        .rpc('get_discount_distribution')
-        .select('*');
+        .from('discount_distribution')
+        .select('discount_range, user_count');
 
       if (error) {
         console.error('Error fetching discount distribution:', error);
         throw error;
       }
       
-      return (data as unknown) as DiscountDistributionData[];
+      return data as DiscountDistributionData[];
     }
   });
 
