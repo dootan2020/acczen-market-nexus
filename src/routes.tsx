@@ -12,6 +12,7 @@ import AdminHome from './pages/admin/AdminHome';
 import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminReports from './pages/admin/AdminReports';
+import AdminExchangeRates from './pages/admin/AdminExchangeRates';
 import Cart from './pages/Cart';
 import AdminGuard from './components/AdminGuard';
 import PrivateRoute from './components/PrivateRoute';
@@ -149,7 +150,7 @@ const AppRoutes = () => {
         />
       </Route>
 
-      {/* Admin routes - ensure AdminGuard is properly used */}
+      {/* Admin routes - with improved AdminGuard */}
       <Route
         path="/admin"
         element={
@@ -168,6 +169,7 @@ const AppRoutes = () => {
         <Route path="reports" element={<AdminReports />} />
         <Route path="integration" element={<ProductIntegration />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
+        <Route path="exchange-rates" element={<AdminExchangeRates />} />
       </Route>
     </Routes>
   );

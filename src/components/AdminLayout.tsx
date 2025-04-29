@@ -21,7 +21,6 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, isAdmin, isLoading } = useAuth();
-  const [isInitialized, setIsInitialized] = useState(false);
   
   // Debug logs
   console.log("AdminLayout: rendering", {
@@ -31,23 +30,14 @@ const AdminLayout = () => {
     pathname: location.pathname
   });
   
-  useEffect(() => {
-    // Mark as initialized after a short delay to ensure auth state is stable
-    const timer = setTimeout(() => {
-      setIsInitialized(true);
-    }, 200);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
   // This is a fallback check in case AdminGuard fails
-  if (isInitialized && !isLoading && (!user || !isAdmin)) {
+  if (!isLoading && (!user || !isAdmin)) {
     console.log("AdminLayout fallback redirect: user absent or not admin");
     return <Navigate to="/" replace />;
   }
   
   // Show loading state while initializing
-  if (isLoading || !isInitialized) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -71,6 +61,7 @@ const AdminLayout = () => {
     { name: 'Reports', href: '/admin/reports' },
     { name: 'Integrations', href: '/admin/integration' },
     { name: 'API Monitoring', href: '/admin/api-monitoring' },
+    { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
 
   const getBreadcrumbs = () => {
@@ -105,6 +96,14 @@ const AdminLayout = () => {
         if (navItem) {
           breadcrumbs.push({
             name: navItem.name,
+            path: currentPath,
+            isCurrentPage: i === pathSegments.length - 1
+          });
+        } else {
+          // Handle special cases or dynamic paths
+          const segment = pathSegments[i];
+          breadcrumbs.push({
+            name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
             path: currentPath,
             isCurrentPage: i === pathSegments.length - 1
           });
@@ -174,6 +173,7 @@ const getCurrentPageTitle = () => {
     '/admin/reports': 'Reports & Analytics',
     '/admin/integration': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
+    '/admin/exchange-rates': 'Exchange Rates Management',
   };
 
   return titles[location.pathname] || 'Dashboard';

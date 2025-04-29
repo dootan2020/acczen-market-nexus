@@ -19,12 +19,8 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     if (!isLoading) {
       console.log("AdminGuard: Loading complete, setting isReady to true");
       
-      // Add a small delay to ensure auth state is fully processed
-      const timer = setTimeout(() => {
-        setIsReady(true);
-      }, 100);
-      
-      return () => clearTimeout(timer);
+      // We're not using a timer anymore as it might contribute to the render loop
+      setIsReady(true);
     }
   }, [isLoading]);
 
