@@ -42,7 +42,7 @@ export const PurchaseConfirmModal = ({
 }: PurchaseConfirmModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isProcessing, validatePurchase, executePurchase } = usePurchaseProduct();
+  const { isProcessing, executePurchase } = usePurchaseProduct();
   const [insufficientBalance, setInsufficientBalance] = useState(false);
   const [totalPrice] = useState(productPrice * quantity);
   

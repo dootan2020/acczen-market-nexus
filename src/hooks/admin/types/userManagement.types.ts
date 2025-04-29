@@ -16,6 +16,7 @@ export interface UserProfile {
   discount_note?: string;
   discount_updated_at?: string;
   discount_updated_by?: string;
+  phone?: string; // Added the phone property
 }
 
 export interface UserDiscountHistory {
