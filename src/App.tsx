@@ -95,13 +95,15 @@ function App() {
           path="/dashboard/*"
           element={
             <ProtectedRoute>
-              <Routes>
-                <Route path="" element={<Dashboard />} />
-                <Route path="deposits" element={<DepositHistoryPage />} />
-                <Route path="purchases" element={<PurchasesPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-              </Routes>
+              <DashboardLayout>
+                <Routes>
+                  <Route path="" element={<Dashboard />} />
+                  <Route path="deposits" element={<DepositHistoryPage />} />
+                  <Route path="purchases" element={<PurchasesPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                </Routes>
+              </DashboardLayout>
             </ProtectedRoute>
           }
         />
