@@ -22,6 +22,40 @@ const reportWebVitals = () => {
   }
 };
 
+// Register service worker for PWA support
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('ServiceWorker registration successful with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.error('ServiceWorker registration failed:', error);
+      });
+  });
+}
+
+// Performance monitoring for Core Web Vitals
+if (import.meta.env.PROD) {
+  // Report FID and LCP
+  const reportLCP = () => {
+    const perfEntries = performance.getEntriesByType('navigation');
+    if (perfEntries && perfEntries.length > 0) {
+      const navEntry = perfEntries[0];
+      const loadEventTime = navEntry.loadEventStart - navEntry.startTime;
+      console.info(`Largest Contentful Paint: ${loadEventTime}ms`);
+    }
+  };
+
+  new PerformanceObserver((entryList) => {
+    for (const entry of entryList.getEntries()) {
+      console.info(`FID: ${entry.processingStart - entry.startTime}ms`);
+    }
+  }).observe({ type: 'first-input', buffered: true });
+  
+  window.addEventListener('load', reportLCP);
+}
+
 // Make sure the root element exists
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");

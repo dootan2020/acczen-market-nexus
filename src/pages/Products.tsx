@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import ProductsList from '@/components/products/ProductsList';
 import { Input } from '@/components/ui/input';
@@ -7,42 +7,56 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileHeader from '@/components/mobile/MobileHeader';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300); // Debounce search by 300ms
   const { data, isLoading, error } = useProducts();
   const isMobile = useIsMobile();
 
-  const filteredProducts = data?.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Use callback for search handler to prevent recreation on each render
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  // Memoize the filtered products to avoid recomputation on every render
+  const filteredProducts = useMemo(() => {
+    if (!data) return [];
+    return data.filter(product => 
+      product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    );
+  }, [data, debouncedSearchTerm]);
 
   // Map the database product format to the format expected by ProductsList
-  const mappedProducts = filteredProducts?.map(product => ({
-    id: product.id,
-    name: product.name,
-    image: product.image_url || '', // Map image_url to image
-    price: product.price,
-    salePrice: product.sale_price || undefined,
-    category: product.category?.name || '',
-    subcategory: product.subcategory?.name,
-    stock: product.stock_quantity, // Map stock_quantity to stock
-    featured: false, // Default value
-    kioskToken: product.kiosk_token
-  })) || [];
+  // Memoize this transformation to avoid unnecessary processing
+  const mappedProducts = useMemo(() => {
+    return filteredProducts.map(product => ({
+      id: product.id,
+      name: product.name,
+      image: product.image_url || '', // Map image_url to image
+      price: product.price,
+      salePrice: product.sale_price || undefined,
+      category: product.category?.name || '',
+      subcategory: product.subcategory?.name,
+      stock: product.stock_quantity, // Map stock_quantity to stock
+      featured: false, // Default value
+      kioskToken: product.kiosk_token
+    })) || [];
+  }, [filteredProducts]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     // Search is already handled through the filter above
-  };
+  }, []);
 
   // Function for the mobile search button
-  const openMobileSearch = () => {
+  const openMobileSearch = useCallback(() => {
     const searchField = document.getElementById('product-search');
     if (searchField) {
       searchField.focus();
     }
-  };
+  }, []);
 
   return (
     <>
@@ -58,7 +72,7 @@ const Products = () => {
                 type="text"
                 placeholder="Tìm kiếm sản phẩm..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="pl-9 py-6 md:py-5 text-base"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -85,4 +99,4 @@ const Products = () => {
   );
 };
 
-export default Products;
+export default React.memo(Products);
