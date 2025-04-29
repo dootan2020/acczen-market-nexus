@@ -10,10 +10,10 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { products, isLoading, error } = useProducts();
+  const { data, isLoading, error } = useProducts();
   const isMobile = useIsMobile();
 
-  const filteredProducts = products?.filter(product => 
+  const filteredProducts = data?.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
