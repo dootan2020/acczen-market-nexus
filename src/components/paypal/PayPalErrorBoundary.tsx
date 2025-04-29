@@ -6,8 +6,8 @@ import { FallbackPayPalButton } from './FallbackPayPalButton';
 
 interface Props {
   children: React.ReactNode;
-  amount: number;
-  onSuccess: (orderDetails: any, amount: number) => Promise<void>;
+  amount?: number; // Make amount optional
+  onSuccess?: (orderDetails: any, amount: number) => Promise<void>;
 }
 
 interface State {
@@ -40,10 +40,18 @@ export class PayPalErrorBoundary extends Component<Props, State> {
               There was a problem loading the PayPal payment system. You can try our fallback payment option below.
             </AlertDescription>
           </Alert>
-          <FallbackPayPalButton 
-            amount={this.props.amount} 
-            onSuccess={this.props.onSuccess} 
-          />
+          {this.props.amount && this.props.onSuccess ? (
+            <FallbackPayPalButton 
+              amount={this.props.amount} 
+              onSuccess={this.props.onSuccess} 
+            />
+          ) : (
+            <Alert>
+              <AlertDescription>
+                Unable to load fallback payment option. Please try again later.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       );
     }

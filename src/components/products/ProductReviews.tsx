@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -79,12 +78,19 @@ const ProductReviews = ({ productId, className }: ProductReviewsProps) => {
   const { user } = useAuth();
   
   useEffect(() => {
-    fetchReviews();
+    if (productId) {
+      fetchReviews();
+    }
   }, [productId]);
   
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
+      // Use a type that matches what we expect from the database to avoid TypeScript errors
+      type ProductReviewWithUser = Review & {
+        user: { username: string | null; avatar_url: string | null };
+      };
+      
       const { data, error } = await supabase
         .from('product_reviews')
         .select(`
@@ -103,22 +109,24 @@ const ProductReviews = ({ productId, className }: ProductReviewsProps) => {
         
       if (error) throw error;
       
-      setReviews(data || []);
+      // Cast the data to the expected type to avoid TypeScript errors
+      const typedData = data as unknown as ProductReviewWithUser[];
+      setReviews(typedData || []);
       
       // Calculate average rating
-      if (data && data.length > 0) {
-        const total = data.reduce((sum, review) => sum + review.rating, 0);
-        setAverageRating(total / data.length);
-        setTotalReviews(data.length);
+      if (typedData && typedData.length > 0) {
+        const total = typedData.reduce((sum, review) => sum + review.rating, 0);
+        setAverageRating(total / typedData.length);
+        setTotalReviews(typedData.length);
       }
       
       // Check if the current user has already reviewed this product
       if (user) {
-        const hasReviewed = data?.some(review => review.user_id === user.id);
+        const hasReviewed = typedData?.some(review => review.user_id === user.id);
         setUserHasReviewed(!!hasReviewed);
         
         if (hasReviewed) {
-          const existingReview = data?.find(review => review.user_id === user.id);
+          const existingReview = typedData?.find(review => review.user_id === user.id);
           if (existingReview) {
             setUserReview({
               id: existingReview.id,
@@ -178,8 +186,7 @@ const ProductReviews = ({ productId, className }: ProductReviewsProps) => {
           .from('product_reviews')
           .update({
             rating: userReview.rating,
-            comment: userReview.comment,
-            updated_at: new Date().toISOString()
+            comment: userReview.comment
           })
           .eq('id', userReview.id);
           

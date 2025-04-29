@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { PAYPAL_OPTIONS } from './paypal-config';
@@ -40,6 +39,70 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
     // Reset error state when the component mounts or amount changes
     setPaypalError(null);
   }, [amount]);
+
+  // Define a success handler for the error boundary
+  const handleBoundarySuccess = async (orderDetails: any, paymentAmount: number) => {
+    try {
+      // Process the order in our database
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('process-transaction', {
+        body: JSON.stringify({
+          user_id: user?.id,
+          items: items.map(item => ({
+            id: item.id,
+            quantity: item.quantity
+          })),
+          transaction_type: 'purchase',
+          payment_method: 'paypal',
+          payment_data: {
+            paypal_order_id: orderDetails.id,
+            paypal_payer_id: orderDetails.payer?.payer_id,
+            paypal_payment_id: orderDetails.purchase_units?.[0]?.payments?.captures?.[0]?.id
+          }
+        })
+      });
+      
+      if (orderError) {
+        throw new Error('Failed to process order');
+      }
+      
+      // Show success message
+      toast({
+        title: "Payment Successful",
+        description: "Your purchase has been completed",
+      });
+      
+      // Call the success callback if provided
+      if (onSuccess) {
+        onSuccess({
+          ...orderDetails,
+          order: orderData.order
+        });
+      }
+      
+      // Prepare order data for the completion page
+      const orderCompleteData = {
+        id: orderData.order_id,
+        total: amount,
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity
+        })),
+        payment_method: 'PayPal',
+        transaction_id: orderDetails.id
+      };
+      
+      // Navigate to the order complete page
+      navigate('/order-complete', { state: { orderData: orderCompleteData } });
+    } catch (error) {
+      console.error('Error processing successful payment:', error);
+      
+      if (onError) {
+        onError(error);
+      }
+    }
+  };
 
   const createOrderHandler = async () => {
     try {
@@ -180,7 +243,10 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
 
   return (
     <div className={className}>
-      <PayPalErrorBoundary>
+      <PayPalErrorBoundary 
+        amount={amount} 
+        onSuccess={handleBoundarySuccess}
+      >
         <PayPalScriptProvider options={PAYPAL_OPTIONS}>
           {paypalError ? (
             <Card className="p-4 border-red-200 bg-red-50">
