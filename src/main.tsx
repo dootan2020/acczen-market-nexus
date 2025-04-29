@@ -7,6 +7,16 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import App from './App.tsx';
 import './index.css';
 
+// Measure the initial load performance
+const reportWebVitals = () => {
+  if (window.performance) {
+    const metrics = window.performance.getEntriesByType('navigation');
+    if (metrics && metrics.length > 0) {
+      console.info('Page load performance:', metrics[0]);
+    }
+  }
+};
+
 // Make sure the root element exists
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
@@ -23,3 +33,6 @@ createRoot(rootElement).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// If you want to measure performance
+reportWebVitals();
