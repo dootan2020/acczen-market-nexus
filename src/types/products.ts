@@ -10,7 +10,7 @@ export interface TaphoammoProduct {
   emergency?: boolean;
 }
 
-export type ProductStatus = 'active' | 'inactive' | 'out_of_stock';
+export type ProductStatus = 'active' | 'inactive' | 'out_of_stock' | 'draft' | 'archived';
 
 export interface ProductFormData {
   id?: string;

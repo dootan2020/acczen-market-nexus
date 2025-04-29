@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,8 +135,7 @@ const AdminProducts = () => {
     setFormData(prev => ({ ...prev, subcategory_id: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (formData: ProductFormData) => {
     productMutation.mutate({ ...formData, id: currentProduct?.id, isEditing });
     setIsProductDialogOpen(false);
   };
@@ -240,7 +238,7 @@ const AdminProducts = () => {
             </DialogDescription>
           </DialogHeader>
           <ProductForm
-            formData={formData}
+            initialData={formData}
             handleInputChange={handleInputChange}
             handleSubmit={handleSubmit}
             handleCategoryChange={handleCategoryChange}

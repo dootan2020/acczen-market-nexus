@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -51,6 +50,8 @@ const productFormSchema = z.object({
   category_id: z.string().min(1, { message: 'Vui lòng chọn danh mục' }),
   subcategory_id: z.string().optional(),
   image_url: z.string().url({ message: 'URL hình ảnh không hợp lệ' }).optional().or(z.literal('')),
+  sku: z.string().optional(),
+  kiosk_token: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -84,6 +85,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
       category_id: initialData.category_id || '',
       subcategory_id: initialData.subcategory_id || '',
       image_url: initialData.image_url || '',
+      sku: initialData.sku || '',
+      kiosk_token: initialData.kiosk_token || '',
     },
     mode: 'onChange',
   });
@@ -92,9 +95,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
     // Convert string values to their appropriate types
     const formattedValues: ProductFormData = {
       ...values,
-      price: parseFloat(values.price),
-      sale_price: values.sale_price ? parseFloat(values.sale_price) : undefined,
-      stock_quantity: parseInt(values.stock_quantity),
+      price: values.price,
+      sale_price: values.sale_price || '',
+      stock_quantity: values.stock_quantity,
     };
     
     handleSubmit(formattedValues);
@@ -110,7 +113,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-1">
           <FormField
             control={form.control}

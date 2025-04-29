@@ -19,6 +19,7 @@ import { ProductBulkActions } from '@/components/admin/products/ProductBulkActio
 import ProductBulkDeleteDialog from '@/components/admin/products/ProductBulkDeleteDialog';
 import { ProductsPagination } from '@/components/admin/products/ProductsPagination';
 import { useProductManagement } from '@/hooks/admin/useProductManagement';
+import { ProductFormData } from '@/types/products';
 
 const AdminProducts = () => {
   const {
@@ -48,7 +49,6 @@ const AdminProducts = () => {
     handleInputChange,
     handleCategoryChange,
     handleSubcategoryChange,
-    handleSubmit,
     handleToggleSelect,
     handleToggleSelectAll,
     handleBulkDelete,
@@ -62,6 +62,11 @@ const AdminProducts = () => {
   } = useProductManagement();
 
   const { data: categories } = useCategories();
+
+  const handleSubmit = (formData: ProductFormData) => {
+    productMutation.mutate({ ...formData, id: currentProduct?.id, isEditing });
+    setIsProductDialogOpen(false);
+  };
 
   return (
     <div className="container px-4 sm:px-6 w-full max-w-full mx-auto">
@@ -138,6 +143,7 @@ const AdminProducts = () => {
             categories={categories}
             isEditing={isEditing}
             isPending={productMutation.isPending}
+            initialData={formData}
           />
         </DialogContent>
       </Dialog>
