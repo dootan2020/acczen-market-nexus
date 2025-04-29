@@ -1,3 +1,4 @@
+
 export type DatabaseRoleType = 'admin' | 'user';
 
 export interface UserProfile {
@@ -10,4 +11,5 @@ export interface UserProfile {
   updated_at?: string | null;
   balance?: number;
   role: 'admin' | 'user' | 'support' | 'content_manager';
+  phone?: string | null; // Added phone field
 }
