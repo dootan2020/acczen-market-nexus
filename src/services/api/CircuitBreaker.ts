@@ -24,8 +24,8 @@ interface ApiHealthRecord {
   opened_at: string | null;
   updated_at: string;
   created_at: string;
-  half_open?: boolean;
-  consecutive_success?: number;
+  half_open: boolean;
+  consecutive_success: number;
 }
 
 /**
@@ -64,13 +64,13 @@ export class CircuitBreaker {
       }
 
       // Fetch current circuit state from database
-      const { data: apiHealth } = await supabase
+      const { data: apiHealth, error } = await supabase
         .from('api_health')
         .select('*')
         .eq('api_name', this.apiName)
         .single();
         
-      if (!apiHealth) {
+      if (error || !apiHealth) {
         // Initialize circuit breaker record if it doesn't exist
         await this.initializeCircuitRecord();
         this.cachedState = { isOpen: false, openedAt: null };
@@ -225,18 +225,25 @@ export class CircuitBreaker {
   public async recordSuccess(): Promise<void> {
     try {
       // Get current circuit state
-      const { data: apiHealth } = await supabase
+      const { data, error } = await supabase
         .from('api_health')
         .select('half_open, consecutive_success')
         .eq('api_name', this.apiName)
         .single();
       
-      if (!apiHealth || !apiHealth.half_open) {
+      // Handle database errors or missing record
+      if (error || !data) {
+        console.error('Error fetching circuit state:', error);
+        return; 
+      }
+      
+      // TypeScript now knows data is ApiHealthRecord with half_open property
+      if (!data.half_open) {
         return; // Only increment success count in half-open state
       }
       
       // Increment consecutive successes
-      const newSuccessCount = (apiHealth.consecutive_success || 0) + 1;
+      const newSuccessCount = (data.consecutive_success || 0) + 1;
       
       // Update consecutive success count
       await supabase

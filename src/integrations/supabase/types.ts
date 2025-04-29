@@ -48,8 +48,10 @@ export type Database = {
       api_health: {
         Row: {
           api_name: string
+          consecutive_success: number | null
           created_at: string
           error_count: number
+          half_open: boolean | null
           id: string
           is_open: boolean
           last_error: string | null
@@ -58,8 +60,10 @@ export type Database = {
         }
         Insert: {
           api_name: string
+          consecutive_success?: number | null
           created_at?: string
           error_count?: number
+          half_open?: boolean | null
           id?: string
           is_open?: boolean
           last_error?: string | null
@@ -68,8 +72,10 @@ export type Database = {
         }
         Update: {
           api_name?: string
+          consecutive_success?: number | null
           created_at?: string
           error_count?: number
+          half_open?: boolean | null
           id?: string
           is_open?: boolean
           last_error?: string | null
