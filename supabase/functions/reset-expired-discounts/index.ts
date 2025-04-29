@@ -1,86 +1,58 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
+// supabase Edge Function to reset expired discounts
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-// Create a Supabase client with the service role key
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
-serve(async (req: Request) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 204 })
   }
 
   try {
-    // Check if this is a scheduled invocation or manual (auth check for manual)
-    let isAuthenticated = false;
-    const authHeader = req.headers.get('Authorization');
+    // Create a Supabase client with the Auth context of the logged in user
+    const supabaseClient = createClient(
+      // Supabase API URL - env var exported by default.
+      Deno.env.get('SUPABASE_URL') ?? '',
+      // Supabase API ANON KEY - env var exported by default.
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
     
-    if (authHeader) {
-      // Manual invocation - verify admin permissions
-      const jwt = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt);
-      
-      if (!authError && user) {
-        // Verify user is admin
-        const { data: userProfile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-          
-        if (!profileError && userProfile?.role === 'admin') {
-          isAuthenticated = true;
-        }
-      }
-      
-      if (!isAuthenticated) {
-        throw new Error('Unauthorized: Admin privileges required');
-      }
-    } else {
-      // If no auth header, assume it's a scheduled invocation
-      // In production, you'd want to add additional security checks here
-      console.log('Processing scheduled reset of expired discounts');
-    }
+    console.log('Running reset-expired-discounts function...')
     
-    // Call the database function to reset expired discounts
-    const { data, error } = await supabaseClient.rpc('reset_expired_discounts');
+    // Call the SQL function to reset expired discounts
+    const { data, error } = await supabaseClient.rpc('reset_expired_discounts')
     
     if (error) {
-      throw error;
+      console.error('Error resetting expired discounts:', error)
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
     
-    console.log(`Reset ${data} expired temporary discount(s)`);
+    console.log(`Reset ${data} expired discount(s) successfully.`)
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        resetCount: data,
-        timestamp: new Date().toISOString()
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  } catch (error) {
-    console.error('Error resetting expired discounts:', error.message);
-    return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message 
+        success: true, 
+        message: `Reset ${data} expired discount(s)`,
+        count: data 
       }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    )
+    
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return new Response(
+      JSON.stringify({ success: false, error: 'Internal server error' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
-});
+})
