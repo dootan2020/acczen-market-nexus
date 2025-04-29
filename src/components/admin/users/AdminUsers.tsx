@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { EditRoleDialog } from '@/components/admin/users/EditRoleDialog';
 import { AdjustBalanceDialog } from '@/components/admin/users/AdjustBalanceDialog';
 import { UsersTable } from '@/components/admin/users/UsersTable';
@@ -20,6 +20,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Search, UserCog, Download, Filter } from 'lucide-react';
+import { UserDiscountForm } from './UserDiscountForm';
+import { useUserDiscount } from '@/hooks/admin/useUserDiscount';
 
 const AdminUsers = () => {
   const { 
@@ -48,6 +50,51 @@ const AdminUsers = () => {
     handleAdjustBalanceConfirm
   } = useUserManagement();
 
+  const [discountFilter, setDiscountFilter] = useState<string | null>(null);
+  
+  // Filter users based on discount percentage
+  const applyDiscountFilter = (users: any[]) => {
+    if (!discountFilter) return users;
+    
+    return users.filter(user => {
+      const discount = user.discount_percentage || 0;
+      switch (discountFilter) {
+        case 'no-discount':
+          return discount === 0;
+        case 'with-discount':
+          return discount > 0;
+        case 'high-discount':
+          return discount >= 10;
+        default:
+          return true;
+      }
+    });
+  };
+  
+  const discountFilteredUsers = applyDiscountFilter(filteredUsers || []);
+  
+  // Get access to user discount functionality
+  const { 
+    setDiscountMutation, 
+    isDialogOpen: isDiscountDialogOpen,
+    setIsDialogOpen: setIsDiscountDialogOpen
+  } = useUserDiscount();
+  
+  const handleSetDiscount = (user: any) => {
+    setCurrentUser(user);
+    setIsDiscountDialogOpen(true);
+  };
+  
+  const handleDiscountSubmit = (values: { discountPercentage: number; discountNote?: string }) => {
+    if (!currentUser) return;
+    
+    setDiscountMutation.mutate({
+      userId: currentUser.id,
+      discountPercentage: values.discountPercentage,
+      discountNote: values.discountNote
+    });
+  };
+
   const handleViewUser = (user: any) => {
     setCurrentUser(user);
   };
@@ -74,18 +121,34 @@ const AdminUsers = () => {
           />
         </div>
         
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={roleFilter || "all"} onValueChange={(value) => setRoleFilter(value === "all" ? null : value)}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="user">User</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={roleFilter || "all"} onValueChange={(value) => setRoleFilter(value === "all" ? null : value)}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Select value={discountFilter || "all"} onValueChange={(value) => setDiscountFilter(value === "all" ? null : value)}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by discount" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Discounts</SelectItem>
+                <SelectItem value="no-discount">No Discount (0%)</SelectItem>
+                <SelectItem value="with-discount">With Discount (>0%)</SelectItem>
+                <SelectItem value="high-discount">High Discount (≥10%)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       
@@ -98,9 +161,10 @@ const AdminUsers = () => {
           ) : (
             <div className="overflow-x-auto">
               <UsersTable 
-                users={filteredUsers || []}
+                users={discountFilteredUsers || []}
                 onEditRole={handleEditRole}
                 onAdjustBalance={handleAdjustBalance}
+                onSetDiscount={handleSetDiscount}
                 onViewUser={handleViewUser}
               />
             </div>
@@ -123,7 +187,7 @@ const AdminUsers = () => {
         open={isEditRoleDialogOpen}
         onOpenChange={setIsEditRoleDialogOpen}
         onConfirm={handleUpdateRole}
-        isLoading={false} // This will be handled by the mutation in the hook
+        isLoading={false}
         currentUser={currentUser}
       />
       
@@ -131,8 +195,18 @@ const AdminUsers = () => {
         open={isAdjustBalanceDialogOpen}
         onOpenChange={setIsAdjustBalanceDialogOpen}
         onConfirm={handleAdjustBalanceConfirm}
-        isLoading={false} // This will be handled by the mutation in the hook
+        isLoading={false}
         currentUser={currentUser}
+      />
+      
+      <UserDiscountForm
+        open={isDiscountDialogOpen}
+        onOpenChange={setIsDiscountDialogOpen}
+        onSubmit={handleDiscountSubmit}
+        isLoading={setDiscountMutation.isPending}
+        currentDiscount={currentUser?.discount_percentage || 0}
+        currentNote={currentUser?.discount_note || ''}
+        username={currentUser?.username || currentUser?.email}
       />
       
       {currentUser && (
@@ -140,6 +214,7 @@ const AdminUsers = () => {
           user={currentUser} 
           onEdit={() => setIsEditRoleDialogOpen(true)}
           onAdjustBalance={() => setIsAdjustBalanceDialogOpen(true)}
+          onSetDiscount={() => setIsDiscountDialogOpen(true)}
         />
       )}
     </div>

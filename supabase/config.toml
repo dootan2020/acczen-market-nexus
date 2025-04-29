@@ -75,3 +75,9 @@ verify_jwt = true
 
 [functions.update-exchange-rates]
 verify_jwt = true
+
+[functions.set-user-discount]
+verify_jwt = true
+
+[functions.calculate-user-discount]
+verify_jwt = true

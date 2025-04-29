@@ -192,6 +192,51 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_history: {
+        Row: {
+          change_note: string | null
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          new_percentage: number | null
+          previous_percentage: number | null
+          user_id: string | null
+        }
+        Insert: {
+          change_note?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_percentage?: number | null
+          previous_percentage?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          change_note?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_percentage?: number | null
+          previous_percentage?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -721,6 +766,10 @@ export type Database = {
           avatar_url: string | null
           balance: number
           created_at: string
+          discount_note: string | null
+          discount_percentage: number | null
+          discount_updated_at: string | null
+          discount_updated_by: string | null
           email: string
           full_name: string | null
           id: string
@@ -732,6 +781,10 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
+          discount_note?: string | null
+          discount_percentage?: number | null
+          discount_updated_at?: string | null
+          discount_updated_by?: string | null
           email: string
           full_name?: string | null
           id: string
@@ -743,6 +796,10 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
+          discount_note?: string | null
+          discount_percentage?: number | null
+          discount_updated_at?: string | null
+          discount_updated_by?: string | null
           email?: string
           full_name?: string | null
           id?: string
@@ -750,7 +807,15 @@ export type Database = {
           updated_at?: string
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_discount_updated_by_fkey"
+            columns: ["discount_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_notifications: {
         Row: {
@@ -1052,6 +1117,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_loyalty_points: {
+        Args: {
+          p_user_id: string
+          p_points: number
+          p_transaction_type: Database["public"]["Enums"]["loyalty_transaction_type"]
+          p_reference_id: string
+          p_description: string
+        }
+        Returns: string
+      }
       admin_update_exchange_rate: {
         Args: {
           p_from_currency: string
@@ -1060,6 +1135,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_update_user_discount: {
+        Args: {
+          p_user_id: string
+          p_discount_percentage: number
+          p_discount_note: string
+        }
+        Returns: string
+      }
+      calculate_loyalty_discount: {
+        Args: { user_id: string; order_amount: number }
+        Returns: number
+      }
+      calculate_order_loyalty_points: {
+        Args: { order_amount: number }
+        Returns: number
+      }
+      calculate_user_discount: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: number
+      }
       check_if_should_open_circuit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1067,6 +1162,20 @@ export type Database = {
       generate_random_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_loyalty_info: {
+        Args: { p_user_id: string }
+        Returns: {
+          user_id: string
+          loyalty_points: number
+          current_tier_name: string
+          current_tier_discount: number
+          current_tier_perks: string[]
+          current_tier_icon: string
+          next_tier_name: string
+          next_tier_min_points: number
+          points_to_next_tier: number
+        }[]
       }
       increment_error_count: {
         Args: Record<PropertyKey, never>
@@ -1084,8 +1193,13 @@ export type Database = {
         Args: { user_id: string; amount: number }
         Returns: undefined
       }
+      update_user_loyalty_tier: {
+        Args: { user_id: string }
+        Returns: string
+      }
     }
     Enums: {
+      loyalty_transaction_type: "earned" | "redeemed" | "expired" | "adjusted"
       order_status:
         | "pending"
         | "completed"
@@ -1210,6 +1324,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      loyalty_transaction_type: ["earned", "redeemed", "expired", "adjusted"],
       order_status: ["pending", "completed", "cancelled", "refunded", "failed"],
       product_status: ["active", "inactive", "out_of_stock"],
       transaction_type: ["purchase", "deposit", "refund"],

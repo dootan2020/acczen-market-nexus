@@ -1,126 +1,200 @@
 
-import React from 'react';
-import { 
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetDescription
-} from '@/components/ui/sheet';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage
-} from '@/components/ui/avatar';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Wallet, UserCheck } from 'lucide-react';
+import { 
+  UserCog, 
+  CircleDollarSign, 
+  Package, 
+  CreditCard, 
+  Calendar, 
+  Mail, 
+  User2,
+  Percent
+} from 'lucide-react';
+import { format } from 'date-fns';
 import { UserProfile } from '@/hooks/admin/types/userManagement.types';
+import { DiscountBadge } from './DiscountBadge';
+import { useUserDiscount } from '@/hooks/admin/useUserDiscount';
+import { DiscountHistoryTable } from './DiscountHistoryTable';
 
 interface UserDetailsProps {
   user: UserProfile;
   onEdit: () => void;
   onAdjustBalance: () => void;
+  onSetDiscount: () => void;
 }
 
-export function UserDetails({ user, onEdit, onAdjustBalance }: UserDetailsProps) {
-  // Helper function to get user initials
-  const getUserInitials = (name?: string, email?: string): string => {
-    if (name && name.length > 0) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase();
-    }
-    if (email && email.length > 0) {
-      return email[0].toUpperCase();
-    }
-    return 'U';
-  };
+export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: UserDetailsProps) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const { discountHistory, isLoadingHistory } = useUserDiscount(user.id);
   
-  // Helper function to format date
-  const formatDate = (dateString?: string): string => {
+  const getInitials = (name: string | null = '', email: string | null = '') => {
+    if (name) {
+      return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    return email ? email[0].toUpperCase() : 'U';
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
-  
+
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
-        <SheetHeader className="mb-4">
-          <SheetTitle>User Details</SheetTitle>
-          <SheetDescription>View complete information about this user</SheetDescription>
-        </SheetHeader>
-        
-        <div className="space-y-6">
-          <div className="flex flex-col items-center text-center">
-            <Avatar className="h-20 w-20 mb-2">
-              <AvatarImage src={user.avatar_url || ''} alt={user.username || ''} />
-              <AvatarFallback>{getUserInitials(user.full_name, user.email)}</AvatarFallback>
-            </Avatar>
-            <h3 className="text-lg font-semibold">{user.full_name || user.username || 'Unnamed User'}</h3>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-            <Badge className="mt-2" variant={user.role === 'admin' ? "destructive" : "outline"}>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* User profile card */}
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>User Profile</CardTitle>
+            <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
               {user.role}
             </Badge>
           </div>
+          <CardDescription>User details and information</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center text-center">
+          <Avatar className="h-24 w-24 mb-4">
+            <AvatarImage src={user.avatar_url || undefined} alt={user.username || ''} />
+            <AvatarFallback className="text-xl">{getInitials(user.full_name, user.email)}</AvatarFallback>
+          </Avatar>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium">Username</div>
-                <div className="text-right">{user.username || 'N/A'}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium">Balance</div>
-                <div className="text-right font-semibold">${user.balance?.toFixed(2) || '0.00'}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium">User ID</div>
-                <div className="text-right text-xs text-muted-foreground break-all">{user.id}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium">Joined</div>
-                <div className="text-right">{formatDate(user.created_at)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="font-medium">Last Updated</div>
-                <div className="text-right">{formatDate(user.updated_at)}</div>
-              </div>
-            </CardContent>
-          </Card>
+          <h3 className="text-lg font-medium">{user.full_name || user.username || 'Unnamed User'}</h3>
           
-          <div className="flex gap-2">
-            <Button className="flex-1" onClick={onEdit} variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Role
+          {user.discount_percentage > 0 && (
+            <div className="mt-2">
+              <DiscountBadge 
+                percentage={user.discount_percentage} 
+                size="lg"
+                tooltipContent={user.discount_note ? `Reason: ${user.discount_note}` : undefined}
+              />
+            </div>
+          )}
+          
+          <div className="mt-4 space-y-2 w-full">
+            <div className="flex items-center justify-start border-t pt-2">
+              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm break-all">{user.email || 'No email'}</span>
+            </div>
+            
+            <div className="flex items-center justify-start border-t pt-2">
+              <User2 className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">{user.username || 'No username'}</span>
+            </div>
+            
+            <div className="flex items-center justify-start border-t pt-2">
+              <CircleDollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">${user.balance.toFixed(2)} balance</span>
+            </div>
+            
+            <div className="flex items-center justify-start border-t pt-2">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">Joined {formatDate(user.created_at)}</span>
+            </div>
+            
+            {user.discount_updated_at && (
+              <div className="flex items-center justify-start border-t pt-2">
+                <Percent className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">
+                  Discount updated {formatDate(user.discount_updated_at)}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <div className="flex gap-2 w-full">
+            <Button onClick={onEdit} className="flex-1">
+              <UserCog className="mr-1 h-4 w-4" />
+              Change Role
             </Button>
-            <Button className="flex-1" onClick={onAdjustBalance} variant="outline">
-              <Wallet className="h-4 w-4 mr-2" />
+            <Button onClick={onAdjustBalance} variant="outline" className="flex-1">
+              <CircleDollarSign className="mr-1 h-4 w-4" />
               Adjust Balance
             </Button>
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+          <Button onClick={onSetDiscount} variant="secondary" className="w-full">
+            <Percent className="mr-1 h-4 w-4" />
+            Set Discount
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Tabs for user details */}
+      <div className="md:col-span-2">
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="discount-history">Discount History</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Overview</CardTitle>
+                <CardDescription>Summary of user activity and statistics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col p-4 border rounded-lg">
+                    <span className="text-sm text-muted-foreground">Total Orders</span>
+                    <div className="flex items-center mt-1">
+                      <Package className="h-5 w-5 mr-2 text-primary" />
+                      <span className="text-2xl font-bold">0</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col p-4 border rounded-lg">
+                    <span className="text-sm text-muted-foreground">Total Spend</span>
+                    <div className="flex items-center mt-1">
+                      <CreditCard className="h-5 w-5 mr-2 text-primary" />
+                      <span className="text-2xl font-bold">$0.00</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <h3 className="font-medium mb-2">Most Recent Activity</h3>
+                  <div className="text-sm text-muted-foreground">No recent activity to display.</div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order History</CardTitle>
+                <CardDescription>View all orders placed by this user</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No orders found for this user.
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="discount-history">
+            <DiscountHistoryTable 
+              history={discountHistory || []}
+              isLoading={isLoadingHistory}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }

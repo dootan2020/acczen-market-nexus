@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, AlertTriangle, ShieldCheck, CreditCard } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ShieldCheck, CreditCard, Percent } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +42,15 @@ const Checkout = () => {
     hasItems: true,
     validStock: true
   });
+  const [discountData, setDiscountData] = useState<{
+    discountPercentage: number;
+    discountAmount: number;
+    finalAmount: number;
+  }>({
+    discountPercentage: 0,
+    discountAmount: 0,
+    finalAmount: 0
+  });
   const { isProcessing, executePurchase } = usePurchaseProduct();
   
   // Check if we have a direct product purchase
@@ -61,13 +70,13 @@ const Checkout = () => {
       return;
     }
     
-    // Fetch user balance
-    const fetchBalance = async () => {
+    // Fetch user balance and discount
+    const fetchUserData = async () => {
       try {
         setError(null);
         const { data, error } = await supabase
           .from('profiles')
-          .select('balance')
+          .select('balance, discount_percentage')
           .eq('id', user.id)
           .single();
           
@@ -81,12 +90,33 @@ const Checkout = () => {
         const productPrice = directProduct ? directProduct.price : 0;
         const total = productPrice * quantity;
         
-        // Validate checkout data
-        validateCheckout(data.balance || 0, directProduct, total);
+        // Calculate discount if applicable
+        if (data.discount_percentage > 0) {
+          const discountAmount = (total * data.discount_percentage) / 100;
+          const finalAmount = total - discountAmount;
+          
+          setDiscountData({
+            discountPercentage: data.discount_percentage,
+            discountAmount: discountAmount,
+            finalAmount: finalAmount
+          });
+          
+          // Validate checkout data with discounted price
+          validateCheckout(data.balance || 0, directProduct, finalAmount);
+        } else {
+          setDiscountData({
+            discountPercentage: 0,
+            discountAmount: 0,
+            finalAmount: total
+          });
+          
+          // Validate checkout data with regular price
+          validateCheckout(data.balance || 0, directProduct, total);
+        }
         
       } catch (error) {
-        console.error('Error fetching user balance:', error);
-        setError('Không thể tải thông tin số dư. Vui lòng thử lại.');
+        console.error('Error fetching user data:', error);
+        setError('Không thể tải thông tin người dùng. Vui lòng thử lại.');
         toast({
           title: "Lỗi tải dữ liệu",
           description: "Vui lòng làm mới trang",
@@ -95,16 +125,21 @@ const Checkout = () => {
       }
     };
     
-    fetchBalance();
+    fetchUserData();
   }, [user, navigate, location, toast, directProduct, quantity]);
 
   // Get total price
   const total = directProduct ? directProduct.price * quantity : 0;
+  
+  // Use final amount after discount
+  const finalAmount = discountData.finalAmount || total;
   const totalUSD = convertVNDtoUSD(total);
+  const discountAmountUSD = convertVNDtoUSD(discountData.discountAmount);
+  const finalAmountUSD = convertVNDtoUSD(finalAmount);
   const balanceUSD = convertVNDtoUSD(userBalance);
-  const hasEnoughBalance = userBalance >= total;
+  const hasEnoughBalance = userBalance >= finalAmount;
 
-  const validateCheckout = (balance: number, product: any, totalAmount: number) => {
+  const validateCheckout = (balance: number, product: any, totalAfterDiscount: number) => {
     if (!product) {
       setError('Không có sản phẩm để thanh toán.');
       setValidation({
@@ -116,7 +151,7 @@ const Checkout = () => {
     }
     
     const newValidation = {
-      hasEnoughBalance: balance >= totalAmount,
+      hasEnoughBalance: balance >= totalAfterDiscount,
       hasItems: !!product,
       validStock: true
     };
@@ -132,7 +167,7 @@ const Checkout = () => {
     
     // Set error message if validation fails
     if (!newValidation.hasEnoughBalance) {
-      setError(`Số dư không đủ. Bạn cần ${formatUSD(totalUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}.`);
+      setError(`Số dư không đủ. Bạn cần ${formatUSD(finalAmountUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}.`);
     } else if (!newValidation.hasItems) {
       setError('Không có sản phẩm để thanh toán.');
     } else if (!newValidation.validStock) {
@@ -174,7 +209,8 @@ const Checkout = () => {
       name: directProduct.name,
       price: directProduct.price,
       kioskToken: directProduct.kiosk_token,
-      quantity: quantity
+      quantity: quantity,
+      userDiscount: discountData.discountPercentage
     });
 
     if (orderId) {
@@ -189,8 +225,12 @@ const Checkout = () => {
               price: convertVNDtoUSD(directProduct.price),
               total: convertVNDtoUSD(directProduct.price * quantity)
             }],
-            total: convertVNDtoUSD(directProduct.price * quantity),
-            payment_method: 'Account Balance'
+            total: convertVNDtoUSD(finalAmount),
+            payment_method: 'Account Balance',
+            discount: {
+              percentage: discountData.discountPercentage,
+              amount: discountAmountUSD
+            }
           }
         }
       });
@@ -274,10 +314,25 @@ const Checkout = () => {
                     <span className="font-medium">{formatUSD(totalUSD)}</span>
                   </div>
                   
+                  {discountData.discountPercentage > 0 && (
+                    <div className="flex items-center justify-between text-green-600">
+                      <span className="text-sm flex items-center">
+                        <Percent className="h-4 w-4 mr-1" />
+                        Giảm giá ({discountData.discountPercentage}%)
+                      </span>
+                      <span className="font-medium">-{formatUSD(discountAmountUSD)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between border-t pt-4">
+                    <span className="text-sm font-medium">Số tiền thanh toán</span>
+                    <span className="font-bold text-primary">{formatUSD(finalAmountUSD)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Số dư sau khi thanh toán</span>
                     <span className={`font-bold ${!hasEnoughBalance ? 'text-destructive' : 'text-primary'}`}>
-                      {hasEnoughBalance ? formatUSD(balanceUSD - totalUSD) : "Không đủ số dư"}
+                      {hasEnoughBalance ? formatUSD(balanceUSD - finalAmountUSD) : "Không đủ số dư"}
                     </span>
                   </div>
                   
@@ -348,9 +403,17 @@ const Checkout = () => {
                     <span className="text-sm text-muted-foreground">Số lượng</span>
                     <span>{quantity}</span>
                   </div>
+                  
+                  {discountData.discountPercentage > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-sm">Giảm giá</span>
+                      <span>-{formatUSD(discountAmountUSD)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between border-t pt-2 font-medium">
                     <span>Tổng tiền</span>
-                    <span>{formatUSD(totalUSD)}</span>
+                    <span>{formatUSD(finalAmountUSD)}</span>
                   </div>
                 </div>
               </CardContent>

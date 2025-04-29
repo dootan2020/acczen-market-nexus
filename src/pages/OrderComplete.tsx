@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, ShoppingBag, ArrowRight, Download, Home, ClipboardList } from 'lucide-react';
+import { CheckCircle, ShoppingBag, ArrowRight, Download, Home, ClipboardList, Percent } from 'lucide-react';
 import TrustBadges from '@/components/trust/TrustBadges';
 import { useOrderConfirmation } from '@/hooks/useOrderConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,7 +29,8 @@ const OrderComplete = () => {
         total: orderData.total || 0,
         payment_method: orderData.payment_method || 'Account Balance',
         transaction_id: orderData.transaction_id,
-        digital_items: orderData.digital_items || []
+        digital_items: orderData.digital_items || [],
+        discount: orderData.discount || null
       });
     }
   }, [orderData, user]);
@@ -71,9 +72,28 @@ const OrderComplete = () => {
       headStyles: { fillColor: [46, 204, 113] }
     });
     
-    // Add total
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.text(`Total: $${typeof orderData.total === 'number' ? orderData.total.toFixed(2) : orderData.total}`, 170, finalY, { align: 'right' });
+    // Add total and discount if applicable
+    let finalY = (doc as any).lastAutoTable.finalY + 10;
+    
+    if (orderData.discount && orderData.discount.percentage > 0) {
+      doc.text(`Subtotal: $${typeof orderData.total === 'number' ? 
+        (Number(orderData.total) + Number(orderData.discount.amount)).toFixed(2) : 
+        orderData.total}`, 170, finalY, { align: 'right' });
+      
+      finalY += 7;
+      doc.setTextColor(46, 204, 113); // Green color for discount
+      doc.text(`Discount (${orderData.discount.percentage}%): -$${
+        typeof orderData.discount.amount === 'number' ? 
+        orderData.discount.amount.toFixed(2) : 
+        orderData.discount.amount
+      }`, 170, finalY, { align: 'right' });
+      
+      finalY += 7;
+      doc.setTextColor(51, 51, 51); // Reset to normal text color
+      doc.text(`Total: $${typeof orderData.total === 'number' ? orderData.total.toFixed(2) : orderData.total}`, 170, finalY, { align: 'right' });
+    } else {
+      doc.text(`Total: $${typeof orderData.total === 'number' ? orderData.total.toFixed(2) : orderData.total}`, 170, finalY, { align: 'right' });
+    }
     
     // Add digital items if available
     if (orderData.digital_items && orderData.digital_items.length > 0) {
@@ -155,6 +175,16 @@ const OrderComplete = () => {
                       </div>
                     ))}
                   </div>
+                  
+                  {orderData.discount && orderData.discount.percentage > 0 && (
+                    <div className="flex justify-between pt-2 text-green-600">
+                      <div className="flex items-center gap-1">
+                        <Percent className="h-4 w-4" />
+                        <p>Giảm giá ({orderData.discount.percentage}%)</p>
+                      </div>
+                      <p className="font-medium">-{formatUSD(orderData.discount.amount)}</p>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between pt-4 border-t">
                     <p className="font-medium">Tổng tiền</p>
