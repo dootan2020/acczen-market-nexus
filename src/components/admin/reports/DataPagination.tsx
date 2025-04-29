@@ -1,21 +1,15 @@
 
 import React from 'react';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationPrevious, 
-  PaginationNext, 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
   PaginationLink,
-  PaginationEllipsis
+  PaginationNext,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DataPaginationProps {
   currentPage: number;
@@ -32,15 +26,15 @@ export function DataPagination({
   setPageSize,
   totalItems
 }: DataPaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
   
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisiblePages = 5;
+    const maxPagesToShow = 5; // Adjust based on design preference
     
-    if (totalPages <= maxVisiblePages) {
-      // Show all pages if total pages are less than max visible
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages if total pages are less than or equal to maxPagesToShow
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
@@ -48,27 +42,34 @@ export function DataPagination({
       // Always include first page
       pages.push(1);
       
-      // Add ellipsis if current page is far from start
-      if (currentPage > 3) {
-        pages.push('ellipsis');
+      // Calculate the range around current page
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Adjust the range to always show 3 pages when possible
+      if (startPage === 2) {
+        endPage = Math.min(4, totalPages - 1);
+      }
+      if (endPage === totalPages - 1) {
+        startPage = Math.max(2, totalPages - 3);
       }
       
-      // Add pages around current page
-      const startPage = Math.max(2, currentPage - 1);
-      const endPage = Math.min(totalPages - 1, currentPage + 1);
+      // Add ellipsis after page 1 if start page is not 2
+      if (startPage > 2) {
+        pages.push('ellipsis1');
+      }
       
+      // Add pages in the middle
       for (let i = startPage; i <= endPage; i++) {
-        if (i > 1 && i < totalPages) {
-          pages.push(i);
-        }
+        pages.push(i);
       }
       
-      // Add ellipsis if current page is far from end
-      if (currentPage < totalPages - 2) {
-        pages.push('ellipsis');
+      // Add ellipsis before last page if end page is not totalPages - 1
+      if (endPage < totalPages - 1) {
+        pages.push('ellipsis2');
       }
       
-      // Always include last page
+      // Always include last page if more than 1 page
       if (totalPages > 1) {
         pages.push(totalPages);
       }
@@ -89,12 +90,16 @@ export function DataPagination({
     }
   };
   
+  const pageNumbers = getPageNumbers();
+
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center mt-4 gap-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Rows per page:</span>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        <p className="text-sm text-muted-foreground">
+          Rows per page
+        </p>
         <Select
-          value={String(pageSize)}
+          value={pageSize.toString()}
           onValueChange={(value) => {
             setPageSize(Number(value));
             setCurrentPage(1); // Reset to first page when changing page size
@@ -111,47 +116,47 @@ export function DataPagination({
             <SelectItem value="100">100</SelectItem>
           </SelectContent>
         </Select>
-        
-        <span className="text-sm text-muted-foreground ml-4">
-          {totalItems > 0 
-            ? `${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalItems)} of ${totalItems}`
-            : 'No items'
-          }
-        </span>
       </div>
       
       <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
-              onClick={handlePrevious}
-              className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} 
+              onClick={handlePrevious} 
+              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
           
-          {getPageNumbers().map((page, index) => (
-            <PaginationItem key={`page-${index}`}>
-              {page === 'ellipsis' ? (
+          {pageNumbers.map((page, i) => (
+            page === 'ellipsis1' || page === 'ellipsis2' ? (
+              <PaginationItem key={`ellipsis-${i}`}>
                 <PaginationEllipsis />
-              ) : (
-                <PaginationLink 
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={`page-${page}`}>
+                <PaginationLink
+                  isActive={page === currentPage}
                   onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                  isActive={currentPage === page}
+                  className={typeof page === 'number' ? "cursor-pointer" : ""}
                 >
                   {page}
                 </PaginationLink>
-              )}
-            </PaginationItem>
+              </PaginationItem>
+            )
           ))}
           
           <PaginationItem>
             <PaginationNext 
-              onClick={handleNext}
-              className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} 
+              onClick={handleNext} 
+              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+      
+      <div className="text-sm text-muted-foreground">
+        Showing {Math.min((currentPage - 1) * pageSize + 1, totalItems)} to {Math.min(currentPage * pageSize, totalItems)} of {totalItems}
+      </div>
     </div>
   );
 }

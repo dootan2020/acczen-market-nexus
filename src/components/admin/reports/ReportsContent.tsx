@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportOverview } from "./ReportOverview";
@@ -133,10 +134,12 @@ export function ReportsContent({
         </TabsContent>
         
         <TabsContent value="products">
-          <BestSellingProducts 
-            dateRange={dateRange}
-            productsData={productsData}
-          />
+          {dateRange && (
+            <BestSellingProducts 
+              dateRange={dateRange}
+              productsData={productsData}
+            />
+          )}
         </TabsContent>
         
         {isLoading && (

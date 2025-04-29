@@ -19,11 +19,12 @@ interface Product {
 
 interface BestSellingProductsProps {
   dateRange: DateRange;
+  productsData?: any[]; // Make productsData optional
 }
 
 const COLORS = ['#2ECC71', '#27AE60', '#3DB573', '#45C985', '#4FDA9A'];
 
-const BestSellingProducts = ({ dateRange }: BestSellingProductsProps) => {
+const BestSellingProducts = ({ dateRange, productsData: initialProductsData }: BestSellingProductsProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
@@ -85,10 +86,13 @@ const BestSellingProducts = ({ dateRange }: BestSellingProductsProps) => {
     gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
   
+  // Use initialProductsData if provided, otherwise use fetched products
+  const displayProducts = initialProductsData || products || [];
+  
   // Calculate pagination
   const offset = (currentPage - 1) * pageSize;
-  const paginatedProducts = products ? products.slice(offset, offset + pageSize) : [];
-  const totalProducts = products?.length || 0;
+  const paginatedProducts = displayProducts.slice(offset, offset + pageSize);
+  const totalProducts = displayProducts.length || 0;
 
   return (
     <Card className="w-full">
@@ -98,7 +102,7 @@ const BestSellingProducts = ({ dateRange }: BestSellingProductsProps) => {
           <CardDescription>Products with highest sales volume</CardDescription>
         </div>
         <ExportButtons
-          data={products || []}
+          data={displayProducts}
           fileName={`best-selling-products-${format(new Date(), 'yyyy-MM-dd')}`}
           dateRange={dateRange}
         />
@@ -108,7 +112,7 @@ const BestSellingProducts = ({ dateRange }: BestSellingProductsProps) => {
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : products?.length === 0 ? (
+        ) : displayProducts.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             No products data available for the selected period.
           </div>
