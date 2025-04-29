@@ -25,9 +25,6 @@ interface OrdersReportProps {
 }
 
 export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) {
-  // Ensure we have valid data before rendering
-  const hasValidData = Array.isArray(ordersChartData) && ordersChartData.length > 0;
-
   return (
     <Card>
       <CardHeader>
@@ -39,10 +36,6 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-80 w-full" />
-        ) : !hasValidData ? (
-          <div className="h-80 w-full flex items-center justify-center text-muted-foreground">
-            No order data available for the selected period
-          </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
@@ -59,14 +52,8 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
                 dataKey="date" 
                 tickFormatter={(date) => format(new Date(date), 'MMM dd')}
               />
-              <YAxis 
-                yAxisId="left" 
-                orientation="left"
-              />
-              <YAxis 
-                yAxisId="right" 
-                orientation="right" 
-              />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
               <Tooltip 
                 formatter={(value: number, name) => {
                   if (name === 'amount') return [`$${value.toFixed(2)}`, 'Revenue'];

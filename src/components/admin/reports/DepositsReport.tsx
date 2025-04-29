@@ -11,92 +11,183 @@ import { format } from "date-fns";
 import {
   LineChart,
   Line,
-  CartesianGrid,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { DayData } from '@/hooks/reports/types';
 
 interface DepositsReportProps {
-  depositsChartData: DayData[];
-  depositsData?: any[];
+  depositsChartData: any[];
   isLoading: boolean;
+  depositsData: any[];
 }
 
-export function DepositsReport({ depositsChartData, depositsData, isLoading }: DepositsReportProps) {
-  // Ensure we have valid data before rendering
-  const hasValidData = Array.isArray(depositsChartData) && depositsChartData.length > 0;
-
+export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Deposit Trends</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Daily deposit volume and amount
-        </p>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-80 w-full" />
-        ) : !hasValidData ? (
-          <div className="h-80 w-full flex items-center justify-center text-muted-foreground">
-            No deposit data available for the selected period
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart
-              data={depositsChartData}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(date) => format(new Date(date), 'MMM dd')}
-              />
-              <YAxis 
-                yAxisId="left"
-                orientation="left"
-              />
-              <YAxis 
-                yAxisId="right" 
-                orientation="right"
-              />
-              <Tooltip 
-                formatter={(value: number, name) => {
-                  if (name === 'amount') return [`$${value.toFixed(2)}`, 'Amount'];
-                  return [value, 'Deposits'];
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Deposit Trends</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Daily deposit amounts over selected period
+          </p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-80 w-full" />
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={depositsChartData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
                 }}
-                labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke="#2ECC71" 
-                name="Amount" 
-                yAxisId="left"
-                strokeWidth={2}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="count" 
-                stroke="#3498DB" 
-                name="Deposit Count"
-                yAxisId="right"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                  labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#2ECC71" 
+                  name="Deposit Amount" 
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#3498DB" 
+                  name="Deposit Count"
+                  yAxisId={1}
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+      
+      <div className="grid md:grid-cols-2 gap-4 mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>PayPal Deposits</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Transaction history and amounts
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-60 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={depositsChartData.map(d => ({
+                    ...d,
+                    paypalAmount: (depositsData || [])
+                      .filter(deposit => 
+                        deposit.payment_method === 'PayPal' && 
+                        deposit.status === 'completed' &&
+                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+                      )
+                      .reduce((sum, d) => sum + (d.amount || 0), 0)
+                  }))}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="paypalAmount" 
+                    fill="#2ECC71" 
+                    name="PayPal Deposits"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>USDT Deposits</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Transaction history and amounts
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-60 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={depositsChartData.map(d => ({
+                    ...d,
+                    usdtAmount: (depositsData || [])
+                      .filter(deposit => 
+                        deposit.payment_method === 'USDT' && 
+                        deposit.status === 'completed' &&
+                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+                      )
+                      .reduce((sum, d) => sum + (d.amount || 0), 0)
+                  }))}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="usdtAmount" 
+                    fill="#3498DB" 
+                    name="USDT Deposits"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -81,6 +82,11 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
       name: 'API Monitoring', 
       href: '/admin/api-monitoring', 
       icon: <ActivitySquare className="h-5 w-5" /> 
+    },
+    { 
+      name: 'Exchange Rates', 
+      href: '/admin/exchange-rates', 
+      icon: <CurrencyIcon className="h-5 w-5" /> 
     },
   ];
   

@@ -34,14 +34,14 @@ export const OrderFilters = ({
         />
       </div>
       <Select
-        value={statusFilter || 'all'}
-        onValueChange={(value) => onStatusFilterChange(value === 'all' ? null : value)}
+        value={statusFilter || ''}
+        onValueChange={(value) => onStatusFilterChange(value || null)}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
+          <SelectItem value="">All Statuses</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
           <SelectItem value="completed">Completed</SelectItem>
           <SelectItem value="cancelled">Cancelled</SelectItem>

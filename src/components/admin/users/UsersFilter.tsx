@@ -34,14 +34,14 @@ export function UsersFilter({
         />
       </div>
       <Select
-        value={roleFilter || 'all'}
-        onValueChange={(value) => onRoleFilterChange(value === 'all' ? null : value)}
+        value={roleFilter || ''}
+        onValueChange={(value) => onRoleFilterChange(value || null)}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filter by role" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Roles</SelectItem>
+          <SelectItem value="">All Roles</SelectItem>
           <SelectItem value="user">User</SelectItem>
           <SelectItem value="admin">Admin</SelectItem>
         </SelectContent>

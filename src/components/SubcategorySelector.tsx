@@ -32,7 +32,7 @@ export default function SubcategorySelector({
       </SelectTrigger>
       <SelectContent>
         {subcategories?.map((subcategory) => (
-          <SelectItem key={subcategory.id} value={subcategory.id || 'undefined'}>
+          <SelectItem key={subcategory.id} value={subcategory.id}>
             {subcategory.name}
           </SelectItem>
         ))}
