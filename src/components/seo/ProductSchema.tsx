@@ -14,6 +14,32 @@ interface ProductSchemaProps {
   reviewCount?: number;
 }
 
+// Define a proper type for the schema data that includes the optional aggregateRating property
+interface SchemaData {
+  '@context': string;
+  '@type': string;
+  name: string;
+  description: string;
+  image: string;
+  sku?: string;
+  brand: {
+    '@type': string;
+    name: string;
+  };
+  offers: {
+    '@type': string;
+    url: string;
+    price: number;
+    priceCurrency: string;
+    availability: string;
+  };
+  aggregateRating?: {
+    '@type': string;
+    ratingValue: number;
+    reviewCount: number;
+  };
+}
+
 export const ProductSchema: React.FC<ProductSchemaProps> = ({
   name,
   description,
@@ -26,7 +52,7 @@ export const ProductSchema: React.FC<ProductSchemaProps> = ({
   ratingValue,
   reviewCount,
 }) => {
-  const schemaData = {
+  const schemaData: SchemaData = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     name,
