@@ -9,8 +9,11 @@ import { MobileNav } from "@/components/mobile-nav"
 import { DepositButton } from "@/components/deposit-button"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function Header() {
+  const isMobile = useIsMobile();
+
   return (
     <header className="supports-backdrop-blur:bg-background/60 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center">
@@ -32,10 +35,7 @@ export function Header() {
         </div>
         
         <div className="flex flex-1 md:flex-none items-center justify-end gap-2">
-          <div className="hidden md:block">
-            <DepositButton />
-          </div>
-          
+          {!isMobile && <DepositButton />}
           <CartButton />
           <UserMenu />
           <ModeToggle />

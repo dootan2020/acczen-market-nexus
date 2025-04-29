@@ -137,21 +137,22 @@ const Checkout = () => {
 
   if (items.length === 0 && !singleProduct) {
     return (
-      <div className="container mx-auto py-12 px-4">
+      <div className="container mx-auto py-8 px-4">
         <CheckoutEmpty />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-4 sm:mb-6"
+          size="sm"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
 
@@ -166,7 +167,7 @@ const Checkout = () => {
             />
           </div>
 
-          <div>
+          <div className="order-first md:order-last">
             <OrderSummary items={items} total={total} />
           </div>
         </div>

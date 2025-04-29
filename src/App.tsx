@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Routes,
   Route,
@@ -25,17 +25,25 @@ import EditProductPage from './pages/admin/EditProductPage';
 import CategoriesAdminPage from './pages/admin/CategoriesAdminPage';
 import UsersAdminPage from './pages/admin/UsersAdminPage';
 import DepositsAdminPage from './pages/admin/DepositsAdminPage';
+import Layout from './components/Layout';
+import BottomNav from './components/mobile/BottomNav';
+import { useIsMobile } from './hooks/use-mobile';
 
 // Import necessary components from routes.tsx or create placeholder components if needed
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
+
+// Create placeholder components for missing components
+import Home from './pages/Home';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 
 // ProtectedRoute component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Store the attempted URL in localStorage
     if (!user && !isLoading) {
       localStorage.setItem('previousPath', location.pathname);
@@ -43,7 +51,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user, isLoading, location.pathname]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    </div>;
   }
 
   if (!user) {
@@ -53,20 +63,70 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Create placeholder components for missing components
-const Home = () => <div>Home Page</div>;
-const ProductsPage = () => <div>Products Page</div>;
-const ProductDetailPage = () => <div>Product Detail Page</div>;
-const OrderComplete = () => <div>Order Complete Page</div>;
-const DepositPage = () => <div>Deposit Page</div>;
-const DepositHistoryPage = () => <div>Deposit History Page</div>;
-const PurchasesPage = () => <div>Purchases Page</div>;
-const SettingsPage = () => <div>Settings Page</div>;
+// Placeholder components for missing components
+const ProductsPage = () => (
+  <Layout>
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Products Page</h1>
+      <p>Products listing will go here.</p>
+    </div>
+  </Layout>
+);
+
+const ProductDetailPage = () => (
+  <Layout>
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Product Detail Page</h1>
+      <p>Product details will go here.</p>
+    </div>
+  </Layout>
+);
+
+const OrderComplete = () => (
+  <Layout>
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Order Complete</h1>
+      <p>Thank you for your order!</p>
+    </div>
+  </Layout>
+);
+
+const DepositPage = () => (
+  <Layout>
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Deposit</h1>
+      <p>Deposit functionality will go here.</p>
+    </div>
+  </Layout>
+);
+
+const DepositHistoryPage = () => (
+  <div>
+    <h1 className="text-2xl font-bold mb-6">Deposit History</h1>
+    <p>Your deposit history will appear here.</p>
+  </div>
+);
+
+const PurchasesPage = () => (
+  <div>
+    <h1 className="text-2xl font-bold mb-6">Your Purchases</h1>
+    <p>Your purchase history will appear here.</p>
+  </div>
+);
+
+const SettingsPage = () => (
+  <div>
+    <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
+    <p>Account settings will be available here.</p>
+  </div>
+);
 
 function App() {
+  const isMobile = useIsMobile();
+  
   return (
     <>
-      <Toaster />
+      <Toaster position={isMobile ? "top-center" : "top-right"} />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -78,6 +138,7 @@ function App() {
         <Route path="/auth/update-password" element={<UpdatePassword />} />
         <Route path="/products/:categorySlug" element={<ProductsPage />} />
         <Route path="/product/:productSlug" element={<ProductDetailPage />} />
+        <Route path="/cart" element={<Cart />} />
         <Route path="/order-complete" element={<OrderComplete />} />
 
         {/* Protected Routes */}
@@ -86,6 +147,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DepositPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <Checkout />
             </ProtectedRoute>
           }
         />
@@ -129,6 +198,8 @@ function App() {
           }
         />
       </Routes>
+      
+      {isMobile && <div className="h-16" />}
     </>
   );
 }

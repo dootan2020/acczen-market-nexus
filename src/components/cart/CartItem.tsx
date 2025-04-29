@@ -1,54 +1,88 @@
 
 import React from 'react';
+import { X, MinusCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CartItem as CartItemType } from '@/types/cart';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { CartItemType } from '@/types/cart';
 
-interface CartItemProps {
+type CartItemProps = {
   item: CartItemType;
   onRemove: (id: string) => void;
   onUpdateQuantity: (id: string, quantity: number) => void;
-}
+};
 
 const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => {
-  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
-  
+  const { id, name, price, quantity, image } = item;
+  const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+  const formattedTotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price * quantity);
+
   return (
-    <div className="flex items-center border-b py-4 hover:bg-secondary/10 transition-colors">
-      <img 
-        src={item.image} 
-        alt={item.name} 
-        className="w-24 h-24 object-cover rounded mr-4" 
-      />
-      <div className="flex-grow">
-        <h2 className="font-semibold">{item.name}</h2>
-        <p className="text-muted-foreground">
-          Price: {formatUSD(convertVNDtoUSD(item.price))}
-        </p>
-        <div className="flex items-center gap-2 mt-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-6 border-b">
+      <div className="flex items-start sm:items-center w-full sm:w-auto">
+        <div className="relative h-16 w-16 flex-shrink-0 bg-muted rounded-md overflow-hidden mr-3 sm:mr-4">
+          {image ? (
+            <img
+              src={image}
+              alt={name}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full w-full bg-muted">
+              <span className="text-muted-foreground text-xs">No Image</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0 mr-2 sm:mr-4">
+          <h3 className="font-medium text-base mb-1 line-clamp-2">{name}</h3>
+          <p className="text-sm text-muted-foreground block sm:hidden">
+            {formattedPrice} × {quantity} = {formattedTotal}
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex flex-row sm:flex-col items-center justify-between w-full sm:w-auto mt-4 sm:mt-0">
+        <div className="flex items-center justify-between min-w-28">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full text-primary"
+            onClick={() => onUpdateQuantity(id, Math.max(1, quantity - 1))}
+            disabled={quantity <= 1}
           >
-            -
+            <MinusCircle className="h-4 w-4" />
           </Button>
-          <span>{item.quantity}</span>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+          
+          <span className="mx-3 font-medium">{quantity}</span>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full text-primary"
+            onClick={() => onUpdateQuantity(id, quantity + 1)}
           >
-            +
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={() => onRemove(item.id)}
-          >
-            Xóa
+            <PlusCircle className="h-4 w-4" />
           </Button>
         </div>
+        
+        <div className="hidden sm:flex flex-col items-end min-w-28">
+          <p className="font-medium">{formattedTotal}</p>
+          <p className="text-sm text-muted-foreground">
+            {formattedPrice} × {quantity}
+          </p>
+        </div>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onRemove(id)}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Remove</span>
+        </Button>
       </div>
     </div>
   );

@@ -84,22 +84,22 @@ const Register = () => {
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full">
+      <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
           <Link to="/" className="flex items-center gap-2 font-bold text-2xl">
             <Package className="h-8 w-8 text-primary" />
-            <span>AccZen<span className="text-secondary">.net</span></span>
+            <span>Digital<span className="text-primary">Deals</span></span>
           </Link>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Tạo tài khoản mới</CardTitle>
-            <CardDescription>
-              Nhập thông tin của bạn để tạo tài khoản AccZen.net
+        <Card className="w-full">
+          <CardHeader className="space-y-1 px-4 py-5 sm:p-6">
+            <CardTitle className="text-xl sm:text-2xl text-center sm:text-left">Tạo tài khoản mới</CardTitle>
+            <CardDescription className="text-center sm:text-left">
+              Nhập thông tin của bạn để tạo tài khoản
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 sm:px-6">
               {errorMessage && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -108,7 +108,7 @@ const Register = () => {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="fullName">Họ và tên</Label>
+                <Label htmlFor="fullName" className="text-sm font-medium">Họ và tên</Label>
                 <Input
                   id="fullName"
                   placeholder="Nguyễn Văn A"
@@ -116,10 +116,11 @@ const Register = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -128,10 +129,11 @@ const Register = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <Label htmlFor="password" className="text-sm font-medium">Mật khẩu</Label>
                 <Input
                   id="password"
                   type="password"
@@ -140,10 +142,11 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Xác nhận mật khẩu</Label>
+                <Label htmlFor="confirm-password" className="text-sm font-medium">Xác nhận mật khẩu</Label>
                 <Input
                   id="confirm-password"
                   type="password"
@@ -152,13 +155,14 @@ const Register = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="h-11"
                 />
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="terms" 
                   checked={agreeTerms}
-                  onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
+                  onCheckedChange={(checked) => setAgreeTerms(!!checked)}
                   disabled={isLoading}
                 />
                 <Label htmlFor="terms" className="text-sm">
@@ -173,13 +177,13 @@ const Register = () => {
                 </Label>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+            <CardFooter className="flex flex-col space-y-4 px-4 pb-6 pt-2 sm:px-6">
+              <Button type="submit" className="w-full h-11 text-base" disabled={isLoading}>
                 {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
               </Button>
               <div className="text-center text-sm">
                 Đã có tài khoản?{" "}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/login" className="text-primary hover:underline font-medium">
                   Đăng nhập
                 </Link>
               </div>
