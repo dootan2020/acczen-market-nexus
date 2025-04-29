@@ -18,6 +18,7 @@ export class TaphoammoApiService {
   
   private constructor() {
     this.apiClient = {};
+    // Initialize services first before using them in method bindings
     this.productService = new TaphoammoProductService();
     this.orderService = new TaphoammoOrderService();
   }
@@ -33,14 +34,14 @@ export class TaphoammoApiService {
   }
   
   // Forward methods from product service
-  public getStock = this.productService.getStock.bind(this.productService);
-  public checkKioskActive = this.productService.checkKioskActive.bind(this.productService); 
-  public testConnection = this.productService.testConnection.bind(this.productService);
+  public getStock = () => this.productService.getStock();
+  public checkKioskActive = () => this.productService.checkKioskActive(); 
+  public testConnection = () => this.productService.testConnection();
   
   // Forward methods from order service
-  public buyProducts = this.orderService.buyProducts.bind(this.orderService);
-  public getProducts = this.orderService.getProducts.bind(this.orderService);
-  public checkStockAvailability = this.orderService.checkStockAvailability.bind(this.orderService);
+  public buyProducts = () => this.orderService.buyProducts();
+  public getProducts = () => this.orderService.getProducts();
+  public checkStockAvailability = () => this.orderService.checkStockAvailability();
   
   /**
    * Clear API cache across all services

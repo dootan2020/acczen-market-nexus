@@ -1,19 +1,16 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useTaphoammoAPI } from "@/hooks/useTaphoammoAPI";
 import { PurchaseModalHeader } from "./purchase/PurchaseModalHeader";
 import { PurchaseModalProduct } from "./purchase/PurchaseModalProduct";
 import { PurchaseModalInfo } from "./purchase/PurchaseModalInfo";
 import { PurchaseModalActions } from "./purchase/PurchaseModalActions";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { OrderResponse, ProductsResponse } from "@/services/taphoammo/TaphoammoOrderService";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -41,8 +38,7 @@ export const PurchaseConfirmModal = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
-  const { buyProducts, getProducts } = useTaphoammoAPI();
-
+  
   const sendOrderConfirmationEmail = async (userId: string, orderData: any) => {
     try {
       const response = await supabase.functions.invoke('send-notification-email', {
@@ -121,11 +117,28 @@ export const PurchaseConfirmModal = ({
         throw new Error(`Số dư không đủ. Bạn cần ${formatUSD(totalCostUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}`);
       }
       
-      // Fix: Correct parameter order for buyProducts function
-      // userToken should be the second param and quantity should be third
-      const orderData = await buyProducts(kioskToken, quantity, user.id);
+      const { data: apiResponse, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: JSON.stringify({
+          endpoint: 'buyProducts',
+          kioskToken,
+          userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
+          quantity
+        })
+      });
       
-      if (!orderData.order_id) {
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Type assertion for apiResponse to fix type errors
+      const typedResponse = apiResponse as OrderResponse;
+      
+      if (!typedResponse || typedResponse.success === "false") {
+        throw new Error(typedResponse?.message || typedResponse?.description || "Đã xảy ra lỗi khi mua sản phẩm");
+      }
+
+      const orderId = typedResponse.order_id;
+      if (!orderId) {
         throw new Error("Không nhận được mã đơn hàng từ API");
       }
       
@@ -151,8 +164,8 @@ export const PurchaseConfirmModal = ({
         total: totalCost,
         data: {
           kiosk_token: kioskToken,
-          taphoammo_order_id: orderData.order_id,
-          product_keys: orderData.product_keys || []
+          taphoammo_order_id: typedResponse.order_id,
+          product_keys: typedResponse.product_keys || []
         }
       };
       
@@ -174,14 +187,22 @@ export const PurchaseConfirmModal = ({
           reference_id: order.id
         });
       
-      let productKeys = orderData.product_keys || [];
+      let productKeys = typedResponse.product_keys || [];
       
-      if (orderData.status === "processing" || !productKeys.length) {
-        // Fix: Remove the third parameter
-        const checkResult = await getProducts(orderData.order_id, user.id);
+      if (typedResponse.status === "processing" || !productKeys.length) {
+        const { data: checkResult } = await supabase.functions.invoke('taphoammo-api', {
+          body: JSON.stringify({
+            endpoint: 'getProducts',
+            orderId: typedResponse.order_id,
+            userToken: '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
+          })
+        });
         
-        if (checkResult.success === "true" && checkResult.data?.length) {
-          productKeys = checkResult.data.map(item => item.product);
+        // Type assertion for checkResult
+        const typedCheckResult = checkResult as ProductsResponse;
+        
+        if (typedCheckResult.success === "true" && typedCheckResult.data?.length) {
+          productKeys = typedCheckResult.data.map(item => item.product);
           
           const { data: orderItem } = await supabase
             .from('order_items')
@@ -194,7 +215,7 @@ export const PurchaseConfirmModal = ({
             
             const updatedData = {
               kiosk_token: typeof itemData === 'object' ? itemData.kiosk_token : kioskToken,
-              taphoammo_order_id: typeof itemData === 'object' ? itemData.taphoammo_order_id : orderData.order_id,
+              taphoammo_order_id: typeof itemData === 'object' ? itemData.taphoammo_order_id : typedResponse.order_id,
               product_keys: productKeys
             };
             
@@ -207,14 +228,14 @@ export const PurchaseConfirmModal = ({
       }
       
       await sendOrderConfirmationEmail(user.id, {
-        order_id: orderData.order_id,
+        order_id: typedResponse.order_id,
         total_amount: totalCost,
         product_keys: productKeys
       });
       
       toast({
         title: "Đặt hàng thành công",
-        description: `Mã đơn hàng: ${orderData.order_id}`,
+        description: `Mã đơn hàng: ${typedResponse.order_id}`,
       });
       
       setTimeout(() => {
@@ -265,3 +286,6 @@ export const PurchaseConfirmModal = ({
     </Dialog>
   );
 };
+
+// Added import for useToast hook
+import { useToast } from "@/hooks/use-toast";
