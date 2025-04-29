@@ -71,6 +71,7 @@ export const LoyaltyTierProgress: React.FC<LoyaltyTierProgressProps> = ({
           // Calculate position as percentage
           const position = Math.min(100, (tier.min_points / highestTierPoints) * 100);
           const isCurrent = tier.name === currentTierName;
+          const tierColor = getTierColor(tier.name);
           
           return (
             <div 
@@ -87,9 +88,9 @@ export const LoyaltyTierProgress: React.FC<LoyaltyTierProgressProps> = ({
                   w-3 h-3 rounded-full ${isCurrent ? 'ring-2 ring-offset-2' : ''}
                 `}
                 style={{ 
-                  backgroundColor: getTierColor(tier.name),
+                  backgroundColor: tierColor,
                   boxShadow: isCurrent ? '0 0 0 2px white' : 'none',
-                  ringColor: getTierColor(tier.name)
+                  // Removed ringColor property as it's not valid
                 }}
               ></div>
               
