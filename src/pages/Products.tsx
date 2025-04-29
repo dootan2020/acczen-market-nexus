@@ -42,8 +42,8 @@ const Products = () => {
       category: product.category?.name || '',
       subcategory: product.subcategory?.name,
       stock: product.stock_quantity,
-      featured: Boolean(product.featured),
-      kioskToken: product.kiosk_token
+      // Changed from product.featured to check for active status and stock
+      featured: product.status === 'active' && product.stock_quantity > 0
     })) || [];
   }, [filteredProducts]);
 

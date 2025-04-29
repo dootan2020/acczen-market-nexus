@@ -38,44 +38,30 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Giảm thiểu số lượng requests được cache để tránh xung đột
-const shouldCache = (url) => {
-  // Chỉ cache assets tĩnh cơ bản và quan trọng
-  if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) return true;
-  if (url.pathname.endsWith('.woff2') || url.pathname.endsWith('.ttf')) return true;
-  
-  // Không cache API calls và tài nguyên động
-  if (url.pathname.includes('/api/') || 
-      url.pathname.includes('/auth/')) return false;
-  
-  return false;
-};
-
-// Simplified fetch strategy - network first only for important assets
+// Simple fetch handler - network first with cache fallback
 self.addEventListener('fetch', (event) => {
-  // Chỉ xử lý GET requests
+  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-
-  const url = new URL(event.request.url);
   
-  // Nếu là asset cần cache
-  if (shouldCache(url)) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Nếu response ok, cache lại
-          if (response.ok) {
-            const clonedResponse = response.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, clonedResponse);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Nếu network fail, thử từ cache
-          return caches.match(event.request);
-        })
-    );
-  }
+  // Skip API calls and dynamic resources
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('/api/') || url.pathname.includes('/auth/')) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        // Cache successful responses
+        if (response.ok) {
+          const clonedResponse = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, clonedResponse);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Fallback to cache if network fails
+        return caches.match(event.request);
+      })
+  );
 });
