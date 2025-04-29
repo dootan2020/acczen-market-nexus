@@ -1,17 +1,23 @@
 
 /**
- * Removes all HTML tags from a string
+ * Removes all HTML tags from a string and decodes HTML entities
  * @param html HTML string to strip tags from
- * @returns Plain text without HTML tags
+ * @returns Plain text without HTML tags and with decoded entities
  */
 export const stripHtmlTags = (html: string | null | undefined): string => {
   if (!html) return '';
   
-  // Replace HTML tags with spaces to maintain readability
-  return html
-    .replace(/<[^>]*>?/g, ' ')  // Replace tags with space
-    .replace(/\s{2,}/g, ' ')    // Collapse multiple spaces
-    .trim();                    // Remove leading/trailing spaces
+  // Create a temporary element to decode HTML entities
+  const tempElement = document.createElement('div');
+  tempElement.innerHTML = html;
+  
+  // Get the text content (this removes tags and decodes entities)
+  let text = tempElement.textContent || tempElement.innerText || '';
+  
+  // Clean up extra spaces
+  return text
+    .replace(/\s{2,}/g, ' ')  // Collapse multiple spaces
+    .trim();                   // Remove leading/trailing spaces
 };
 
 /**

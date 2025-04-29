@@ -32,7 +32,8 @@ const RichTextContent = ({ content, className = '' }: RichTextContentProps) => {
   const sanitizedContent = DOMPurify.sanitize(content, {
     ADD_ATTR: ['target'],
     ADD_TAGS: ['iframe'],
-    ALLOWED_ATTR: ['src', 'alt', 'href', 'target', 'class', 'style', 'id', 'width', 'height']
+    ALLOWED_ATTR: ['src', 'alt', 'href', 'target', 'class', 'style', 'id', 'width', 'height'],
+    USE_PROFILES: { html: true }  // Ensure HTML entities are properly handled
   });
 
   return (

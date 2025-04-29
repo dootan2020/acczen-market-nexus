@@ -67,10 +67,10 @@ const ProductCard = ({
     [displaySalePrice, formatUSD]);
 
   // Process the description to remove HTML tags and truncate
-  const cleanDescription = useMemo(() => 
-    truncateText(stripHtmlTags(description), 150), 
-    [description]
-  );
+  const cleanDescription = useMemo(() => {
+    // First strip HTML tags and decode entities, then truncate
+    return truncateText(stripHtmlTags(description), 150);
+  }, [description]);
 
   const handleBuyNow = () => {
     navigate('/checkout', { 
