@@ -17,6 +17,20 @@ const Products = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Map the database product format to the format expected by ProductsList
+  const mappedProducts = filteredProducts?.map(product => ({
+    id: product.id,
+    name: product.name,
+    image: product.image_url || '', // Map image_url to image
+    price: product.price,
+    salePrice: product.sale_price || undefined,
+    category: product.category?.name || '',
+    subcategory: product.subcategory?.name,
+    stock: product.stock_quantity, // Map stock_quantity to stock
+    featured: false, // Default value
+    kioskToken: product.kiosk_token
+  })) || [];
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Search is already handled through the filter above
@@ -61,7 +75,7 @@ const Products = () => {
           </div>
         ) : (
           <ProductsList 
-            products={filteredProducts || []} 
+            products={mappedProducts} 
             loading={isLoading}
             emptyMessage={searchTerm ? "Không có sản phẩm phù hợp" : "Chưa có sản phẩm nào"}
           />
