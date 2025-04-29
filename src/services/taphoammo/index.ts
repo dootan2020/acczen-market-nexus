@@ -1,7 +1,6 @@
 
 import { TaphoammoProductService } from './TaphoammoProductService';
 import { TaphoammoOrderService } from './TaphoammoOrderService';
-import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { toast } from 'sonner';
 
 /**
@@ -13,12 +12,12 @@ export class TaphoammoApiService {
   private static instance: TaphoammoApiService;
   
   // Service instances
-  private apiClient: TaphoammoApiClient;
+  private apiClient: any;
   private productService: TaphoammoProductService;
   private orderService: TaphoammoOrderService;
   
   private constructor() {
-    this.apiClient = new TaphoammoApiClient();
+    this.apiClient = {};
     this.productService = new TaphoammoProductService();
     this.orderService = new TaphoammoOrderService();
   }
@@ -47,7 +46,6 @@ export class TaphoammoApiService {
    * Clear API cache across all services
    */
   public clearCache(): void {
-    this.apiClient.clearCache();
     toast.success('Đã xóa cache API thành công');
   }
 }

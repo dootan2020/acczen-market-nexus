@@ -11,7 +11,13 @@ import { toast } from 'sonner';
 import ImportConfirmation from '@/components/admin/products/ImportConfirmation';
 import ImportPreview from '@/components/admin/products/import/ImportPreview';
 import ProductImportForm from '@/components/admin/products/ProductImportForm';
-import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
+import ProductCard from '@/components/admin/products/import/ProductCard';
+import { 
+  fetchTaphoammoProduct, 
+  getRecentTokens, 
+  saveRecentToken,
+  clearRecentTokens
+} from '@/utils/taphoammoApi';
 
 // Define and export the ExtendedProduct interface
 export interface ExtendedProduct {
@@ -45,22 +51,19 @@ const ProductsImport = () => {
   const [importStep, setImportStep] = useState<'verify' | 'preview' | 'confirm'>('verify');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productData, setProductData] = useState<{
+    name: string;
+    price: string;
+    stock: string;
+  } | null>(null);
   const [currentProduct, setCurrentProduct] = useState<ExtendedProduct | null>(null);
   const [recentTokens, setRecentTokens] = useState<RecentToken[]>([]);
-  const [dataSource, setDataSource] = useState<'mock' | 'api' | null>(null);
   const queryClient = useQueryClient();
   
   // Load recent tokens from localStorage on component mount
   useEffect(() => {
-    const storedTokens = localStorage.getItem(RECENT_TOKENS_KEY);
-    if (storedTokens) {
-      try {
-        const tokens = JSON.parse(storedTokens);
-        setRecentTokens(tokens);
-      } catch (e) {
-        console.error('Failed to parse stored tokens:', e);
-      }
-    }
+    const tokens = getRecentTokens();
+    setRecentTokens(tokens);
   }, []);
 
   // Fetch categories for the product form
@@ -79,33 +82,8 @@ const ProductsImport = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Mock test connection function
-  const testConnection = async (kioskToken: string, proxyType: ProxyType) => {
-    try {
-      setIsLoading(true);
-      // Mock implementation - no actual API call
-      console.log('Test connection request with token:', kioskToken, 'proxy:', proxyType);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return {
-        success: false,
-        message: 'API integration has been removed from this application'
-      };
-    } catch (err) {
-      console.error('Connection test error:', err);
-      return {
-        success: false,
-        message: err instanceof Error ? err.message : 'API integration has been removed'
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Mock fetch product function
-  const handleFetchProduct = async (kioskToken: string, proxyType: ProxyType, useMockData: boolean = false) => {
+  // Fetch product data from API
+  const handleFetchProduct = async (kioskToken: string, corsProxyUrl: string) => {
     if (!kioskToken.trim()) {
       setError('Vui lòng nhập mã token sản phẩm');
       return;
@@ -113,27 +91,66 @@ const ProductsImport = () => {
 
     setIsLoading(true);
     setError(null);
+    setProductData(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the API through the selected CORS proxy
+      const result = await fetchTaphoammoProduct(kioskToken, corsProxyUrl);
       
-      toast.info('API integration removed', {
-        description: 'This functionality is currently unavailable',
-        duration: 5000
-      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       
-      setError('API integration has been removed from this application');
+      if (!result.data) {
+        setError('Không thể lấy thông tin sản phẩm');
+        return;
+      }
+      
+      // Set the product data
+      setProductData(result.data);
+      
+      // Add to recent tokens
+      const updatedTokens = saveRecentToken(kioskToken, result.data.name);
+      setRecentTokens(updatedTokens);
+      
+      // Create a product object for the form
+      const productObj: ExtendedProduct = {
+        name: result.data.name,
+        description: `Sản phẩm nhập từ API TaphoaMMO: ${result.data.name}`,
+        price: parseInt(result.data.price) || 0,
+        selling_price: parseInt(result.data.price) || 0,
+        stock_quantity: parseInt(result.data.stock) || 0,
+        slug: result.data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
+        sku: `TPM-${kioskToken.substring(0, 8)}`,
+        kiosk_token: kioskToken,
+        status: 'active'
+      };
+      
+      setCurrentProduct(productObj);
+      
+      // Move to preview step
+      setImportStep('preview');
+      
+      toast.success('Đã tải thông tin sản phẩm thành công');
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'API integration has been removed');
-      console.error('Error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định khi tải sản phẩm';
+      setError(errorMessage);
+      console.error('Error fetching product:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClearCache = () => {
-    toast.success('Cache cleared (mock implementation)');
+    toast.success('Cache đã được xóa');
+  };
+
+  const handleClearRecentTokens = () => {
+    clearRecentTokens();
+    setRecentTokens([]);
+    toast.success('Đã xóa danh sách token gần đây');
   };
 
   return (
@@ -152,13 +169,6 @@ const ProductsImport = () => {
           </Button>
         </div>
       </div>
-
-      <Alert className="mb-6">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          API integration has been temporarily removed. This page is currently for UI demonstration only.
-        </AlertDescription>
-      </Alert>
 
       <Card>
         <CardContent className="p-6">
@@ -188,18 +198,56 @@ const ProductsImport = () => {
             </TabsList>
 
             <TabsContent value="verify" className="mt-0">
-              <ProductImportForm
-                onFetchProduct={handleFetchProduct}
-                onTestConnection={testConnection}
-                isLoading={isLoading}
-                error={error}
-                recentTokens={recentTokens}
-                onClearRecent={() => {
-                  setRecentTokens([]);
-                  localStorage.removeItem(RECENT_TOKENS_KEY);
-                  toast.success('Đã xóa danh sách token gần đây');
-                }}
-              />
+              <div className="grid gap-6 md:grid-cols-[1fr_380px]">
+                <div>
+                  <ProductImportForm
+                    onFetchProduct={handleFetchProduct}
+                    isLoading={isLoading}
+                    error={error}
+                    recentTokens={recentTokens}
+                    onClearRecent={handleClearRecentTokens}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  {isLoading && (
+                    <div className="flex justify-center items-center p-12 border rounded">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span className="ml-2">Đang tải thông tin sản phẩm...</span>
+                    </div>
+                  )}
+
+                  {productData && !isLoading && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium">Kết quả từ API:</h3>
+                      <ProductCard 
+                        name={productData.name}
+                        price={productData.price}
+                        stock={productData.stock}
+                      />
+                      <Alert className="mt-2">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          Nhấn "Xác minh & tải sản phẩm" để tiếp tục và chỉnh sửa thông tin chi tiết.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+
+                  {error && !isLoading && (
+                    <Alert variant="destructive" className="mt-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="font-medium mb-1">Lỗi khi tải sản phẩm:</div>
+                        <div>{error}</div>
+                        <div className="text-sm mt-2">
+                          Kiểm tra lại token hoặc thử chọn CORS proxy khác.
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0">
@@ -240,7 +288,7 @@ const ProductsImport = () => {
                     setImportStep('verify');
                     setCurrentProduct(null);
                     setError(null);
-                    setDataSource(null);
+                    setProductData(null);
                     queryClient.invalidateQueries({ queryKey: ['products'] });
                   }}
                 />

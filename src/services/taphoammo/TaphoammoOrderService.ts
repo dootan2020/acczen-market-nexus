@@ -1,5 +1,4 @@
 
-import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { ProxyType } from '@/utils/corsProxy';
 
 /**
@@ -7,10 +6,10 @@ import { ProxyType } from '@/utils/corsProxy';
  * // TODO: Implement new API logic
  */
 export class TaphoammoOrderService {
-  private apiClient: TaphoammoApiClient;
+  private apiClient: any;
   
   constructor() {
-    this.apiClient = new TaphoammoApiClient();
+    this.apiClient = {};
   }
   
   /**

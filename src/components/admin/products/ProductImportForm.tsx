@@ -6,13 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Clock, X, RefreshCw, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ProxyType, getProxyOptions, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { debounce } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { corsProxyOptions, DEFAULT_USER_TOKEN, testTaphoammoConnection } from '@/utils/taphoammoApi';
 
 interface RecentToken {
   token: string;
@@ -21,8 +21,7 @@ interface RecentToken {
 }
 
 interface ProductImportFormProps {
-  onFetchProduct: (token: string, proxyType: ProxyType, useMockData: boolean) => Promise<void>;
-  onTestConnection: (token: string, proxyType: ProxyType) => Promise<{ success: boolean; message: string }>;
+  onFetchProduct: (token: string, corsProxyUrl: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   recentTokens?: RecentToken[];
@@ -31,36 +30,34 @@ interface ProductImportFormProps {
 
 const ProductImportForm: React.FC<ProductImportFormProps> = ({ 
   onFetchProduct, 
-  onTestConnection, 
   isLoading, 
   error,
   recentTokens = [],
   onClearRecent
 }) => {
   const [kioskToken, setKioskToken] = useState('');
-  const [proxyType, setProxyType] = useState<ProxyType>(getStoredProxy());
+  const [corsProxyUrl, setCorsProxyUrl] = useState(corsProxyOptions[0].value);
   const [testStatus, setTestStatus] = useState<{ success: boolean; message: string } | null>(null);
-  const [useMockData, setUseMockData] = useState(false);
-
+  
   // Create a debounced version of the test connection function
-  const debouncedTestConnection = debounce(async (token: string, proxy: ProxyType) => {
+  const debouncedTestConnection = debounce(async (token: string, proxy: string) => {
     if (!token.trim()) return;
     
     setTestStatus(null);
-    const result = await onTestConnection(token, proxy);
+    const result = await testTaphoammoConnection(token, proxy);
     setTestStatus(result);
   }, 500);
   
   // When token or proxy changes, reset test status
   useEffect(() => {
     setTestStatus(null);
-  }, [kioskToken, proxyType]);
+  }, [kioskToken, corsProxyUrl]);
 
   const handleTestConnection = async () => {
     if (!kioskToken.trim()) return;
     
     setTestStatus(null);
-    const result = await onTestConnection(kioskToken, proxyType);
+    const result = await testTaphoammoConnection(kioskToken, corsProxyUrl);
     setTestStatus(result);
   };
 
@@ -68,24 +65,16 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
     e.preventDefault();
     if (!kioskToken.trim()) return;
     
-    await onFetchProduct(kioskToken, proxyType, useMockData);
+    await onFetchProduct(kioskToken, corsProxyUrl);
   };
   
   const handleTokenSelect = (token: string) => {
     setKioskToken(token);
-    debouncedTestConnection(token, proxyType);
+    debouncedTestConnection(token, corsProxyUrl);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Alert className="mb-6 bg-blue-50 border-blue-200">
-        <Info className="h-4 w-4 text-blue-500" />
-        <AlertDescription className="text-blue-700">
-          API integration has been removed. This form is for UI demonstration only.
-          {/* TODO: Implement new API logic */}
-        </AlertDescription>
-      </Alert>
-      
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -166,10 +155,9 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
                   className="h-4 w-4 p-0 ml-1 rounded-full"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const updatedTokens = recentTokens.filter(t => t.token !== item.token);
                     if (onClearRecent) {
-                      onClearRecent();
-                      // Re-add all tokens except the deleted one
+                      // Remove specific token
+                      const updatedTokens = recentTokens.filter(t => t.token !== item.token);
                       localStorage.setItem('recent_import_tokens', JSON.stringify(updatedTokens));
                       // Force reload of page to update tokens
                       window.location.reload();
@@ -185,51 +173,26 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
       )}
       
       <div className="space-y-2">
-        <Label htmlFor="proxyType">Loại Proxy</Label>
+        <Label htmlFor="corsProxyUrl">CORS Proxy</Label>
         <Select 
-          value={proxyType} 
-          onValueChange={(value) => {
-            setProxyType(value as ProxyType);
-            setStoredProxy(value as ProxyType);
-          }}
+          value={corsProxyUrl} 
+          onValueChange={setCorsProxyUrl}
           disabled={isLoading}
         >
-          <SelectTrigger id="proxyType">
-            <SelectValue placeholder="Chọn loại proxy" />
+          <SelectTrigger id="corsProxyUrl">
+            <SelectValue placeholder="Chọn CORS proxy" />
           </SelectTrigger>
           <SelectContent>
-            {getProxyOptions().map(option => (
+            {corsProxyOptions.map(option => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label} {option.value === 'allorigins' ? '(Khuyến nghị)' : ''}
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Chọn proxy để giải quyết vấn đề CORS khi tải sản phẩm từ API. AllOrigins được khuyến nghị để có kết quả tốt nhất.
+          Chọn CORS proxy để giải quyết vấn đề CORS khi tải sản phẩm từ API. AllOrigins được khuyến nghị để có kết quả tốt nhất.
         </p>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="debug-mode" 
-                  checked={useMockData} 
-                  onCheckedChange={setUseMockData} 
-                />
-                <Label htmlFor="debug-mode" className="cursor-pointer">Chế độ debug (dữ liệu mẫu)</Label>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="w-[200px] text-xs">
-                Khi bật, hệ thống sẽ sử dụng dữ liệu mẫu thay vì gọi API thực. Hữu ích để test UI mà không tiêu tốn API call.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
       
       <div className="flex gap-2">
@@ -259,14 +222,7 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
               Đang xác minh...
             </>
           ) : (
-            <>
-              Xác minh & tải sản phẩm
-              {useMockData && (
-                <Badge variant="outline" className="absolute -top-3 -right-3 text-xs bg-yellow-500 text-white">
-                  DEBUG
-                </Badge>
-              )}
-            </>
+            'Xác minh & tải sản phẩm'
           )}
         </Button>
       </div>
