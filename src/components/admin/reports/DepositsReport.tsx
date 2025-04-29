@@ -13,7 +13,7 @@ import {
   SkeletonChartBar,
   SkeletonTable 
 } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -43,6 +43,25 @@ interface DepositsReportProps {
   depositsData: any[];
 }
 
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string, formatString: string): string => {
+  try {
+    // Try to parse the date string
+    const date = parseISO(dateString);
+    
+    // Check if the resulting date is valid
+    if (!isValid(date)) {
+      return 'Invalid date';
+    }
+    
+    // Format the date
+    return format(date, formatString);
+  } catch (error) {
+    console.error('Error formatting date:', dateString, error);
+    return 'Invalid date';
+  }
+};
+
 export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -52,9 +71,9 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
   const hasDepositsData = depositsData && depositsData.length > 0;
 
   // Calculate total pages
-  const totalPages = Math.ceil(depositsData.length / pageSize);
+  const totalPages = Math.ceil((depositsData?.length || 0) / pageSize);
   const startIndex = (page - 1) * pageSize;
-  const paginatedDeposits = depositsData.slice(startIndex, startIndex + pageSize);
+  const paginatedDeposits = (depositsData || []).slice(startIndex, startIndex + pageSize);
   
   // Handlers for pagination
   const handleNextPage = () => {
@@ -99,7 +118,13 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="date" 
-                  tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                  tickFormatter={(date) => {
+                    try {
+                      return safeFormatDate(date, 'MMM dd');
+                    } catch (error) {
+                      return '';
+                    }
+                  }}
                 />
                 <YAxis 
                   yAxisId="left"
@@ -111,7 +136,13 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 />
                 <Tooltip 
                   formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                  labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                  labelFormatter={(date) => {
+                    try {
+                      return safeFormatDate(date, 'MMMM d, yyyy');
+                    } catch (error) {
+                      return 'Invalid date';
+                    }
+                  }}
                 />
                 <Legend />
                 <Line 
@@ -154,16 +185,29 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={depositsChartData.map(d => ({
-                    ...d,
-                    paypalAmount: (depositsData || [])
-                      .filter(deposit => 
-                        deposit.payment_method === 'PayPal' && 
-                        deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
-                      )
-                      .reduce((sum, d) => sum + (d.amount || 0), 0)
-                  }))}
+                  data={depositsChartData.map(d => {
+                    // Ensure date property is valid
+                    const validDate = d.date && typeof d.date === 'string' ? d.date : null;
+                    
+                    return {
+                      ...d,
+                      paypalAmount: (depositsData || [])
+                        .filter(deposit => {
+                          // Ensure we don't process invalid dates
+                          if (!deposit?.created_at || !validDate) return false;
+                          
+                          try {
+                            const depositDate = safeFormatDate(deposit.created_at, 'yyyy-MM-dd');
+                            return deposit.payment_method === 'PayPal' && 
+                              deposit.status === 'completed' &&
+                              depositDate === validDate;
+                          } catch (error) {
+                            return false;
+                          }
+                        })
+                        .reduce((sum, d) => sum + (d.amount || 0), 0)
+                    };
+                  })}
                   margin={{
                     top: 5,
                     right: 30,
@@ -174,12 +218,24 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      try {
+                        return safeFormatDate(date, 'MMM dd');
+                      } catch (error) {
+                        return '';
+                      }
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      try {
+                        return safeFormatDate(date, 'MMMM d, yyyy');
+                      } catch (error) {
+                        return 'Invalid date';
+                      }
+                    }}
                   />
                   <Legend />
                   <Bar 
@@ -210,16 +266,29 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={depositsChartData.map(d => ({
-                    ...d,
-                    usdtAmount: (depositsData || [])
-                      .filter(deposit => 
-                        deposit.payment_method === 'USDT' && 
-                        deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
-                      )
-                      .reduce((sum, d) => sum + (d.amount || 0), 0)
-                  }))}
+                  data={depositsChartData.map(d => {
+                    // Ensure date property is valid
+                    const validDate = d.date && typeof d.date === 'string' ? d.date : null;
+                    
+                    return {
+                      ...d,
+                      usdtAmount: (depositsData || [])
+                        .filter(deposit => {
+                          // Ensure we don't process invalid dates
+                          if (!deposit?.created_at || !validDate) return false;
+                          
+                          try {
+                            const depositDate = safeFormatDate(deposit.created_at, 'yyyy-MM-dd');
+                            return deposit.payment_method === 'USDT' && 
+                              deposit.status === 'completed' &&
+                              depositDate === validDate;
+                          } catch (error) {
+                            return false;
+                          }
+                        })
+                        .reduce((sum, d) => sum + (d.amount || 0), 0)
+                    };
+                  })}
                   margin={{
                     top: 5,
                     right: 30,
@@ -230,12 +299,24 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      try {
+                        return safeFormatDate(date, 'MMM dd');
+                      } catch (error) {
+                        return '';
+                      }
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      try {
+                        return safeFormatDate(date, 'MMMM d, yyyy');
+                      } catch (error) {
+                        return 'Invalid date';
+                      }
+                    }}
                   />
                   <Legend />
                   <Bar 
@@ -276,7 +357,9 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 {paginatedDeposits.map((deposit) => (
                   <TableRow key={deposit.id}>
                     <TableCell>
-                      {format(new Date(deposit.created_at), 'yyyy-MM-dd HH:mm')}
+                      {deposit.created_at ? 
+                        safeFormatDate(deposit.created_at, 'yyyy-MM-dd HH:mm') : 
+                        'Invalid date'}
                     </TableCell>
                     <TableCell>${deposit.amount?.toFixed(2)}</TableCell>
                     <TableCell>{deposit.payment_method}</TableCell>
@@ -299,10 +382,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
             </Table>
           )}
         </CardContent>
-        {depositsData.length > pageSize && (
+        {(depositsData?.length || 0) > pageSize && (
           <CardFooter className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1}-{Math.min(startIndex + pageSize, depositsData.length)} of {depositsData.length} deposits
+              Showing {startIndex + 1}-{Math.min(startIndex + pageSize, depositsData?.length || 0)} of {depositsData?.length || 0} deposits
             </div>
             <div className="flex items-center space-x-2">
               <Button 
