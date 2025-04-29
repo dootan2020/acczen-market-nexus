@@ -31,11 +31,12 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
+      // Modified query to correctly join with profiles table
       const { data, error } = await supabase
         .from('product_reviews')
         .select(`
           *,
-          user:user_id (
+          profiles:user_id (
             username,
             avatar_url
           )
@@ -45,12 +46,13 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
       
       if (error) throw error;
       
+      // Transform the data to match our Review type structure
       const reviewsWithProfiles = data.map(review => ({
         ...review,
         user: {
-          username: review.user?.username || 'Anonymous',
-          avatar_url: review.user?.avatar_url || null,
-        },
+          username: review.profiles?.username || 'Anonymous',
+          avatar_url: review.profiles?.avatar_url || null,
+        }
       }));
       
       setReviews(reviewsWithProfiles);
