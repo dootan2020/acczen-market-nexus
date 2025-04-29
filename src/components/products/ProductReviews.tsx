@@ -31,8 +31,8 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      // Fix the relationship query - use proper join format
-      const { data, error } = await supabase
+      // First get all reviews for the product
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('product_reviews')
         .select(`
           id, 
@@ -42,22 +42,33 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
           comment, 
           created_at, 
           helpful_count, 
-          is_verified_purchase,
-          profiles(username, avatar_url)
+          is_verified_purchase
         `)
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
       
-      // Transform the data to match our Review type structure
-      const reviewsWithProfiles = data.map(review => ({
-        ...review,
-        user: {
-          username: review.profiles?.username || 'Anonymous',
-          avatar_url: review.profiles?.avatar_url || null,
-        }
-      }));
+      // Then get the profile information for all users who left reviews
+      const reviewsWithProfiles = await Promise.all(
+        reviewsData.map(async (review) => {
+          // Get profile information for each review's user_id
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', review.user_id)
+            .single();
+          
+          // Return the review with the associated user profile data
+          return {
+            ...review,
+            user: {
+              username: profileData?.username || 'Anonymous',
+              avatar_url: profileData?.avatar_url || null,
+            }
+          };
+        })
+      );
       
       setReviews(reviewsWithProfiles);
     } catch (error) {
