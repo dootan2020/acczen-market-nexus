@@ -9,22 +9,22 @@ import {
 const ProductBenefits = () => {
   const benefits = [
     {
-      icon: <Truck className="h-8 w-8 text-[#2ECC71]" />,
+      icon: <Truck className="h-10 w-10 text-primary" />,
       title: "Giao hàng miễn phí",
       description: "Áp dụng cho đơn hàng từ $50"
     },
     {
-      icon: <Shield className="h-8 w-8 text-[#3498DB]" />,
+      icon: <Shield className="h-10 w-10 text-accent" />,
       title: "Bảo mật 100%",
       description: "Thanh toán an toàn & bảo mật"
     },
     {
-      icon: <Award className="h-8 w-8 text-[#F1C40F]" />,
+      icon: <Award className="h-10 w-10 text-[#F1C40F]" />,
       title: "Sản phẩm chất lượng",
       description: "Cam kết chất lượng cao"
     },
     {
-      icon: <RefreshCw className="h-8 w-8 text-[#E74C3C]" />,
+      icon: <RefreshCw className="h-10 w-10 text-[#E74C3C]" />,
       title: "Hoàn tiền dễ dàng",
       description: "Trong vòng 30 ngày"
     }
@@ -35,13 +35,13 @@ const ProductBenefits = () => {
       {benefits.map((benefit, index) => (
         <div 
           key={index} 
-          className="flex items-start gap-3 p-4 bg-[#F9FAFB] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 hover:bg-white"
+          className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md hover:border-primary/20"
         >
-          <div className="flex-shrink-0 mt-1">
+          <div className="p-3 bg-gray-50 rounded-full">
             {benefit.icon}
           </div>
           <div>
-            <h3 className="text-base font-semibold mb-1 text-[#333333] font-poppins">{benefit.title}</h3>
+            <h3 className="text-base font-semibold mb-1 text-gray-800 font-poppins">{benefit.title}</h3>
             <p className="text-sm text-gray-600 font-inter">{benefit.description}</p>
           </div>
         </div>

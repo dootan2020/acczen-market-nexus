@@ -42,6 +42,7 @@ const ProductInfo = ({
   const navigate = useNavigate();
   
   const finalPrice = salePrice || price;
+  const isOutOfStock = stockQuantity <= 0;
   
   const handleBuyNow = () => {
     if (!user) {
@@ -64,31 +65,33 @@ const ProductInfo = ({
   return (
     <>
       <div className="space-y-6">
-        <div className="flex space-x-4 items-center">
+        <div className="flex items-center justify-between mb-4">
           <ProductQuantity 
             quantity={quantity} 
             stockQuantity={stockQuantity} 
             onQuantityChange={handleQuantityChange} 
           />
           
-          <div className="flex-grow">
-            <p className="text-sm text-muted-foreground font-inter">
-              {stockQuantity > 0 
-                ? `${stockQuantity} sản phẩm có sẵn` 
-                : 'Hết hàng'}
-            </p>
+          <div className="text-sm font-medium text-right">
+            {isOutOfStock ? (
+              <span className="text-red-500">Hết hàng</span>
+            ) : stockQuantity <= 5 ? (
+              <span className="text-amber-600">Chỉ còn {stockQuantity} sản phẩm</span>
+            ) : (
+              <span className="text-green-600">Còn {stockQuantity} sản phẩm</span>
+            )}
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Button 
             onClick={handleBuyNow} 
-            disabled={stockQuantity <= 0}
+            disabled={isOutOfStock}
             size="lg"
-            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] font-inter"
+            className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base group"
           >
-            <ShoppingBag className="mr-2 h-5 w-5" />
-            Mua ngay
+            <ShoppingBag className="mr-2 h-5 w-5 transition-transform group-hover:rotate-12" />
+            {isOutOfStock ? 'Hết hàng' : 'Mua ngay'}
           </Button>
           
           <Button 
@@ -96,16 +99,16 @@ const ProductInfo = ({
             variant="outline"
             size="lg"
             className={cn(
-              "flex-1 transition-all duration-300 border-2",
+              "flex-1 transition-all duration-300 border-2 h-12",
               isFavorited 
-                ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/10 hover:bg-[#E74C3C]/20" 
-                : "border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10"
+                ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/5 hover:bg-[#E74C3C]/10" 
+                : "border-accent text-accent hover:bg-accent/5"
             )}
           >
             <Heart 
               className={cn(
                 "mr-2 h-5 w-5 transition-all duration-300", 
-                isFavorited && "fill-[#E74C3C]"
+                isFavorited ? "fill-[#E74C3C]" : "group-hover:scale-110"
               )} 
             />
             {isFavorited ? 'Đã yêu thích' : 'Yêu thích'}
