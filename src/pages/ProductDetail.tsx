@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Container } from "@/components/ui/container";
 import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
@@ -23,7 +23,6 @@ import {
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
 import { Home, ShieldCheck, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 
@@ -91,6 +90,15 @@ const ProductDetail = () => {
   const discountPercentage = isOnSale 
     ? Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100) 
     : 0;
+
+  // Extract specifications and usage instructions from metadata or set defaults
+  const specifications = product.metadata && typeof product.metadata === 'object' 
+    ? (product.metadata as any).specifications || null 
+    : null;
+  
+  const usageInstructions = product.metadata && typeof product.metadata === 'object'
+    ? (product.metadata as any).usage_instructions || null
+    : null;
   
   return (
     <div className="bg-[#FFFFFF] py-8 md:py-12">
@@ -99,16 +107,20 @@ const ProductDetail = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/">
-                <Home className="h-3.5 w-3.5 mr-1" />
-                <span>Trang chủ</span>
+              <BreadcrumbLink asChild>
+                <Link to="/">
+                  <Home className="h-3.5 w-3.5 mr-1" />
+                  <span>Trang chủ</span>
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to={`/category/${product.category?.id || ''}`}>
-                {product.category?.name || 'Danh mục'}
+              <BreadcrumbLink asChild>
+                <Link to={`/category/${product.category?.id || ''}`}>
+                  {product.category?.name || 'Danh mục'}
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -261,8 +273,8 @@ const ProductDetail = () => {
             <CardContent className="p-0">
               <ProductDescription 
                 description={product.description || 'No description available.'} 
-                specifications={product.specifications || null}
-                usage={product.usage_instructions || null}
+                specifications={specifications}
+                usage={usageInstructions}
               />
             </CardContent>
           </Card>
