@@ -53,11 +53,17 @@ const OrdersPage: React.FC = () => {
         const lowerQuery = searchQuery.toLowerCase();
         filteredData = data.filter(order => {
           const orderIdMatch = order.id.toLowerCase().includes(lowerQuery);
-          const emailMatch = order.profiles?.email 
-            ? order.profiles.email.toLowerCase().includes(lowerQuery)
+          // Use type assertion here to help TypeScript understand the structure
+          const profiles = order.profiles as { email?: string; username?: string } | null;
+          
+          // Check email match if profiles and email exist
+          const emailMatch = profiles?.email 
+            ? profiles.email.toLowerCase().includes(lowerQuery)
             : false;
-          const usernameMatch = order.profiles?.username 
-            ? order.profiles.username.toLowerCase().includes(lowerQuery)
+            
+          // Check username match if profiles and username exist
+          const usernameMatch = profiles?.username 
+            ? profiles.username.toLowerCase().includes(lowerQuery)
             : false;
           
           return orderIdMatch || emailMatch || usernameMatch;
@@ -67,10 +73,19 @@ const OrdersPage: React.FC = () => {
       // Export to CSV
       if (filteredData && filteredData.length > 0) {
         // Transform data for CSV export - map profiles to user field for compatibility
-        const exportData = filteredData.map(order => ({
-          ...order,
-          user: order.profiles // Map profiles to user field for compatibility with exportOrdersToCsv
-        }));
+        const exportData = filteredData.map(order => {
+          // Use type assertion here as well
+          const profiles = order.profiles as { email?: string; username?: string } | null;
+          
+          return {
+            ...order,
+            // Map profiles to user field for compatibility with exportOrdersToCsv
+            user: profiles ? { 
+              email: profiles.email,
+              username: profiles.username
+            } : undefined
+          };
+        });
         
         exportOrdersToCsv(exportData, `orders-export-${new Date().toISOString().split('T')[0]}`);
         
