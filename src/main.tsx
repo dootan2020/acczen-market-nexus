@@ -8,16 +8,19 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import App from './App.tsx';
 import './index.css';
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
+
+createRoot(rootElement).render(
   <React.StrictMode>
-    <CartProvider>
-      <TooltipProvider>
-        <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
-          <BrowserRouter>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
+        <CartProvider>
+          <TooltipProvider>
             <App />
-          </BrowserRouter>
-        </ThemeProvider>
-      </TooltipProvider>
-    </CartProvider>
+          </TooltipProvider>
+        </CartProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
