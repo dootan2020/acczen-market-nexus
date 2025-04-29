@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
 import {
@@ -13,26 +13,36 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, isAdmin, isLoading } = useAuth();
+  
+  // Debug logs
+  console.log("AdminLayout: user =", !!user, "isAdmin =", isAdmin, "isLoading =", isLoading);
+  
+  // This is a fallback check in case AdminGuard fails
+  if (!isLoading && (!user || !isAdmin)) {
+    console.log("AdminLayout fallback redirect: user absent or not admin");
+    return <Navigate to="/" replace />;
+  }
   
   const navItems = [
     { name: 'Digital Deals Hub', href: '/' },
     { name: 'Admin', href: '/admin' },
     { name: 'Dashboard', href: '/admin' },
     { name: 'Products', href: '/admin/products' },
-    { name: 'Import Products', href: '/admin/products-import' },
+    { name: 'Import Products', href: '/admin/products/import' },
     { name: 'Categories', href: '/admin/categories' },
     { name: 'Orders', href: '/admin/orders' },
     { name: 'Users', href: '/admin/users' },
     { name: 'Deposits', href: '/admin/deposits' },
     { name: 'Reports', href: '/admin/reports' },
-    { name: 'Integrations', href: '/admin/integrations' },
+    { name: 'Integrations', href: '/admin/integration' },
     { name: 'API Monitoring', href: '/admin/api-monitoring' },
-    { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
 
   const getBreadcrumbs = () => {
@@ -97,7 +107,7 @@ const AdminLayout = () => {
                       {crumb.isCurrentPage ? (
                         <BreadcrumbPage className="font-medium">{crumb.name}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink href={crumb.path} className="cursor-pointer" asChild>
+                        <BreadcrumbLink asChild>
                           <Link to={crumb.path}>{crumb.name}</Link>
                         </BreadcrumbLink>
                       )}
@@ -128,15 +138,14 @@ const getCurrentPageTitle = () => {
   const titles = {
     '/admin': 'Dashboard',
     '/admin/products': 'Products Management',
-    '/admin/products-import': 'Import Products',
+    '/admin/products/import': 'Import Products',
     '/admin/categories': 'Categories Management',
     '/admin/orders': 'Orders Management',
     '/admin/users': 'Users Management',
     '/admin/deposits': 'Deposits Management',
     '/admin/reports': 'Reports & Analytics',
-    '/admin/integrations': 'Integrations',
+    '/admin/integration': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
-    '/admin/exchange-rates': 'Exchange Rates',
   };
 
   return titles[location.pathname] || 'Dashboard';

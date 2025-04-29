@@ -18,15 +18,34 @@ const AdminHome = () => {
     dateRange
   } = useReportsData();
 
+  console.log("AdminHome: Rendering with data", {
+    hasStatsData: !!statsData,
+    hasPaymentMethodData: !!paymentMethodData?.length,
+    hasDepositsChartData: !!depositsChartData?.length,
+    hasOrdersChartData: !!ordersChartData?.length,
+    isLoading
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
       
       <DashboardOverview 
         statsData={statsData}
-        revenueChartData={depositsChartData}
-        ordersChartData={ordersChartData}
-        paymentMethodData={paymentMethodData}
+        revenueChartData={depositsChartData || []}
+        ordersChartData={ordersChartData || []}
+        paymentMethodData={paymentMethodData || []}
         isLoading={isLoading}
       />
       
@@ -45,7 +64,10 @@ const AdminHome = () => {
             <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <OrdersReport ordersChartData={ordersChartData} isLoading={isLoading} />
+            <OrdersReport 
+              ordersChartData={ordersChartData || []} 
+              isLoading={isLoading} 
+            />
           </CardContent>
         </Card>
       </div>
@@ -56,9 +78,9 @@ const AdminHome = () => {
         </CardHeader>
         <CardContent>
           <DepositsReport 
-            depositsChartData={depositsChartData} 
+            depositsChartData={depositsChartData || []} 
             isLoading={isLoading} 
-            depositsData={depositsChartData} 
+            depositsData={depositsChartData || []} 
           />
         </CardContent>
       </Card>

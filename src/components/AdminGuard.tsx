@@ -1,11 +1,11 @@
 
 import React, { useEffect } from 'react';
-import { Navigate, useLocation, Outlet } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface AdminGuardProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }
 
 const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
@@ -20,6 +20,9 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
       });
     }
   }, [isLoading, user, isAdmin]);
+
+  // Add debug logs
+  console.log("AdminGuard: isLoading =", isLoading, "user =", !!user, "isAdmin =", isAdmin);
 
   if (isLoading) {
     return (
@@ -42,7 +45,7 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  return children ? <>{children}</> : <Outlet />;
+  return <>{children}</>;
 };
 
 export default AdminGuard;

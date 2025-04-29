@@ -1,7 +1,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 
-type AdminPermission = 
+export type AdminPermission = 
   | 'view_users' 
   | 'edit_users' 
   | 'view_products' 
@@ -13,7 +13,7 @@ type AdminPermission =
   | 'view_reports'
   | 'system_settings';
 
-// Giả lập hệ thống phân quyền chi tiết
+// Role-based permission map
 const ADMIN_PERMISSIONS: Record<string, AdminPermission[]> = {
   'admin': [
     'view_users', 'edit_users', 'view_products', 'edit_products',
@@ -27,23 +27,32 @@ const ADMIN_PERMISSIONS: Record<string, AdminPermission[]> = {
 export const useAdmin = () => {
   const { user, isAdmin } = useAuth();
   
-  // Kiểm tra quyền cụ thể của admin
+  console.log("useAdmin hook called, isAdmin:", isAdmin, "user:", user ? "exists" : "null");
+  
+  // Check for specific admin permission
   const hasPermission = (permission: AdminPermission): boolean => {
-    if (!isAdmin || !user) return false;
+    if (!isAdmin || !user) {
+      console.log("Permission check failed: not admin or no user");
+      return false;
+    }
     
-    // Lấy loại admin từ metadata (hoặc mặc định là 'admin')
+    // Get admin type from metadata or default to 'admin'
     const adminType = user.user_metadata?.admin_type as string || 'admin';
-    const permissions = ADMIN_PERMISSIONS[adminType] || [];
+    console.log("Admin type:", adminType);
     
-    return permissions.includes(permission);
+    const permissions = ADMIN_PERMISSIONS[adminType] || [];
+    const result = permissions.includes(permission);
+    
+    console.log(`Permission check: ${permission} = ${result}`);
+    return result;
   };
 
-  // Kiểm tra nhiều quyền cùng lúc (chỉ cần có 1 quyền)
+  // Check if user has any of the provided permissions
   const hasAnyPermission = (permissions: AdminPermission[]): boolean => {
     return permissions.some(permission => hasPermission(permission));
   };
 
-  // Kiểm tra bắt buộc có tất cả các quyền
+  // Check if user has all of the provided permissions
   const hasAllPermissions = (permissions: AdminPermission[]): boolean => {
     return permissions.every(permission => hasPermission(permission));
   };

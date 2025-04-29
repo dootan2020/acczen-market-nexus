@@ -11,6 +11,7 @@ import AdminOrders from './pages/admin/OrdersPage';
 import AdminHome from './pages/admin/AdminHome';
 import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminReports from './pages/admin/AdminReports';
 import Cart from './pages/Cart';
 import AdminGuard from './components/AdminGuard';
 import PrivateRoute from './components/PrivateRoute';
@@ -161,6 +162,7 @@ const AppRoutes = () => {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="deposits" element={<AdminDeposits />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="reports" element={<AdminReports />} />
         <Route path="integration" element={<ProductIntegration />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
       </Route>
