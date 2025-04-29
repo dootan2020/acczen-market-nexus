@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Info, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -86,11 +85,11 @@ const ProductCard = ({
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
         <Link to={`/product/${id}`} className="block">
-          <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-[180px] w-full flex items-center justify-center">
+          <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-[180px] w-full flex items-center justify-center p-4">
             <img
               src={image || "/placeholder.svg"}
               alt={name}
-              className="h-[130px] object-contain group-hover:scale-105 transition-transform duration-300"
+              className="max-h-full w-auto max-w-full object-contain object-center group-hover:scale-105 transition-transform duration-300"
             />
           </div>
         </Link>
