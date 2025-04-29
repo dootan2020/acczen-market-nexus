@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PayPalDeposit from '@/components/paypal/PayPalDeposit';
-import USDTDeposit from '@/components/usdt/USDTDeposit';
+import USDTDeposit from '@/components/USDTDeposit';
 
 const DepositTab = () => {
   return (
