@@ -65,27 +65,32 @@ const Products = () => {
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">Sản phẩm</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            id={product.id}
-            name={product.name}
-            image={product.image_url}
-            price={product.price}
-            salePrice={product.sale_price}
-            category={product.category?.name || 'Uncategorized'}
-            subcategory={product.subcategory?.name}
-            stock={product.stock_quantity}
-            kioskToken={product.kiosk_token}
-            featured={product.metadata?.featured}
-            rating={product.metadata?.rating}
-            reviewCount={product.metadata?.review_count}
-            isNew={product.metadata?.is_new}
-            isBestSeller={product.metadata?.is_best_seller}
-            description={product.description?.substring(0, 100)}
-            soldCount={product.metadata?.sold_count}
-          />
-        ))}
+        {products.map((product) => {
+          // Safely extract metadata properties with type checking
+          const metadata = product.metadata as Record<string, any> || {};
+          
+          return (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              image={product.image_url}
+              price={product.price}
+              salePrice={product.sale_price}
+              category={product.category?.name || 'Uncategorized'}
+              subcategory={product.subcategory?.name}
+              stock={product.stock_quantity}
+              kioskToken={product.kiosk_token}
+              featured={!!metadata.featured}
+              rating={typeof metadata.rating === 'number' ? metadata.rating : 0}
+              reviewCount={typeof metadata.review_count === 'number' ? metadata.review_count : 0}
+              isNew={!!metadata.is_new}
+              isBestSeller={!!metadata.is_best_seller}
+              description={product.description?.substring(0, 100)}
+              soldCount={typeof metadata.sold_count === 'number' ? metadata.sold_count : 0}
+            />
+          );
+        })}
       </div>
     </div>
   );
