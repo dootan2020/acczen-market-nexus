@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
@@ -30,13 +31,15 @@ createRoot(rootElement).render(
     <BrowserRouter>
       <ThemeProvider defaultTheme="system" storageKey="digital-deals-theme">
         <ReactQueryProvider>
-          <CurrencyProvider>
-            <PaymentProvider>
-              <TooltipProvider>
-                <App />
-              </TooltipProvider>
-            </PaymentProvider>
-          </CurrencyProvider>
+          <AuthProvider>
+            <CurrencyProvider>
+              <PaymentProvider>
+                <TooltipProvider>
+                  <App />
+                </TooltipProvider>
+              </PaymentProvider>
+            </CurrencyProvider>
+          </AuthProvider>
         </ReactQueryProvider>
       </ThemeProvider>
     </BrowserRouter>
