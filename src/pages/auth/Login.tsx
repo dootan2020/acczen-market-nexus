@@ -173,7 +173,9 @@ const Login = () => {
                           placeholder="name@example.com"
                           {...field}
                           disabled={isLoading || loginAttempts >= 5}
-                          className="focus-visible:ring-primary"
+                          className={`focus-visible:ring-primary ${form.formState.errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                          aria-invalid={!!form.formState.errors.email}
+                          autoComplete="email"
                         />
                       </FormControl>
                       <FormMessage />
@@ -199,7 +201,9 @@ const Login = () => {
                             placeholder="••••••••"
                             {...field}
                             disabled={isLoading || loginAttempts >= 5}
-                            className="focus-visible:ring-primary"
+                            className={`focus-visible:ring-primary ${form.formState.errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            aria-invalid={!!form.formState.errors.password}
+                            autoComplete="current-password"
                           />
                           <button 
                             type="button"
@@ -207,6 +211,7 @@ const Login = () => {
                             onClick={togglePasswordVisibility}
                             tabIndex={-1}
                             disabled={isLoading || loginAttempts >= 5}
+                            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -253,7 +258,7 @@ const Login = () => {
                 <Button 
                   type="submit" 
                   className="w-full group" 
-                  disabled={isLoading || loginAttempts >= 5 || !form.formState.isValid}
+                  disabled={isLoading || loginAttempts >= 5 || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
                 >
                   {isLoading ? (
                     <>

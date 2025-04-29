@@ -32,6 +32,10 @@ const depositSchema = z.object({
       const num = parseFloat(val);
       return num <= 10000;
     }, { message: "Số tiền không được vượt quá $10,000" })
+    .refine(val => {
+      const num = parseFloat(val);
+      return Number.isInteger(num * 100) / 100;
+    }, { message: "Số tiền chỉ được có tối đa 2 chữ số thập phân" })
 });
 
 type DepositFormValues = z.infer<typeof depositSchema>;
@@ -56,6 +60,7 @@ const PayPalDeposit = () => {
   });
   
   const watchAmount = form.watch("amount");
+  const formIsValid = form.formState.isValid;
 
   const calculateTotal = (amount: number) => {
     if (amount <= 0) return 0;
@@ -65,7 +70,11 @@ const PayPalDeposit = () => {
 
   useEffect(() => {
     const amount = selectedAmount || (watchAmount ? parseFloat(watchAmount) : 0);
-    setTotalAmount(calculateTotal(amount));
+    if (!isNaN(amount)) {
+      setTotalAmount(calculateTotal(amount));
+    } else {
+      setTotalAmount(0);
+    }
   }, [selectedAmount, watchAmount]);
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +87,11 @@ const PayPalDeposit = () => {
   };
 
   const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
+    if (!orderDetails || !amount || amount <= 0) {
+      toast.error('Invalid payment details');
+      return;
+    }
+
     try {
       setIsProcessing(true);
       toast.info('Processing your deposit...', {
@@ -99,6 +113,10 @@ const PayPalDeposit = () => {
           description: 'There was a problem processing your deposit. Please contact support.' 
         });
         return;
+      }
+
+      if (!data || !data.depositId) {
+        throw new Error('Invalid response from server');
       }
 
       // Refresh user data to update balance
@@ -130,12 +148,15 @@ const PayPalDeposit = () => {
   };
 
   const onPresetAmountSelect = (value: string) => {
+    if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
+      return;
+    }
+    
     setSelectedAmount(parseFloat(value));
     form.setValue("amount", value, { shouldValidate: true });
   };
 
   const amount = selectedAmount || (watchAmount ? parseFloat(watchAmount) : 0);
-  const formIsValid = form.formState.isValid;
 
   return (
     <PayPalScriptProvider options={PAYPAL_OPTIONS}>
@@ -177,8 +198,9 @@ const PayPalDeposit = () => {
                         placeholder="Nhập số tiền..."
                         value={field.value}
                         onChange={handleCustomAmountChange}
-                        className="bg-white mt-1.5"
+                        className={`bg-white mt-1.5 ${form.formState.errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                         disabled={isProcessing}
+                        aria-invalid={!!form.formState.errors.amount}
                       />
                     </FormControl>
                     <FormMessage />
@@ -197,7 +219,9 @@ const PayPalDeposit = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Phí giao dịch:</span>
-                      <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+                      <span className="font-medium">
+                        ${isNaN(amount) || amount <= 0 ? "0.00" : ((amount * FEE_PERCENTAGE) + FEE_FIXED).toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-border/40">
                       <span className="font-medium">Tổng thanh toán:</span>

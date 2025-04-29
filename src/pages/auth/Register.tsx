@@ -20,7 +20,8 @@ const registerSchema = z.object({
   fullName: z
     .string()
     .min(3, { message: "Tên phải có ít nhất 3 ký tự" })
-    .max(50, { message: "Tên không được vượt quá 50 ký tự" }),
+    .max(50, { message: "Tên không được vượt quá 50 ký tự" })
+    .regex(/^[a-zA-Z\s\u00C0-\u1EF9]+$/, { message: "Tên chỉ được chứa chữ cái và khoảng trắng" }),
   email: z
     .string()
     .email({ message: "Email không hợp lệ" })
@@ -31,7 +32,8 @@ const registerSchema = z.object({
     .min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự" })
     .regex(/[A-Z]/, { message: "Mật khẩu phải chứa ít nhất 1 chữ hoa" })
     .regex(/[a-z]/, { message: "Mật khẩu phải chứa ít nhất 1 chữ thường" })
-    .regex(/[0-9]/, { message: "Mật khẩu phải chứa ít nhất 1 số" }),
+    .regex(/[0-9]/, { message: "Mật khẩu phải chứa ít nhất 1 số" })
+    .regex(/[^a-zA-Z0-9]/, { message: "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt" }),
   confirmPassword: z.string(),
   agreeTerms: z.boolean().refine(val => val === true, {
     message: "Bạn phải đồng ý với điều khoản dịch vụ",
@@ -64,6 +66,14 @@ const Register = () => {
     },
     mode: "onChange", // Validate on change for immediate feedback
   });
+
+  // Reset error message when inputs change
+  React.useEffect(() => {
+    const subscription = form.watch(() => {
+      if (errorMessage) setErrorMessage(null);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, errorMessage]);
 
   const handleSubmit = async (formData: RegisterFormValues) => {
     setIsLoading(true);
@@ -117,7 +127,7 @@ const Register = () => {
             </CardDescription>
           </CardHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <CardContent className="space-y-4">
                 {errorMessage && (
                   <Alert variant="destructive">
@@ -137,6 +147,8 @@ const Register = () => {
                           placeholder="Nguyễn Văn A"
                           {...field}
                           disabled={isLoading}
+                          aria-invalid={!!form.formState.errors.fullName}
+                          className={form.formState.errors.fullName ? "border-red-500 focus-visible:ring-red-500" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -156,6 +168,9 @@ const Register = () => {
                           placeholder="name@example.com"
                           {...field}
                           disabled={isLoading}
+                          aria-invalid={!!form.formState.errors.email}
+                          className={form.formState.errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+                          autoComplete="email"
                         />
                       </FormControl>
                       <FormMessage />
@@ -176,6 +191,9 @@ const Register = () => {
                             placeholder="••••••••"
                             {...field}
                             disabled={isLoading}
+                            aria-invalid={!!form.formState.errors.password}
+                            className={form.formState.errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            autoComplete="new-password"
                           />
                           <button 
                             type="button"
@@ -209,6 +227,9 @@ const Register = () => {
                             placeholder="••••••••"
                             {...field}
                             disabled={isLoading}
+                            aria-invalid={!!form.formState.errors.confirmPassword}
+                            className={form.formState.errors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            autoComplete="new-password"
                           />
                           <button 
                             type="button"
@@ -239,6 +260,7 @@ const Register = () => {
                           checked={field.value} 
                           onCheckedChange={field.onChange}
                           disabled={isLoading}
+                          aria-invalid={!!form.formState.errors.agreeTerms}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
@@ -262,7 +284,7 @@ const Register = () => {
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading || !form.formState.isValid}
+                  disabled={isLoading || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
                 >
                   {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
                 </Button>

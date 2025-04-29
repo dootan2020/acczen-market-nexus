@@ -64,12 +64,17 @@ const usdtDepositSchema = z.object({
     .refine(val => {
       const num = parseFloat(val);
       return num <= 50000;
-    }, { message: "Số tiền không được vượt quá $50,000" }),
+    }, { message: "Số tiền không được vượt quá $50,000" })
+    .refine(val => {
+      const num = parseFloat(val);
+      return Number.isInteger(num * 100) / 100;
+    }, { message: "Số tiền chỉ được có tối đa 2 chữ số thập phân" }),
   txid: z
     .string()
     .min(64, { message: "Transaction hash phải có đúng 64 ký tự" })
     .max(64, { message: "Transaction hash phải có đúng 64 ký tự" })
     .regex(/^[0-9a-fA-F]+$/, { message: "Transaction hash phải là chuỗi kí tự hex" })
+    .trim()
 });
 
 type USDTDepositFormValues = z.infer<typeof usdtDepositSchema>;
@@ -98,12 +103,22 @@ const USDTDeposit = () => {
     mutationFn: async (formData: USDTDepositFormValues): Promise<VerificationResult> => {
       if (!user) throw new Error('User not authenticated');
 
+      // Validate data before proceeding
+      const amount = parseFloat(formData.amount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error('Invalid amount');
+      }
+
+      if (!formData.txid || formData.txid.length !== 64) {
+        throw new Error('Invalid transaction hash');
+      }
+
       // Create deposit record first
       const { data: depositData, error: depositError } = await supabase
         .from('deposits')
         .insert({
           user_id: user.id,
-          amount: parseFloat(formData.amount),
+          amount: amount,
           payment_method: 'USDT',
           transaction_hash: formData.txid,
           status: 'pending'
@@ -112,6 +127,10 @@ const USDTDeposit = () => {
         .single();
 
       if (depositError) throw depositError;
+      
+      if (!depositData || !depositData.id) {
+        throw new Error('Failed to create deposit record');
+      }
       
       setDepositId(depositData.id);
       await refreshDeposits(); // Refresh deposits to show pending status
@@ -122,7 +141,7 @@ const USDTDeposit = () => {
         const verifyResponse = await supabase.functions.invoke<DepositResponse>('verify-usdt-transaction', {
           body: {
             txid: formData.txid,
-            expected_amount: parseFloat(formData.amount),
+            expected_amount: amount,
             user_id: user.id,
             deposit_id: depositData.id,
             wallet_address: walletAddress
@@ -201,7 +220,9 @@ const USDTDeposit = () => {
   };
 
   const onPresetAmountSelect = (value: string) => {
-    form.setValue("amount", value, { shouldValidate: true });
+    if (value && !isNaN(parseFloat(value))) {
+      form.setValue("amount", value, { shouldValidate: true });
+    }
   };
 
   return (
@@ -251,6 +272,8 @@ const USDTDeposit = () => {
                           }
                         }}
                         disabled={depositMutation.isPending || isVerifying}
+                        className={form.formState.errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        aria-invalid={!!form.formState.errors.amount}
                       />
                     </FormControl>
                     <FormMessage />
@@ -287,7 +310,7 @@ const USDTDeposit = () => {
                     <FormControl>
                       <Textarea
                         placeholder="Enter your TRC20 transaction hash here..."
-                        className="font-mono resize-none"
+                        className={`font-mono resize-none ${form.formState.errors.txid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                         {...field}
                         onChange={(e) => {
                           const value = e.target.value;
@@ -296,6 +319,7 @@ const USDTDeposit = () => {
                           }
                         }}
                         disabled={depositMutation.isPending || isVerifying}
+                        aria-invalid={!!form.formState.errors.txid}
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1.5">
@@ -320,7 +344,7 @@ const USDTDeposit = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={depositMutation.isPending || isVerifying || !form.formState.isValid}
+              disabled={depositMutation.isPending || isVerifying || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
             >
               {depositMutation.isPending || isVerifying ? (
                 <>

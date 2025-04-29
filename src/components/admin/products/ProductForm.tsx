@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import SubcategorySelector from '@/components/SubcategorySelector';
 
@@ -26,7 +26,8 @@ const productFormSchema = z.object({
     .regex(/^[a-z0-9-]+$/, { message: 'Slug chỉ được chứa chữ thường, số và dấu gạch ngang' }),
   description: z
     .string()
-    .min(10, { message: 'Mô tả phải có ít nhất 10 ký tự' }),
+    .min(10, { message: 'Mô tả phải có ít nhất 10 ký tự' })
+    .max(2000, { message: 'Mô tả không được vượt quá 2000 ký tự' }),
   price: z
     .string()
     .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, { 
@@ -43,7 +44,7 @@ const productFormSchema = z.object({
     .refine(val => !isNaN(parseInt(val)) && parseInt(val) >= 0, {
       message: 'Số lượng phải là số nguyên không âm'
     }),
-  status: z.string(),
+  status: z.enum(['active', 'draft', 'archived']),
   category_id: z.string().min(1, { message: 'Vui lòng chọn danh mục' }),
   subcategory_id: z.string().optional(),
   image_url: z.string().url({ message: 'URL hình ảnh không hợp lệ' }).optional().or(z.literal('')),
@@ -78,7 +79,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       price: initialData.price?.toString() || '0',
       sale_price: initialData.sale_price?.toString() || '',
       stock_quantity: initialData.stock_quantity?.toString() || '0',
-      status: initialData.status || 'draft',
+      status: (initialData.status as 'active' | 'draft' | 'archived') || 'draft',
       category_id: initialData.category_id || '',
       subcategory_id: initialData.subcategory_id || '',
       image_url: initialData.image_url || '',
@@ -92,17 +93,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
     // Convert string values to their appropriate types
     const formattedValues: ProductFormData = {
       ...values,
-      name: values.name,
-      description: values.description,
-      slug: values.slug,
+      name: values.name.trim(),
+      description: values.description.trim(),
+      slug: values.slug.trim(),
       category_id: values.category_id,
       subcategory_id: values.subcategory_id || '',
       status: values.status as ProductStatus,
       price: values.price,
       sale_price: values.sale_price || '',
       stock_quantity: values.stock_quantity,
-      image_url: values.image_url || '',
-      sku: values.sku || '',
+      image_url: values.image_url?.trim() || '',
+      sku: values.sku?.trim() || '',
+      kiosk_token: values.kiosk_token?.trim() || '',
     };
     
     handleSubmit(formattedValues);
@@ -116,6 +118,39 @@ const ProductForm: React.FC<ProductFormProps> = ({
     form.setValue('subcategory_id', '');
   }, [watchCategoryId, form]);
 
+  // Generate slug from name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')  // Remove non-word chars
+      .replace(/\s+/g, '-')      // Replace spaces with -
+      .replace(/-+/g, '-');      // Replace multiple - with single -
+  };
+
+  // Watch name to generate slug
+  const watchName = form.watch('name');
+  
+  // Generate slug when name changes if slug is empty
+  React.useEffect(() => {
+    const currentSlug = form.getValues('slug');
+    if (!currentSlug && watchName) {
+      const newSlug = generateSlug(watchName);
+      form.setValue('slug', newSlug, { shouldValidate: true });
+    }
+  }, [watchName, form]);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    form.setValue('name', name, { shouldValidate: true });
+    
+    // Only auto-generate slug if we're creating a new product and slug is empty
+    if (!isEditing && !form.getValues('slug')) {
+      const newSlug = generateSlug(name);
+      form.setValue('slug', newSlug, { shouldValidate: true });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -127,7 +162,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>Tên sản phẩm</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Nhập tên sản phẩm" />
+                  <Input 
+                    {...field} 
+                    placeholder="Nhập tên sản phẩm" 
+                    onChange={handleNameChange}
+                    className={form.formState.errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -152,8 +192,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                         .replace(/[^a-z0-9-]/g, '');
                       field.onChange(value);
                     }}
+                    className={form.formState.errors.slug ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </FormControl>
+                <FormDescription>
+                  URL thân thiện cho sản phẩm, tự động tạo từ tên
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -167,7 +211,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 <FormLabel>Mô tả sản phẩm</FormLabel>
                 <FormControl>
                   <textarea 
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px] resize-y"
+                    className={`flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px] resize-y ${
+                      form.formState.errors.description ? "border-red-500 focus-visible:ring-red-500" : ""
+                    }`}
                     {...field} 
                     placeholder="Nhập mô tả sản phẩm chi tiết"
                   />
@@ -194,6 +240,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                         const value = e.target.value.replace(/[^\d.]/g, '');
                         field.onChange(value);
                       }}
+                      className={form.formState.errors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -217,8 +264,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                         const value = e.target.value.replace(/[^\d.]/g, '');
                         field.onChange(value);
                       }}
+                      className={form.formState.errors.sale_price ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Để trống nếu không có giá khuyến mãi
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -241,6 +292,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       const value = e.target.value.replace(/\D/g, '');
                       field.onChange(value);
                     }}
+                    className={form.formState.errors.stock_quantity ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -259,7 +311,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     value={field.value}
                     onValueChange={field.onChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={form.formState.errors.status ? "border-red-500 focus-visible:ring-red-500" : ""}>
                       <SelectValue placeholder="Chọn trạng thái" />
                     </SelectTrigger>
                     <SelectContent>
@@ -285,7 +337,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     value={field.value}
                     onValueChange={field.onChange}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={form.formState.errors.category_id ? "border-red-500 focus-visible:ring-red-500" : ""}>
                       <SelectValue placeholder="Chọn danh mục" />
                     </SelectTrigger>
                     <SelectContent>
@@ -330,8 +382,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>URL hình ảnh</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="https://example.com/image.jpg" />
+                  <Input 
+                    {...field} 
+                    placeholder="https://example.com/image.jpg" 
+                    className={form.formState.errors.image_url ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormControl>
+                <FormDescription>
+                  URL hình ảnh sản phẩm (để trống nếu không có)
+                </FormDescription>
                 <FormMessage />
                 {field.value && (
                   <div className="mt-2 relative w-20 h-20">
@@ -348,6 +407,50 @@ const ProductForm: React.FC<ProductFormProps> = ({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="sku"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SKU</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="SKU-123456" 
+                    className={form.formState.errors.sku ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Mã SKU để quản lý sản phẩm (để trống nếu không cần)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {isEditing && (
+            <FormField
+              control={form.control}
+              name="kiosk_token"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kiosk Token</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="Token for Kiosk integration" 
+                      className={form.formState.errors.kiosk_token ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Token tích hợp với hệ thống Kiosk (để trống nếu không cần)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
 
         <DialogFooter>
@@ -356,7 +459,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </DialogClose>
           <Button 
             type="submit"
-            disabled={isPending || !form.formState.isValid}
+            disabled={isPending || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
           >
             {isPending ? (
               <>

@@ -12,6 +12,22 @@ import CheckoutEmpty from '@/components/checkout/CheckoutEmpty';
 import OrderSummary from '@/components/checkout/OrderSummary';
 import CheckoutCard from '@/components/checkout/CheckoutCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { z } from 'zod';
+
+// Define validation schema for checkout
+const checkoutSchema = z.object({
+  hasEnoughBalance: z.boolean().refine(val => val === true, {
+    message: "Số dư không đủ để hoàn tất giao dịch này"
+  }),
+  hasItems: z.boolean().refine(val => val === true, {
+    message: "Không có sản phẩm nào trong giỏ hàng"
+  }),
+  validStock: z.boolean().refine(val => val === true, {
+    message: "Một số sản phẩm không đủ số lượng"
+  })
+});
+
+type CheckoutValidation = z.infer<typeof checkoutSchema>;
 
 const Checkout = () => {
   const { user } = useAuth();
@@ -23,6 +39,11 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [userBalance, setUserBalance] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<CheckoutValidation>({
+    hasEnoughBalance: true,
+    hasItems: true,
+    validStock: true
+  });
   
   // Check if we have a single product purchase instead of cart
   const singleProduct = location.state?.product;
@@ -56,6 +77,14 @@ const Checkout = () => {
         }
         
         setUserBalance(data.balance || 0);
+        
+        // Get items and total
+        const items = singleProduct ? [{ ...singleProduct, quantity }] : cartItems;
+        const total = singleProduct ? singleProduct.price * quantity : totalPrice;
+        
+        // Validate checkout data
+        validateCheckout(data.balance || 0, items, total);
+        
       } catch (error) {
         console.error('Error fetching user balance:', error);
         setError('Không thể tải thông tin số dư. Vui lòng thử lại.');
@@ -68,7 +97,7 @@ const Checkout = () => {
     };
     
     fetchBalance();
-  }, [user, navigate, location, toast]);
+  }, [user, navigate, location, toast, cartItems, totalPrice, singleProduct, quantity]);
 
   // Get items and total based on whether it's a cart checkout or single product
   const items = singleProduct 
@@ -83,34 +112,59 @@ const Checkout = () => {
   const balanceUSD = convertVNDtoUSD(userBalance);
   const hasEnoughBalance = userBalance >= total;
 
-  const validatePurchase = () => {
-    if (!user) {
-      setError('Vui lòng đăng nhập để tiếp tục.');
-      return false;
-    }
+  const validateCheckout = (balance: number, checkoutItems: typeof items, totalAmount: number) => {
+    const newValidation = {
+      hasEnoughBalance: balance >= totalAmount,
+      hasItems: checkoutItems.length > 0,
+      validStock: true
+    };
     
-    if (!hasEnoughBalance) {
-      setError('Số dư không đủ. Vui lòng nạp thêm tiền để tiếp tục.');
-      return false;
-    }
+    // Check for item availability
+    const unavailableItem = checkoutItems.find(item => 
+      item.stock_quantity !== undefined && 
+      item.quantity !== undefined && 
+      item.stock_quantity < item.quantity
+    );
     
-    if (items.length === 0) {
-      setError('Không có sản phẩm nào để thanh toán.');
-      return false;
-    }
-    
-    // Check for item availability (this would be more robust with actual inventory checks)
-    const unavailableItem = items.find(item => item.stock_quantity && item.stock_quantity < item.quantity);
     if (unavailableItem) {
-      setError(`Sản phẩm "${unavailableItem.name}" không đủ số lượng.`);
-      return false;
+      newValidation.validStock = false;
     }
     
-    return true;
+    setValidation(newValidation);
+    
+    // Set error message if validation fails
+    if (!newValidation.hasEnoughBalance) {
+      setError('Số dư không đủ. Vui lòng nạp thêm tiền để tiếp tục.');
+    } else if (!newValidation.hasItems) {
+      setError('Không có sản phẩm nào để thanh toán.');
+    } else if (!newValidation.validStock) {
+      const item = unavailableItem as (typeof items)[0];
+      setError(`Sản phẩm "${item.name}" không đủ số lượng.`);
+    } else {
+      setError(null);
+    }
+    
+    return newValidation.hasEnoughBalance && 
+           newValidation.hasItems && 
+           newValidation.validStock;
   };
 
   const handlePurchase = async () => {
-    if (!validatePurchase()) return;
+    // Revalidate before proceeding
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to complete your purchase",
+        variant: "destructive",
+      });
+      localStorage.setItem('previousPath', location.pathname);
+      navigate("/login");
+      return;
+    }
+    
+    // Final validation check
+    const isValid = validateCheckout(userBalance, items, total);
+    if (!isValid) return;
     
     setIsProcessing(true);
     setError(null);
@@ -188,6 +242,7 @@ const Checkout = () => {
           variant="ghost" 
           onClick={() => navigate(-1)}
           className="mb-6"
+          aria-label="Back"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
@@ -209,6 +264,7 @@ const Checkout = () => {
               hasEnoughBalance={hasEnoughBalance}
               isProcessing={isProcessing}
               onPurchase={handlePurchase}
+              isValid={validation.hasEnoughBalance && validation.hasItems && validation.validStock}
             />
           </div>
 
