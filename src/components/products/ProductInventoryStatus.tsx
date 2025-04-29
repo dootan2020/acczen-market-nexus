@@ -1,208 +1,118 @@
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { useStockOperations } from '@/hooks/taphoammo/useStockOperations';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { ProxyType } from '@/utils/corsProxy';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import StockBadge from './inventory/StockBadge';
-import StockNotification from './inventory/StockNotification';
-import StockUpdateButton from './inventory/StockUpdateButton';
+import React, { useState, useEffect } from 'react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { getProxyOptions, getStoredProxy, setStoredProxy, ProxyType } from '@/utils/corsProxy';
 import ProxySelector from './inventory/ProxySelector';
-import StockTimestamp from './inventory/StockTimestamp';
 
-// Helper functions to handle proxy storage locally if not using the corsProxy module
-const getLocalStoredProxy = (): ProxyType => {
-  try {
-    const stored = localStorage.getItem('preferred_proxy');
-    if (stored && (stored === 'cloudflare' || stored === 'cors-anywhere' || stored === 'direct')) {
-      return stored as ProxyType;
-    }
-  } catch (err) {
-    console.error('Error retrieving proxy preference:', err);
-  }
-  return 'cloudflare'; // Default
-};
-
-const setLocalStoredProxy = (proxyType: ProxyType): void => {
-  try {
-    localStorage.setItem('preferred_proxy', proxyType);
-    window.dispatchEvent(new Event('storage'));
-  } catch (err) {
-    console.error('Error storing proxy preference:', err);
-  }
-};
-
-interface ProductInventoryStatusProps {
-  kioskToken: string;
-  stock: number;
-  productId: string;
-  productName: string;
+interface InventoryStatusProps {
+  stockQuantity: number;
+  lastChecked: string | Date | null;
+  isLoading?: boolean;
+  onRefresh?: () => Promise<void>;
 }
 
-const ProductInventoryStatus = ({
-  kioskToken,
-  stock,
-  productId,
-  productName,
-}: ProductInventoryStatusProps) => {
-  const { syncProductStock, loading, cacheInfo } = useStockOperations();
-  const [lastUpdate, setLastUpdate] = useState<string>('');
-  const [isExpired, setIsExpired] = useState<boolean>(false);
-  const [subscribed, setSubscribed] = useState<boolean>(false);
-  const [currentProxy, setCurrentProxy] = useState<ProxyType>(getLocalStoredProxy());
+const formatTimeAgo = (date: Date | string) => {
+  const now = new Date();
+  const past = new Date(date);
+  const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+  
+  if (seconds < 60) return `${seconds} giây trước`;
+  
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} phút trước`;
+  
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  
+  const days = Math.floor(hours / 24);
+  return `${days} ngày trước`;
+};
+
+export default function ProductInventoryStatus({ 
+  stockQuantity, 
+  lastChecked, 
+  isLoading = false,
+  onRefresh 
+}: InventoryStatusProps) {
+  const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (cacheInfo.lastChecked) {
-      setLastUpdate(
-        formatDistanceToNow(cacheInfo.lastChecked, {
-          addSuffix: true,
-          locale: vi
-        })
-      );
-    }
-
-    if (cacheInfo.expiresAt) {
-      setIsExpired(new Date() > cacheInfo.expiresAt);
-    }
-
-    const timer = setInterval(() => {
-      if (cacheInfo.lastChecked) {
-        setLastUpdate(
-          formatDistanceToNow(cacheInfo.lastChecked, {
-            addSuffix: true,
-            locale: vi
-          })
-        );
-      }
-      
-      if (cacheInfo.expiresAt) {
-        setIsExpired(new Date() > cacheInfo.expiresAt);
-      }
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, [cacheInfo.lastChecked, cacheInfo.expiresAt]);
-
-  useEffect(() => {
-    if (stock === 0 && productId) {
-      checkSubscriptionStatus();
-    }
-  }, [stock, productId]);
-
-  useEffect(() => {
-    const handler = () => setCurrentProxy(getLocalStoredProxy());
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
-
-  const handleSyncStock = async () => {
-    try {
+  
+  const refreshInventory = async () => {
+    if (onRefresh) {
       const startTime = Date.now();
-      const result = await syncProductStock(kioskToken);
+      await onRefresh();
       const endTime = Date.now();
       setResponseTime(endTime - startTime);
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message || 'Đồng bộ thất bại');
-      }
-    } catch (error) {
-      console.error('Sync error:', error);
-      toast.error('Đã xảy ra lỗi khi đồng bộ tồn kho');
     }
   };
   
-  const handleChangeProxy = (proxy: ProxyType) => {
-    setLocalStoredProxy(proxy);
+  const handleProxyChange = (proxy: ProxyType) => {
+    setStoredProxy(proxy);
     setCurrentProxy(proxy);
-    toast.success(`Đã chuyển sang sử dụng proxy: ${proxy}`);
   };
-
-  const checkSubscriptionStatus = async () => {
-    if (!user?.id || !productId) return;
+  
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrentProxy(getStoredProxy());
+    };
     
-    try {
-      const { data, error } = await supabase.functions.invoke('process-stock-notifications', {
-        body: JSON.stringify({
-          action: 'check',
-          productId,
-          userId: user.id
-        })
-      });
-
-      if (!error && data.success && data.subscribed) {
-        setSubscribed(true);
-      }
-    } catch (err) {
-      console.error('Error checking notification status:', err);
-    }
-  };
-
-  const handleUnsubscribe = async () => {
-    if (!productId || !user?.id) return;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('process-stock-notifications', {
-        body: JSON.stringify({
-          action: 'unsubscribe',
-          productId,
-          userId: user.id
-        })
-      });
-
-      if (error) {
-        toast.error(`Lỗi: ${error.message}`);
-        return;
-      }
-
-      if (data.success) {
-        toast.success('Đã hủy đăng ký thông báo');
-        setSubscribed(false);
-      } else {
-        toast.error(data.message || 'Hủy đăng ký thông báo thất bại');
-      }
-    } catch (err: any) {
-      toast.error(`Lỗi: ${err.message || 'Không thể hủy đăng ký thông báo'}`);
-    }
-  };
-
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 mb-1">
-        <StockBadge stock={stock} />
+    <Card className="mt-6">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-medium">Tình trạng tồn kho</h3>
+          <div className="flex items-center gap-1">
+            <ProxySelector 
+              currentProxy={currentProxy}
+              responseTime={responseTime}
+              onProxyChange={handleProxyChange}
+            />
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={refreshInventory}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+        </div>
         
-        {stock <= 0 && (
-          <StockNotification
-            productId={productId}
-            productName={productName}
-            subscribed={subscribed}
-            onSubscribe={() => setSubscribed(true)}
-            onUnsubscribe={handleUnsubscribe}
-          />
-        )}
-      </div>
-      
-      <div className="flex items-center text-xs text-muted-foreground gap-2">
-        <StockTimestamp lastUpdate={lastUpdate} />
-        <ProxySelector
-          currentProxy={currentProxy}
-          responseTime={responseTime}
-          onProxyChange={handleChangeProxy}
-        />
-        <StockUpdateButton
-          loading={loading}
-          isExpired={isExpired}
-          onUpdate={handleSyncStock}
-        />
-      </div>
-    </div>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={stockQuantity > 0 ? "success" : "destructive"}
+              className={stockQuantity > 0 ? "bg-green-500" : ""}
+            >
+              {stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+            </Badge>
+            <span className="text-sm">{stockQuantity} sản phẩm</span>
+          </div>
+          
+          <div className="text-xs text-muted-foreground">
+            {lastChecked ? (
+              <>Cập nhật {formatTimeAgo(lastChecked)}</>
+            ) : (
+              <>Chưa có dữ liệu</>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-};
-
-export default ProductInventoryStatus;
+}

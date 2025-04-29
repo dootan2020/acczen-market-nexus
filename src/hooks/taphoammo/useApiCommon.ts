@@ -2,29 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/utils/corsProxy';
-
-// Local helper functions for proxy management
-const getLocalStoredProxy = (): ProxyType => {
-  try {
-    const stored = localStorage.getItem('preferred_proxy');
-    if (stored && (stored === 'cloudflare' || stored === 'cors-anywhere' || stored === 'direct')) {
-      return stored as ProxyType;
-    }
-  } catch (err) {
-    console.error('Error retrieving proxy preference:', err);
-  }
-  return 'cloudflare'; // Default
-};
-
-const setLocalStoredProxy = (proxyType: ProxyType): void => {
-  try {
-    localStorage.setItem('preferred_proxy', proxyType);
-    window.dispatchEvent(new Event('storage'));
-  } catch (err) {
-    console.error('Error storing proxy preference:', err);
-  }
-};
+import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 
 // Maximum number of retries and corresponding delays with exponential backoff
 export const MAX_RETRIES = 3;
@@ -66,19 +44,19 @@ export const useApiCommon = () => {
       
       if (attempt >= MAX_RETRIES) {
         // If we've exhausted retries, try switching proxy for next request
-        const currentProxy = getLocalStoredProxy();
+        const currentProxy = getStoredProxy();
         
-        // Only switch if not already using admin or if it's a CORS-related error
-        if (currentProxy !== 'admin' && (err.message?.includes('CORS') || err.message?.includes('network'))) {
+        // Switch to next proxy option if CORS-related error
+        if (err.message?.includes('CORS') || err.message?.includes('network')) {
           // Try to switch to next proxy option
           if (currentProxy === 'cloudflare') {
-            setLocalStoredProxy('cors-anywhere');
+            setStoredProxy('cors-anywhere');
             console.log('Switching proxy to cors-anywhere for next request');
           } else if (currentProxy === 'cors-anywhere') {
-            setLocalStoredProxy('direct');
+            setStoredProxy('direct');
             console.log('Switching proxy to direct connection for next request');
           } else {
-            setLocalStoredProxy('cloudflare');
+            setStoredProxy('cloudflare');
             console.log('Switching back to cloudflare proxy for next request');
           }
           

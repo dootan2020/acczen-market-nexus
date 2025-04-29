@@ -7,14 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProxyType } from '@/utils/corsProxy';
-
-// Local helper function to get proxy options
-const getLocalProxyOptions = () => [
-  { value: 'cloudflare', label: 'Cloudflare Workers' },
-  { value: 'cors-anywhere', label: 'CORS Anywhere' },
-  { value: 'direct', label: 'Kết nối trực tiếp' }
-];
+import { ProxyType, getProxyOptions } from '@/utils/corsProxy';
 
 interface ProxySelectorProps {
   currentProxy: ProxyType;
@@ -22,8 +15,8 @@ interface ProxySelectorProps {
   onProxyChange: (proxy: ProxyType) => void;
 }
 
-const ProxySelector = ({ currentProxy, responseTime, onProxyChange }: ProxySelectorProps) => {
-  const proxyOptions = getLocalProxyOptions();
+export const ProxySelector = ({ currentProxy, responseTime, onProxyChange }: ProxySelectorProps) => {
+  const proxyOptions = getProxyOptions();
 
   return (
     <DropdownMenu>
