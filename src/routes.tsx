@@ -21,6 +21,7 @@ import DepositSuccess from './pages/DepositSuccess';
 import AdminApiMonitoring from './pages/admin/AdminApiMonitoring';
 import ProductsImport from './pages/admin/ProductsImport';
 import ProductIntegration from './pages/admin/ProductIntegration';
+import IntegrationsPage from './pages/admin/IntegrationsPage';
 
 import { lazy, Suspense } from 'react';
 
@@ -161,12 +162,12 @@ const AppRoutes = () => {
         <Route index element={<AdminHome />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="products" element={<AdminProducts />} />
-        <Route path="products/import" element={<ProductsImport />} />
+        <Route path="products-import" element={<ProductsImport />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="deposits" element={<AdminDeposits />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="reports" element={<AdminReports />} />
-        <Route path="integration" element={<ProductIntegration />} />
+        <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
       </Route>
     </Routes>
