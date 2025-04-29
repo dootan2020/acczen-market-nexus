@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   role: 'user' | 'admin';
-  phone?: string; // Add phone as optional property
+  phone?: string | null; // Add phone as an optional property
 }
 
 // Define the validation schema
