@@ -35,20 +35,20 @@ const FAQSection = () => {
   ];
 
   return (
-    <div className="bg-white py-16">
+    <div className="bg-white py-20">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-2">Frequently Asked Questions</h2>
-        <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-2 text-[#202123]">Frequently Asked Questions</h2>
+        <p className="text-center text-[#8E8EA0] mb-12 max-w-2xl mx-auto">
           Find answers to common questions about our digital products, purchase process, and support services
         </p>
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left">
+              <AccordionItem key={index} value={`item-${index}`} className="border-b border-[#E5E5E5]">
+                <AccordionTrigger className="text-left text-[#343541] hover:text-[#19C37D]">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent>
+                <AccordionContent className="text-[#8E8EA0]">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>

@@ -31,14 +31,22 @@ const FeaturedProducts = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="border rounded-lg p-4">
-            <div className="h-40 bg-gray-200 rounded animate-pulse mb-4"></div>
-            <div className="h-6 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+      <div className="bg-[#F7F7F8] py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
           </div>
-        ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-4 bg-white shadow-sm">
+                <div className="h-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -48,11 +56,11 @@ const FeaturedProducts = () => {
   }
 
   return (
-    <div className="bg-white py-16">
+    <div className="bg-[#F7F7F8] py-20">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">Featured Products</h2>
-          <Button asChild variant="ghost" className="flex items-center gap-1">
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="text-3xl font-bold text-[#202123]">Featured Products</h2>
+          <Button asChild variant="ghost" className="flex items-center gap-1 text-[#19C37D] hover:bg-[#F7F7F8]/80">
             <Link to="/products">
               View All
               <ChevronRight className="h-4 w-4" />
@@ -60,18 +68,19 @@ const FeaturedProducts = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              image={product.image_url || ''}
-              price={product.price}
-              salePrice={product.sale_price}
-              category={product.category?.name || ''}
-              stock={product.stock_quantity}
-              featured={product.status === 'active' && product.stock_quantity > 0}
-            />
+          {products.map((product, index) => (
+            <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                image={product.image_url || ''}
+                price={product.price}
+                salePrice={product.sale_price}
+                category={product.category?.name || ''}
+                stock={product.stock_quantity}
+                featured={product.status === 'active' && product.stock_quantity > 0}
+              />
+            </div>
           ))}
         </div>
       </div>

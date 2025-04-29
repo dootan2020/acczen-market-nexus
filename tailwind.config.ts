@@ -55,6 +55,15 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // ChatGPT colors
+        chatgpt: {
+          primary: "#19C37D",     // green
+          secondary: "#343541",   // dark gray
+          text: "#202123",        // near black
+          muted: "#8E8EA0",       // muted text
+          light: "#F7F7F8",       // very light gray
+          border: "#E5E5E5",      // light gray for borders
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -70,6 +79,7 @@ const config: Config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "fade-in": "fade-in 0.5s ease-out",
       },
       keyframes: {
         "accordion-down": {
@@ -83,6 +93,10 @@ const config: Config = {
         "pulse-subtle": {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.9", transform: "scale(1.03)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
         },
       },
       typography: {
@@ -98,7 +112,7 @@ const config: Config = {
             },
             'h1, h2, h3, h4, h5, h6': {
               color: 'hsl(var(--foreground))',
-              fontFamily: 'Poppins, sans-serif',
+              fontFamily: 'Inter, sans-serif',
               fontWeight: '600',
             },
           },
@@ -125,18 +139,11 @@ const config: Config = {
         },
         '@font-face': [
           {
-            fontFamily: 'Poppins',
+            fontFamily: 'Inter',
             fontWeight: '400 700',
             fontStyle: 'normal',
             fontDisplay: 'swap',
-            src: 'url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap")'
-          },
-          {
-            fontFamily: 'Inter',
-            fontWeight: '400 500',
-            fontStyle: 'normal',
-            fontDisplay: 'swap',
-            src: 'url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap")'
+            src: 'url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap")'
           }
         ],
       })
