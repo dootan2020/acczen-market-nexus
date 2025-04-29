@@ -6,6 +6,7 @@ import { DiscountDistributionChart } from './DiscountDistributionChart';
 import { DiscountTimelineChart } from './DiscountTimelineChart';
 import { DiscountStatCards } from './DiscountStatCards';
 import { TopDiscountedUsersTable } from './TopDiscountedUsersTable';
+import { ResetExpiredDiscountsButton } from './ResetExpiredDiscountsButton';
 import {
   Select,
   SelectContent,
@@ -13,7 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download, Users, Percent, Calendar, ArrowDownTray } from 'lucide-react';
 
 export function DiscountAnalytics() {
   const {
@@ -24,38 +31,11 @@ export function DiscountAnalytics() {
     dateRange,
     setDateRange,
     isLoading,
+    exportDiscountedUsers,
+    exportDistributionData,
+    exportTimelineData,
+    exportAllData
   } = useDiscountAnalytics();
-
-  const exportAnalyticsData = () => {
-    // Create a combined analytics data object
-    const exportData = {
-      summary: summaryData,
-      distribution: distributionData,
-      timeline: timelineData,
-      topUsers: topUsers?.map(user => ({
-        email: user.email,
-        username: user.username,
-        full_name: user.full_name,
-        discount: user.discount_percentage,
-        saved: user.total_discount_amount,
-        orders: user.order_count,
-        expires: user.discount_expires_at
-      }))
-    };
-
-    // Convert to JSON and download
-    const jsonData = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `discount_analytics_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="container px-4 sm:px-6 w-full max-w-full mx-auto space-y-6">
@@ -75,10 +55,34 @@ export function DiscountAnalytics() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" onClick={exportAnalyticsData}>
-            <Download className="h-4 w-4 mr-2" />
-            Export All
-          </Button>
+          <ResetExpiredDiscountsButton />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportDiscountedUsers}>
+                <Users className="h-4 w-4 mr-2" />
+                Export Users with Discounts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportDistributionData}>
+                <Percent className="h-4 w-4 mr-2" />
+                Export Distribution Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportTimelineData}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Export Timeline Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAllData}>
+                <ArrowDownTray className="h-4 w-4 mr-2" />
+                Export All Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       

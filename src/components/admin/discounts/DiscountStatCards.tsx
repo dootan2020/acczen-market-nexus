@@ -1,85 +1,108 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Users, Percent, Calendar, CircleDollarSign } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DiscountSummary } from '@/hooks/admin/useDiscountAnalytics';
 
 interface DiscountStatCardsProps {
-  data: DiscountSummary | undefined;
+  data?: DiscountSummary;
   isLoading: boolean;
 }
 
 export function DiscountStatCards({ data, isLoading }: DiscountStatCardsProps) {
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        {Array(4).fill(0).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Loading...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-4 bg-muted rounded animate-pulse"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">No Data Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">-</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Users with Discounts</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Users With Discounts
+          </CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{data.totalUsers}</div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {data?.totalUsers || 0}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-1">
-            <Badge variant="outline">{data.temporaryDiscountsCount} temporary</Badge>
+            {data?.temporaryDiscountsCount || 0} temporary
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Total Discount Amount</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Average Discount
+          </CardTitle>
+          <Percent className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${data.totalDiscountAmount.toFixed(2)}</div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {data?.averageDiscountPercentage ? data.averageDiscountPercentage.toFixed(1) : 0}%
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            Highest: {data?.highestDiscount || 0}%
+          </p>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Average Discount</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Total Savings
+          </CardTitle>
+          <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{data.averageDiscountPercentage.toFixed(1)}%</div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {formatCurrency(data?.totalDiscountAmount || 0)}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            From all discounted orders
+          </p>
         </CardContent>
       </Card>
-      
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Highest Discount</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Temporary Discounts
+          </CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{data.highestDiscount}%</div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {data?.temporaryDiscountsCount || 0}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            Auto-expire when time is up
+          </p>
         </CardContent>
       </Card>
     </div>

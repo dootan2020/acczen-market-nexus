@@ -13,13 +13,15 @@ import {
   Calendar, 
   Mail, 
   User2,
-  Percent
+  Percent,
+  Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 import { DiscountBadge } from './DiscountBadge';
 import { useUserDiscount } from '@/hooks/admin/useUserDiscount';
 import { DiscountHistoryTable } from './DiscountHistoryTable';
+import { ResetUserDiscountButton } from './ResetUserDiscountButton';
 
 interface UserDetailsProps {
   user: UserProfile;
@@ -53,6 +55,10 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
     }
   };
 
+  const isTemporaryDiscount = user.discount_percentage > 0 && user.discount_expires_at;
+  const daysUntilExpiry = isTemporaryDiscount ? 
+    Math.ceil((new Date(user.discount_expires_at!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* User profile card */}
@@ -75,12 +81,26 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
           <h3 className="text-lg font-medium">{user.full_name || user.username || 'Unnamed User'}</h3>
           
           {user.discount_percentage > 0 && (
-            <div className="mt-2">
+            <div className="mt-3 flex flex-col items-center">
               <DiscountBadge 
                 percentage={user.discount_percentage} 
                 size="lg"
                 tooltipContent={user.discount_note ? `Reason: ${user.discount_note}` : undefined}
               />
+              
+              {isTemporaryDiscount && (
+                <div className={`mt-2 flex items-center text-xs ${
+                  daysUntilExpiry < 3 ? 'text-red-500' : 'text-amber-500'
+                }`}>
+                  <Clock className="h-3 w-3 mr-1" />
+                  {daysUntilExpiry < 0 
+                    ? 'Expired! Will be reset automatically.'
+                    : daysUntilExpiry === 0 
+                      ? 'Expires today'
+                      : `Expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}`
+                  }
+                </div>
+              )}
             </div>
           )}
           
@@ -105,13 +125,25 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
               <span className="text-sm">Joined {formatDate(user.created_at)}</span>
             </div>
             
-            {user.discount_updated_at && (
-              <div className="flex items-center justify-start border-t pt-2">
-                <Percent className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="text-sm">
-                  Discount updated {formatDate(user.discount_updated_at)}
-                </span>
-              </div>
+            {user.discount_percentage > 0 && (
+              <>
+                <div className="flex items-center justify-start border-t pt-2">
+                  <Percent className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="text-sm">
+                    {user.discount_percentage}% discount
+                    {isTemporaryDiscount && ` until ${formatDate(user.discount_expires_at)}`}
+                  </span>
+                </div>
+                
+                {user.discount_updated_at && (
+                  <div className="flex items-center justify-start pt-1">
+                    <div className="w-4 mr-2" />
+                    <span className="text-xs text-muted-foreground">
+                      Updated {formatDate(user.discount_updated_at)}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </CardContent>
@@ -126,10 +158,22 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
               Adjust Balance
             </Button>
           </div>
-          <Button onClick={onSetDiscount} variant="secondary" className="w-full">
-            <Percent className="mr-1 h-4 w-4" />
-            Set Discount
-          </Button>
+          
+          <div className="flex gap-2 w-full">
+            <Button onClick={onSetDiscount} variant="secondary" className="flex-1">
+              <Percent className="mr-1 h-4 w-4" />
+              {user.discount_percentage > 0 ? 'Update Discount' : 'Set Discount'}
+            </Button>
+            
+            {user.discount_percentage > 0 && (
+              <ResetUserDiscountButton 
+                userId={user.id} 
+                username={user.username || user.email || undefined}
+                variant="outline"
+                size="default"
+              />
+            )}
+          </div>
         </CardFooter>
       </Card>
 

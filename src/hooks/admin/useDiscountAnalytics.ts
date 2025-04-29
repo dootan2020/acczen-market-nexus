@@ -62,7 +62,7 @@ export const useDiscountAnalytics = () => {
   const { data: distributionData, isLoading: isLoadingDistribution } = useQuery({
     queryKey: ['discount-distribution'],
     queryFn: async () => {
-      // Using the database function created in our migration
+      // Use the database function for getting discount distribution
       const { data, error } = await supabase.rpc('get_discount_distribution');
 
       if (error) {
@@ -172,6 +172,102 @@ export const useDiscountAnalytics = () => {
       } as DiscountSummary;
     }
   });
+  
+  // Export data functions
+  const exportToCSV = (data: any[], filename: string) => {
+    if (!data || !data.length) return;
+    
+    // Convert data to CSV format
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => {
+        return headers.map(header => {
+          // Handle null values and ensure proper CSV formatting
+          const cellValue = row[header] === null ? '' : row[header];
+          
+          // If the value contains commas, quotes, or newlines, wrap in quotes
+          if (typeof cellValue === 'string' && 
+              (cellValue.includes(',') || cellValue.includes('"') || cellValue.includes('\n'))) {
+            // Escape quotes by doubling them
+            return `"${cellValue.replace(/"/g, '""')}"`;
+          }
+          return cellValue;
+        }).join(',');
+      })
+    ].join('\n');
+    
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // Format user data for export
+  const exportDiscountedUsers = () => {
+    if (!topUsers) return;
+    
+    const formattedData = topUsers.map(user => ({
+      User_Email: user.email || 'N/A',
+      Username: user.username || 'N/A',
+      Full_Name: user.full_name || 'N/A',
+      Discount_Percentage: `${user.discount_percentage}%`,
+      Total_Savings: user.total_discount_amount || 0,
+      Order_Count: user.order_count || 0,
+      Expires_At: user.discount_expires_at ? format(new Date(user.discount_expires_at), 'yyyy-MM-dd') : 'Never'
+    }));
+    
+    exportToCSV(formattedData, 'discounted_users');
+  };
+  
+  // Format distribution data for export
+  const exportDistributionData = () => {
+    if (!distributionData) return;
+    
+    const formattedData = distributionData.map(item => ({
+      Discount_Range: item.discount_range,
+      User_Count: item.user_count
+    }));
+    
+    exportToCSV(formattedData, 'discount_distribution');
+  };
+  
+  // Format timeline data for export
+  const exportTimelineData = () => {
+    if (!timelineData) return;
+    
+    const formattedData = timelineData.map(item => ({
+      Date: item.date,
+      Discount_Activity: item.total_discount
+    }));
+    
+    exportToCSV(formattedData, 'discount_timeline');
+  };
+  
+  // Export all data combined
+  const exportAllData = () => {
+    // Export each dataset
+    exportDiscountedUsers();
+    exportDistributionData();
+    exportTimelineData();
+    
+    // Also export summary data
+    if (summaryData) {
+      exportToCSV([{
+        Total_Users_With_Discount: summaryData.totalUsers,
+        Total_Discount_Amount: summaryData.totalDiscountAmount,
+        Average_Discount_Percentage: `${summaryData.averageDiscountPercentage.toFixed(2)}%`,
+        Temporary_Discounts_Count: summaryData.temporaryDiscountsCount,
+        Highest_Discount: `${summaryData.highestDiscount}%`
+      }], 'discount_summary');
+    }
+  };
 
   return {
     distributionData,
@@ -180,6 +276,12 @@ export const useDiscountAnalytics = () => {
     summaryData,
     dateRange,
     setDateRange,
-    isLoading: isLoadingDistribution || isLoadingTimeline || isLoadingTopUsers || isLoadingSummary
+    isLoading: isLoadingDistribution || isLoadingTimeline || isLoadingTopUsers || isLoadingSummary,
+    // Export functions
+    exportDiscountedUsers,
+    exportDistributionData,
+    exportTimelineData,
+    exportAllData,
+    exportToCSV
   };
 };
