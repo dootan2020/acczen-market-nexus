@@ -10,8 +10,9 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/OrdersPage';
 import AdminHome from './pages/admin/AdminHome';
 import AdminDeposits from './pages/admin/AdminDeposits';
+import AdminUsers from './pages/admin/AdminUsers';
 import Cart from './pages/Cart';
-import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminGuard from './components/AdminGuard';
 import PrivateRoute from './components/PrivateRoute';
 import Deposit from './pages/Deposit';
 import DepositPending from './pages/DepositPending';
@@ -148,9 +149,9 @@ const AppRoutes = () => {
       <Route
         path="/admin"
         element={
-          <AdminProtectedRoute>
+          <AdminGuard>
             <AdminLayout />
-          </AdminProtectedRoute>
+          </AdminGuard>
         }
       >
         <Route index element={<AdminHome />} />
@@ -159,6 +160,7 @@ const AppRoutes = () => {
         <Route path="products/import" element={<ProductsImport />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="deposits" element={<AdminDeposits />} />
+        <Route path="users" element={<AdminUsers />} />
         <Route path="integration" element={<ProductIntegration />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
       </Route>
