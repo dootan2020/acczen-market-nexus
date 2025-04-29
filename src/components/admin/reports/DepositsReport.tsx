@@ -13,7 +13,7 @@ import {
   SkeletonChartBar,
   SkeletonTable 
 } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -42,6 +42,27 @@ interface DepositsReportProps {
   isLoading: boolean;
   depositsData: any[];
 }
+
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string, formatString: string, fallback: string = 'Invalid date') => {
+  try {
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, formatString) : fallback;
+  } catch (e) {
+    console.error("Error formatting date:", dateString, e);
+    return fallback;
+  }
+};
+
+// Helper function to check if a date is valid
+const isValidDate = (dateString: string): boolean => {
+  try {
+    const date = new Date(dateString);
+    return isValid(date);
+  } catch (e) {
+    return false;
+  }
+};
 
 export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
   const [page, setPage] = useState(1);
@@ -99,7 +120,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="date" 
-                  tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                  tickFormatter={(date) => {
+                    if (!date) return '';
+                    return safeFormatDate(date, 'MMM dd');
+                  }}
                 />
                 <YAxis 
                   yAxisId="left"
@@ -111,7 +135,10 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 />
                 <Tooltip 
                   formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                  labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                  labelFormatter={(date) => {
+                    if (!date) return 'Unknown date';
+                    return safeFormatDate(date, 'MMMM d, yyyy');
+                  }}
                 />
                 <Legend />
                 <Line 
@@ -160,7 +187,9 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                       .filter(deposit => 
                         deposit.payment_method === 'PayPal' && 
                         deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+                        deposit.created_at && 
+                        isValidDate(deposit.created_at) && 
+                        safeFormatDate(deposit.created_at, 'yyyy-MM-dd') === d.date
                       )
                       .reduce((sum, d) => sum + (d.amount || 0), 0)
                   }))}
@@ -174,12 +203,18 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      if (!date) return '';
+                      return safeFormatDate(date, 'MMM dd');
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      if (!date) return 'Unknown date';
+                      return safeFormatDate(date, 'MMMM d, yyyy');
+                    }}
                   />
                   <Legend />
                   <Bar 
@@ -216,7 +251,9 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                       .filter(deposit => 
                         deposit.payment_method === 'USDT' && 
                         deposit.status === 'completed' &&
-                        format(new Date(deposit.created_at), 'yyyy-MM-dd') === d.date
+                        deposit.created_at && 
+                        isValidDate(deposit.created_at) && 
+                        safeFormatDate(deposit.created_at, 'yyyy-MM-dd') === d.date
                       )
                       .reduce((sum, d) => sum + (d.amount || 0), 0)
                   }))}
@@ -230,12 +267,18 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                    tickFormatter={(date) => {
+                      if (!date) return '';
+                      return safeFormatDate(date, 'MMM dd');
+                    }}
                   />
                   <YAxis />
                   <Tooltip 
                     formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    labelFormatter={(date) => format(new Date(date), 'MMMM d, yyyy')}
+                    labelFormatter={(date) => {
+                      if (!date) return 'Unknown date';
+                      return safeFormatDate(date, 'MMMM d, yyyy');
+                    }}
                   />
                   <Legend />
                   <Bar 
@@ -276,7 +319,9 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
                 {paginatedDeposits.map((deposit) => (
                   <TableRow key={deposit.id}>
                     <TableCell>
-                      {format(new Date(deposit.created_at), 'yyyy-MM-dd HH:mm')}
+                      {deposit.created_at && isValidDate(deposit.created_at) 
+                        ? safeFormatDate(deposit.created_at, 'yyyy-MM-dd HH:mm')
+                        : 'Invalid date'}
                     </TableCell>
                     <TableCell>${deposit.amount?.toFixed(2)}</TableCell>
                     <TableCell>{deposit.payment_method}</TableCell>
