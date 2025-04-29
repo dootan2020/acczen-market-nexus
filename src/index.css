@@ -73,21 +73,20 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Cải thiện độ đọc văn bản trên toàn trang */
+  /* Improve text readability across the site */
   p, span, a, button, input, textarea, label, li {
     @apply text-foreground;
   }
   
-  /* Đảm bảo văn bản placeholder có độ tương phản tốt */
+  /* Ensure placeholder text has good contrast */
   ::placeholder {
     @apply text-muted-foreground opacity-80;
   }
   
-  /* Cải thiện transitions cho chế độ chủ đề mượt mà hơn */
+  /* Improved transitions for smoother theme toggling */
   button, 
   a, 
   input, 
@@ -107,20 +106,10 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 300ms;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
-    @apply font-semibold;
-  }
-
-  /* Thêm border cơ bản để elements dễ nhận biết */
-  button, input, textarea, select {
-    @apply border border-input focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary;
-  }
 }
 
 @layer utilities {
-  /* Animation hiệu ứng nhẹ cho nút deposit */
+  /* Subtle pulse animation for deposit button */
   .animate-pulse-subtle {
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
@@ -136,12 +125,12 @@
     }
   }
 
-  /* Highlight nav active */
+  /* Active nav highlight */
   .nav-link-active {
     @apply bg-accent/50;
   }
   
-  /* Tăng độ tương phản cho product badges */
+  /* Improved contrast for product badges */
   .product-badge {
     @apply px-2 py-0.5 rounded text-xs font-medium;
   }
@@ -158,12 +147,12 @@
     @apply bg-green-600 text-white dark:bg-green-500;
   }
   
-  /* Văn bản tương phản cao trên nền tối */
+  /* High contrast text on dark backgrounds */
   .text-high-contrast {
     @apply text-white dark:text-white;
   }
   
-  /* Button với độ tương phản tốt hơn trên nền tối */
+  /* Better button contrast on dark backgrounds */
   .button-high-contrast {
     @apply bg-white text-black hover:bg-gray-200 dark:bg-white dark:text-black dark:hover:bg-gray-200;
   }

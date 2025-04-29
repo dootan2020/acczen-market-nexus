@@ -12,7 +12,7 @@ import { CartProvider } from './providers/CartProvider';
 import App from './App.tsx';
 import './index.css';
 
-// Đo lường hiệu suất tải trang ban đầu
+// Measure the initial load performance
 const reportWebVitals = () => {
   if (window.performance) {
     const metrics = window.performance.getEntriesByType('navigation');
@@ -22,49 +22,11 @@ const reportWebVitals = () => {
   }
 };
 
-// Đăng ký service worker cho hỗ trợ PWA - chỉ trong môi trường production
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('ServiceWorker registration successful with scope:', registration.scope);
-      })
-      .catch((error) => {
-        console.error('ServiceWorker registration failed:', error);
-      });
-  });
-}
-
-// Đo lường Core Web Vitals - chỉ trong môi trường production
-if (import.meta.env.PROD) {
-  // Báo cáo FID và LCP
-  const reportLCP = () => {
-    const perfEntries = performance.getEntriesByType('navigation');
-    if (perfEntries && perfEntries.length > 0) {
-      const navEntry = perfEntries[0] as PerformanceNavigationTiming;
-      const loadEventTime = navEntry.loadEventStart - navEntry.startTime;
-      console.info(`Largest Contentful Paint: ${loadEventTime}ms`);
-    }
-  };
-
-  // Sử dụng PerformanceObserver để theo dõi FID
-  if ('PerformanceObserver' in window) {
-    new PerformanceObserver((entryList) => {
-      for (const entry of entryList.getEntries()) {
-        const fidEntry = entry as PerformanceEventTiming;
-        console.info(`FID: ${fidEntry.processingStart - fidEntry.startTime}ms`);
-      }
-    }).observe({ type: 'first-input', buffered: true });
-  }
-  
-  window.addEventListener('load', reportLCP);
-}
-
-// Đảm bảo phần tử root tồn tại
+// Make sure the root element exists
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
-// Tạo root React và render ứng dụng
+// Create the React root and render the app
 createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -87,5 +49,5 @@ createRoot(rootElement).render(
   </React.StrictMode>
 );
 
-// Nếu muốn đo lường hiệu suất
+// If you want to measure performance
 reportWebVitals();

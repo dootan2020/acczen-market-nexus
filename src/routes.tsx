@@ -36,16 +36,16 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Improved code splitting with custom chunk naming and priority hints
-const DashboardPage = React.lazy(() => import(/* webpackChunkName: "dashboard" */ /* webpackPrefetch: true */ './pages/Dashboard'));
-const ProductsPage = React.lazy(() => import(/* webpackChunkName: "products" */ /* webpackPrefetch: true */ './pages/Products'));
-const ProductDetailPage = React.lazy(() => import(/* webpackChunkName: "product-detail" */ './pages/ProductDetail'));
-const CheckoutPage = React.lazy(() => import(/* webpackChunkName: "checkout" */ './pages/Checkout'));
-const OrderCompletePage = React.lazy(() => import(/* webpackChunkName: "order-complete" */ './pages/OrderComplete'));
-const OrderDetail = React.lazy(() => import(/* webpackChunkName: "order-detail" */ './pages/OrderDetail'));
-const PurchasesPage = React.lazy(() => import(/* webpackChunkName: "purchases" */ './pages/PurchasesPage'));
-const AccountPage = React.lazy(() => import(/* webpackChunkName: "account" */ './pages/AccountPage'));
-const TransactionsPage = React.lazy(() => import(/* webpackChunkName: "transactions" */ './pages/TransactionsPage'));
+// Use lazy loading for the components
+const DashboardPage = lazy(() => import('./pages/Dashboard'));
+const ProductsPage = lazy(() => import('./pages/Products'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetail'));
+const CheckoutPage = lazy(() => import('./pages/Checkout'));
+const OrderCompletePage = lazy(() => import('./pages/OrderComplete'));
+const OrderDetail = lazy(() => import('./pages/OrderDetail'));
+const PurchasesPage = lazy(() => import('./pages/PurchasesPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
 
 const AppRoutes = () => {
   return (

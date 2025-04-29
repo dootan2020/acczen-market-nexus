@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useCart } from '@/hooks/useCart';
 import CartHeader from '@/components/cart/CartHeader';
 import CartItem from '@/components/cart/CartItem';
@@ -11,11 +11,8 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 const Cart: React.FC = () => {
   const { cartItems, totalPrice, removeItem, updateQuantity } = useCart();
   const isMobile = useIsMobile();
-  
-  // Memoize the empty cart check to avoid recalculation
-  const isCartEmpty = useMemo(() => cartItems.length === 0, [cartItems.length]);
 
-  if (isCartEmpty) {
+  if (cartItems.length === 0) {
     return (
       <>
         {isMobile && <MobileHeader title="Giỏ hàng" />}
@@ -49,4 +46,4 @@ const Cart: React.FC = () => {
   );
 };
 
-export default React.memo(Cart);
+export default Cart;
