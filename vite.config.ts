@@ -52,22 +52,31 @@ export default defineConfig(({ mode }) => ({
             'react-router-dom',
             '@tanstack/react-query',
           ],
+          // Fix: Reference specific files instead of directories
           ui: [
-            '@/components/ui',
-          ],
-          // Fix: Use absolute path for shadcn components
-          shadcn: [
             '@/components/ui/button',
             '@/components/ui/dialog',
             '@/components/ui/input',
             '@/components/ui/toast',
+            '@/components/ui/accordion',
+            '@/components/ui/dropdown-menu',
+            '@/components/ui/card',
+            '@/components/ui/form',
           ],
-          // Separate API and utilities for better caching
+          // Fix: Reference specific utility files instead of directories
           utils: [
-            '@/utils', 
-            '@/lib/utils',
-            '@/hooks',
-            '@/services',
+            '@/lib/utils.ts',
+            '@/utils/formatters.ts',
+            '@/utils/product-utils.ts',
+            '@/utils/debugTools.ts',
+            '@/utils/corsProxy.ts',
+          ],
+          // Fix: Reference specific API utilities
+          api: [
+            '@/utils/api/config.ts',
+            '@/utils/api/orderApi.ts',
+            '@/utils/api/stockApi.ts',
+            '@/utils/api/taphoammoApi.ts',
           ],
           // Media handling in separate chunk
           media: [
