@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -284,7 +283,7 @@ export function useDeposits(options: UseDepositsOptions = {}) {
 export const getStatusBadgeVariant = (status: string) => {
   switch (status) {
     case 'completed': return 'success';
-    case 'pending': return 'warning';
+    case 'pending': return 'default';
     case 'rejected': return 'destructive';
     default: return 'secondary';
   }

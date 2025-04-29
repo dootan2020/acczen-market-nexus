@@ -24,20 +24,6 @@ const DepositHistoryPage = () => {
     totalPages
   } = useDepositsHistory();
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Deposit History</CardTitle>
-          <CardDescription>View your deposit and transaction history</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center p-8">
-          <p>Loading your deposit history...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (error) {
     return (
       <Card>
@@ -75,7 +61,7 @@ const DepositHistoryPage = () => {
         </CardHeader>
         <CardContent>
           <DepositsFilter search={search} setSearch={setSearch} />
-          <DepositsTable deposits={deposits} />
+          <DepositsTable deposits={deposits} isLoading={isLoading} />
           <PurchasesPagination 
             currentPage={page}
             totalPages={totalPages}
