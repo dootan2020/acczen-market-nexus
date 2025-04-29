@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Clock, X } from 'lucide-react';
+import { AlertCircle, Loader2, Clock, X, RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ProxyType, getProxyOptions, getStoredProxy } from '@/utils/corsProxy';
+import { ProxyType, getProxyOptions, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { debounce } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface RecentToken {
   token: string;
@@ -19,7 +21,7 @@ interface RecentToken {
 }
 
 interface ProductImportFormProps {
-  onFetchProduct: (token: string, proxyType: ProxyType) => Promise<void>;
+  onFetchProduct: (token: string, proxyType: ProxyType, useMockData: boolean) => Promise<void>;
   onTestConnection: (token: string, proxyType: ProxyType) => Promise<{ success: boolean; message: string }>;
   isLoading: boolean;
   error: string | null;
@@ -38,6 +40,7 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
   const [kioskToken, setKioskToken] = useState('');
   const [proxyType, setProxyType] = useState<ProxyType>(getStoredProxy());
   const [testStatus, setTestStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [useMockData, setUseMockData] = useState(false);
 
   // Create a debounced version of the test connection function
   const debouncedTestConnection = debounce(async (token: string, proxy: ProxyType) => {
@@ -65,7 +68,7 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
     e.preventDefault();
     if (!kioskToken.trim()) return;
     
-    await onFetchProduct(kioskToken, proxyType);
+    await onFetchProduct(kioskToken, proxyType, useMockData);
   };
   
   const handleTokenSelect = (token: string) => {
@@ -84,7 +87,19 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
       
       {testStatus && (
         <Alert variant={testStatus.success ? "default" : "destructive"} className="animate-in fade-in-0">
-          <AlertDescription>{testStatus.message}</AlertDescription>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{testStatus.message}</span>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleTestConnection} 
+              className="h-7 px-2"
+              disabled={isLoading}
+            >
+              <RefreshCw size={14} className="mr-1" />
+              Kiểm tra lại
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
       
@@ -165,7 +180,10 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
         <Label htmlFor="proxyType">Loại Proxy</Label>
         <Select 
           value={proxyType} 
-          onValueChange={(value) => setProxyType(value as ProxyType)}
+          onValueChange={(value) => {
+            setProxyType(value as ProxyType);
+            setStoredProxy(value as ProxyType);
+          }}
           disabled={isLoading}
         >
           <SelectTrigger id="proxyType">
@@ -174,14 +192,36 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
           <SelectContent>
             {getProxyOptions().map(option => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {option.label} {option.value === 'allorigins' ? '(Khuyến nghị)' : ''}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Chọn proxy để giải quyết vấn đề CORS khi tải sản phẩm từ API.
+          Chọn proxy để giải quyết vấn đề CORS khi tải sản phẩm từ API. AllOrigins được khuyến nghị để có kết quả tốt nhất.
         </p>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="debug-mode" 
+                  checked={useMockData} 
+                  onCheckedChange={setUseMockData} 
+                />
+                <Label htmlFor="debug-mode" className="cursor-pointer">Chế độ debug (dữ liệu mẫu)</Label>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="w-[200px] text-xs">
+                Khi bật, hệ thống sẽ sử dụng dữ liệu mẫu thay vì gọi API thực. Hữu ích để test UI mà không tiêu tốn API call.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <div className="flex gap-2">
@@ -203,6 +243,7 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
         <Button 
           type="submit" 
           disabled={isLoading || !kioskToken.trim()}
+          className="relative"
         >
           {isLoading ? (
             <>
@@ -210,7 +251,14 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
               Đang xác minh...
             </>
           ) : (
-            'Xác minh & tải sản phẩm'
+            <>
+              Xác minh & tải sản phẩm
+              {useMockData && (
+                <Badge variant="outline" className="absolute -top-3 -right-3 text-xs bg-yellow-500 text-white">
+                  DEBUG
+                </Badge>
+              )}
+            </>
           )}
         </Button>
       </div>

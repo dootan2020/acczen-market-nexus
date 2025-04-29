@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ApiService, ApiOptions } from './api/ApiService';
 import { toast } from 'sonner';
+import { ProxyType, markProxySuccess, markProxyFailure } from '@/utils/corsProxy';
 
 // Local cache to prevent duplicate API calls with the same parameters
 const apiCache = new Map<string, {
@@ -51,6 +52,7 @@ export class TaphoammoApiService {
     // Check options for cache behavior
     const useCache = options.useCache !== false;
     const forceRefresh = options.forceRefresh === true;
+    const proxyType = options.proxyType || 'allorigins'; // Default to allorigins
     
     // Check if we should use cached data
     if (useCache && !forceRefresh) {
@@ -74,12 +76,14 @@ export class TaphoammoApiService {
         const { data, error } = await supabase.functions.invoke('taphoammo-api', {
           body: { 
             ...params,
+            proxy_type: proxyType, // Add proxy type to the request
             action: method 
           }
         });
         
         if (error) {
           console.error(`[TaphoammoApiService] Error in ${method}:`, error);
+          markProxyFailure(proxyType as ProxyType);
           throw new TaphoammoError(
             error.message || 'API request failed',
             TaphoammoErrorCodes.NETWORK_ERROR,
@@ -91,6 +95,7 @@ export class TaphoammoApiService {
         // FIXED: Changed string check "false" to boolean check false
         if (data && data.success === false) {
           console.error(`[TaphoammoApiService] ${method} returned failure:`, data.message);
+          markProxyFailure(proxyType as ProxyType);
           throw new TaphoammoError(
             data.message || 'Unknown API error',
             TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
@@ -110,6 +115,9 @@ export class TaphoammoApiService {
             expiresAt: Date.now() + CACHE_TTL
           });
         }
+        
+        // Mark proxy as successful
+        markProxySuccess(proxyType as ProxyType);
         
         resolve(data as T);
       } catch (error) {
@@ -162,7 +170,10 @@ export class TaphoammoApiService {
     try {
       const data = await this.executeApiCall<any>(
         'get_product', 
-        { kiosk_token: kioskToken },
+        { 
+          kiosk_token: kioskToken,
+          debug_mock: options.useMockData ? 'true' : 'false' // Add debug mode flag
+        },
         options
       );
       
@@ -181,7 +192,8 @@ export class TaphoammoApiService {
         result: {
           cached: !!data.source && data.source === 'mock',
           name: data.product.name,
-          stock: data.product.stock_quantity
+          stock: data.product.stock_quantity,
+          source: data.source || 'api'
         }
       });
       
@@ -206,10 +218,11 @@ export class TaphoammoApiService {
   /**
    * Check if kiosk is active and available
    */
-  public async checkKioskActive(kioskToken: string): Promise<boolean> {
+  public async checkKioskActive(kioskToken: string, proxyType: ProxyType = 'allorigins'): Promise<boolean> {
     try {
       const stockInfo = await this.getStock(kioskToken, {
-        forceRefresh: true // Always get fresh data for active check
+        forceRefresh: true, // Always get fresh data for active check
+        proxyType: proxyType
       });
       
       // Check quantity and ensure kiosk is operational
@@ -246,7 +259,8 @@ export class TaphoammoApiService {
     kioskToken: string, 
     quantity: number = 1, 
     userToken: string = 'system',
-    promotion?: string
+    promotion?: string,
+    proxyType: ProxyType = 'allorigins'
   ): Promise<any> {
     const { data, error } = await this.apiService.callTaphoammoAPI(
       'buyProducts', 
@@ -254,7 +268,8 @@ export class TaphoammoApiService {
         kioskToken, 
         userToken, 
         quantity,
-        promotion
+        promotion,
+        proxy_type: proxyType
       },
       {
         useCache: false, // Never cache purchase requests
@@ -292,13 +307,15 @@ export class TaphoammoApiService {
    */
   public async getProducts(
     orderId: string, 
-    userToken: string = 'system'
+    userToken: string = 'system',
+    proxyType: ProxyType = 'allorigins'
   ): Promise<any> {
     const { data, error } = await this.apiService.callTaphoammoAPI(
       'getProducts', 
       { 
         orderId,
-        userToken 
+        userToken,
+        proxy_type: proxyType
       }
     );
     
@@ -326,7 +343,7 @@ export class TaphoammoApiService {
   /**
    * Test connection to the API
    */
-  public async testConnection(kioskToken: string, proxyType?: string): Promise<{
+  public async testConnection(kioskToken: string, proxyType: ProxyType = 'allorigins'): Promise<{
     success: boolean;
     message: string;
   }> {
@@ -340,15 +357,18 @@ export class TaphoammoApiService {
       });
 
       if (response.error) {
+        markProxyFailure(proxyType);
         return {
           success: false,
           message: `Lỗi kết nối API: ${response.error.message}`
         };
       }
 
+      markProxySuccess(proxyType);
       return response.data;
     } catch (err) {
       console.error('Test connection error:', err);
+      markProxyFailure(proxyType);
       return {
         success: false,
         message: err instanceof Error ? err.message : 'Lỗi không xác định khi kiểm tra kết nối'

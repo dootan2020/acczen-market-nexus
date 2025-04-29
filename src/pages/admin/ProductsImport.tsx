@@ -48,6 +48,7 @@ const ProductsImport = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentProduct, setCurrentProduct] = useState<ExtendedProduct | null>(null);
   const [recentTokens, setRecentTokens] = useState<RecentToken[]>([]);
+  const [dataSource, setDataSource] = useState<'mock' | 'api' | null>(null);
   const queryClient = useQueryClient();
   
   // Load recent tokens from localStorage on component mount
@@ -120,7 +121,7 @@ const ProductsImport = () => {
     }
   };
 
-  const handleFetchProduct = async (kioskToken: string, proxyType: ProxyType) => {
+  const handleFetchProduct = async (kioskToken: string, proxyType: ProxyType, useMockData: boolean = false) => {
     if (!kioskToken.trim()) {
       setError('Vui lòng nhập mã token sản phẩm');
       return;
@@ -135,7 +136,9 @@ const ProductsImport = () => {
       
       // Try to get the product data directly from the API service
       const product = await taphoammoApiService.getStock(kioskToken, {
-        forceRefresh: true // Always get fresh data
+        forceRefresh: true, // Always get fresh data
+        proxyType: proxyType,
+        useMockData: useMockData // Add flag to use mock data if requested
       });
       
       if (!product) {
@@ -161,6 +164,9 @@ const ProductsImport = () => {
       setCurrentProduct(extendedProduct);
       setImportStep('preview');
       
+      // Track data source for UI display
+      setDataSource(useMockData ? 'mock' : 'api');
+      
       // Invalidate cache for real-time data
       queryClient.invalidateQueries({ queryKey: ['products'] });
       
@@ -182,7 +188,7 @@ const ProductsImport = () => {
     if (currentProduct?.kiosk_token) {
       // Clear the error and try again
       setError(null);
-      await handleFetchProduct(currentProduct.kiosk_token, getStoredProxy());
+      await handleFetchProduct(currentProduct.kiosk_token, getStoredProxy(), dataSource === 'mock');
     }
   };
 
@@ -203,6 +209,7 @@ const ProductsImport = () => {
     setImportStep('verify');
     setCurrentProduct(null);
     setError(null);
+    setDataSource(null);
     
     // Invalidate the products query to refresh the data
     queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -272,6 +279,16 @@ const ProductsImport = () => {
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0">
+              {dataSource === 'mock' && (
+                <Alert className="mb-4 bg-yellow-100 border-yellow-300">
+                  <AlertDescription className="flex justify-between items-center">
+                    <span className="font-medium text-yellow-800">
+                      Đang sử dụng dữ liệu mẫu (Debug Mode) - Dữ liệu này không phải từ API thực
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {error && (
                 <Alert variant="destructive" className="mb-6">
                   <AlertTriangle className="h-4 w-4" />
@@ -301,6 +318,16 @@ const ProductsImport = () => {
             </TabsContent>
 
             <TabsContent value="confirm" className="mt-0">
+              {dataSource === 'mock' && (
+                <Alert className="mb-4 bg-yellow-100 border-yellow-300">
+                  <AlertDescription className="flex justify-between items-center">
+                    <span className="font-medium text-yellow-800">
+                      Đang sử dụng dữ liệu mẫu (Debug Mode) - Sản phẩm này không lấy từ API thực
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {currentProduct && (
                 <ImportConfirmation
                   product={currentProduct}

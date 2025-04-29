@@ -96,11 +96,13 @@ async function handleTestConnection(data) {
 }
 
 async function handleGetProduct(data) {
-  const { kiosk_token, proxy_type } = data;
+  const { kiosk_token, proxy_type, debug_mock } = data;
   
   try {
-    // Check if we have mock data for this token
-    if (mockProductData[kiosk_token]) {
+    // Check if we should use mock data or if we have mock data for this token
+    const useMockData = debug_mock === 'true' || (Deno.env.get('ENVIRONMENT') !== 'production' && mockProductData[kiosk_token]);
+    
+    if (useMockData && mockProductData[kiosk_token]) {
       console.log('[TaphoaMMO API] Using mock data for token:', kiosk_token);
       return new Response(
         JSON.stringify({
@@ -162,7 +164,7 @@ async function handleGetProduct(data) {
 
 async function handleDirectEndpoint(data) {
   const { endpoint, ...params } = data;
-  const proxy_type = params.proxy_type || 'cors-anywhere';
+  const proxy_type = params.proxy_type || 'allorigins'; // Changed default to allorigins
   
   try {
     const result = await fetchFromTaphoaMMO(endpoint, params, proxy_type);
@@ -184,14 +186,14 @@ async function handleDirectEndpoint(data) {
   }
 }
 
-async function fetchFromTaphoaMMO(endpoint, params, proxyType = 'cors-anywhere') {
+async function fetchFromTaphoaMMO(endpoint, params, proxyType = 'allorigins') {
   // Base URL for TaphoaMMO API
   const baseUrl = 'https://taphoammo.net/api';
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (key !== 'proxy_type') { // Skip proxy_type as it's not an API parameter
+    if (!['proxy_type', 'debug_mock'].includes(key)) { // Skip proxy_type as it's not an API parameter
       queryParams.append(key, String(value));
     }
   }
@@ -219,6 +221,12 @@ async function fetchFromTaphoaMMO(endpoint, params, proxyType = 'cors-anywhere')
       console.log('Using CORS Anywhere proxy');
       fetchUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
       fetchOptions.headers['Origin'] = 'https://acczen.net';
+      break;
+      
+    case 'allorigins':
+      // AllOrigins proxy
+      console.log('Using AllOrigins proxy');
+      fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
       break;
       
     case 'direct':

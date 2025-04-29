@@ -2,7 +2,7 @@
 /**
  * Types of proxy available for CORS handling
  */
-export type ProxyType = 'cloudflare' | 'cors-anywhere' | 'direct';
+export type ProxyType = 'cloudflare' | 'cors-anywhere' | 'allorigins' | 'direct';
 
 /**
  * Cache key for storing proxy preference
@@ -10,18 +10,18 @@ export type ProxyType = 'cloudflare' | 'cors-anywhere' | 'direct';
 const PROXY_STORAGE_KEY = 'preferred_proxy';
 
 /**
- * Get the stored proxy type from localStorage or default to cors-anywhere
+ * Get the stored proxy type from localStorage or default to allorigins
  */
 export const getStoredProxy = (): ProxyType => {
   try {
     const storedProxy = localStorage.getItem(PROXY_STORAGE_KEY);
-    if (storedProxy && ['cloudflare', 'cors-anywhere', 'direct'].includes(storedProxy)) {
+    if (storedProxy && ['cloudflare', 'cors-anywhere', 'allorigins', 'direct'].includes(storedProxy)) {
       return storedProxy as ProxyType;
     }
   } catch (err) {
     console.error('Error accessing localStorage:', err);
   }
-  return 'cors-anywhere'; // Default value
+  return 'allorigins'; // Changed default value to allorigins
 };
 
 /**
@@ -45,6 +45,8 @@ export const getProxyUrl = (targetUrl: string, proxyType: ProxyType = getStoredP
       return `https://cors-proxy.your-worker.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
     case 'cors-anywhere':
       return `https://cors-anywhere.herokuapp.com/${targetUrl}`;
+    case 'allorigins':
+      return `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
     case 'direct':
     default:
       return targetUrl;
@@ -55,6 +57,7 @@ export const getProxyUrl = (targetUrl: string, proxyType: ProxyType = getStoredP
  * Get options for proxy selector dropdown
  */
 export const getProxyOptions = () => [
+  { label: 'AllOrigins', value: 'allorigins' }, // Made this first option
   { label: 'CORS-Anywhere', value: 'cors-anywhere' },
   { label: 'Cloudflare Worker', value: 'cloudflare' },
   { label: 'Direct (No Proxy)', value: 'direct' }
@@ -120,11 +123,11 @@ export const markProxySuccess = (proxyType: ProxyType): void => {
 export const getMostReliableProxy = (): ProxyType => {
   try {
     const lastProxyStatus = JSON.parse(localStorage.getItem('proxy_status') || '{}');
-    let bestProxy: ProxyType = 'cors-anywhere';
+    let bestProxy: ProxyType = 'allorigins'; // Changed default to allorigins
     let highestScore = -1;
     
     // Calculate a score for each proxy based on success/failure history
-    for (const proxy of ['cloudflare', 'cors-anywhere', 'direct'] as ProxyType[]) {
+    for (const proxy of ['cloudflare', 'cors-anywhere', 'allorigins', 'direct'] as ProxyType[]) {
       const status = lastProxyStatus[proxy] || {};
       const failures = status.failures || 0;
       const successes = status.successCount || 0;
@@ -140,6 +143,6 @@ export const getMostReliableProxy = (): ProxyType => {
     
     return bestProxy;
   } catch (err) {
-    return 'cors-anywhere';
+    return 'allorigins';
   }
 };
