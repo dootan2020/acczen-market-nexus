@@ -24,27 +24,16 @@ const AdminGuard: React.FC<AdminGuardProps> = memo(({ children }) => {
   useEffect(() => {
     // Only mark as ready when we have completed loading and have determined user state
     if (!isLoading) {
-      console.log("AdminGuard: Loading complete, setting isReady to true");
       setIsReady(true);
     }
   }, [isLoading]);
 
-  // Show toast when access is denied
+  // Show toast when access is denied - only run once when state changes
   useEffect(() => {
     if (isReady && user && !isAdmin) {
-      console.log("AdminGuard: Access denied - user exists but is not admin");
       showDeniedToast();
     }
   }, [isReady, user, isAdmin, showDeniedToast]);
-
-  // Add detailed debug logs
-  console.log("AdminGuard state:", {
-    isLoading,
-    isReady,
-    hasUser: !!user, 
-    isAdmin,
-    path: location.pathname
-  });
 
   // Show loading state while determining authentication
   if (isLoading || !isReady) {
@@ -60,7 +49,6 @@ const AdminGuard: React.FC<AdminGuardProps> = memo(({ children }) => {
 
   // Redirect to login if no user
   if (!user) {
-    console.log("AdminGuard: No user, redirecting to login");
     // Save current path so we can redirect back after login
     localStorage.setItem('previousPath', location.pathname);
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -68,11 +56,9 @@ const AdminGuard: React.FC<AdminGuardProps> = memo(({ children }) => {
 
   // Redirect to home if not admin
   if (!isAdmin) {
-    console.log("AdminGuard: User is not admin, redirecting to home");
     return <Navigate to="/" replace />;
   }
 
-  console.log("AdminGuard: Access granted, rendering admin content");
   // User is authenticated and is an admin
   return <>{children}</>;
 });

@@ -40,9 +40,6 @@ const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
 const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
 
 const AppRoutes = () => {
-  // Debug log for route rendering
-  console.log("Rendering AppRoutes component");
-  
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -162,12 +159,12 @@ const AppRoutes = () => {
         <Route index element={<AdminHome />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="products" element={<AdminProducts />} />
-        <Route path="products/import" element={<ProductsImport />} />
+        <Route path="products-import" element={<ProductsImport />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="deposits" element={<AdminDeposits />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="reports" element={<AdminReports />} />
-        <Route path="integration" element={<ProductIntegration />} />
+        <Route path="integrations" element={<ProductIntegration />} />
         <Route path="api-monitoring" element={<AdminApiMonitoring />} />
         <Route path="exchange-rates" element={<AdminExchangeRates />} />
       </Route>

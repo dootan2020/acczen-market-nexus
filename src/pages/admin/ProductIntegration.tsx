@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -71,6 +71,28 @@ const ProductIntegration = () => {
       }
     );
   };
+
+  // Initial API key fetch effect
+  useEffect(() => {
+    const fetchApiConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('api_settings')
+          .select('api_key, api_secret')
+          .eq('provider', 'taphoammo')
+          .single();
+          
+        if (data) {
+          setApiKey(data.api_key || '');
+          setApiSecret(data.api_secret || '');
+        }
+      } catch (err) {
+        console.error("Error fetching API settings:", err);
+      }
+    };
+    
+    fetchApiConfig();
+  }, []);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -233,7 +255,7 @@ const ProductIntegration = () => {
                     <span>Đồng bộ gần nhất</span>
                   </div>
                   <span className="text-muted-foreground">
-                    {new Date().toLocaleString('vi-VN')}
+                    {apiStatus?.lastSync ? new Date(apiStatus.lastSync).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}
                   </span>
                 </div>
               </div>

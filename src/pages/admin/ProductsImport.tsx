@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import ImportConfirmation from '@/components/admin/products/ImportConfirmation';
 import ImportPreview from '@/components/admin/products/import/ImportPreview';
+import ProductImportForm from '@/components/admin/products/ProductImportForm';
+import { ProxyType } from '@/utils/corsProxy';
 
 // Define and export the ExtendedProduct interface
 export interface ExtendedProduct {
@@ -31,7 +33,6 @@ export interface ExtendedProduct {
 
 const ProductsImport = () => {
   const [importStep, setImportStep] = useState<'verify' | 'preview' | 'confirm'>('verify');
-  const [productToken, setProductToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentProduct, setCurrentProduct] = useState<ExtendedProduct | null>(null);
@@ -50,8 +51,34 @@ const ProductsImport = () => {
     }
   });
 
-  const handleVerifyToken = async () => {
-    if (!productToken.trim()) {
+  const testConnection = async (kioskToken: string, proxyType: ProxyType) => {
+    try {
+      // Test connection to API using the token
+      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+        body: { 
+          action: 'test_connection',
+          kiosk_token: kioskToken,
+          proxy_type: proxyType
+        }
+      });
+
+      if (error) throw new Error(error.message);
+      
+      return {
+        success: true,
+        message: 'Kết nối thành công đến API!'
+      };
+    } catch (err) {
+      console.error('Connection test error:', err);
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Không thể kiểm tra kết nối'
+      };
+    }
+  };
+
+  const handleFetchProduct = async (kioskToken: string, proxyType: ProxyType) => {
+    if (!kioskToken.trim()) {
       setError('Vui lòng nhập mã token sản phẩm');
       return;
     }
@@ -61,11 +88,11 @@ const ProductsImport = () => {
 
     try {
       // Fetch product data from API using the token
-      // This is a mock implementation - in a real app, you'd call your actual API
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: { 
           action: 'get_product',
-          kiosk_token: productToken 
+          kiosk_token: kioskToken,
+          proxy_type: proxyType
         }
       });
 
@@ -81,9 +108,9 @@ const ProductsImport = () => {
         description: data.product.description || '',
         price: data.product.price || 0,
         stock_quantity: data.product.stock_quantity || 0,
-        slug: data.product.slug || productToken.toLowerCase().replace(/\s+/g, '-'),
+        slug: data.product.slug || kioskToken.toLowerCase().replace(/\s+/g, '-'),
         sku: data.product.sku || `P-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-        kiosk_token: productToken,
+        kiosk_token: kioskToken,
         status: 'active'
       };
       
@@ -112,8 +139,8 @@ const ProductsImport = () => {
 
   const handleComplete = () => {
     setImportStep('verify');
-    setProductToken('');
     setCurrentProduct(null);
+    setError(null);
   };
 
   return (
@@ -150,39 +177,12 @@ const ProductsImport = () => {
             </TabsList>
 
             <TabsContent value="verify" className="mt-0">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Nhập mã token sản phẩm</h2>
-                  <p className="text-muted-foreground mb-4">
-                    Nhập mã token sản phẩm từ TaphoaMMO để bắt đầu import sản phẩm vào hệ thống.
-                  </p>
-
-                  <div className="flex gap-2 max-w-md">
-                    <Input
-                      placeholder="Nhập token sản phẩm..."
-                      value={productToken}
-                      onChange={(e) => setProductToken(e.target.value)}
-                      disabled={isLoading}
-                      className="flex-1"
-                    />
-                    <Button onClick={handleVerifyToken} disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Đang xác minh...
-                        </>
-                      ) : 'Xác minh'}
-                    </Button>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive" className="mt-4">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </div>
+              <ProductImportForm
+                onFetchProduct={handleFetchProduct}
+                onTestConnection={testConnection}
+                isLoading={isLoading}
+                error={error}
+              />
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0">

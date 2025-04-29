@@ -20,21 +20,7 @@ const AdminLayout = memo(() => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user, isAdmin, isLoading } = useAuth();
-  
-  // Debug logs - only log once, not on every render
-  console.log("AdminLayout: rendering", {
-    user: !!user, 
-    isAdmin,
-    isLoading,
-    pathname: location.pathname
-  });
-  
-  // This is a fallback check in case AdminGuard fails
-  if (!isLoading && (!user || !isAdmin)) {
-    console.log("AdminLayout fallback redirect: user absent or not admin");
-    return <Navigate to="/" replace />;
-  }
+  const { isLoading } = useAuth();
   
   // Show loading state while initializing
   if (isLoading) {
@@ -53,13 +39,13 @@ const AdminLayout = memo(() => {
     { name: 'Admin', href: '/admin' },
     { name: 'Dashboard', href: '/admin' },
     { name: 'Products', href: '/admin/products' },
-    { name: 'Import Products', href: '/admin/products/import' },
+    { name: 'Import Products', href: '/admin/products-import' },
     { name: 'Categories', href: '/admin/categories' },
     { name: 'Orders', href: '/admin/orders' },
     { name: 'Users', href: '/admin/users' },
     { name: 'Deposits', href: '/admin/deposits' },
     { name: 'Reports', href: '/admin/reports' },
-    { name: 'Integrations', href: '/admin/integration' },
+    { name: 'Integrations', href: '/admin/integrations' },
     { name: 'API Monitoring', href: '/admin/api-monitoring' },
     { name: 'Exchange Rates', href: '/admin/exchange-rates' },
   ];
@@ -167,13 +153,13 @@ const getCurrentPageTitle = () => {
   const titles = {
     '/admin': 'Dashboard',
     '/admin/products': 'Products Management',
-    '/admin/products/import': 'Import Products',
+    '/admin/products-import': 'Import Products',
     '/admin/categories': 'Categories Management',
     '/admin/orders': 'Orders Management',
     '/admin/users': 'Users Management',
     '/admin/deposits': 'Deposits Management',
     '/admin/reports': 'Reports & Analytics',
-    '/admin/integration': 'Integrations',
+    '/admin/integrations': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
     '/admin/exchange-rates': 'Exchange Rates Management',
   };
