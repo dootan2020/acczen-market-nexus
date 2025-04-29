@@ -21,12 +21,13 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Thêm cấu hình để đảm bảo tên file đầu ra nhất quán
+    // Ensure consistent file naming in build output
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash].[ext]',
+        manualChunks: undefined
       }
     }
   }

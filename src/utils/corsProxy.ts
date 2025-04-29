@@ -37,3 +37,12 @@ export const getProxyUrl = (targetUrl: string, proxyType: ProxyType = getStoredP
       return targetUrl;
   }
 };
+
+/**
+ * Get options for proxy selector dropdown
+ */
+export const getProxyOptions = () => [
+  { label: 'CORS-Anywhere', value: 'cors-anywhere' },
+  { label: 'Cloudflare Worker', value: 'cloudflare' },
+  { label: 'Direct (No Proxy)', value: 'direct' }
+];
