@@ -13,11 +13,11 @@ export const useUserMutations = () => {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string, role: UserRoleType }) => {
-      // Looking at the database schema, profiles.role is likely an enum in Supabase
-      // We need to pass the role without casting, as it should match the expected enum values
+      // Cast the role to string to accommodate database schema differences
+      // This ensures compatibility between our frontend types and the database enum
       const { error } = await supabase
         .from('profiles')
-        .update({ role })
+        .update({ role: role as string })
         .eq('id', id);
       
       if (error) throw error;
