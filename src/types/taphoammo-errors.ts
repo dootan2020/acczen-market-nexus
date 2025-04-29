@@ -1,23 +1,23 @@
 
 export enum TaphoammoErrorCodes {
-  API_TEMP_DOWN = 'API_TEMP_DOWN',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  INVALID_RESPONSE = 'INVALID_RESPONSE',
   UNEXPECTED_RESPONSE = 'UNEXPECTED_RESPONSE',
-  KIOSK_PENDING = 'KIOSK_PENDING',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
   ORDER_PROCESSING = 'ORDER_PROCESSING',
+  KIOSK_PENDING = 'KIOSK_PENDING',
+  PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
+  STOCK_UNAVAILABLE = 'STOCK_UNAVAILABLE',
   TIMEOUT = 'TIMEOUT',
-  RATE_LIMIT = 'RATE_LIMIT',
-  CORS_ERROR = 'CORS_ERROR'
+  API_TEMP_DOWN = 'API_TEMP_DOWN'
 }
 
 export class TaphoammoError extends Error {
-  public readonly code: TaphoammoErrorCodes;
-  public readonly retryCount: number;
-  public readonly responseTime: number;
-
+  code: TaphoammoErrorCodes;
+  retryCount: number;
+  responseTime: number;
+  
   constructor(
-    message: string,
+    message: string, 
     code: TaphoammoErrorCodes,
     retryCount: number = 0,
     responseTime: number = 0

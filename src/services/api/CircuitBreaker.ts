@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -12,6 +11,20 @@ export interface CircuitBreakerOptions {
   failureThreshold?: number;
   resetTimeout?: number;
   monitorInterval?: number;
+}
+
+// Updated interface to match DB schema
+interface ApiHealthRecord {
+  id: string;
+  api_name: string;
+  is_open: boolean;
+  error_count: number;
+  last_error: string | null;
+  opened_at: string | null;
+  updated_at: string;
+  created_at: string;
+  half_open?: boolean;
+  consecutive_success?: number;
 }
 
 /**
@@ -174,14 +187,21 @@ export class CircuitBreaker {
    */
   private async transitionToHalfOpen(): Promise<void> {
     try {
-      // Set half_open flag to true in database
-      await supabase
+      // Check if half_open column exists in the table
+      const { data, error } = await supabase
         .from('api_health')
         .update({
-          half_open: true,
+          is_open: false,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
+        
+      // Try to update half_open field if it exists
+      try {
+        await supabase.rpc('set_circuit_half_open', { api_name_param: this.apiName });
+      } catch (halfOpenErr) {
+        console.log('Half-open state not supported in current DB schema, using fallback behavior');
+      }
         
       // Log transition
       await supabase.from('api_logs').insert({
@@ -208,26 +228,39 @@ export class CircuitBreaker {
    */
   public async reset(): Promise<void> {
     try {
-      const { data: apiHealth } = await supabase
-        .from('api_health')
-        .select('is_open, half_open')
-        .eq('api_name', this.apiName)
-        .single();
-        
-      // Only notify when transitioning from open/half-open to closed
-      const wasOpen = apiHealth?.is_open || apiHealth?.half_open;
+      // Check if half_open column exists
+      let wasOpen = false;
+      
+      try {
+        const { data } = await supabase
+          .from('api_health')
+          .select('is_open')
+          .eq('api_name', this.apiName)
+          .single();
+          
+        // Only notify when transitioning from open to closed
+        wasOpen = !!data?.is_open;
+      } catch (err) {
+        console.error('Error checking circuit state:', err);
+      }
       
       // Reset circuit state
       await supabase
         .from('api_health')
         .update({
           is_open: false,
-          half_open: false,
           error_count: 0,
           opened_at: null,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
+       
+      // Try to reset half_open field if it exists
+      try {
+        await supabase.rpc('reset_circuit_half_open', { api_name_param: this.apiName });
+      } catch (halfOpenErr) {
+        console.log('Half-open state not supported in current DB schema');
+      }
         
       // Clear cached state
       this.cachedState = null;
@@ -265,7 +298,6 @@ export class CircuitBreaker {
         .insert({
           api_name: this.apiName,
           is_open: false,
-          half_open: false,
           error_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

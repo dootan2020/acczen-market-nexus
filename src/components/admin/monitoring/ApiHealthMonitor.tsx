@@ -42,15 +42,18 @@ interface ApiLogEntry {
   details: any;
 }
 
+// Updated interface to match the actual database schema
 interface ApiHealth {
+  id: string;
   api_name: string;
   is_open: boolean;
-  half_open: boolean;
+  half_open?: boolean; // Optional since it might not exist in the DB yet
   error_count: number;
   last_error: string | null;
   opened_at: string | null;
   updated_at: string;
-  consecutive_success: number;
+  created_at: string;
+  consecutive_success?: number; // Optional since it might not exist in the DB yet
 }
 
 const ApiHealthMonitor: React.FC = () => {
@@ -64,7 +67,8 @@ const ApiHealthMonitor: React.FC = () => {
         .order('updated_at', { ascending: false });
         
       if (error) throw error;
-      return data as ApiHealth[];
+      // Type cast the data to match our interface
+      return (data as ApiHealth[]) || [];
     },
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refresh every minute

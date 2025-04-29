@@ -139,20 +139,28 @@ export class RetryService {
     // If we get here, we've failed after all retries
     const totalTime = Date.now() - startTime;
     
-    // If we have a TaphoammoError, enhance it with retry information
+    // Create a new error object instead of modifying read-only properties
+    let finalError: TaphoammoError;
+    
+    // If we have a TaphoammoError, create a new one with the retry information
     if (lastError instanceof TaphoammoError) {
-      lastError.retryCount = retries;
-      lastError.responseTime = totalTime;
-      throw lastError;
+      finalError = new TaphoammoError(
+        lastError.message,
+        lastError.code,
+        retries,
+        totalTime
+      );
+    } else {
+      // Wrap other errors in TaphoammoError
+      finalError = new TaphoammoError(
+        lastError?.message || 'Unknown error after maximum retries',
+        TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+        retries,
+        totalTime
+      );
     }
     
-    // Wrap other errors in TaphoammoError
-    throw new TaphoammoError(
-      lastError?.message || 'Unknown error after maximum retries',
-      TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
-      retries,
-      totalTime
-    );
+    throw finalError;
   }
 
   /**
