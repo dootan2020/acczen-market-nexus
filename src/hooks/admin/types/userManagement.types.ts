@@ -11,5 +11,5 @@ export interface UserProfile {
   updated_at?: string | null;
   balance?: number;
   role: 'admin' | 'user' | 'support' | 'content_manager';
-  phone?: string | null; // Added phone field
+  phone?: string | null; // Phone field is optional and can be null
 }

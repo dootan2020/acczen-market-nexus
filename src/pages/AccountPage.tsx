@@ -12,20 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { UserProfile as BaseUserProfile } from '@/hooks/admin/types/userManagement.types';
 
 // Define a profile interface that includes phone
-interface UserProfile {
-  id: string;
-  username: string;
-  full_name: string;
-  email: string;
-  avatar_url: string;
-  balance: number;
-  created_at: string;
-  updated_at: string;
-  role: 'user' | 'admin';
-  phone?: string | null; // Add phone as an optional property
-}
+interface UserProfile extends BaseUserProfile {}
 
 // Define the validation schema
 const accountSchema = z.object({
@@ -129,7 +119,7 @@ const AccountPage = () => {
   }, [user, accountForm]);
 
   const onAccountSubmit = async (values: AccountFormValues) => {
-    if (!user) return;
+    if (!user || !userProfile) return;
     
     setIsLoading(true);
     setError(null);
