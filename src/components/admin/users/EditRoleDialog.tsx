@@ -17,15 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserProfile } from "@/hooks/admin/types/userManagement.types";
 
-type UserRole = 'user' | 'admin';
+type UserRoleType = UserProfile['role'];
 
 interface EditRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (role: UserRole) => void;
+  onConfirm: (role: UserRoleType) => void;
   isLoading: boolean;
-  currentUser: { email: string; role: UserRole } | null;
+  currentUser: UserProfile | null;
 }
 
 export function EditRoleDialog({ 
@@ -35,7 +36,7 @@ export function EditRoleDialog({
   isLoading, 
   currentUser 
 }: EditRoleDialogProps) {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(currentUser?.role || 'user');
+  const [selectedRole, setSelectedRole] = useState<UserRoleType>(currentUser?.role || 'user');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,7 +50,7 @@ export function EditRoleDialog({
         <div className="py-4">
           <Select
             value={selectedRole}
-            onValueChange={(value) => setSelectedRole(value as UserRole)}
+            onValueChange={(value) => setSelectedRole(value as UserRoleType)}
           >
             <SelectTrigger>
               <SelectValue />
@@ -57,6 +58,8 @@ export function EditRoleDialog({
             <SelectContent>
               <SelectItem value="user">User</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="support">Support</SelectItem>
+              <SelectItem value="content_manager">Content Manager</SelectItem>
             </SelectContent>
           </Select>
         </div>
