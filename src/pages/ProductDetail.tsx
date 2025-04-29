@@ -23,14 +23,19 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
-import { Home, ShieldCheck, Lock, Check, Star } from "lucide-react";
+import { Home, ShieldCheck, Lock, Heart, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RichTextContent from "@/components/RichTextContent";
+import { cn } from "@/lib/utils";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const [isFavorited, setIsFavorited] = useState(false);
   
   const { data: relatedProducts } = useRelatedProducts(
     product?.category_id || '',
@@ -75,7 +80,6 @@ const ProductDetail = () => {
   const isFeatured = true; // Example, set based on your criteria
   const isOnSale = product.sale_price && product.sale_price < product.price;
   const isNew = false; // Example, could be based on creation date
-  const isBestSeller = false; // Example, could be based on sales metrics
   
   // Extract product images or use the main image
   const productImages = product.image_url ? [product.image_url] : [];
@@ -88,7 +92,11 @@ const ProductDetail = () => {
     ? Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100) 
     : 0;
 
-  // Extract specifications and usage instructions from metadata or set defaults
+  const handleFavoriteToggle = () => {
+    setIsFavorited(!isFavorited);
+  };
+
+  // Extract specifications and usage instructions from metadata
   const specifications = product.metadata && typeof product.metadata === 'object' 
     ? (product.metadata as any).specifications || null 
     : null;
@@ -105,7 +113,7 @@ const ProductDetail = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/" className="hover:text-primary">
+                <Link to="/" className="hover:text-primary flex items-center">
                   <Home className="h-3.5 w-3.5 mr-1" />
                   <span>Trang chủ</span>
                 </Link>
@@ -152,17 +160,12 @@ const ProductDetail = () => {
                 )}
                 {isOnSale && (
                   <div className="absolute top-4 right-4 z-10">
-                    <ProductBadge type="sale" />
+                    <ProductBadge type="sale" label={`-${discountPercentage}%`} />
                   </div>
                 )}
                 {isNew && (
                   <div className="absolute top-14 left-4 z-10">
                     <ProductBadge type="new" />
-                  </div>
-                )}
-                {isBestSeller && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <ProductBadge type="bestSeller" />
                   </div>
                 )}
                 <ProductImageGallery
@@ -176,8 +179,8 @@ const ProductDetail = () => {
 
             {/* Right column - Product Info */}
             <div className="md:w-3/5 p-6 md:border-l border-gray-200">
-              <div className="flex justify-between items-start mb-2">
-                <h1 className="text-2xl font-bold text-gray-800 font-poppins">{product.name}</h1>
+              <div className="flex justify-between items-start">
+                <h1 className="text-2xl font-bold text-gray-800 font-poppins mb-2">{product.name}</h1>
                 <ProductInventoryStatus stockQuantity={product.stock_quantity} variant="badge" />
               </div>
               
@@ -201,49 +204,65 @@ const ProductDetail = () => {
               />
               
               {/* Pricing */}
-              <ProductPricing 
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                soldCount={soldCount}
-              />
-              
-              {/* Features */}
-              <div className="border-t border-b border-gray-200 py-4 mb-6">
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Tính năng nổi bật:</h3>
-                  <ul className="text-gray-600 text-sm space-y-1">
-                    {stripHtmlTags(product.description || '')
-                      .split('\n')
-                      .filter(line => line.trim().length > 0)
-                      .slice(0, 4)
-                      .map((feature, index) => (
-                        <li key={index} className="flex items-start">
-                          <Check className="text-primary h-4 w-4 mt-1 mr-2" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                  </ul>
+              <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-bold text-primary">
+                    {isOnSale ? (
+                      `${product.sale_price?.toLocaleString()}đ`
+                    ) : (
+                      `${product.price?.toLocaleString()}đ`
+                    )}
+                  </span>
+                  
+                  {isOnSale && (
+                    <>
+                      <span className="text-lg text-muted-foreground line-through">
+                        {product.price?.toLocaleString()}đ
+                      </span>
+                      
+                      <Badge variant="destructive" className="ml-2">
+                        -{discountPercentage}%
+                      </Badge>
+                    </>
+                  )}
                 </div>
               </div>
               
               {/* Buy/Favorite buttons */}
-              <ProductInfo
-                id={product.id}
-                name={product.name}
-                description={stripHtmlTags(product.description || '').substring(0, 100)}
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                image={product.image_url || ''}
-                rating={rating}
-                reviewCount={reviewCount}
-                soldCount={soldCount}
-                kiosk_token={product.kiosk_token || null}
-              />
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <Button 
+                  onClick={() => {}}
+                  size="lg"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base"
+                  disabled={product.stock_quantity <= 0}
+                >
+                  <ShoppingBag className="mr-2 h-5 w-5 transition-transform hover:rotate-12" />
+                  {product.stock_quantity <= 0 ? 'Hết hàng' : 'Mua ngay'}
+                </Button>
+                
+                <Button 
+                  onClick={handleFavoriteToggle}
+                  variant="outline"
+                  size="lg"
+                  className={cn(
+                    "flex-1 transition-all duration-300 border-2 h-12",
+                    isFavorited 
+                      ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/5 hover:bg-[#E74C3C]/10" 
+                      : "border-accent text-accent hover:bg-accent/5"
+                  )}
+                >
+                  <Heart 
+                    className={cn(
+                      "mr-2 h-5 w-5 transition-all duration-300", 
+                      isFavorited ? "fill-[#E74C3C]" : ""
+                    )} 
+                  />
+                  {isFavorited ? 'Đã yêu thích' : 'Yêu thích'}
+                </Button>
+              </div>
               
               {/* Security info */}
-              <div className="bg-gray-50 p-4 rounded-lg mt-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-start mb-3">
                   <ShieldCheck className="text-gray-700 h-5 w-5 mt-1 mr-3" />
                   <div>
@@ -264,184 +283,127 @@ const ProductDetail = () => {
         </div>
         
         {/* Description and Reviews Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8">
-              <button 
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'description' 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('description')}
-              >
-                Mô tả sản phẩm
-              </button>
-              <button 
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'reviews' 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setActiveTab('reviews')}
-              >
-                Đánh giá ({reviewCount})
-              </button>
-              {specifications && (
-                <button 
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'specifications' 
-                      ? 'border-primary text-primary' 
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                  onClick={() => setActiveTab('specifications')}
+        <div className="bg-white rounded-lg shadow-sm mb-10 overflow-hidden">
+          <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
+            <div className="border-b border-gray-200 bg-gray-50">
+              <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
+                <TabsTrigger 
+                  value="description" 
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
-                  Thông số kỹ thuật
-                </button>
-              )}
-              {usageInstructions && (
-                <button 
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'usage' 
-                      ? 'border-primary text-primary' 
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                  onClick={() => setActiveTab('usage')}
+                  Mô tả sản phẩm
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reviews" 
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
-                  Hướng dẫn sử dụng
-                </button>
-              )}
-            </nav>
-          </div>
-          
-          {/* Tab Content */}
-          <div className="pt-6 bg-white rounded-b-lg shadow-sm">
-            {activeTab === 'description' && (
-              <div className="prose max-w-none p-6">
-                <ProductDescription 
-                  description={product.description || ''}
-                  specifications={specifications}
-                  usage={usageInstructions}
-                />
-              </div>
-            )}
+                  Đánh giá ({reviewCount})
+                </TabsTrigger>
+              </TabsList>
+            </div>
             
-            {activeTab === 'reviews' && (
-              <div className="p-6">
-                <div className="mb-8">
-                  <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
-                    <div className="md:mr-4 mb-4 md:mb-0">
-                      <div className="text-5xl font-bold text-gray-800">{rating}</div>
-                      <div className="flex mt-1">
+            <TabsContent value="description" className="p-6">
+              <div className="prose max-w-none">
+                {product.description ? (
+                  <RichTextContent content={product.description} />
+                ) : (
+                  <p className="text-gray-500 italic">Không có thông tin mô tả cho sản phẩm này.</p>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reviews" className="p-6">
+              <div className="mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
+                  <div className="md:mr-4 mb-4 md:mb-0">
+                    <div className="text-5xl font-bold text-gray-800">{rating}</div>
+                    <div className="flex mt-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-4 w-4 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">{reviewCount} đánh giá</div>
+                  </div>
+                  
+                  <div className="flex-1 md:ml-4 w-full">
+                    {[5, 4, 3, 2, 1].map((stars) => (
+                      <div className="flex items-center mb-2" key={stars}>
+                        <div className="text-sm font-medium w-14">{stars} sao</div>
+                        <div className="flex-1 h-2.5 bg-gray-200 rounded-full">
+                          <div 
+                            className="h-2.5 bg-amber-400 rounded-full" 
+                            style={{ width: `${stars === 5 ? 85 : stars === 4 ? 10 : stars === 3 ? 3 : stars === 2 ? 1 : 1}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-sm font-medium w-14 text-right">
+                          {stars === 5 ? '85%' : stars === 4 ? '10%' : stars === 3 ? '3%' : stars === 2 ? '1%' : '1%'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Review Comments (example) */}
+              <div className="space-y-6">
+                {/* These would be real reviews from your database */}
+                {[
+                  { 
+                    id: 1, 
+                    name: 'Trần Hoàng', 
+                    initials: 'TH', 
+                    date: '14/05/2023', 
+                    rating: 5, 
+                    comment: 'Tài khoản hoạt động rất tốt, có đầy đủ tính năng như mô tả. Tôi đã thay đổi mật khẩu và thông tin cá nhân thành công. Hỗ trợ khách hàng phản hồi nhanh khi tôi có thắc mắc. Rất hài lòng với sản phẩm này!' 
+                  },
+                  { 
+                    id: 2, 
+                    name: 'Nguyễn Thảo', 
+                    initials: 'NT', 
+                    date: '02/05/2023', 
+                    rating: 5, 
+                    comment: 'Nhận tài khoản ngay sau khi thanh toán. Hướng dẫn chi tiết và dễ hiểu. Tôi đã sử dụng được Gmail và các dịch vụ Google khác mà không gặp vấn đề gì. Đặc biệt hài lòng với chế độ bảo hành 30 ngày.' 
+                  },
+                  { 
+                    id: 3, 
+                    name: 'Lê Minh', 
+                    initials: 'LM', 
+                    date: '27/04/2023', 
+                    rating: 4, 
+                    comment: 'Tài khoản hoạt động tốt, chỉ có một vài vấn đề nhỏ khi thay đổi thông tin khôi phục. Đã liên hệ với bộ phận hỗ trợ và họ đã giúp tôi giải quyết nhanh chóng. Giá cả hợp lý cho một tài khoản đã xác minh đầy đủ.' 
+                  }
+                ].map((review) => (
+                  <div key={review.id} className="border-b border-gray-200 pb-6">
+                    <div className="flex justify-between mb-2">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-gray-600 font-medium">{review.initials}</span>
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="font-medium text-gray-800">{review.name}</h4>
+                          <div className="text-xs text-gray-500">{review.date}</div>
+                        </div>
+                      </div>
+                      <div className="flex">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
-                            className={`h-4 w-4 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
+                            className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
                           />
                         ))}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">{reviewCount} đánh giá</div>
                     </div>
-                    
-                    <div className="flex-1 md:ml-4 w-full">
-                      {[5, 4, 3, 2, 1].map((stars) => (
-                        <div className="flex items-center mb-2" key={stars}>
-                          <div className="text-sm font-medium w-14">{stars} sao</div>
-                          <div className="flex-1 h-2.5 bg-gray-200 rounded-full">
-                            <div 
-                              className="h-2.5 bg-amber-400 rounded-full" 
-                              style={{ width: `${stars === 5 ? 85 : stars === 4 ? 10 : stars === 3 ? 3 : stars === 2 ? 1 : 1}%` }}
-                            ></div>
-                          </div>
-                          <div className="text-sm font-medium w-14 text-right">
-                            {stars === 5 ? '85%' : stars === 4 ? '10%' : stars === 3 ? '3%' : stars === 2 ? '1%' : '1%'}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="text-gray-600 text-sm">
+                      <p>{review.comment}</p>
                     </div>
                   </div>
-                </div>
-                
-                {/* Review Comments (example) */}
-                <div className="space-y-6">
-                  {/* These would be real reviews from your database */}
-                  {[
-                    { 
-                      id: 1, 
-                      name: 'Trần Hoàng', 
-                      initials: 'TH', 
-                      date: '14/05/2023', 
-                      rating: 5, 
-                      comment: 'Tài khoản hoạt động rất tốt, có đầy đủ tính năng như mô tả. Tôi đã thay đổi mật khẩu và thông tin cá nhân thành công. Hỗ trợ khách hàng phản hồi nhanh khi tôi có thắc mắc. Rất hài lòng với sản phẩm này!' 
-                    },
-                    { 
-                      id: 2, 
-                      name: 'Nguyễn Thảo', 
-                      initials: 'NT', 
-                      date: '02/05/2023', 
-                      rating: 5, 
-                      comment: 'Nhận tài khoản ngay sau khi thanh toán. Hướng dẫn chi tiết và dễ hiểu. Tôi đã sử dụng được Gmail và các dịch vụ Google khác mà không gặp vấn đề gì. Đặc biệt hài lòng với chế độ bảo hành 30 ngày.' 
-                    },
-                    { 
-                      id: 3, 
-                      name: 'Lê Minh', 
-                      initials: 'LM', 
-                      date: '27/04/2023', 
-                      rating: 4, 
-                      comment: 'Tài khoản hoạt động tốt, chỉ có một vài vấn đề nhỏ khi thay đổi thông tin khôi phục. Đã liên hệ với bộ phận hỗ trợ và họ đã giúp tôi giải quyết nhanh chóng. Giá cả hợp lý cho một tài khoản đã xác minh đầy đủ.' 
-                    }
-                  ].map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex justify-between mb-2">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-gray-600 font-medium">{review.initials}</span>
-                          </div>
-                          <div className="ml-3">
-                            <h4 className="font-medium text-gray-800">{review.name}</h4>
-                            <div className="text-xs text-gray-500">{review.date}</div>
-                          </div>
-                        </div>
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="text-gray-600 text-sm">
-                        <p>{review.comment}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
-            )}
-            
-            {activeTab === 'specifications' && specifications && (
-              <div className="p-6">
-                <div className="prose max-w-none prose-headings:text-gray-800 prose-p:text-gray-600">
-                  <div dangerouslySetInnerHTML={{ __html: specifications }}></div>
-                </div>
-              </div>
-            )}
-            
-            {activeTab === 'usage' && usageInstructions && (
-              <div className="p-6">
-                <div className="prose max-w-none prose-headings:text-gray-800 prose-p:text-gray-600">
-                  <div dangerouslySetInnerHTML={{ __html: usageInstructions }}></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Benefits Section */}
-        <div className="mb-10">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Ưu đãi khi mua tại AccZen</h2>
-          <ProductBenefits />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Related Products */}
