@@ -7,19 +7,20 @@ import { toast } from 'sonner';
 /**
  * Main service facade for Taphoammo API integration
  * Provides a simple interface for all Taphoammo operations
+ * // TODO: Implement new API logic
  */
 export class TaphoammoApiService {
   private static instance: TaphoammoApiService;
   
   // Service instances
+  private apiClient: TaphoammoApiClient;
   private productService: TaphoammoProductService;
   private orderService: TaphoammoOrderService;
-  private apiClient: TaphoammoApiClient;
   
   private constructor() {
+    this.apiClient = new TaphoammoApiClient();
     this.productService = new TaphoammoProductService();
     this.orderService = new TaphoammoOrderService();
-    this.apiClient = new TaphoammoApiClient();
   }
   
   /**

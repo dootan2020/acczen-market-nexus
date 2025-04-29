@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Clock, X, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, Clock, X, RefreshCw, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProxyType, getProxyOptions, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +78,14 @@ const ProductImportForm: React.FC<ProductImportFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <Alert className="mb-6 bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertDescription className="text-blue-700">
+          API integration has been removed. This form is for UI demonstration only.
+          {/* TODO: Implement new API logic */}
+        </AlertDescription>
+      </Alert>
+      
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

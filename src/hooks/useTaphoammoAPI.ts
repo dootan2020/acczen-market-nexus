@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
-import { taphoammoApiService } from '@/services/taphoammo';
-import { TaphoammoProduct, TaphoammoApiOptions } from '@/services/taphoammo';
-import { TaphoammoError } from '@/types/taphoammo-errors';
+import { taphoammoApiService } from '@/services/TaphoammoApiService';
+import { TaphoammoProduct, TaphoammoApiOptions } from '@/services/TaphoammoApiService';
 import { toast } from 'sonner';
 import { ProxyType } from '@/utils/corsProxy';
 
@@ -12,10 +11,13 @@ export interface UseTaphoammoOptions {
   showToasts?: boolean;
 }
 
+/**
+ * Hook for interacting with the Taphoammo API
+ * This is a mock implementation for future implementation
+ * // TODO: Implement new API logic
+ */
 export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   const { 
-    autoRetry = true,
-    useCache = true,
     showToasts = true
   } = options;
   
@@ -23,7 +25,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   const [error, setError] = useState<string | null>(null);
   
   /**
-   * Get stock information for a kiosk token
+   * Mock get stock information
    */
   const getStock = async (
     kioskToken: string, 
@@ -34,25 +36,17 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      const apiOptions: TaphoammoApiOptions = {
-        proxyType,
-        forceRefresh: forceFresh,
-        useCache
-      };
-      
-      const result = await taphoammoApiService.getStock(kioskToken, apiOptions);
-      return result;
-    } catch (err: any) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMsg);
-      
       if (showToasts) {
-        toast.error('Lỗi lấy dữ liệu sản phẩm', {
-          description: errorMsg,
+        toast.error('API integration has been removed', {
+          description: 'This functionality is no longer available',
           duration: 5000
         });
       }
       
+      throw new Error('API integration has been removed');
+    } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -60,7 +54,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   };
   
   /**
-   * Check if stock is available for purchase
+   * Mock check stock availability
    */
   const checkStockAvailability = async (
     kioskToken: string, 
@@ -71,15 +65,14 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      return await taphoammoApiService.checkStockAvailability(kioskToken, quantity, proxyType);
+      throw new Error('API integration has been removed');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       
-      // Return an error object
       return {
         available: false,
-        message: "Không thể kiểm tra tồn kho: " + errorMsg
+        message: "API integration has been removed"
       };
     } finally {
       setLoading(false);
@@ -87,7 +80,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   };
   
   /**
-   * Buy products from the API
+   * Mock buy products
    */
   const buyProducts = async (
     kioskToken: string,
@@ -100,26 +93,13 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      // First check availability to prevent failed purchases
-      const { available, message } = await checkStockAvailability(kioskToken, quantity, proxyType);
-      
-      if (!available) {
-        if (showToasts) {
-          toast.error('Không thể mua sản phẩm', {
-            description: message,
-            duration: 5000
-          });
-        }
-        throw new Error(message);
-      }
-      
-      return await taphoammoApiService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType);
+      throw new Error('API integration has been removed');
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
       
       if (showToasts) {
-        toast.error('Lỗi mua hàng', {
+        toast.error('API integration has been removed', {
           description: errorMsg,
           duration: 5000
         });
@@ -132,7 +112,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   };
   
   /**
-   * Get products from an order
+   * Mock get products
    */
   const getProducts = async (
     orderId: string, 
@@ -143,18 +123,10 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      return await taphoammoApiService.getProducts(orderId, userToken, proxyType);
+      throw new Error('API integration has been removed');
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
-      
-      if (showToasts) {
-        toast.error('Lỗi lấy thông tin sản phẩm', {
-          description: errorMsg,
-          duration: 5000
-        });
-      }
-      
       throw err;
     } finally {
       setLoading(false);
@@ -162,7 +134,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   };
   
   /**
-   * Test the connection to the API
+   * Mock test connection
    */
   const testConnection = async (
     kioskToken: string, 
@@ -175,7 +147,10 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     setError(null);
     
     try {
-      return await taphoammoApiService.testConnection(kioskToken, proxyType);
+      return {
+        success: false,
+        message: "API integration has been removed"
+      };
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMsg);
@@ -190,10 +165,11 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   };
   
   /**
-   * Clear cache
+   * Mock clear cache
    */
   const clearCache = () => {
     taphoammoApiService.clearCache();
+    toast.success('Cache cleared (mock implementation)');
   };
   
   return {

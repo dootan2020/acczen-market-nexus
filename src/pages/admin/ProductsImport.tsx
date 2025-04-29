@@ -6,13 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportConfirmation from '@/components/admin/products/ImportConfirmation';
 import ImportPreview from '@/components/admin/products/import/ImportPreview';
 import ProductImportForm from '@/components/admin/products/ProductImportForm';
-import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
-import { taphoammoApiService } from '@/services/TaphoammoApiService';
+import { ProxyType, getStoredProxy } from '@/utils/corsProxy';
 
 // Define and export the ExtendedProduct interface
 export interface ExtendedProduct {
@@ -63,19 +62,8 @@ const ProductsImport = () => {
       }
     }
   }, []);
-  
-  // Save a token to recent tokens
-  const saveToRecentTokens = (token: string, name: string) => {
-    const updatedTokens = [
-      { token, timestamp: Date.now(), name },
-      ...recentTokens.filter(item => item.token !== token)
-    ].slice(0, MAX_RECENT_TOKENS);
-    
-    setRecentTokens(updatedTokens);
-    localStorage.setItem(RECENT_TOKENS_KEY, JSON.stringify(updatedTokens));
-  };
 
-  // Fetch categories for the product form with debounce and retry
+  // Fetch categories for the product form
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -91,36 +79,32 @@ const ProductsImport = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Mock test connection function
   const testConnection = async (kioskToken: string, proxyType: ProxyType) => {
     try {
       setIsLoading(true);
+      // Mock implementation - no actual API call
+      console.log('Test connection request with token:', kioskToken, 'proxy:', proxyType);
       
-      // Store the selected proxy type
-      setStoredProxy(proxyType);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const result = await taphoammoApiService.testConnection(kioskToken, proxyType);
-      
-      if (result.success) {
-        // Extract product name from message if available
-        const nameMatch = result.message.match(/Found: (.*?) \(Stock:/);
-        const productName = nameMatch ? nameMatch[1] : 'Sản phẩm';
-        
-        // Save successful token to recent list
-        saveToRecentTokens(kioskToken, productName);
-      }
-      
-      return result;
+      return {
+        success: false,
+        message: 'API integration has been removed from this application'
+      };
     } catch (err) {
       console.error('Connection test error:', err);
       return {
         success: false,
-        message: err instanceof Error ? err.message : 'Không thể kiểm tra kết nối'
+        message: err instanceof Error ? err.message : 'API integration has been removed'
       };
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Mock fetch product function
   const handleFetchProduct = async (kioskToken: string, proxyType: ProxyType, useMockData: boolean = false) => {
     if (!kioskToken.trim()) {
       setError('Vui lòng nhập mã token sản phẩm');
@@ -131,92 +115,25 @@ const ProductsImport = () => {
     setError(null);
 
     try {
-      // Store the selected proxy type for future use
-      setStoredProxy(proxyType);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Try to get the product data directly from the API service
-      const product = await taphoammoApiService.getStock(kioskToken, {
-        forceRefresh: true, // Always get fresh data
-        proxyType: proxyType,
-        useMockData: useMockData // Add flag to use mock data if requested
+      toast.info('API integration removed', {
+        description: 'This functionality is currently unavailable',
+        duration: 5000
       });
       
-      if (!product) {
-        throw new Error('Không tìm thấy sản phẩm với mã token này');
-      }
-      
-      // Create the ExtendedProduct object
-      const extendedProduct: ExtendedProduct = {
-        name: product.name || 'Sản phẩm không tên',
-        description: product.description || '',
-        price: product.price || 0,
-        selling_price: product.price || 0,
-        stock_quantity: product.stock_quantity || 0,
-        slug: product.slug || kioskToken.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-        sku: product.sku || `P-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-        kiosk_token: kioskToken,
-        status: 'active'
-      };
-      
-      // Save to recent tokens
-      saveToRecentTokens(kioskToken, extendedProduct.name);
-      
-      setCurrentProduct(extendedProduct);
-      setImportStep('preview');
-      
-      // Track data source for UI display
-      setDataSource(useMockData ? 'mock' : 'api');
-      
-      // Invalidate cache for real-time data
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      
+      setError('API integration has been removed from this application');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi kiểm tra sản phẩm');
-      console.error('Token verification error:', err);
-      
-      // Show toast with detailed error
-      toast.error('Lỗi lấy thông tin sản phẩm', {
-        description: err instanceof Error ? err.message : 'Lỗi không xác định',
-        duration: 5000,
-      });
+      setError(err instanceof Error ? err.message : 'API integration has been removed');
+      console.error('Error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRetry = async () => {
-    if (currentProduct?.kiosk_token) {
-      // Clear the error and try again
-      setError(null);
-      await handleFetchProduct(currentProduct.kiosk_token, getStoredProxy(), dataSource === 'mock');
-    }
-  };
-
-  const handlePrevious = () => {
-    if (importStep === 'preview') {
-      setImportStep('verify');
-    } else if (importStep === 'confirm') {
-      setImportStep('preview');
-    }
-  };
-
-  const handleNext = (updatedProduct: ExtendedProduct) => {
-    setCurrentProduct(updatedProduct);
-    setImportStep('confirm');
-  };
-
-  const handleComplete = () => {
-    setImportStep('verify');
-    setCurrentProduct(null);
-    setError(null);
-    setDataSource(null);
-    
-    // Invalidate the products query to refresh the data
-    queryClient.invalidateQueries({ queryKey: ['products'] });
-  };
-
   const handleClearCache = () => {
-    taphoammoApiService.clearCache();
+    toast.success('Cache cleared (mock implementation)');
   };
 
   return (
@@ -235,6 +152,13 @@ const ProductsImport = () => {
           </Button>
         </div>
       </div>
+
+      <Alert className="mb-6">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          API integration has been temporarily removed. This page is currently for UI demonstration only.
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardContent className="p-6">
@@ -279,24 +203,11 @@ const ProductsImport = () => {
             </TabsContent>
 
             <TabsContent value="preview" className="mt-0">
-              {dataSource === 'mock' && (
-                <Alert className="mb-4 bg-yellow-100 border-yellow-300">
-                  <AlertDescription className="flex justify-between items-center">
-                    <span className="font-medium text-yellow-800">
-                      Đang sử dụng dữ liệu mẫu (Debug Mode) - Dữ liệu này không phải từ API thực
-                    </span>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
               {error && (
                 <Alert variant="destructive" className="mb-6">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="flex justify-between items-center">
                     <span>{error}</span>
-                    <Button size="sm" onClick={handleRetry} variant="outline">
-                      Thử lại
-                    </Button>
                   </AlertDescription>
                 </Alert>
               )}
@@ -311,28 +222,27 @@ const ProductsImport = () => {
                   product={currentProduct}
                   categories={categories || []}
                   categoriesLoading={categoriesLoading}
-                  onPrevious={handlePrevious}
-                  onNext={handleNext}
+                  onPrevious={() => setImportStep('verify')}
+                  onNext={(product) => {
+                    setCurrentProduct(product);
+                    setImportStep('confirm');
+                  }}
                 />
               )}
             </TabsContent>
 
             <TabsContent value="confirm" className="mt-0">
-              {dataSource === 'mock' && (
-                <Alert className="mb-4 bg-yellow-100 border-yellow-300">
-                  <AlertDescription className="flex justify-between items-center">
-                    <span className="font-medium text-yellow-800">
-                      Đang sử dụng dữ liệu mẫu (Debug Mode) - Sản phẩm này không lấy từ API thực
-                    </span>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
               {currentProduct && (
                 <ImportConfirmation
                   product={currentProduct}
-                  onPrevious={handlePrevious}
-                  onComplete={handleComplete}
+                  onPrevious={() => setImportStep('preview')}
+                  onComplete={() => {
+                    setImportStep('verify');
+                    setCurrentProduct(null);
+                    setError(null);
+                    setDataSource(null);
+                    queryClient.invalidateQueries({ queryKey: ['products'] });
+                  }}
                 />
               )}
             </TabsContent>
