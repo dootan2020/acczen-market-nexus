@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Index from './pages/Index';
@@ -21,67 +22,50 @@ import DepositSuccess from './pages/DepositSuccess';
 import AdminApiMonitoring from './pages/admin/AdminApiMonitoring';
 import ProductsImport from './pages/admin/ProductsImport';
 import ProductIntegration from './pages/admin/ProductIntegration';
-import NotFound from './pages/NotFound';
-import ErrorBoundary from './components/error/ErrorBoundary';
 
 import { lazy, Suspense } from 'react';
 
-// Loading fallback component with improved design
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-[300px]">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      <p className="text-muted-foreground">Đang tải...</p>
-    </div>
-  </div>
-);
-
-// Use lazy loading for the components
+// Use lazy loading for the missing components
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
 const ProductsPage = lazy(() => import('./pages/Products'));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetail'));
 const CheckoutPage = lazy(() => import('./pages/Checkout'));
 const OrderCompletePage = lazy(() => import('./pages/OrderComplete'));
-const OrderDetail = lazy(() => import('./pages/OrderDetail'));
+const OrderDetailsPage = lazy(() => import('./pages/OrderDetail'));
 const PurchasesPage = lazy(() => import('./pages/PurchasesPage'));
 const AccountPage = lazy(() => import('./pages/AccountPage'));
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
+
+// Loading fallback component
+const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<ErrorBoundary><Index /></ErrorBoundary>} />
-        <Route path="login" element={<ErrorBoundary><LoginPage /></ErrorBoundary>} />
-        <Route path="register" element={<ErrorBoundary><RegisterPage /></ErrorBoundary>} />
+        <Route index element={<Index />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
         <Route path="products" element={
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <ProductsPage />
-            </Suspense>
-          </ErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <ProductsPage />
+          </Suspense>
         } />
         <Route path="products/:slug" element={
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <ProductDetailPage />
-            </Suspense>
-          </ErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <ProductDetailPage />
+          </Suspense>
         } />
-        <Route path="cart" element={<ErrorBoundary><Cart /></ErrorBoundary>} />
+        <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <CheckoutPage />
-            </Suspense>
-          </ErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <CheckoutPage />
+          </Suspense>
         } />
         <Route path="order-complete" element={
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <OrderCompletePage />
-            </Suspense>
-          </ErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <OrderCompletePage />
+          </Suspense>
         } />
         
         {/* Deposit related routes */}
@@ -89,9 +73,7 @@ const AppRoutes = () => {
           path="deposit"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Deposit />
-              </ErrorBoundary>
+              <Deposit />
             </PrivateRoute>
           }
         />
@@ -99,9 +81,7 @@ const AppRoutes = () => {
           path="deposit/pending"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <DepositPending />
-              </ErrorBoundary>
+              <DepositPending />
             </PrivateRoute>
           }
         />
@@ -109,9 +89,7 @@ const AppRoutes = () => {
           path="deposit/success"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <DepositSuccess />
-              </ErrorBoundary>
+              <DepositSuccess />
             </PrivateRoute>
           }
         />
@@ -121,11 +99,9 @@ const AppRoutes = () => {
           path="dashboard"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <DashboardPage />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <DashboardPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -133,11 +109,9 @@ const AppRoutes = () => {
           path="dashboard/purchases"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <PurchasesPage />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <PurchasesPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -145,11 +119,9 @@ const AppRoutes = () => {
           path="dashboard/orders/:id"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <OrderDetail />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <OrderDetailsPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -157,11 +129,9 @@ const AppRoutes = () => {
           path="dashboard/account"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AccountPage />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <AccountPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -169,17 +139,12 @@ const AppRoutes = () => {
           path="dashboard/transactions"
           element={
             <PrivateRoute>
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingFallback />}>
-                  <TransactionsPage />
-                </Suspense>
-              </ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <TransactionsPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
-        
-        {/* 404 page */}
-        <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
       </Route>
 
       {/* Admin routes - with improved AdminGuard */}
@@ -187,9 +152,7 @@ const AppRoutes = () => {
         path="/admin"
         element={
           <AdminGuard>
-            <ErrorBoundary>
-              <AdminLayout />
-            </ErrorBoundary>
+            <AdminLayout />
           </AdminGuard>
         }
       >

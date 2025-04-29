@@ -1,10 +1,9 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfToday, endOfToday, endOfMonth, startOfMonth } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { toast } from "sonner";
 
 // Types
 export interface StatsData {
@@ -42,8 +41,6 @@ export function useReportsData() {
     to: new Date(),
   });
   const [dateRangeType, setDateRangeType] = useState(DATE_RANGES.LAST_30_DAYS);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
   // Update date range based on selection
   const handleDateRangeChange = (value: string) => {
@@ -77,9 +74,6 @@ export function useReportsData() {
         break;
       // For custom, do nothing as it's handled by the date picker component
     }
-    
-    // Reset to page 1 when changing date range
-    setCurrentPage(1);
   };
 
   // Custom date range handler
@@ -87,104 +81,61 @@ export function useReportsData() {
     if (range?.from && range?.to) {
       setDateRange(range);
       setDateRangeType(DATE_RANGES.CUSTOM);
-      setCurrentPage(1); // Reset to page 1 when changing date range
     }
   };
-
-  // Format dates for queries
-  const getFormattedDateRange = useCallback(() => {
-    return {
-      from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '2000-01-01',
-      to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
-    };
-  }, [dateRange]);
 
   // Fetch deposits data
   const depositsQuery = useQuery({
     queryKey: ['admin-reports-deposits', dateRange],
     queryFn: async () => {
-      try {
-        const { from, to } = getFormattedDateRange();
-        
-        const { data, error, count } = await supabase
-          .from('deposits')
-          .select('*', { count: 'exact' })
-          .gte('created_at', from)
-          .lte('created_at', to)
-          .order('created_at', { ascending: false });
-  
-        if (error) throw error;
-        return { data, count: count || 0 };
-      } catch (error: any) {
-        toast.error('Failed to load deposit data', {
-          description: error.message || 'Please try again later'
-        });
-        console.error('Deposits query error:', error);
-        return { data: [], count: 0 };
-      }
+      const { data, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .gte('created_at', dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '2000-01-01')
+        .lte('created_at', dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data;
     },
-    enabled: !!dateRange?.from && !!dateRange?.to,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false
+    enabled: !!dateRange?.from && !!dateRange?.to
   });
 
   // Fetch orders data
   const ordersQuery = useQuery({
     queryKey: ['admin-reports-orders', dateRange],
     queryFn: async () => {
-      try {
-        const { from, to } = getFormattedDateRange();
-        
-        const { data, error, count } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact' })
-          .gte('created_at', from)
-          .lte('created_at', to)
-          .order('created_at', { ascending: false });
-  
-        if (error) throw error;
-        return { data, count: count || 0 };
-      } catch (error: any) {
-        toast.error('Failed to load orders data', {
-          description: error.message || 'Please try again later'
-        });
-        console.error('Orders query error:', error);
-        return { data: [], count: 0 };
-      }
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '2000-01-01')
+        .lte('created_at', dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data;
     },
-    enabled: !!dateRange?.from && !!dateRange?.to,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false
+    enabled: !!dateRange?.from && !!dateRange?.to
   });
 
   // Fetch users data
   const usersQuery = useQuery({
-    queryKey: ['admin-reports-users'],
+    queryKey: ['admin-reports-users', dateRange],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: true });
-  
-        if (error) throw error;
-        return data;
-      } catch (error: any) {
-        toast.error('Failed to load users data', {
-          description: error.message || 'Please try again later'
-        });
-        console.error('Users query error:', error);
-        return [];
-      }
-    },
-    staleTime: 10 * 60 * 1000, // Cache user data longer (10 minutes)
-    refetchOnWindowFocus: false
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    }
   });
 
   // Process data for stats
   const statsData: StatsData = (() => {
-    const deposits = depositsQuery.data?.data || [];
-    const orders = ordersQuery.data?.data || [];
+    const deposits = depositsQuery.data || [];
+    const orders = ordersQuery.data || [];
     const users = usersQuery.data || [];
     
     // Filter completed deposits
@@ -228,7 +179,7 @@ export function useReportsData() {
 
   // Prepare deposits chart data
   const depositsChartData = (() => {
-    const deposits = depositsQuery.data?.data || [];
+    const deposits = depositsQuery.data || [];
     if (!dateRange?.from || !dateRange?.to) return [];
     
     // Group deposits by day
@@ -254,7 +205,7 @@ export function useReportsData() {
 
   // Prepare orders chart data
   const ordersChartData = (() => {
-    const orders = ordersQuery.data?.data || [];
+    const orders = ordersQuery.data || [];
     if (!dateRange?.from || !dateRange?.to) return [];
     
     // Group orders by day
@@ -296,22 +247,6 @@ export function useReportsData() {
     return `${format(dateRange.from, 'PPP')} - ${format(dateRange.to, 'PPP')}`;
   })();
 
-  // Refresh function with optimistic UI updates
-  const refetch = useCallback(async () => {
-    toast.promise(
-      Promise.all([
-        depositsQuery.refetch(),
-        ordersQuery.refetch(),
-        usersQuery.refetch(),
-      ]), 
-      {
-        loading: 'Refreshing data...',
-        success: 'Data updated successfully',
-        error: 'Failed to refresh data'
-      }
-    );
-  }, [depositsQuery, ordersQuery, usersQuery]);
-
   return {
     dateRange,
     dateRangeType,
@@ -323,17 +258,10 @@ export function useReportsData() {
     ordersChartData,
     paymentMethodData,
     isLoading,
-    refetch,
-    // Pagination
-    currentPage,
-    setCurrentPage,
-    pageSize, 
-    setPageSize,
-    // Data for tables
-    depositsData: depositsQuery.data?.data || [],
-    ordersData: ordersQuery.data?.data || [],
-    // Total counts for pagination
-    totalDeposits: depositsQuery.data?.count || 0,
-    totalOrders: ordersQuery.data?.count || 0
+    refetch: () => {
+      depositsQuery.refetch();
+      ordersQuery.refetch();
+      usersQuery.refetch();
+    }
   };
 }

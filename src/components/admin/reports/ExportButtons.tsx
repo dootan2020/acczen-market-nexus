@@ -1,115 +1,89 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
-import { type DateRange } from '@/components/ui/date-range-picker';
-import { format } from 'date-fns';
-import * as FileSaver from 'file-saver';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import jsPDF from "jspdf";
+import Papa from "papaparse";
+import { saveAs } from "file-saver";
+import { format } from "date-fns";
+import { StatsData } from "@/hooks/useReportsData";
 
 interface ExportButtonsProps {
-  data: any[];
-  fileName: string;
-  dateRange: DateRange;
+  statsData: StatsData;
+  depositsChartData: any[];
+  formattedDateRange: string;
+  isLoading: boolean;
 }
 
-export default function ExportButtons({ data, fileName, dateRange }: ExportButtonsProps) {
-  const exportToCSV = () => {
-    if (!data || data.length === 0) {
-      console.error('No data to export');
-      return;
-    }
-    
-    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
-    const fileExtension = '.xlsx';
-    
-    const normalizedData = data.map(item => {
-      // Create a simpler object for CSV export
-      const normalized: Record<string, any> = {};
-      
-      Object.entries(item).forEach(([key, value]) => {
-        // Skip complex objects and arrays
-        if (typeof value !== 'object' || value === null) {
-          normalized[key] = value;
-        } else if (Array.isArray(value)) {
-          normalized[key] = JSON.stringify(value);
-        } else if (key === 'date' && typeof value === 'string') {
-          normalized[key] = value;
-        }
-      });
-      
-      return normalized;
-    });
-    
-    const worksheet = XLSX.utils.json_to_sheet(normalizedData);
-    const workbook = { Sheets: { data: worksheet }, SheetNames: ['data'] };
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const fileData = new Blob([excelBuffer], { type: fileType });
-    
-    FileSaver.saveAs(fileData, `${fileName}${fileExtension}`);
-  };
-  
+export function ExportButtons({
+  statsData,
+  depositsChartData,
+  formattedDateRange,
+  isLoading
+}: ExportButtonsProps) {
+  // Export to PDF function
   const exportToPDF = () => {
-    if (!data || data.length === 0) {
-      console.error('No data to export');
-      return;
-    }
+    const doc = new jsPDF('landscape');
     
-    const doc = new jsPDF();
-    const tableColumn = Object.keys(data[0]);
-    const tableRows: any[][] = [];
+    // Title
+    doc.setFontSize(18);
+    doc.text("Digital Deals Hub - Financial Reports", 14, 22);
     
-    data.forEach(item => {
-      const rowData = tableColumn.map(columnKey => {
-        const value = item[columnKey];
-        if (typeof value === 'object' && value !== null) {
-          return JSON.stringify(value);
-        }
-        return value;
-      });
-      tableRows.push(rowData);
-    });
+    // Date range
+    doc.setFontSize(12);
+    doc.text(`Date range: ${formattedDateRange}`, 14, 30);
     
-    const dateRangeText = dateRange.from && dateRange.to 
-      ? `Data from ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`
-      : 'Data export';
-      
+    // Summary data
     doc.setFontSize(14);
-    doc.text('AccZen Report', 14, 15);
+    doc.text("Summary", 14, 40);
     
-    doc.setFontSize(10);
-    doc.text(dateRangeText, 14, 21);
-    doc.text(`Generated on ${format(new Date(), 'MMM d, yyyy HH:mm')}`, 14, 27);
+    const summaryData = [
+      ['Total Deposits', `$${statsData.totalDepositAmount.toFixed(2)}`],
+      ['Total Deposits Count', statsData.totalDeposits.toString()],
+      ['PayPal Deposits', `$${statsData.paypalAmount.toFixed(2)}`],
+      ['USDT Deposits', `$${statsData.usdtAmount.toFixed(2)}`],
+      ['Total Orders', statsData.totalOrders.toString()],
+      ['Average Order Value', `$${statsData.averageOrderValue.toFixed(2)}`],
+      ['Active Users', `${statsData.activeUsers} / ${statsData.totalUsers}`],
+      ['Conversion Rate', `${statsData.conversionRate}%`]
+    ];
     
-    autoTable(doc, {
-      head: [tableColumn.map(header => header.replace('_', ' ').toUpperCase())],
-      body: tableRows,
-      startY: 35,
-      styles: {
-        overflow: 'linebreak',
-        cellWidth: 'wrap'
-      },
-      columnStyles: {
-        0: { cellWidth: 'auto' }
-      },
-      headStyles: {
-        fillColor: [46, 204, 113]
-      }
+    (doc as any).autoTable({
+      startY: 45,
+      head: [['Metric', 'Value']],
+      body: summaryData,
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 5 }
     });
     
-    doc.save(`${fileName}.pdf`);
+    // Export to file
+    const fileName = `financial-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(fileName);
   };
   
+  // Export to CSV function
+  const exportToCSV = () => {
+    // Prepare deposits data
+    const depositsData = depositsChartData.map(day => ({
+      date: day.date,
+      depositsAmount: day.amount,
+      depositsCount: day.count,
+    }));
+    
+    // Convert to CSV
+    const csv = Papa.unparse(depositsData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const fileName = `financial-data-${new Date().toISOString().slice(0, 10)}.csv`;
+    saveAs(blob, fileName);
+  };
+
   return (
     <div className="flex gap-2">
-      <Button variant="outline" size="sm" onClick={exportToCSV} disabled={!data || data.length === 0}>
-        <Download className="mr-2 h-4 w-4" />
+      <Button variant="outline" onClick={exportToCSV} disabled={isLoading}>
+        <FileDown className="mr-2 h-4 w-4" />
         Export CSV
       </Button>
-      <Button variant="outline" size="sm" onClick={exportToPDF} disabled={!data || data.length === 0}>
-        <Download className="mr-2 h-4 w-4" />
+      <Button variant="outline" onClick={exportToPDF} disabled={isLoading}>
+        <FileDown className="mr-2 h-4 w-4" />
         Export PDF
       </Button>
     </div>

@@ -74,17 +74,17 @@ const Login = () => {
     
     try {
       console.log("Đang thực hiện đăng nhập với:", { email });
-      const result = await signIn(email, password);
+      const result = await signIn(email, password, rememberMe);
       
       if (result?.error) {
         console.error("Login error details:", result.error);
         setLoginAttempts(prev => prev + 1);
         
         // Handle specific error types
-        setErrorMessage(result.error.message || "Đăng nhập thất bại");
+        setErrorMessage(result.error);
         
         toast.error("Lỗi đăng nhập", {
-          description: result.error.message || "Đăng nhập thất bại"
+          description: result.error
         });
       } else {
         // Success is handled by AuthContext
@@ -92,13 +92,13 @@ const Login = () => {
         navigate(getPreviousPath());
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại";
+      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra, vui lòng thử lại";
       console.error("Login error:", error);
-      setErrorMessage(errorMsg);
+      setErrorMessage(errorMessage);
       setLoginAttempts(prev => prev + 1);
       
       toast.error("Lỗi đăng nhập", {
-        description: errorMsg
+        description: errorMessage
       });
     } finally {
       setIsLoading(false);
@@ -114,22 +114,22 @@ const Login = () => {
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="max-w-md w-full">
         <div className="flex justify-center mb-6">
           <Link to="/" className="flex items-center gap-2 font-bold text-2xl">
             <Package className="h-8 w-8 text-primary" />
-            <span>Digital<span className="text-primary">Deals</span></span>
+            <span>AccZen<span className="text-secondary">.net</span></span>
           </Link>
         </div>
-        <Card className="border-primary/10 shadow-lg w-full">
-          <CardHeader className="space-y-1 px-4 py-5 sm:p-6">
-            <CardTitle className="text-xl sm:text-2xl text-center sm:text-left">Đăng nhập</CardTitle>
-            <CardDescription className="text-center sm:text-left">
-              Nhập thông tin tài khoản của bạn
+        <Card className="border-primary/10 shadow-lg">
+          <CardHeader>
+            <CardTitle>Đăng nhập tài khoản</CardTitle>
+            <CardDescription>
+              Nhập email và mật khẩu để truy cập vào tài khoản của bạn
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4 px-4 sm:px-6">
+            <CardContent className="space-y-4">
               {errorMessage && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -138,21 +138,21 @@ const Login = () => {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || loginAttempts >= 5}
-                  className="h-11"
+                  className="focus-visible:ring-primary"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium">Mật khẩu</Label>
+                  <Label htmlFor="password">Mật khẩu</Label>
                   <Link to="/reset-password" className="text-xs text-primary hover:underline">
                     Quên mật khẩu?
                   </Link>
@@ -165,7 +165,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading || loginAttempts >= 5}
-                  className="h-11"
+                  className="focus-visible:ring-primary"
                 />
                 {getHelperText() && (
                   <p className="text-xs text-muted-foreground mt-1">{getHelperText()}</p>
@@ -176,7 +176,7 @@ const Login = () => {
                 <Checkbox 
                   id="rememberMe" 
                   checked={rememberMe} 
-                  onCheckedChange={(checked) => setRememberMe(!!checked)}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                   disabled={isLoading || loginAttempts >= 5}
                 />
                 <label
@@ -187,10 +187,10 @@ const Login = () => {
                 </label>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4 px-4 pb-6 pt-2 sm:px-6">
+            <CardFooter className="flex flex-col space-y-4">
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base" 
+                className="w-full group" 
                 disabled={isLoading || loginAttempts >= 5}
               >
                 {isLoading ? (
@@ -204,7 +204,7 @@ const Login = () => {
               </Button>
               <div className="text-center text-sm">
                 Chưa có tài khoản?{" "}
-                <Link to="/register" className="text-primary hover:underline font-medium">
+                <Link to="/register" className="text-primary hover:underline">
                   Đăng ký
                 </Link>
               </div>

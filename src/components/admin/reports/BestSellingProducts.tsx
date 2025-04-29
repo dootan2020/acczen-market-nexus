@@ -1,177 +1,146 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { type DateRange } from '@/components/ui/date-range-picker';
-import { format } from 'date-fns';
-import ExportButtons from './ExportButtons';
-import { DataPagination } from './DataPagination';
-
-interface Product {
-  id: string;
-  name: string;
-  total_sold: number;
-  total_amount: number;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DateRange } from "react-day-picker";
 
 interface BestSellingProductsProps {
-  dateRange: DateRange;
-  productsData?: any[]; // Make productsData optional
+  dateRange: DateRange | undefined;
 }
 
-const COLORS = ['#2ECC71', '#27AE60', '#3DB573', '#45C985', '#4FDA9A'];
+interface ProductSales {
+  id: string;
+  name: string;
+  orders: number;
+  revenue: number;
+  category_name: string | null;
+}
 
-const BestSellingProducts = ({ dateRange, productsData: initialProductsData }: BestSellingProductsProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  
-  const fetchBestSellingProducts = async () => {
-    let query = supabase
-      .from('order_items')
-      .select(`
-        product_id,
-        products:product_id(id, name),
-        quantity,
-        price,
-        orders:order_id(created_at)
-      `)
-      .eq('orders.status', 'completed');
-    
-    if (dateRange.from) {
-      query = query.gte('orders.created_at', format(dateRange.from, 'yyyy-MM-dd'));
-    }
-    
-    if (dateRange.to) {
-      query = query.lte('orders.created_at', format(dateRange.to, 'yyyy-MM-dd'));
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Process data to get product totals
-    const productMap = new Map();
-    
-    data.forEach(item => {
-      const productId = item.product_id;
-      const productName = item.products?.name || 'Unknown Product';
-      const quantity = item.quantity;
-      const totalAmount = item.price * item.quantity;
+export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['best-selling-products', dateRange],
+    queryFn: async () => {
+      // Format dates for the query
+      const fromDate = dateRange?.from 
+        ? new Date(dateRange.from).toISOString()
+        : new Date(new Date().setDate(new Date().getDate() - 30)).toISOString();
       
-      if (productMap.has(productId)) {
-        const product = productMap.get(productId);
-        product.total_sold += quantity;
-        product.total_amount += totalAmount;
-      } else {
-        productMap.set(productId, {
-          id: productId,
-          name: productName,
-          total_sold: quantity,
-          total_amount: totalAmount
-        });
-      }
-    });
-    
-    // Convert to array and sort by total sold
-    return Array.from(productMap.values())
-      .sort((a, b) => b.total_sold - a.total_sold);
-  };
-  
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['bestSellingProducts', dateRange],
-    queryFn: fetchBestSellingProducts,
-    gcTime: 5 * 60 * 1000, // 5 minutes cache
+      const toDate = dateRange?.to
+        ? new Date(dateRange.to).toISOString()
+        : new Date().toISOString();
+        
+      // Get order items with product info
+      const { data, error } = await supabase
+        .from('order_items')
+        .select(`
+          id,
+          price,
+          quantity,
+          total,
+          product:products(id, name, category_id),
+          order:orders(created_at, status)
+        `)
+        .gte('order.created_at', fromDate)
+        .lte('order.created_at', toDate)
+        .eq('order.status', 'completed');
+      
+      if (error) throw error;
+      
+      // Get categories for mapping
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name');
+      
+      const categoryMap = new Map();
+      categories?.forEach(cat => categoryMap.set(cat.id, cat.name));
+      
+      // Process data to calculate sales by product
+      const productSalesMap = new Map();
+      
+      data?.forEach(item => {
+        const productId = item.product?.id;
+        const productName = item.product?.name;
+        const categoryId = item.product?.category_id;
+        
+        if (productId && productName) {
+          if (!productSalesMap.has(productId)) {
+            productSalesMap.set(productId, {
+              id: productId,
+              name: productName,
+              orders: 0,
+              revenue: 0,
+              category_name: categoryId ? categoryMap.get(categoryId) : null
+            });
+          }
+          
+          const productStats = productSalesMap.get(productId);
+          productStats.orders += item.quantity || 1;
+          productStats.revenue += item.total || 0;
+        }
+      });
+      
+      // Convert to array and sort by revenue
+      const productSales = Array.from(productSalesMap.values());
+      return productSales.sort((a, b) => b.revenue - a.revenue);
+    },
+    enabled: !!dateRange?.from // Only require from date to be present
   });
-  
-  // Use initialProductsData if provided, otherwise use fetched products
-  const displayProducts = initialProductsData || products || [];
-  
-  // Calculate pagination
-  const offset = (currentPage - 1) * pageSize;
-  const paginatedProducts = displayProducts.slice(offset, offset + pageSize);
-  const totalProducts = displayProducts.length || 0;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Best Selling Products</CardTitle>
-          <CardDescription>Products with highest sales volume</CardDescription>
-        </div>
-        <ExportButtons
-          data={displayProducts}
-          fileName={`best-selling-products-${format(new Date(), 'yyyy-MM-dd')}`}
-          dateRange={dateRange}
-        />
+    <Card>
+      <CardHeader>
+        <CardTitle>Best Selling Products</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : displayProducts.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground">
-            No products data available for the selected period.
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div className="space-y-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={paginatedProducts} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }} 
-                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value} 
-                />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => name === 'total_sold' ? `${value} units` : `$${Number(value).toFixed(2)}`}
-                  labelFormatter={(name) => `Product: ${name}`}
-                />
-                <Bar dataKey="total_sold" name="Units Sold" radius={[4, 4, 0, 0]}>
-                  {paginatedProducts.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            
-            <div className="rounded-md border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50 text-muted-foreground">
-                    <th className="h-10 px-4 text-left font-medium">Product</th>
-                    <th className="h-10 px-4 text-right font-medium">Units Sold</th>
-                    <th className="h-10 px-4 text-right font-medium">Total Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedProducts.map((product, i) => (
-                    <tr key={product.id} className="border-b">
-                      <td className="p-4">{product.name}</td>
-                      <td className="p-4 text-right">{product.total_sold}</td>
-                      <td className="p-4 text-right">${product.total_amount.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <DataPagination
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              pageSize={pageSize}
-              setPageSize={setPageSize}
-              totalItems={totalProducts}
-            />
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Units Sold</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data && data.length > 0 ? (
+                  data.slice(0, 10).map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.category_name || 'Uncategorized'}</TableCell>
+                      <TableCell className="text-right">{product.orders}</TableCell>
+                      <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4">No sales data available</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
     </Card>
   );
-};
-
-export default BestSellingProducts;
+}

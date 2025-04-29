@@ -99,7 +99,7 @@ export const PaymentProvider = ({ children }: PaymentProviderProps) => {
       
     } catch (error) {
       console.error('Error fetching payment data:', error);
-      toast.error('Không thể tải dữ liệu thanh toán');
+      toast.error('Failed to load payment data');
     } finally {
       setIsLoading(false);
     }

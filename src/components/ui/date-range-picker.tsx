@@ -2,7 +2,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { type DateRange } from "react-day-picker"
+import { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,9 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-
-// Export DateRange type for use in other components
-export type { DateRange } from "react-day-picker"
 
 interface DatePickerWithRangeProps {
   date: DateRange | undefined
@@ -67,20 +64,4 @@ export function DatePickerWithRange({
       </Popover>
     </div>
   )
-}
-
-// Create DateRangePicker component for compatibility
-export function DateRangePicker(props: {
-  value: DateRange;
-  onChange: (value: DateRange | undefined) => void;
-  className?: string;
-  align?: "center" | "start" | "end";
-}) {
-  return (
-    <DatePickerWithRange 
-      date={props.value} 
-      onChange={props.onChange} 
-      className={props.className}
-    />
-  );
 }

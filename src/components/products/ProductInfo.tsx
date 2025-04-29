@@ -57,14 +57,14 @@ const ProductInfo = ({
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4 md:space-y-6">
+    <div className="flex flex-col h-full">
       <ProductHeader 
         name={name}
         rating={rating}
         reviewCount={reviewCount}
       />
       
-      <p className="text-muted-foreground text-sm md:text-base">{description}</p>
+      <p className="text-muted-foreground mt-2 mb-4">{description}</p>
       
       <ProductPricing 
         price={price}
@@ -73,24 +73,22 @@ const ProductInfo = ({
         soldCount={soldCount}
       />
       
-      <div className="mt-auto space-y-4">
-        <ProductQuantity
-          quantity={quantity}
-          stockQuantity={stockQuantity}
-          onQuantityChange={setQuantity}
-        />
-        
-        <ProductActions
-          isOutOfStock={isOutOfStock}
-          onAddToCart={handleAddToCart}
-          productId={id}
-          productName={name}
-          productPrice={effectivePrice}
-          productImage={image}
-          quantity={quantity}
-          kioskToken={kiosk_token}
-        />
-      </div>
+      <ProductQuantity
+        quantity={quantity}
+        stockQuantity={stockQuantity}
+        onQuantityChange={setQuantity}
+      />
+      
+      <ProductActions
+        isOutOfStock={isOutOfStock}
+        onAddToCart={handleAddToCart}
+        productId={id}
+        productName={name}
+        productPrice={effectivePrice}
+        productImage={image}
+        quantity={quantity}
+        kioskToken={kiosk_token}
+      />
     </div>
   );
 };

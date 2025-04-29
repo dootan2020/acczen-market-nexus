@@ -11,7 +11,7 @@ export function OrderStatistics({ orderCount }: OrderStatisticsProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Tổng đơn hàng</CardTitle>
+        <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
         <ShoppingCart className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>

@@ -54,14 +54,14 @@ const PayPalDeposit = () => {
 
       if (error) {
         console.error('Error processing deposit:', error);
-        toast.error('Lỗi xử lý thanh toán', { 
-          description: 'Đã xảy ra lỗi khi xử lý nạp tiền. Vui lòng liên hệ hỗ trợ.' 
+        toast.error('Payment Processing Error', { 
+          description: 'There was a problem processing your deposit. Please contact support.' 
         });
         return;
       }
 
-      toast.success('Nạp tiền thành công', { 
-        description: `$${amount.toFixed(2)} đã được thêm vào tài khoản của bạn.` 
+      toast.success('Deposit Successful', { 
+        description: `$${amount.toFixed(2)} has been added to your account.` 
       });
 
       navigate('/deposit/success', { 
@@ -77,8 +77,8 @@ const PayPalDeposit = () => {
       });
     } catch (error) {
       console.error('Payment processing error:', error);
-      toast.error('Lỗi xử lý thanh toán', { 
-        description: 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.' 
+      toast.error('Payment Processing Error', { 
+        description: 'There was an unexpected error. Please try again later.' 
       });
     }
   };

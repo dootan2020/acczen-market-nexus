@@ -15,31 +15,20 @@ const AdminReports = () => {
     ordersChartData,
     paymentMethodData,
     isLoading,
-    refetch,
-    formattedDateRange,
-    currentPage,
-    setCurrentPage,
-    pageSize,
-    setPageSize,
-    depositsData,
-    ordersData,
-    totalDeposits,
-    totalOrders
+    refetch
   } = useReportsData();
   
   const [activeTab, setActiveTab] = React.useState('overview');
   
-  // For products tab, we'll extract from Best Selling Products component
-  const productsData = React.useMemo(() => {
-    return [];  // This will be fetched directly in the BestSellingProducts component
-  }, []);
+  console.log("AdminReports: Rendering with data", {
+    hasStatsData: !!statsData,
+    hasPaymentMethodData: !!paymentMethodData?.length,
+    hasDepositsChartData: !!depositsChartData?.length,
+    hasOrdersChartData: !!ordersChartData?.length,
+    isLoading
+  });
   
-  React.useEffect(() => {
-    // Reset pagination when changing tabs
-    setCurrentPage(1);
-  }, [activeTab, setCurrentPage]);
-  
-  if (isLoading && !depositsData.length && !ordersData.length) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
@@ -50,31 +39,23 @@ const AdminReports = () => {
     );
   }
   
+  // Ensure we have safe data to pass to components
+  const safeDepositsData = depositsChartData || [];
+  const safeOrdersData = ordersChartData || [];
+  const safePaymentData = paymentMethodData || [];
+  
   return (
     <div className="space-y-6">
       <ReportsContent
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         statsData={statsData}
-        paymentMethodData={paymentMethodData}
-        depositsChartData={depositsChartData}
-        ordersChartData={ordersChartData}
+        paymentMethodData={safePaymentData}
+        depositsChartData={safeDepositsData}
+        ordersChartData={safeOrdersData}
         dateRange={dateRange}
         isLoading={isLoading}
-        depositsData={depositsData}
-        ordersData={ordersData}
-        productsData={productsData}
-        dateRangeType={dateRangeType}
-        onDateRangeChange={handleDateRangeChange}
-        onDateRangePickerChange={handleDateRangePickerChange}
-        onRefresh={refetch}
-        formattedDateRange={formattedDateRange}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        totalDeposits={totalDeposits}
-        totalOrders={totalOrders}
+        depositsData={safeDepositsData}
       />
     </div>
   );
