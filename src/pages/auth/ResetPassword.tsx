@@ -11,12 +11,12 @@ import { useAuth } from "@/contexts/AuthContext";
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { resetPassword } = useAuth();
+  const { requestPasswordReset } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await resetPassword(email);
+    await requestPasswordReset(email);
     setIsLoading(false);
   };
 

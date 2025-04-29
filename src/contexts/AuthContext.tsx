@@ -1,22 +1,27 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Auth } from '@supabase/ui-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: any | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;  // Added isAdmin property
   login: (args: any) => Promise<any>;
   logout: () => Promise<void>;
   register: (args: any) => Promise<any>;
   requestPasswordReset: (email: string) => Promise<any>;
-  resetPassword: (accessToken: string, newPassword: string) => Promise<any>;
+  resetPassword: (newPassword: string) => Promise<any>;
   balance: number;
   role: string;
   username: string;
   fullName: string;
+  userDisplayName: string; // Added userDisplayName property
   refreshUser: () => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>; // Added signIn method
+  signOut: (redirect?: boolean) => Promise<void>; // Added signOut method
+  signUp: (email: string, password: string, fullName?: string) => Promise<any>; // Added signUp method
+  updateUserEmail: (email: string) => Promise<{error: any | null}>; // Added updateUserEmail method
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +38,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Update the AuthProvider component to include a refreshUser function
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -42,7 +46,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<string>('user');
   const [username, setUsername] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  // User display name getter
+  const userDisplayName = user ? fullName || username || user.email?.split('@')[0] || 'User' : '';
 
   useEffect(() => {
     const loadSession = async () => {
@@ -69,6 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setRole(profile?.role || 'user');
             setUsername(profile?.username || '');
             setFullName(profile?.full_name || '');
+            // Set admin status based on role or metadata
+            setIsAdmin(profile?.role === 'admin' || Boolean(user.user_metadata?.admin_type));
           }
         }
       } catch (error) {
@@ -91,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole('user');
         setUsername('');
         setFullName('');
+        setIsAdmin(false);
       }
     });
 
@@ -99,39 +110,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [navigate]);
 
+  // Legacy method - keep for backward compatibility
   const login = async (args: any) => {
+    return signIn(args.email, args.password);
+  };
+
+  // New method with clearer naming
+  const signIn = async (email: string, password: string, rememberMe = true) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword(args);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: {
+          persistSession: rememberMe
+        }
+      });
       if (error) throw error;
       return data;
     } catch (error: any) {
       console.error('Login failed:', error);
-      throw error;
+      return { error: error.message || "Login failed" };
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Legacy method - keep for backward compatibility
   const register = async (args: any) => {
+    return signUp(args.email, args.password, args.fullName);
+  };
+
+  // New method with clearer naming
+  const signUp = async (email: string, password: string, fullName?: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp(args);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: fullName ? { full_name: fullName } : undefined
+        }
+      });
       if (error) throw error;
       return data;
     } catch (error: any) {
       console.error('Registration failed:', error);
-      throw error;
+      return { error: error.message || "Registration failed" };
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Legacy method - keep for backward compatibility
   const logout = async () => {
+    return signOut();
+  };
+
+  // New method with clearer naming
+  const signOut = async (redirect: boolean = false) => {
     setIsLoading(true);
     try {
       await supabase.auth.signOut();
-      navigate('/');
+      if (redirect) {
+        navigate('/');
+      }
     } catch (error: any) {
       console.error('Logout failed:', error);
     } finally {
@@ -155,7 +198,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const resetPassword = async (accessToken: string, newPassword: string) => {
+  const resetPassword = async (newPassword: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.updateUser({
@@ -166,6 +209,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Reset password failed:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateUserEmail = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email });
+      return { error };
+    } catch (error: any) {
+      console.error('Email update failed:', error);
+      return { error };
     } finally {
       setIsLoading(false);
     }
@@ -193,6 +249,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(profile?.role || 'user');
         setUsername(profile?.username || '');
         setFullName(profile?.full_name || '');
+        setIsAdmin(profile?.role === 'admin' || Boolean(user.user_metadata?.admin_type));
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
@@ -203,6 +260,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     isAuthenticated,
     isLoading,
+    isAdmin,
     login,
     logout,
     register,
@@ -212,7 +270,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     role,
     username,
     fullName,
-    refreshUser, // Add the refreshUser function to the context value
+    userDisplayName,
+    refreshUser,
+    signIn,
+    signOut,
+    signUp,
+    updateUserEmail
   };
   
   return (
