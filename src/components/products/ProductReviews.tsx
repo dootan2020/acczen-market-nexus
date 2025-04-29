@@ -45,29 +45,38 @@ const ProductReviews = ({ productId, className }: ProductReviewsProps) => {
           created_at, 
           helpful_count,
           is_verified_purchase,
-          user:profiles(username, avatar_url)
+          profiles(username, avatar_url)
         `)
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
       
-      setReviews(data || []);
+      // Transform the data to match Review type
+      const transformedData = data?.map(item => ({
+        ...item,
+        user: {
+          username: item.profiles?.username,
+          avatar_url: item.profiles?.avatar_url
+        }
+      }));
+      
+      setReviews(transformedData || []);
       
       // Calculate average rating
-      if (data && data.length > 0) {
-        const total = data.reduce((sum: number, review: Review) => sum + review.rating, 0);
-        setAverageRating(total / data.length);
-        setTotalReviews(data.length);
+      if (transformedData && transformedData.length > 0) {
+        const total = transformedData.reduce((sum: number, review: Review) => sum + review.rating, 0);
+        setAverageRating(total / transformedData.length);
+        setTotalReviews(transformedData.length);
       }
       
       // Check if the current user has already reviewed this product
-      if (user && data) {
-        const hasReviewed = data.some((review: Review) => review.user_id === user.id);
+      if (user && transformedData) {
+        const hasReviewed = transformedData.some((review: Review) => review.user_id === user.id);
         setUserHasReviewed(!!hasReviewed);
         
         if (hasReviewed) {
-          const existingReview = data.find((review: Review) => review.user_id === user.id);
+          const existingReview = transformedData.find((review: Review) => review.user_id === user.id);
           if (existingReview) {
             setUserReview({
               id: existingReview.id,

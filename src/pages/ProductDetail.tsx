@@ -7,8 +7,6 @@ import ProductHeader from "@/components/products/ProductHeader";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductInfo from "@/components/products/ProductInfo";
 import ProductDescription from "@/components/products/ProductDescription";
-import ProductPricing from "@/components/products/ProductPricing";
-import ProductActions from "@/components/products/ProductActions";
 import ProductInventoryStatus from "@/components/products/ProductInventoryStatus";
 import ProductBenefits from "@/components/products/ProductBenefits";
 import ProductReviews from "@/components/products/ProductReviews";
