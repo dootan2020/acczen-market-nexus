@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -9,17 +9,22 @@ interface AdminGuardProps {
   children: React.ReactNode;
 }
 
-const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
+const AdminGuard: React.FC<AdminGuardProps> = memo(({ children }) => {
   const { user, isAdmin, isLoading } = useAuth();
   const location = useLocation();
   const [isReady, setIsReady] = useState(false);
   
+  // Use useCallback to avoid recreating the function on each render
+  const showDeniedToast = useCallback(() => {
+    toast.error("Truy cập bị từ chối", {
+      description: "Bạn không có quyền truy cập vào trang quản trị",
+    });
+  }, []);
+
   useEffect(() => {
     // Only mark as ready when we have completed loading and have determined user state
     if (!isLoading) {
       console.log("AdminGuard: Loading complete, setting isReady to true");
-      
-      // We're not using a timer anymore as it might contribute to the render loop
       setIsReady(true);
     }
   }, [isLoading]);
@@ -28,11 +33,9 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   useEffect(() => {
     if (isReady && user && !isAdmin) {
       console.log("AdminGuard: Access denied - user exists but is not admin");
-      toast.error("Truy cập bị từ chối", {
-        description: "Bạn không có quyền truy cập vào trang quản trị",
-      });
+      showDeniedToast();
     }
-  }, [isReady, user, isAdmin]);
+  }, [isReady, user, isAdmin, showDeniedToast]);
 
   // Add detailed debug logs
   console.log("AdminGuard state:", {
@@ -72,6 +75,8 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   console.log("AdminGuard: Access granted, rendering admin content");
   // User is authenticated and is an admin
   return <>{children}</>;
-};
+});
+
+AdminGuard.displayName = 'AdminGuard';
 
 export default AdminGuard;

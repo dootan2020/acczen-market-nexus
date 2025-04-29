@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import ImportConfirmation from '@/components/admin/products/ImportConfirmation';
-import ImportPreview from '@/components/admin/products/ImportPreview';
+import ImportPreview from '@/components/admin/products/import/ImportPreview';
 
 // Define and export the ExtendedProduct interface
 export interface ExtendedProduct {

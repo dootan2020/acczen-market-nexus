@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, memo } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
@@ -16,13 +16,13 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-const AdminLayout = () => {
+const AdminLayout = memo(() => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, isAdmin, isLoading } = useAuth();
   
-  // Debug logs
+  // Debug logs - only log once, not on every render
   console.log("AdminLayout: rendering", {
     user: !!user, 
     isAdmin,
@@ -157,7 +157,9 @@ const AdminLayout = () => {
       </div>
     </div>
   );
-};
+});
+
+AdminLayout.displayName = 'AdminLayout';
 
 const getCurrentPageTitle = () => {
   const location = useLocation();
