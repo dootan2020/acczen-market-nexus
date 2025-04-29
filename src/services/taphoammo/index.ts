@@ -33,15 +33,25 @@ export class TaphoammoApiService {
     return this.instance;
   }
   
-  // Forward methods from product service
-  public getStock = () => this.productService.getStock();
-  public checkKioskActive = () => this.productService.checkKioskActive(); 
-  public testConnection = () => this.productService.testConnection();
+  // Forward methods from product service with proper parameters
+  public getStock = (kioskToken: string, options: any = {}) => 
+    this.productService.getStock(kioskToken, options);
   
-  // Forward methods from order service
-  public buyProducts = () => this.orderService.buyProducts();
-  public getProducts = () => this.orderService.getProducts();
-  public checkStockAvailability = () => this.orderService.checkStockAvailability();
+  public checkKioskActive = (kioskToken: string, proxyType?: string) => 
+    this.productService.checkKioskActive(kioskToken, proxyType as any);
+  
+  public testConnection = (kioskToken: string, proxyType?: string) => 
+    this.productService.testConnection(kioskToken, proxyType as any);
+  
+  // Forward methods from order service with proper parameters
+  public buyProducts = (kioskToken: string, quantity = 1, userToken?: string, promotion?: string, proxyType?: string) => 
+    this.orderService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType as any);
+  
+  public getProducts = (orderId: string, userToken?: string, proxyType?: string) => 
+    this.orderService.getProducts(orderId, userToken, proxyType as any);
+  
+  public checkStockAvailability = (kioskToken: string, quantity = 1, proxyType?: string) => 
+    this.orderService.checkStockAvailability(kioskToken, quantity, proxyType as any);
   
   /**
    * Clear API cache across all services
