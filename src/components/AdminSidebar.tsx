@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   ListChecks,
@@ -14,11 +15,12 @@ import {
   Award
 } from "lucide-react"
 
-import { MainNavItem, SidebarNavItem } from "@/types"
+import { MainNavItem, SidebarNavItem as SidebarNavItemType } from "@/types"
+import { SidebarNavItem } from "./sidebar/SidebarNavItem"
 
 interface Props {
-  mainNav: MainNavItem[]
-  sidebarNav: SidebarNavItem[]
+  mainNav: MainNavItemType[]
+  sidebarNav: SidebarNavItemType[]
 }
 
 export function AdminSidebar({ mainNav, sidebarNav }: Props) {
@@ -70,7 +72,10 @@ export function AdminSidebar({ mainNav, sidebarNav }: Props) {
   )
 }
 
-const marketingItems = [
+// Rename the type to avoid confusion
+type MainNavItemType = MainNavItem;
+
+const marketingItems: SidebarNavItemType[] = [
   {
     title: "Notifications",
     href: "/admin/notifications",
@@ -89,7 +94,7 @@ const marketingItems = [
   },
 ];
 
-const integrationItems = [
+const integrationItems: SidebarNavItemType[] = [
   {
     title: "Product Integration",
     href: "/admin/integrations",
@@ -100,9 +105,9 @@ const integrationItems = [
     href: "/admin/api-monitoring",
     icon: <Activity className="h-4 w-4" />,
   }
-]
+];
 
-const settingsItems = [
+const settingsItems: SidebarNavItemType[] = [
   {
     title: "General",
     href: "/admin/settings",
@@ -113,4 +118,4 @@ const settingsItems = [
     href: "/admin/reports",
     icon: <TrendingUp className="h-4 w-4" />,
   }
-]
+];
