@@ -24,8 +24,8 @@ interface ApiHealthRecord {
   opened_at: string | null;
   updated_at: string;
   created_at: string;
-  half_open: boolean;
-  consecutive_success: number;
+  half_open: boolean | null;
+  consecutive_success: number | null;
 }
 
 /**
@@ -237,13 +237,15 @@ export class CircuitBreaker {
         return; 
       }
       
-      // TypeScript now knows data is ApiHealthRecord with half_open property
-      if (!data.half_open) {
+      // Safely access the properties after type casting
+      const healthRecord = data as ApiHealthRecord;
+      
+      if (!healthRecord.half_open) {
         return; // Only increment success count in half-open state
       }
       
       // Increment consecutive successes
-      const newSuccessCount = (data.consecutive_success || 0) + 1;
+      const newSuccessCount = (healthRecord.consecutive_success || 0) + 1;
       
       // Update consecutive success count
       await supabase
