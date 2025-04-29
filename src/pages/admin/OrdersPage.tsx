@@ -1,6 +1,6 @@
 
 import React from 'react';
-import AdminOrders from '@/components/admin/orders/AdminOrders';
+import AdminOrders from '@/components/admin/orders/AdminOrdersEnhanced';
 
 const OrdersPage: React.FC = () => {
   return (
