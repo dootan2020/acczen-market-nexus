@@ -8,6 +8,7 @@ import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductBadge from "./products/ProductBadge";
+import StockSoldBadges from "./products/inventory/StockSoldBadges";
 
 interface ProductCardProps {
   id: string;
@@ -24,6 +25,8 @@ interface ProductCardProps {
   reviewCount?: number;
   isNew?: boolean;
   isBestSeller?: boolean;
+  description?: string;
+  soldCount?: number;
 }
 
 const ProductCard = ({
@@ -41,6 +44,8 @@ const ProductCard = ({
   reviewCount = 0,
   isNew = false,
   isBestSeller = false,
+  description = "",
+  soldCount = 0,
 }: ProductCardProps) => {
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
@@ -78,14 +83,16 @@ const ProductCard = ({
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg rounded-xl border border-gray-200 h-full flex flex-col group">
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
         <Link to={`/product/${id}`} className="block">
-          <img
-            src={image || "/placeholder.svg"}
-            alt={name}
-            className="w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+          <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-[180px] w-full flex items-center justify-center">
+            <img
+              src={image || "/placeholder.svg"}
+              alt={name}
+              className="h-[130px] object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
         </Link>
         
         <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap max-w-[calc(100%-1rem)]">
@@ -104,45 +111,46 @@ const ProductCard = ({
       
       <CardContent className="p-4 flex-grow">
         <Link to={`/product/${id}`}>
-          <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors font-sans mb-2">{name}</h3>
+          <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
         </Link>
         
+        <StockSoldBadges stock={stock} soldCount={soldCount} />
+        
+        {description && (
+          <p className="text-[#333333]/70 text-sm line-clamp-2 mb-3">
+            {description}
+          </p>
+        )}
+        
         <div className="flex items-end justify-between mt-2">
-          <div>
-            <span className="text-lg font-bold text-[#2ECC71]">
-              {formattedSalePrice || formattedPrice}
-            </span>
-            {displaySalePrice && (
-              <span className="text-sm text-muted-foreground line-through ml-2">
-                {formattedPrice}
-              </span>
-            )}
-          </div>
+          <span className="text-xl font-bold text-[#2ECC71] font-sans">
+            {formattedSalePrice || formattedPrice}
+          </span>
           
-          {stock > 0 && (
-            <Badge variant="success" className="text-white">Còn hàng</Badge>
+          {displaySalePrice && (
+            <span className="text-sm text-muted-foreground line-through ml-2">
+              {formattedPrice}
+            </span>
           )}
         </div>
       </CardContent>
       
-      <CardFooter className="p-4 pt-0 grid grid-cols-2 gap-2 mt-auto">
+      <CardFooter className="p-4 pt-0 grid grid-cols-3 gap-2 mt-auto">
         <Button
           variant="outline"
           className="w-full border-[#2ECC71] text-[#2ECC71] hover:bg-[#2ECC71]/10"
           disabled={stock === 0}
           onClick={() => navigate(`/product/${id}`)}
         >
-          <Info className="mr-2 h-4 w-4" />
           Chi tiết
         </Button>
         
         <Button 
-          className="w-full bg-[#2ECC71] hover:bg-[#27AE60] text-white" 
+          className="w-full col-span-2 bg-[#2ECC71] hover:bg-[#27AE60] text-white uppercase font-medium" 
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
-          <ShoppingBag className="mr-2 h-4 w-4" />
-          Mua ngay
+          Mua Ngay
         </Button>
       </CardFooter>
     </Card>
