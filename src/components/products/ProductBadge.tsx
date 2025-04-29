@@ -6,10 +6,9 @@ export type BadgeType = 'featured' | 'new' | 'bestSeller' | 'sale';
 
 interface ProductBadgeProps {
   type: BadgeType;
-  label?: string; // Add optional label prop
 }
 
-const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
+const ProductBadge: React.FC<ProductBadgeProps> = ({ type }) => {
   const getBadgeStyles = (): string => {
     switch (type) {
       case 'featured':
@@ -26,9 +25,6 @@ const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
   };
 
   const getBadgeText = (): string => {
-    // Use custom label if provided, otherwise use default text
-    if (label) return label;
-    
     switch (type) {
       case 'featured':
         return 'Featured';
