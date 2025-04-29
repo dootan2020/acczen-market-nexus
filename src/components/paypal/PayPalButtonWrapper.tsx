@@ -11,7 +11,7 @@ interface PayPalButtonWrapperProps {
 }
 
 export const PayPalButtonWrapper: React.FC<PayPalButtonWrapperProps> = ({ amount, onSuccess }) => {
-  const [{ isPending, isRejected, isResolved }] = usePayPalScriptReducer();
+  const [{ isPending, isRejected }] = usePayPalScriptReducer();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorDetails, setErrorDetails] = useState("");
   
@@ -32,6 +32,24 @@ export const PayPalButtonWrapper: React.FC<PayPalButtonWrapperProps> = ({ amount
     </Alert>
   );
   
+  const handleApprove = async (data: any, actions: any) => {
+    setIsProcessing(true);
+    try {
+      const orderDetails = await actions?.order?.capture();
+      if (orderDetails) {
+        await onSuccess(orderDetails, amount);
+      }
+    } catch (error) {
+      console.error("PayPal Capture Error:", error);
+      setErrorDetails(error instanceof Error ? error.message : JSON.stringify(error));
+      toast.error('Payment Processing Error', {
+        description: 'There was an error capturing your payment'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
   return (
     <PayPalButtons 
       style={{ layout: 'vertical', color: 'blue', shape: 'rect', height: 45 }}
@@ -47,23 +65,7 @@ export const PayPalButtonWrapper: React.FC<PayPalButtonWrapperProps> = ({ amount
           }]
         });
       }}
-      onApprove={async (data, actions) => {
-        setIsProcessing(true);
-        try {
-          const orderDetails = await actions?.order?.capture();
-          if (orderDetails) {
-            await onSuccess(orderDetails, amount);
-          }
-        } catch (error) {
-          console.error("PayPal Capture Error:", error);
-          setErrorDetails(error instanceof Error ? error.message : JSON.stringify(error));
-          toast.error('Payment Processing Error', {
-            description: 'There was an error capturing your payment'
-          });
-        } finally {
-          setIsProcessing(false);
-        }
-      }}
+      onApprove={handleApprove}
       onCancel={() => {
         toast.info('Payment Cancelled', {
           description: 'You cancelled the PayPal payment'

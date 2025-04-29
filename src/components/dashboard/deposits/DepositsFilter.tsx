@@ -1,34 +1,25 @@
 
 import React from 'react';
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 
 interface DepositsFilterProps {
   search: string;
-  setSearch: (search: string) => void;
+  setSearch: (value: string) => void;
 }
 
-export const DepositsFilter = ({ search, setSearch }: DepositsFilterProps) => {
+export function DepositsFilter({ search, setSearch }: DepositsFilterProps) {
   return (
-    <div className="flex items-center mb-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+    <div className="mb-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          type="search"
-          placeholder="Search payment method, email or transaction hash..."
-          className="pl-8"
+          className="pl-10"
+          placeholder="Search by transaction ID or payment method..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <Button
-        variant="outline"
-        onClick={() => setSearch("")}
-        className="ml-2"
-      >
-        Clear
-      </Button>
     </div>
   );
-};
+}

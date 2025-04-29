@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, CreditCard, Wallet, InfoIcon } from "lucide-react";
+import { Lock, CreditCard, Wallet, InfoIcon, Loader2 } from "lucide-react";
 import { PAYPAL_OPTIONS } from './paypal-config';
 import { PayPalButtonWrapper } from './PayPalButtonWrapper';
 import { PayPalErrorBoundary } from './PayPalErrorBoundary';
@@ -14,12 +14,15 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { USDTPresetAmounts } from '../usdt/USDTPresetAmounts';
+import { useAuth } from "@/contexts/AuthContext";
 
 const PayPalDeposit = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const FEE_PERCENTAGE = 0.044; // 4.4%
   const FEE_FIXED = 0.30; // $0.30 USD
@@ -43,11 +46,16 @@ const PayPalDeposit = () => {
 
   const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
     try {
+      setIsProcessing(true);
+      toast.info('Processing your deposit...', {
+        duration: 5000,
+      });
+      
       const { data, error } = await supabase.functions.invoke('process-paypal-deposit', {
         body: {
           orderID: orderDetails.id,
           amount: amount,
-          userID: supabase.auth.getUser().then(res => res.data.user?.id),
+          userID: (await supabase.auth.getUser()).data.user?.id,
           idempotencyKey: orderDetails.id,
         },
       });
@@ -59,6 +67,9 @@ const PayPalDeposit = () => {
         });
         return;
       }
+
+      // Refresh user data to update balance
+      await refreshUser();
 
       toast.success('Deposit Successful', { 
         description: `$${amount.toFixed(2)} has been added to your account.` 
@@ -80,6 +91,8 @@ const PayPalDeposit = () => {
       toast.error('Payment Processing Error', { 
         description: 'There was an unexpected error. Please try again later.' 
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -121,6 +134,7 @@ const PayPalDeposit = () => {
                 value={customAmount}
                 onChange={handleCustomAmountChange}
                 className="bg-white mt-1.5"
+                disabled={isProcessing}
               />
             </div>
 
@@ -130,6 +144,7 @@ const PayPalDeposit = () => {
                 setSelectedAmount(parseFloat(value));
                 setCustomAmount('');
               }}
+              disabled={isProcessing}
             />
 
             <Card className="bg-muted/30 border-border/40">
@@ -150,19 +165,25 @@ const PayPalDeposit = () => {
             </Card>
           </div>
 
-          {amount > 0 && (
+          {isProcessing ? (
+            <div className="py-4 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+              <span>Đang xử lý thanh toán...</span>
+            </div>
+          ) : amount > 0 ? (
             <div className="pt-2">
               <PayPalErrorBoundary amount={amount} onSuccess={handlePaymentSuccess}>
                 <PayPalButtonWrapper amount={amount} onSuccess={handlePaymentSuccess} />
               </PayPalErrorBoundary>
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-col items-center space-y-4 pt-2 text-center">
             <Button
               variant="ghost" 
               className="text-primary hover:text-primary/90 w-full"
               onClick={() => navigate('/deposit')}
+              disabled={isProcessing}
             >
               <CreditCard className="mr-2 h-4 w-4" />
               Chọn phương thức khác

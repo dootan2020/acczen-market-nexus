@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import React from 'react';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EyeIcon, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Deposit {
   id: string;
@@ -15,121 +16,130 @@ interface Deposit {
   payment_method: string;
   status: string;
   created_at: string;
-  paypal_payer_email?: string;
   transaction_hash?: string;
+  paypal_payer_email?: string;
 }
 
 interface DepositsTableProps {
   deposits: Deposit[];
 }
 
-export const DepositsTable = ({ deposits }: DepositsTableProps) => {
-  const [openDepositId, setOpenDepositId] = useState<string | null>(null);
+export function DepositsTable({ deposits }: DepositsTableProps) {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  if (!deposits.length) {
+    return <div className="text-center py-8 text-muted-foreground">No deposit records found</div>;
+  }
 
-  const handleDepositClick = (depositId: string) => {
-    setOpenDepositId(depositId === openDepositId ? null : depositId);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="success" className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Completed</Badge>;
+      case 'pending':
+        return <Badge variant="warning" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
+      case 'failed':
+      case 'rejected':
+        return <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Failed</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
   };
 
-  const formatStatus = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  const formatPaymentMethod = (method: string) => {
-    return method.charAt(0).toUpperCase() + method.slice(1);
-  };
-
-  return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Payment Method</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {deposits.map((deposit) => (
-            <React.Fragment key={deposit.id}>
-              <TableRow 
-                className="cursor-pointer hover:bg-muted/60"
-                onClick={() => handleDepositClick(deposit.id)}
-              >
-                <TableCell>
-                  {new Date(deposit.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>${deposit.amount.toFixed(2)}</TableCell>
-                <TableCell>
-                  {formatPaymentMethod(deposit.payment_method)}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    deposit.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                    deposit.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                    deposit.status === 'failed' ? 'bg-red-100 text-red-800' : 
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {formatStatus(deposit.status)}
-                  </span>
-                </TableCell>
-              </TableRow>
-              {openDepositId === deposit.id && (
-                <TableRow className="bg-muted/30">
-                  <TableCell colSpan={4} className="p-4">
-                    <div className="text-sm">
-                      <p className="font-medium mb-2">Deposit Details</p>
-                      <div className="grid gap-2">
-                        <div className="flex justify-between border-b py-1">
-                          <span className="font-medium">ID:</span>
-                          <span className="text-gray-700">{deposit.id}</span>
-                        </div>
-                        <div className="flex justify-between border-b py-1">
-                          <span className="font-medium">Date:</span>
-                          <span className="text-gray-700">
-                            {new Date(deposit.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between border-b py-1">
-                          <span className="font-medium">Amount:</span>
-                          <span className="text-gray-700">${deposit.amount.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between border-b py-1">
-                          <span className="font-medium">Payment Method:</span>
-                          <span className="text-gray-700">{formatPaymentMethod(deposit.payment_method)}</span>
-                        </div>
-                        {deposit.paypal_payer_email && (
-                          <div className="flex justify-between border-b py-1">
-                            <span className="font-medium">PayPal Email:</span>
-                            <span className="text-gray-700">{deposit.paypal_payer_email}</span>
-                          </div>
-                        )}
-                        {deposit.transaction_hash && (
-                          <div className="flex justify-between border-b py-1">
-                            <span className="font-medium">Transaction Hash:</span>
-                            <span className="text-gray-700 break-all">{deposit.transaction_hash}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between py-1">
-                          <span className="font-medium">Status:</span>
-                          <span className={`
-                            ${deposit.status === 'completed' ? 'text-green-600' : 
-                              deposit.status === 'pending' ? 'text-yellow-600' : 
-                              deposit.status === 'failed' ? 'text-red-600' : 
-                              'text-gray-600'}
-                          `}>
-                            {formatStatus(deposit.status)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                </TableRow>
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {deposits.map((deposit) => (
+          <Card key={deposit.id} className="p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div className="font-medium">${deposit.amount.toFixed(2)}</div>
+              {getStatusBadge(deposit.status)}
+            </div>
+            <div className="text-sm text-muted-foreground mb-1">
+              {format(new Date(deposit.created_at), 'MMM d, yyyy h:mm a')}
+            </div>
+            <div className="text-sm font-medium">
+              {deposit.payment_method}
+              {deposit.paypal_payer_email && (
+                <span className="text-muted-foreground ml-2 text-xs">
+                  ({deposit.paypal_payer_email})
+                </span>
               )}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+            </div>
+            <div className="flex justify-end mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate(`/dashboard/deposits/${deposit.id}`)}
+              >
+                <EyeIcon className="h-4 w-4 mr-1" /> Details
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+  
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Method</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Reference</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {deposits.map((deposit) => (
+          <TableRow key={deposit.id}>
+            <TableCell>
+              {format(new Date(deposit.created_at), 'MMM d, yyyy')}
+              <div className="text-xs text-muted-foreground">
+                {format(new Date(deposit.created_at), 'h:mm a')}
+              </div>
+            </TableCell>
+            <TableCell>
+              {deposit.payment_method}
+              {deposit.paypal_payer_email && (
+                <div className="text-xs text-muted-foreground mt-1 truncate max-w-[180px]">
+                  {deposit.paypal_payer_email}
+                </div>
+              )}
+            </TableCell>
+            <TableCell className="text-right font-medium">
+              ${deposit.amount.toFixed(2)}
+            </TableCell>
+            <TableCell>{getStatusBadge(deposit.status)}</TableCell>
+            <TableCell>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground inline-block max-w-[120px] truncate">
+                      {deposit.transaction_hash || deposit.id.substring(0, 8)}...
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs break-all">
+                    <p>{deposit.transaction_hash || deposit.id}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </TableCell>
+            <TableCell className="text-right">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate(`/dashboard/deposits/${deposit.id}`)}
+              >
+                <EyeIcon className="h-4 w-4 mr-1" /> Details
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
-};
+}
