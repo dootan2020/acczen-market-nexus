@@ -2,7 +2,7 @@
 import React from 'react';
 import { DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ProductFormData } from '@/types/products';
+import { ProductFormData, ProductStatus } from '@/types/products';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
