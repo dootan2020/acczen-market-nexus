@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { CircuitBreaker } from './CircuitBreaker';
+import { CircuitBreaker } from './circuit-breaker';
 import { RetryService } from './RetryService';
 import { CacheService } from './CacheService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
