@@ -144,7 +144,7 @@ const AdminUsers = () => {
               <SelectContent>
                 <SelectItem value="all">All Discounts</SelectItem>
                 <SelectItem value="no-discount">No Discount (0%)</SelectItem>
-                <SelectItem value="with-discount">With Discount (>0%)</SelectItem>
+                <SelectItem value="with-discount">With Discount ({'>'}0%)</SelectItem>
                 <SelectItem value="high-discount">High Discount (≥10%)</SelectItem>
               </SelectContent>
             </Select>
