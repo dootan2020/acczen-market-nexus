@@ -239,10 +239,7 @@ const AdminProducts = () => {
           </DialogHeader>
           <ProductForm
             initialData={formData}
-            handleInputChange={handleInputChange}
             handleSubmit={handleSubmit}
-            handleCategoryChange={handleCategoryChange}
-            handleSubcategoryChange={handleSubcategoryChange}
             categories={categories}
             isEditing={isEditing}
             isPending={productMutation.isPending}

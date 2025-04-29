@@ -31,6 +31,7 @@ export const useProductMutations = () => {
           price: parseFloat(productData.price),
           sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
           stock_quantity: parseInt(productData.stock_quantity, 10),
+          status: productData.status as any, // Type assertion for database compatibility
         };
         
         console.log('Saving product data:', formattedProductData);
@@ -38,7 +39,7 @@ export const useProductMutations = () => {
         if (isEditing) {
           const result = await supabase
             .from('products')
-            .update(formattedProductData)
+            .update(formattedProductData as any)
             .eq('id', productData.id)
             .select();
           
@@ -52,7 +53,7 @@ export const useProductMutations = () => {
         } else {
           const result = await supabase
             .from('products')
-            .insert([formattedProductData])
+            .insert([formattedProductData as any])
             .select();
           
           if (result.error) {

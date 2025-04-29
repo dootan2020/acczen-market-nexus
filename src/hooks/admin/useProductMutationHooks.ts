@@ -18,12 +18,13 @@ export const useProductMutationHooks = () => {
         price: Number(productData.price),
         sale_price: productData.sale_price ? Number(productData.sale_price) : null,
         stock_quantity: Number(productData.stock_quantity),
+        status: productData.status as any, // Type assertion to handle the status
       };
       
       if (isEditing && id) {
         const { error } = await supabase
           .from('products')
-          .update(formattedData)
+          .update(formattedData as any)
           .eq('id', id);
           
         if (error) throw error;
@@ -31,7 +32,7 @@ export const useProductMutationHooks = () => {
       } else {
         const { data, error } = await supabase
           .from('products')
-          .insert(formattedData)
+          .insert(formattedData as any)
           .select();
           
         if (error) throw error;
@@ -115,7 +116,7 @@ export const useProductMutationHooks = () => {
     mutationFn: async ({ ids, status }: { ids: string[], status: ProductStatus }) => {
       const { error } = await supabase
         .from('products')
-        .update({ status })
+        .update({ status: status as any })
         .in('id', ids);
         
       if (error) throw error;

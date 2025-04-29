@@ -7,6 +7,7 @@ import { useProductSelection } from './useProductSelection';
 import { useProductDialogs } from './useProductDialogs';
 import { useProductMutationHooks } from './useProductMutationHooks';
 import { Product } from './types/productManagement.types';
+import { ProductFormData } from '@/types/products';
 
 export const useProductManagement = () => {
   // Fetch products with pagination
@@ -109,12 +110,6 @@ export const useProductManagement = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    productMutation.mutate({ ...formData, id: currentProduct?.id, isEditing });
-    setIsProductDialogOpen(false);
-  };
-
   // Bulk action handlers
   const handleBulkDelete = () => {
     setIsBulkDeleteDialogOpen(true);
@@ -162,7 +157,6 @@ export const useProductManagement = () => {
     handleInputChange,
     handleCategoryChange,
     handleSubcategoryChange,
-    handleSubmit,
     handleToggleSelect,
     handleToggleSelectAll,
     handleBulkDelete,

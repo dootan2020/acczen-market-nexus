@@ -1,12 +1,8 @@
+
 import React from 'react';
 import { DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ProductFormData } from '@/types/products';
-import ProductBasicInfo from './form/ProductBasicInfo';
-import ProductDescription from './form/ProductDescription';
-import ProductPricing from './form/ProductPricing';
-import ProductInventory from './form/ProductInventory';
-import SubcategorySelector from '@/components/SubcategorySelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,6 +11,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
+import SubcategorySelector from '@/components/SubcategorySelector';
 
 // Define the product form schema
 const productFormSchema = z.object({
@@ -95,9 +92,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
     // Convert string values to their appropriate types
     const formattedValues: ProductFormData = {
       ...values,
+      name: values.name,
+      description: values.description,
+      slug: values.slug,
+      category_id: values.category_id,
+      subcategory_id: values.subcategory_id || '',
+      status: values.status as ProductStatus,
       price: values.price,
       sale_price: values.sale_price || '',
       stock_quantity: values.stock_quantity,
+      image_url: values.image_url || '',
+      sku: values.sku || '',
     };
     
     handleSubmit(formattedValues);

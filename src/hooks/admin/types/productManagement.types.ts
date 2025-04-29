@@ -16,4 +16,5 @@ export interface Product {
   sku: string;
   category?: any;
   subcategory?: any;
+  kiosk_token?: string;
 }

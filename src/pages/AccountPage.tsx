@@ -14,6 +14,20 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 
+// Define a profile interface that includes phone
+interface UserProfile {
+  id: string;
+  username: string;
+  full_name: string;
+  email: string;
+  avatar_url: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+  role: 'user' | 'admin';
+  phone?: string; // Add phone as optional property
+}
+
 // Define the validation schema
 const accountSchema = z.object({
   username: z
@@ -61,7 +75,7 @@ const AccountPage = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const accountForm = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
@@ -96,7 +110,7 @@ const AccountPage = () => {
           .single();
 
         if (error) throw error;
-        setUserProfile(data);
+        setUserProfile(data as UserProfile);
 
         // Set form values
         if (data) {
@@ -218,25 +232,19 @@ const AccountPage = () => {
                   </Alert>
                 )}
 
-                <FormField
-                  control={accountForm.control}
-                  name="email"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          value={user.email || ''}
-                          disabled 
-                          className="bg-muted/50"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Email không thể thay đổi
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
+                {/* Using a dummy field to render email read-only */}
+                <div className="space-y-1">
+                  <Label htmlFor="emailDisplay">Email</Label>
+                  <Input 
+                    id="emailDisplay"
+                    value={user?.email || ''}
+                    disabled 
+                    className="bg-muted/50"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Email không thể thay đổi
+                  </p>
+                </div>
 
                 <FormField
                   control={accountForm.control}

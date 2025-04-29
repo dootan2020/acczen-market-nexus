@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -135,15 +134,11 @@ const AdminProducts = () => {
             </DialogDescription>
           </DialogHeader>
           <ProductForm
-            formData={formData}
-            handleInputChange={handleInputChange}
+            initialData={formData}
             handleSubmit={handleSubmit}
-            handleCategoryChange={handleCategoryChange}
-            handleSubcategoryChange={handleSubcategoryChange}
             categories={categories}
             isEditing={isEditing}
             isPending={productMutation.isPending}
-            initialData={formData}
           />
         </DialogContent>
       </Dialog>
