@@ -139,12 +139,6 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
           </Button>
         )}
         
-        {status === 'error' && (
-          <Button onClick={importProduct}>
-            Thử lại
-          </Button>
-        )}
-        
         {status === 'loading' && (
           <Button disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -156,6 +150,12 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
           <Button disabled>
             <CheckCircle2 className="mr-2 h-4 w-4" />
             Đã import thành công
+          </Button>
+        )}
+        
+        {status === 'error' && (
+          <Button onClick={importProduct}>
+            Thử lại
           </Button>
         )}
       </div>

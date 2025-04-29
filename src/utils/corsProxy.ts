@@ -1,54 +1,39 @@
 
+/**
+ * Types of proxy available for CORS handling
+ */
 export type ProxyType = 'cloudflare' | 'cors-anywhere' | 'direct';
 
-// Store the proxy selection in localStorage
-export const setStoredProxy = (proxyType: ProxyType): void => {
-  try {
-    localStorage.setItem('preferred_proxy', proxyType);
-    // Also dispatch a storage event to notify other components
-    window.dispatchEvent(new Event('storage'));
-  } catch (err) {
-    console.error('Error storing proxy preference:', err);
-  }
-};
-
-// Get the stored proxy from localStorage
+/**
+ * Get the stored proxy type from localStorage or default to cloudflare
+ */
 export const getStoredProxy = (): ProxyType => {
-  try {
-    const stored = localStorage.getItem('preferred_proxy');
-    if (stored && (stored === 'cloudflare' || stored === 'cors-anywhere' || stored === 'direct')) {
-      return stored as ProxyType;
-    }
-  } catch (err) {
-    console.error('Error retrieving proxy preference:', err);
+  const storedProxy = localStorage.getItem('preferred_proxy');
+  if (storedProxy && ['cloudflare', 'cors-anywhere', 'direct'].includes(storedProxy)) {
+    return storedProxy as ProxyType;
   }
-  return 'cloudflare'; // Default
+  return 'cors-anywhere';
 };
 
-// Get available proxy options for UI
-export const getProxyOptions = () => [
-  { value: 'cloudflare', label: 'Cloudflare Workers' },
-  { value: 'cors-anywhere', label: 'CORS Anywhere' },
-  { value: 'direct', label: 'Kết nối trực tiếp' }
-];
+/**
+ * Store the preferred proxy type in localStorage
+ */
+export const setStoredProxy = (proxyType: ProxyType): void => {
+  localStorage.setItem('preferred_proxy', proxyType);
+};
 
-export const getProxiedUrl = (originalUrl: string, proxyType: ProxyType): string => {
-  switch (proxyType) {
+/**
+ * Get proxy URL based on the proxy type
+ */
+export const getProxyUrl = (targetUrl: string, proxyType: ProxyType = getStoredProxy()): string => {
+  switch(proxyType) {
     case 'cloudflare':
-      return `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+      // Replace with your Cloudflare Worker URL
+      return `https://cors-proxy.your-worker.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
     case 'cors-anywhere':
-      return `https://cors-anywhere.herokuapp.com/${originalUrl}`;
+      return `https://cors-anywhere.herokuapp.com/${targetUrl}`;
     case 'direct':
     default:
-      return originalUrl;
+      return targetUrl;
   }
-};
-
-export const fetchWithProxy = async (
-  url: string, 
-  proxyType: ProxyType, 
-  options: RequestInit = {}
-): Promise<Response> => {
-  const proxiedUrl = getProxiedUrl(url, proxyType);
-  return fetch(proxiedUrl, options);
 };
