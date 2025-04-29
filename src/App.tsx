@@ -1,10 +1,10 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
+import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
-import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminGuard from './components/AdminGuard';
 import AdminLayout from './components/AdminLayout';
 
 // Public Pages
@@ -63,50 +63,48 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CurrencyProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                {/* Public Routes */}
-                <Route index element={<Home />} />
-                <Route path="products" element={<Products />} />
-                <Route path="products/:slug" element={<ProductDetail />} />
-                <Route path="cart" element={<Cart />} />
-                <Route path="checkout" element={<Checkout />} />
-                <Route path="order-complete" element={<OrderComplete />} />
-                <Route path="login" element={<LoginPage />} />
-                <Route path="register" element={<RegisterPage />} />
-                <Route path="reset-password" element={<ResetPasswordPage />} />
-                <Route path="deposit" element={<Deposit />} />
-                <Route path="deposit/pending" element={<DepositPending />} />
-                <Route path="deposit/success" element={<DepositSuccess />} />
-                <Route path="loyalty-program" element={<LoyaltyProgram />} />
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              {/* Public Routes */}
+              <Route index element={<Home />} />
+              <Route path="products" element={<Products />} />
+              <Route path="products/:slug" element={<ProductDetail />} />
+              <Route path="cart" element={<Cart />} />
+              <Route path="checkout" element={<Checkout />} />
+              <Route path="order-complete" element={<OrderComplete />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
+              <Route path="reset-password" element={<ResetPasswordPage />} />
+              <Route path="deposit" element={<Deposit />} />
+              <Route path="deposit/pending" element={<DepositPending />} />
+              <Route path="deposit/success" element={<DepositSuccess />} />
+              <Route path="loyalty-program" element={<LoyaltyProgram />} />
 
-                {/* Protected Routes */}
-                <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                <Route path="dashboard/purchases" element={<PrivateRoute><PurchasesPage /></PrivateRoute>} />
-                <Route path="dashboard/orders/:id" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
-                <Route path="dashboard/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-                <Route path="dashboard/transactions" element={<PrivateRoute><TransactionsPage /></PrivateRoute>} />
-                <Route path="dashboard/loyalty" element={<PrivateRoute><LoyaltyPage /></PrivateRoute>} />
+              {/* Protected Routes */}
+              <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="dashboard/purchases" element={<PrivateRoute><PurchasesPage /></PrivateRoute>} />
+              <Route path="dashboard/orders/:id" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
+              <Route path="dashboard/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+              <Route path="dashboard/transactions" element={<PrivateRoute><TransactionsPage /></PrivateRoute>} />
+              <Route path="dashboard/loyalty" element={<PrivateRoute><LoyaltyPage /></PrivateRoute>} />
 
-                {/* Admin Routes */}
-                <Route path="admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
-                  <Route index element={<AdminHome />} />
-                  <Route path="categories" element={<AdminCategories />} />
-                  <Route path="products" element={<AdminProducts />} />
-                  <Route path="products-import" element={<AdminProductsImport />} />
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="deposits" element={<AdminDeposits />} />
-                  <Route path="reports" element={<ReportsPage />} />
-                  <Route path="integrations" element={<ProductIntegration />} />
-                  <Route path="api-monitoring" element={<ApiMonitoring />} />
-                  <Route path="exchange-rates" element={<ExchangeRates />} />
-                  <Route path="marketing/loyalty" element={<LoyaltyProgramPage />} />
-                </Route>
+              {/* Admin Routes */}
+              <Route path="admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+                <Route index element={<AdminHome />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="products-import" element={<AdminProductsImport />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="deposits" element={<AdminDeposits />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="integrations" element={<ProductIntegration />} />
+                <Route path="api-monitoring" element={<ApiMonitoring />} />
+                <Route path="exchange-rates" element={<ExchangeRates />} />
+                <Route path="marketing/loyalty" element={<LoyaltyProgramPage />} />
               </Route>
-            </Routes>
-          </Router>
+            </Route>
+          </Routes>
           <Toaster />
         </CurrencyProvider>
       </AuthProvider>

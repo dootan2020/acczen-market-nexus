@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Index from './pages/Index';
@@ -36,138 +35,11 @@ const PurchasesPage = lazy(() => import('./pages/PurchasesPage'));
 const AccountPage = lazy(() => import('./pages/AccountPage'));
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
 
-// Loading fallback component
-const LoadingFallback = () => <div className="p-8 text-center">Loading...</div>;
-
+// This component is kept for reference but is not used anymore
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Index />} />
-        <Route path="login" element={<LoginPage />} />
-        <Route path="register" element={<RegisterPage />} />
-        <Route path="products" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <ProductsPage />
-          </Suspense>
-        } />
-        <Route path="products/:slug" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <ProductDetailPage />
-          </Suspense>
-        } />
-        <Route path="cart" element={<Cart />} />
-        <Route path="checkout" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <CheckoutPage />
-          </Suspense>
-        } />
-        <Route path="order-complete" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <OrderCompletePage />
-          </Suspense>
-        } />
-        
-        {/* Deposit related routes */}
-        <Route
-          path="deposit"
-          element={
-            <PrivateRoute>
-              <Deposit />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="deposit/pending"
-          element={
-            <PrivateRoute>
-              <DepositPending />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="deposit/success"
-          element={
-            <PrivateRoute>
-              <DepositSuccess />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Dashboard routes */}
-        <Route
-          path="dashboard"
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<LoadingFallback />}>
-                <DashboardPage />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="dashboard/purchases"
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<LoadingFallback />}>
-                <PurchasesPage />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="dashboard/orders/:id"
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<LoadingFallback />}>
-                <OrderDetailsPage />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="dashboard/account"
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<LoadingFallback />}>
-                <AccountPage />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="dashboard/transactions"
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<LoadingFallback />}>
-                <TransactionsPage />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-      </Route>
-
-      {/* Admin routes - with improved AdminGuard */}
-      <Route
-        path="/admin"
-        element={
-          <AdminGuard>
-            <AdminLayout />
-          </AdminGuard>
-        }
-      >
-        <Route index element={<AdminHome />} />
-        <Route path="categories" element={<AdminCategories />} />
-        <Route path="products" element={<AdminProducts />} />
-        <Route path="products-import" element={<ProductsImport />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="deposits" element={<AdminDeposits />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="reports" element={<AdminReports />} />
-        <Route path="integrations" element={<ProductIntegration />} />
-        <Route path="api-monitoring" element={<AdminApiMonitoring />} />
-        <Route path="exchange-rates" element={<AdminExchangeRates />} />
-      </Route>
+      {/* Routes content removed as it's now in App.tsx */}
     </Routes>
   );
 };
