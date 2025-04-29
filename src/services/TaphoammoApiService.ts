@@ -5,6 +5,12 @@ import { ApiService, ApiOptions } from './api/ApiService';
 import { toast } from 'sonner';
 import { ProxyType, markProxySuccess, markProxyFailure } from '@/utils/corsProxy';
 
+// Define extended API options interface to include our custom properties
+interface ExtendedApiOptions extends ApiOptions {
+  proxyType?: ProxyType;
+  useMockData?: boolean;
+}
+
 // Local cache to prevent duplicate API calls with the same parameters
 const apiCache = new Map<string, {
   data: any; 
@@ -45,7 +51,7 @@ export class TaphoammoApiService {
   private async executeApiCall<T>(
     method: string, 
     params: Record<string, any>, 
-    options: ApiOptions = {}
+    options: ExtendedApiOptions = {}
   ): Promise<T> {
     const cacheKey = this.generateCacheKey(method, params);
     
@@ -77,7 +83,8 @@ export class TaphoammoApiService {
           body: { 
             ...params,
             proxy_type: proxyType, // Add proxy type to the request
-            action: method 
+            action: method,
+            debug_mock: options.useMockData ? 'true' : 'false' // Add debug mode flag
           }
         });
         
@@ -165,14 +172,13 @@ export class TaphoammoApiService {
    */
   public async getStock(
     kioskToken: string, 
-    options: ApiOptions = {}
+    options: ExtendedApiOptions = {}
   ): Promise<TaphoammoProduct> {
     try {
       const data = await this.executeApiCall<any>(
         'get_product', 
         { 
           kiosk_token: kioskToken,
-          debug_mock: options.useMockData ? 'true' : 'false' // Add debug mode flag
         },
         options
       );
@@ -223,7 +229,7 @@ export class TaphoammoApiService {
       const stockInfo = await this.getStock(kioskToken, {
         forceRefresh: true, // Always get fresh data for active check
         proxyType: proxyType
-      });
+      } as ExtendedApiOptions);
       
       // Check quantity and ensure kiosk is operational
       if (!stockInfo || stockInfo.stock_quantity <= 0) {

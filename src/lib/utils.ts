@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -14,13 +13,10 @@ export function cn(...inputs: ClassValue[]) {
  * @param wait The number of milliseconds to delay
  * @returns A debounced version of the provided function
  */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T, 
-  wait: number
-): (...args: Parameters<T>) => void {
+export function debounce<F extends (...args: any[]) => any>(func: F, wait: number): (...args: Parameters<F>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function(...args: Parameters<T>) {
+  return function(...args: Parameters<F>): void {
     const later = () => {
       timeout = null;
       func(...args);
