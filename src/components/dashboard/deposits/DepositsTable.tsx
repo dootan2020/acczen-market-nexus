@@ -10,17 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { getStatusBadgeVariant } from '@/hooks/useDeposits';
-
-// Define types for deposits
-interface Deposit {
-  id: string;
-  amount: number;
-  created_at: string;
-  payment_method: string;
-  status: 'pending' | 'completed' | 'rejected';
-  updated_at: string;
-}
+import { Deposit, getStatusBadgeVariant } from '@/hooks/useDeposits';
 
 interface DepositsTableProps {
   deposits: Deposit[];
@@ -61,7 +51,7 @@ export function DepositsTable({ deposits, isLoading }: DepositsTableProps) {
             <TableCell>${deposit.amount.toFixed(2)}</TableCell>
             <TableCell>{deposit.payment_method}</TableCell>
             <TableCell>
-              <Badge variant={getStatusBadgeVariant(deposit.status) as any}>
+              <Badge variant={getStatusBadgeVariant(deposit.status)}>
                 {deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}
               </Badge>
             </TableCell>

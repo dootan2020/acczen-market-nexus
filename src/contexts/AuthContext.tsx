@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
         options: {
           // Use the options format that matches the Supabase SDK version
-          autoRefreshToken: rememberMe
+          // Remove autoRefreshToken as it's not supported in the current Supabase version
         }
       });
       if (error) throw error;
