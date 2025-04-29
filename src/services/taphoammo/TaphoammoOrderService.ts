@@ -21,7 +21,7 @@ export interface ProductsResponse {
 
 /**
  * Order service for Taphoammo API
- * // TODO: Implement new API logic
+ * This service directly interacts with the Taphoammo API using CORS proxies
  */
 export class TaphoammoOrderService {
   private apiClient: any;
@@ -36,12 +36,34 @@ export class TaphoammoOrderService {
   public async buyProducts(
     kioskToken: string,
     quantity: number = 1,
-    userToken: string = 'system',
+    userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
     promotion?: string,
     proxyType: ProxyType = 'allorigins'
   ): Promise<OrderResponse> {
-    console.log('Mock buyProducts called, API integration has been removed');
-    throw new Error('API integration has been removed');
+    try {
+      // Create the API URL with query parameters
+      let apiUrl = `https://taphoammo.net/api/buyProducts?kioskToken=${kioskToken}&userToken=${userToken}&quantity=${quantity}`;
+      if (promotion) {
+        apiUrl += `&promotion=${promotion}`;
+      }
+      
+      // Get the proxy URL based on the selected proxy type
+      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
+      
+      // Make the request to the API
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      // Check if the request was successful
+      if (data.success === "false") {
+        throw new Error(data.description || data.message || 'Failed to buy products');
+      }
+      
+      return data as OrderResponse;
+    } catch (error) {
+      console.error('Error buying products:', error);
+      throw error;
+    }
   }
   
   /**
@@ -49,11 +71,30 @@ export class TaphoammoOrderService {
    */
   public async getProducts(
     orderId: string,
-    userToken: string = 'system',
+    userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
     proxyType: ProxyType = 'allorigins'
   ): Promise<ProductsResponse> {
-    console.log('Mock getProducts called, API integration has been removed');
-    throw new Error('API integration has been removed');
+    try {
+      // Create the API URL with query parameters
+      const apiUrl = `https://taphoammo.net/api/getProducts?orderId=${orderId}&userToken=${userToken}`;
+      
+      // Get the proxy URL based on the selected proxy type
+      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
+      
+      // Make the request to the API
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      // Check if the request was successful
+      if (data.success === "false") {
+        throw new Error(data.description || data.message || 'Failed to get products');
+      }
+      
+      return data as ProductsResponse;
+    } catch (error) {
+      console.error('Error getting products:', error);
+      throw error;
+    }
   }
   
   /**
@@ -67,10 +108,59 @@ export class TaphoammoOrderService {
     available: boolean;
     message?: string;
   }> {
-    console.log('Mock checkStockAvailability called, API integration has been removed');
-    return {
-      available: false,
-      message: 'API integration has been removed'
-    };
+    try {
+      // Create the API URL with query parameters
+      const apiUrl = `https://taphoammo.net/api/getStock?kioskToken=${kioskToken}`;
+      
+      // Get the proxy URL based on the selected proxy type
+      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
+      
+      // Make the request to the API
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      // Check if the request was successful
+      if (data.success === "false") {
+        return {
+          available: false,
+          message: data.description || data.message || 'Failed to check stock availability'
+        };
+      }
+      
+      // Check if there is enough stock
+      const stockAvailable = parseInt(data.stock || '0');
+      if (stockAvailable < quantity) {
+        return {
+          available: false,
+          message: `Insufficient stock. Requested: ${quantity}, Available: ${stockAvailable}`
+        };
+      }
+      
+      return {
+        available: true,
+        message: `Stock available: ${stockAvailable}`
+      };
+    } catch (error) {
+      console.error('Error checking stock availability:', error);
+      return {
+        available: false,
+        message: `Error checking stock: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+  
+  /**
+   * Get the proxy URL based on the selected proxy type
+   */
+  private getProxyUrl(apiUrl: string, proxyType: ProxyType): string {
+    switch (proxyType) {
+      case 'corsproxy':
+        return `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+      case 'cors-anywhere':
+        return `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+      case 'allorigins':
+      default:
+        return `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+    }
   }
 }
