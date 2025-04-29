@@ -1,13 +1,24 @@
 
 import { Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ProductHeaderProps {
   name: string;
+  slug?: string;
+  categoryName?: string;
+  categorySlug?: string;
   rating?: number;
   reviewCount?: number;
 }
 
-const ProductHeader = ({ name, rating = 0, reviewCount = 0 }: ProductHeaderProps) => {
+const ProductHeader = ({ 
+  name, 
+  slug, 
+  categoryName, 
+  categorySlug,
+  rating = 0, 
+  reviewCount = 0 
+}: ProductHeaderProps) => {
   const renderRating = () => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -35,6 +46,20 @@ const ProductHeader = ({ name, rating = 0, reviewCount = 0 }: ProductHeaderProps
 
   return (
     <div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        {categoryName && categorySlug && (
+          <Link to={`/category/${categorySlug}`} className="hover:text-primary">
+            {categoryName}
+          </Link>
+        )}
+        {categoryName && (
+          <>
+            <span>/</span>
+            <span>{name}</span>
+          </>
+        )}
+      </div>
+      
       <h1 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight">{name}</h1>
       
       {rating > 0 && (

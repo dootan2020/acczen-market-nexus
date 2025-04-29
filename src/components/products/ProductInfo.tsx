@@ -25,6 +25,7 @@ interface ProductInfoProps {
 const ProductInfo = ({ 
   id, 
   name, 
+  description,
   price, 
   salePrice, 
   stockQuantity,
@@ -50,7 +51,7 @@ const ProductInfo = ({
     });
 
     toast({
-      title: "Đã thêm vào giỏ hàng",
+      title: "Added to cart",
       description: `${quantity} x ${name}`,
     });
   };
@@ -62,6 +63,8 @@ const ProductInfo = ({
         rating={rating}
         reviewCount={reviewCount}
       />
+      
+      <p className="text-muted-foreground mt-2 mb-4">{description}</p>
       
       <ProductPricing 
         price={price}

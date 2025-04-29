@@ -6,7 +6,7 @@ import { FallbackPayPalButton } from './FallbackPayPalButton';
 
 interface Props {
   children: React.ReactNode;
-  amount?: number; // Make amount optional
+  amount?: number; 
   onSuccess?: (orderDetails: any, amount: number) => Promise<void>;
 }
 

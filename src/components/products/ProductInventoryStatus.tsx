@@ -9,33 +9,37 @@ import ProxySelector from './inventory/ProxySelector';
 
 interface InventoryStatusProps {
   stockQuantity: number;
-  lastChecked: string | Date | null;
+  lastChecked?: string | Date | null;
   isLoading?: boolean;
   onRefresh?: () => Promise<void>;
+  kioskToken?: string | null;
 }
 
 const formatTimeAgo = (date: Date | string) => {
+  if (!date) return '';
+  
   const now = new Date();
   const past = new Date(date);
   const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
   
-  if (seconds < 60) return `${seconds} giây trước`;
+  if (seconds < 60) return `${seconds} seconds ago`;
   
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 60) return `${minutes} minutes ago`;
   
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return `${hours} hours ago`;
   
   const days = Math.floor(hours / 24);
-  return `${days} ngày trước`;
+  return `${days} days ago`;
 };
 
 export default function ProductInventoryStatus({ 
   stockQuantity, 
   lastChecked, 
   isLoading = false,
-  onRefresh 
+  onRefresh,
+  kioskToken
 }: InventoryStatusProps) {
   const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
@@ -69,7 +73,7 @@ export default function ProductInventoryStatus({
     <Card className="mt-6">
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium">Tình trạng tồn kho</h3>
+          <h3 className="text-sm font-medium">Inventory Status</h3>
           <div className="flex items-center gap-1">
             <ProxySelector 
               currentProxy={currentProxy}
@@ -98,16 +102,16 @@ export default function ProductInventoryStatus({
             <Badge 
               variant={stockQuantity > 0 ? "success" : "destructive"}
             >
-              {stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+              {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
             </Badge>
-            <span className="text-sm">{stockQuantity} sản phẩm</span>
+            <span className="text-sm">{stockQuantity} items</span>
           </div>
           
           <div className="text-xs text-muted-foreground">
             {lastChecked ? (
-              <>Cập nhật {formatTimeAgo(lastChecked)}</>
+              <>Updated {formatTimeAgo(lastChecked)}</>
             ) : (
-              <>Chưa có dữ liệu</>
+              <>No data yet</>
             )}
           </div>
         </div>

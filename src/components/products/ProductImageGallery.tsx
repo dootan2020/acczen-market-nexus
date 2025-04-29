@@ -13,30 +13,29 @@ import {
 } from "@/components/ui/carousel";
 
 interface ProductImageGalleryProps {
-  imageUrl: string;
-  name: string;
+  imageUrl?: string;
+  name?: string;
   salePrice?: number | null;
   categoryName?: string;
-  // In a real app, you'd have multiple images
-  additionalImages?: string[];
+  images?: string[];
 }
 
 const ProductImageGallery = ({
   imageUrl,
-  name,
+  name = "Product",
   salePrice,
   categoryName,
-  additionalImages = [],
+  images = [],
 }: ProductImageGalleryProps) => {
   const [favorited, setFavorited] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   // Combine main image with additional images
-  const allImages = [imageUrl, ...additionalImages].filter(Boolean);
+  const allImages = imageUrl ? [imageUrl, ...images] : images;
 
   // Use placeholder if no images available
   if (allImages.length === 0) {
-    allImages.push('https://placehold.co/600x400?text=No+Image');
+    allImages.push('/placeholder.svg');
   }
   
   return (

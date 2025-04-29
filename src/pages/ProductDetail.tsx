@@ -59,40 +59,46 @@ const ProductDetail = () => {
       </Container>
     );
   }
+
+  // Extract product images or use the main image
+  const productImages = product.image_url ? [product.image_url] : [];
   
   return (
     <div>
       <Container className="py-8 md:py-12">
         <ProductHeader
           name={product.name}
-          slug={product.slug}
-          categoryName={product.category?.name}
-          categorySlug={product.category?.slug}
+          categoryName={product.category?.name || ''}
+          rating={4.5} // Example rating
+          reviewCount={10} // Example review count
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-12">
-          <ProductImageGallery images={product.images || [product.image_url || '/placeholder.svg']} />
+          <ProductImageGallery 
+            imageUrl={product.image_url || '/placeholder.svg'} 
+            name={product.name}
+            salePrice={product.sale_price}
+            categoryName={product.category?.name}
+          />
           
           <div className="space-y-6">
             <ProductInfo 
+              id={product.id}
               name={product.name}
-              description={product.description}
-            />
-            
-            <ProductPricing 
-              price={product.price} 
+              description={product.description || ''}
+              price={product.price}
               salePrice={product.sale_price}
+              stockQuantity={product.stock_quantity}
+              image={product.image_url || '/placeholder.svg'}
+              rating={4.5} // Example rating
+              reviewCount={10} // Example review count
+              soldCount={50} // Example sold count
+              kiosk_token={product.kiosk_token}
             />
             
             <ProductInventoryStatus
               stockQuantity={product.stock_quantity}
-              kioskToken={product.kiosk_token}
-            />
-            
-            <ProductActions 
-              product={product}
-              quantity={quantity}
-              onQuantityChange={setQuantity}
+              lastChecked={new Date().toISOString()} // Example timestamp
             />
             
             <ProductBenefits />
@@ -105,7 +111,7 @@ const ProductDetail = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2">
-            <ProductDescription description={product.description} />
+            <ProductDescription description={product.description || ''} />
           </div>
         </div>
         
