@@ -6,6 +6,7 @@ import ProductQuantity from "./ProductQuantity";
 import { PurchaseConfirmModal } from "./purchase/PurchaseConfirmModal";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { cn } from "@/lib/utils";
 
 interface ProductInfoProps {
   id: string;
@@ -36,6 +37,7 @@ const ProductInfo = ({
 }: ProductInfoProps) => {
   const [quantity, setQuantity] = useState(1);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -53,6 +55,12 @@ const ProductInfo = ({
     setQuantity(newQuantity);
   };
   
+  const toggleFavorite = () => {
+    // In a real app, this would call an API to save the favorite status
+    setIsFavorited(!isFavorited);
+    console.log(`Product ${id} ${isFavorited ? 'removed from' : 'added to'} favorites`);
+  };
+  
   return (
     <>
       <div className="space-y-6">
@@ -64,7 +72,7 @@ const ProductInfo = ({
           />
           
           <div className="flex-grow">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-inter">
               {stockQuantity > 0 
                 ? `${stockQuantity} sản phẩm có sẵn` 
                 : 'Hết hàng'}
@@ -77,19 +85,30 @@ const ProductInfo = ({
             onClick={handleBuyNow} 
             disabled={stockQuantity <= 0}
             size="lg"
-            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white"
+            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] font-inter"
           >
             <ShoppingBag className="mr-2 h-5 w-5" />
             Mua ngay
           </Button>
           
           <Button 
+            onClick={toggleFavorite}
             variant="outline"
             size="lg"
-            className="flex-1 border-[#2ECC71] text-[#2ECC71] hover:bg-[#2ECC71]/10"
+            className={cn(
+              "flex-1 transition-all duration-300 border-2",
+              isFavorited 
+                ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/10 hover:bg-[#E74C3C]/20" 
+                : "border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10"
+            )}
           >
-            <Heart className="mr-2 h-5 w-5" />
-            Yêu thích
+            <Heart 
+              className={cn(
+                "mr-2 h-5 w-5 transition-all duration-300", 
+                isFavorited && "fill-[#E74C3C]"
+              )} 
+            />
+            {isFavorited ? 'Đã yêu thích' : 'Yêu thích'}
           </Button>
         </div>
       </div>

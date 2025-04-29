@@ -1,43 +1,51 @@
 
-import { Package, Shield, Clock, CreditCard } from "lucide-react";
+import { 
+  Truck, 
+  Shield, 
+  Award, 
+  RefreshCw 
+} from "lucide-react";
 
 const ProductBenefits = () => {
+  const benefits = [
+    {
+      icon: <Truck className="h-8 w-8 text-[#2ECC71]" />,
+      title: "Giao hàng miễn phí",
+      description: "Áp dụng cho đơn hàng từ $50"
+    },
+    {
+      icon: <Shield className="h-8 w-8 text-[#3498DB]" />,
+      title: "Bảo mật 100%",
+      description: "Thanh toán an toàn & bảo mật"
+    },
+    {
+      icon: <Award className="h-8 w-8 text-[#F1C40F]" />,
+      title: "Sản phẩm chất lượng",
+      description: "Cam kết chất lượng cao"
+    },
+    {
+      icon: <RefreshCw className="h-8 w-8 text-[#E74C3C]" />,
+      title: "Hoàn tiền dễ dàng",
+      description: "Trong vòng 30 ngày"
+    }
+  ];
+
   return (
-    <div className="my-10 bg-secondary/30 rounded-lg p-6">
-      <h3 className="text-lg font-semibold mb-4 text-center">Ưu đãi khi mua sắm tại AccZen</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="flex items-center p-4 border border-border bg-background rounded-lg shadow-sm transition-transform hover:scale-105">
-          <Package className="h-9 w-9 text-primary shrink-0 mr-4" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {benefits.map((benefit, index) => (
+        <div 
+          key={index} 
+          className="flex items-start gap-3 p-4 bg-[#F9FAFB] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 hover:bg-white"
+        >
+          <div className="flex-shrink-0 mt-1">
+            {benefit.icon}
+          </div>
           <div>
-            <h4 className="font-medium">Giao hàng tức thì</h4>
-            <p className="text-sm text-muted-foreground">Nhận hàng ngay qua email</p>
+            <h3 className="text-base font-semibold mb-1 text-[#333333] font-poppins">{benefit.title}</h3>
+            <p className="text-sm text-gray-600 font-inter">{benefit.description}</p>
           </div>
         </div>
-        
-        <div className="flex items-center p-4 border border-border bg-background rounded-lg shadow-sm transition-transform hover:scale-105">
-          <Shield className="h-9 w-9 text-primary shrink-0 mr-4" />
-          <div>
-            <h4 className="font-medium">Bảo đảm 100%</h4>
-            <p className="text-sm text-muted-foreground">Hoàn tiền nếu có vấn đề</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center p-4 border border-border bg-background rounded-lg shadow-sm transition-transform hover:scale-105">
-          <Clock className="h-9 w-9 text-primary shrink-0 mr-4" />
-          <div>
-            <h4 className="font-medium">Hỗ trợ 24/7</h4>
-            <p className="text-sm text-muted-foreground">Luôn sẵn sàng hỗ trợ bạn</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center p-4 border border-border bg-background rounded-lg shadow-sm transition-transform hover:scale-105">
-          <CreditCard className="h-9 w-9 text-primary shrink-0 mr-4" />
-          <div>
-            <h4 className="font-medium">Thanh toán an toàn</h4>
-            <p className="text-sm text-muted-foreground">Nhiều phương thức thanh toán</p>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };

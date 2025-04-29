@@ -1,7 +1,7 @@
 
 import React from 'react';
 import DOMPurify from 'dompurify';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface RichTextContentProps {
   content: string;
@@ -40,8 +40,8 @@ const RichTextContent = ({ content, className = '' }: RichTextContentProps) => {
     <div 
       className={cn(
         "prose prose-sm md:prose-base max-w-none",
-        "prose-headings:text-foreground prose-headings:font-semibold",
-        "prose-p:text-foreground",
+        "prose-headings:text-foreground prose-headings:font-semibold prose-headings:font-poppins",
+        "prose-p:text-foreground prose-p:font-inter",
         "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
         "prose-img:rounded-md prose-img:mx-auto",
         "prose-strong:text-foreground",

@@ -1,3 +1,4 @@
+
 import { fontFamily } from "tailwindcss/defaultTheme";
 import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
@@ -62,6 +63,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", ...fontFamily.sans],
+        poppins: ["Poppins", ...fontFamily.sans],
+        inter: ["Inter", ...fontFamily.sans],
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -95,6 +98,8 @@ const config: Config = {
             },
             'h1, h2, h3, h4, h5, h6': {
               color: 'hsl(var(--foreground))',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: '600',
             },
           },
         },
@@ -117,7 +122,23 @@ const config: Config = {
         },
         "html.dark": {
           colorScheme: "dark"
-        }
+        },
+        '@font-face': [
+          {
+            fontFamily: 'Poppins',
+            fontWeight: '400 700',
+            fontStyle: 'normal',
+            fontDisplay: 'swap',
+            src: 'url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap")'
+          },
+          {
+            fontFamily: 'Inter',
+            fontWeight: '400 500',
+            fontStyle: 'normal',
+            fontDisplay: 'swap',
+            src: 'url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap")'
+          }
+        ],
       })
     })
   ],
