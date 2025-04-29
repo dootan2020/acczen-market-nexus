@@ -15,7 +15,7 @@ export const PAYPAL_WEBHOOK_EVENTS = {
   PAYMENT_CAPTURE_DENIED: 'PAYMENT.CAPTURE.DENIED',
   PAYMENT_CAPTURE_REFUNDED: 'PAYMENT.CAPTURE.REFUNDED',
   PAYMENT_CAPTURE_PENDING: 'PAYMENT.CAPTURE.PENDING'
-};
+} as const;
 
 // PayPal payment statuses
 export const PAYMENT_STATUS = {
@@ -23,4 +23,8 @@ export const PAYMENT_STATUS = {
   APPROVED: 'APPROVED',
   DENIED: 'DENIED',
   PENDING: 'PENDING'
-};
+} as const;
+
+// Export types for better TypeScript support
+export type PayPalWebhookEvent = typeof PAYPAL_WEBHOOK_EVENTS[keyof typeof PAYPAL_WEBHOOK_EVENTS];
+export type PayPalPaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -124,8 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         password,
         options: {
-          // Use the options format that matches the Supabase SDK version
-          // Remove autoRefreshToken as it's not supported in the current Supabase version
+          // Use only supported options
         }
       });
       if (error) throw error;

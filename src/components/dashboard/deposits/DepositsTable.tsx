@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { Deposit, getStatusBadgeVariant } from '@/hooks/useDeposits';
+import { Deposit } from '@/types/deposits';
 
 interface DepositsTableProps {
   deposits: Deposit[];
@@ -34,6 +34,16 @@ export function DepositsTable({ deposits, isLoading }: DepositsTableProps) {
     );
   }
   
+  // Helper function to get the right badge variant
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'completed': return 'success';
+      case 'pending': return 'default';
+      case 'rejected': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
   return (
     <Table>
       <TableHeader>

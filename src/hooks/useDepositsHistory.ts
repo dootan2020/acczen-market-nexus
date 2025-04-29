@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Deposit } from '@/hooks/useDeposits';
+import { Deposit } from '@/types/deposits';
 
 const PAGE_SIZE = 10;
 
@@ -20,6 +20,7 @@ export const useDepositsHistory = () => {
         .from('deposits')
         .select(`
           id,
+          user_id,
           amount,
           payment_method,
           status,

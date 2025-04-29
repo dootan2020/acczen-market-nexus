@@ -38,7 +38,7 @@ const DepositHistoryPage = () => {
     );
   }
 
-  if (!deposits.length) {
+  if (!isLoading && !deposits.length) {
     return (
       <Card>
         <CardHeader>
