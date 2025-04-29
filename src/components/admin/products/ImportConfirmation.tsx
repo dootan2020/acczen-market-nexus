@@ -133,19 +133,26 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
           Quay lại
         </Button>
         
-        {status === 'idle' || status === 'error' ? (
-          <Button 
-            onClick={importProduct} 
-            disabled={status === 'loading'}
-          >
-            {status === 'error' ? 'Thử lại' : 'Import sản phẩm'}
+        {status === 'idle' && (
+          <Button onClick={importProduct}>
+            Import sản phẩm
           </Button>
-        ) : status === 'loading' ? (
+        )}
+        
+        {status === 'error' && (
+          <Button onClick={importProduct}>
+            Thử lại
+          </Button>
+        )}
+        
+        {status === 'loading' && (
           <Button disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Đang import...
           </Button>
-        ) : (
+        )}
+        
+        {status === 'success' && (
           <Button disabled>
             <CheckCircle2 className="mr-2 h-4 w-4" />
             Đã import thành công
