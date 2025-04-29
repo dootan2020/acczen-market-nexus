@@ -46,7 +46,7 @@ serve(async (req: Request) => {
     }
     
     // Get request body
-    const { userId, discountPercentage, discountNote } = await req.json();
+    const { userId, discountPercentage, discountNote, expiresAt } = await req.json();
     
     // Validate inputs
     if (!userId || discountPercentage === undefined || discountPercentage === null) {
@@ -57,11 +57,25 @@ serve(async (req: Request) => {
       throw new Error('Invalid discount percentage: must be a number between 0 and 100');
     }
     
+    // Validate expiry date if provided
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt);
+      if (isNaN(expiryDate.getTime())) {
+        throw new Error('Invalid expiry date format');
+      }
+      
+      const now = new Date();
+      if (expiryDate < now) {
+        throw new Error('Expiry date cannot be in the past');
+      }
+    }
+    
     // Call database function to update discount
     const { data, error } = await supabaseClient.rpc('admin_update_user_discount', {
       p_user_id: userId,
       p_discount_percentage: discountPercentage,
-      p_discount_note: discountNote || null
+      p_discount_note: discountNote || null,
+      p_expires_at: expiresAt || null
     });
     
     if (error) {

@@ -16,7 +16,8 @@ export interface UserProfile {
   discount_note?: string;
   discount_updated_at?: string;
   discount_updated_by?: string;
-  phone?: string; // Added the phone property
+  discount_expires_at?: string; // Added field for temporary discount expiration
+  phone?: string;
 }
 
 export interface UserDiscountHistory {
@@ -27,6 +28,7 @@ export interface UserDiscountHistory {
   changed_by: string;
   change_note?: string;
   created_at: string;
+  expiry_date?: string; // Added field for expiry date
   admin?: {
     username?: string;
     full_name?: string;

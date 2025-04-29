@@ -13,6 +13,7 @@ export type DiscountHistoryItem = {
   changed_by: string;
   change_note: string;
   created_at: string;
+  expiry_date?: string; // Added for temporary discount
   admin?: {
     username?: string;
     full_name?: string;
@@ -24,6 +25,7 @@ export interface SetDiscountParams {
   userId: string;
   discountPercentage: number;
   discountNote?: string;
+  expiryDate?: Date | null; // Added for temporary discount
 }
 
 export const useUserDiscount = (userId?: string) => {
@@ -42,7 +44,7 @@ export const useUserDiscount = (userId?: string) => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('discount_percentage, discount_note, discount_updated_at, discount_updated_by')
+        .select('discount_percentage, discount_note, discount_updated_at, discount_updated_by, discount_expires_at')
         .eq('id', userId)
         .single();
         
@@ -79,12 +81,13 @@ export const useUserDiscount = (userId?: string) => {
 
   // Set user discount mutation
   const setDiscountMutation = useMutation({
-    mutationFn: async ({ userId, discountPercentage, discountNote }: SetDiscountParams) => {
+    mutationFn: async ({ userId, discountPercentage, discountNote, expiryDate }: SetDiscountParams) => {
       const { data, error } = await supabase.functions.invoke('set-user-discount', {
         body: {
           userId,
           discountPercentage,
           discountNote,
+          expiresAt: expiryDate ? expiryDate.toISOString() : null,
         },
       });
       
@@ -98,6 +101,12 @@ export const useUserDiscount = (userId?: string) => {
       queryClient.invalidateQueries({ queryKey: ['user-discount', userId] });
       queryClient.invalidateQueries({ queryKey: ['user-discount-history', userId] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['discount-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['discount-distribution'] });
+      queryClient.invalidateQueries({ queryKey: ['discount-timeline'] });
+      queryClient.invalidateQueries({ queryKey: ['top-discounted-users'] });
+      queryClient.invalidateQueries({ queryKey: ['discount-summary'] });
+
       toast.success('Discount updated successfully');
       setIsDialogOpen(false);
     },

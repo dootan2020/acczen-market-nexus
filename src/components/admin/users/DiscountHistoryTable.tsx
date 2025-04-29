@@ -11,17 +11,20 @@ import {
 } from '@/components/ui/table';
 import { DiscountHistoryItem } from '@/hooks/admin/useUserDiscount';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, User2Icon } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { CalendarIcon, User2Icon, ClockIcon, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DiscountHistoryTableProps {
   history: DiscountHistoryItem[];
   isLoading: boolean;
+  onExportCSV?: () => void;
 }
 
 export const DiscountHistoryTable: React.FC<DiscountHistoryTableProps> = ({
   history,
   isLoading,
+  onExportCSV,
 }) => {
   const formatDate = (dateString: string) => {
     try {
@@ -39,6 +42,35 @@ export const DiscountHistoryTable: React.FC<DiscountHistoryTableProps> = ({
       return <Badge variant="destructive">{diff.toFixed(1)}%</Badge>;
     } else {
       return <Badge variant="outline">No change</Badge>;
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (onExportCSV) {
+      onExportCSV();
+    } else {
+      // Default export implementation if none provided
+      const headers = ['Date', 'Previous', 'New', 'Change', 'Admin', 'Note', 'Expiry Date'];
+      const csvData = history.map(item => [
+        formatDate(item.created_at),
+        `${item.previous_percentage}%`,
+        `${item.new_percentage}%`,
+        `${item.new_percentage - item.previous_percentage}%`,
+        item.admin?.full_name || item.admin?.username || item.admin?.email || 'Unknown',
+        item.change_note || '-',
+        item.expiry_date ? formatDate(item.expiry_date) : 'No expiry'
+      ]);
+      
+      const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `discount_history_${new Date().getTime()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -74,8 +106,12 @@ export const DiscountHistoryTable: React.FC<DiscountHistoryTableProps> = ({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Discount History</CardTitle>
+        <Button variant="outline" size="sm" onClick={handleExportCSV}>
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -87,7 +123,8 @@ export const DiscountHistoryTable: React.FC<DiscountHistoryTableProps> = ({
                 <TableHead>New</TableHead>
                 <TableHead>Change</TableHead>
                 <TableHead>Admin</TableHead>
-                <TableHead className="w-1/3">Note</TableHead>
+                <TableHead className="w-1/4">Note</TableHead>
+                <TableHead>Expiry</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -116,6 +153,16 @@ export const DiscountHistoryTable: React.FC<DiscountHistoryTableProps> = ({
                     <div className="truncate" title={item.change_note || '-'}>
                       {item.change_note || '-'}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {item.expiry_date ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {formatDate(item.expiry_date)}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No expiry</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

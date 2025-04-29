@@ -18,10 +18,11 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '@/components/ui/select';
-import { Search, UserCog, Download, Filter } from 'lucide-react';
+} from "@/components/ui/select";
+import { Search, UserCog, Download, Filter, BarChart } from 'lucide-react';
 import { UserDiscountForm } from './UserDiscountForm';
 import { useUserDiscount } from '@/hooks/admin/useUserDiscount';
+import { Link } from 'react-router-dom';
 
 const AdminUsers = () => {
   const { 
@@ -65,6 +66,8 @@ const AdminUsers = () => {
           return discount > 0;
         case 'high-discount':
           return discount >= 10;
+        case 'temporary-discount':
+          return discount > 0 && user.discount_expires_at;
         default:
           return true;
       }
@@ -85,13 +88,19 @@ const AdminUsers = () => {
     setIsDiscountDialogOpen(true);
   };
   
-  const handleDiscountSubmit = (values: { discountPercentage: number; discountNote?: string }) => {
+  const handleDiscountSubmit = (values: { 
+    discountPercentage: number; 
+    discountNote?: string;
+    isTemporary?: boolean; 
+    expiryDate?: Date | null;
+  }) => {
     if (!currentUser) return;
     
     setDiscountMutation.mutate({
       userId: currentUser.id,
       discountPercentage: values.discountPercentage,
-      discountNote: values.discountNote
+      discountNote: values.discountNote,
+      expiryDate: values.expiryDate
     });
   };
 
@@ -99,14 +108,67 @@ const AdminUsers = () => {
     setCurrentUser(user);
   };
 
+  const handleExportUsers = () => {
+    // Simple CSV export of users with discounts
+    if (!users) return;
+    
+    const discountedUsers = users.filter(user => user.discount_percentage > 0);
+    if (discountedUsers.length === 0) {
+      toast.info('No users with discounts to export');
+      return;
+    }
+    
+    const headers = [
+      'Email', 
+      'Username', 
+      'Full Name', 
+      'Discount %', 
+      'Note', 
+      'Updated At', 
+      'Expires'
+    ];
+    
+    const csvData = discountedUsers.map(user => [
+      user.email || '',
+      user.username || '',
+      user.full_name || '',
+      user.discount_percentage || 0,
+      user.discount_note || '',
+      user.discount_updated_at || '',
+      user.discount_expires_at || ''
+    ]);
+    
+    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users_with_discounts_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Users with discounts exported successfully');
+  };
+
   return (
     <div className="container px-4 sm:px-6 w-full max-w-full mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Users Management</h1>
-        <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportUsers}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="default" asChild>
+            <Link to="/admin/discount-analytics">
+              <BarChart className="h-4 w-4 mr-2" />
+              Discount Analytics
+            </Link>
+          </Button>
+        </div>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 items-start">
@@ -146,6 +208,7 @@ const AdminUsers = () => {
                 <SelectItem value="no-discount">No Discount (0%)</SelectItem>
                 <SelectItem value="with-discount">With Discount ({'>'}0%)</SelectItem>
                 <SelectItem value="high-discount">High Discount (≥10%)</SelectItem>
+                <SelectItem value="temporary-discount">Temporary Discounts</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -206,6 +269,7 @@ const AdminUsers = () => {
         isLoading={setDiscountMutation.isPending}
         currentDiscount={currentUser?.discount_percentage || 0}
         currentNote={currentUser?.discount_note || ''}
+        currentExpiryDate={currentUser?.discount_expires_at || null}
         username={currentUser?.username || currentUser?.email}
       />
       

@@ -197,6 +197,7 @@ export type Database = {
           change_note: string | null
           changed_by: string | null
           created_at: string | null
+          expiry_date: string | null
           id: string
           new_percentage: number | null
           previous_percentage: number | null
@@ -206,6 +207,7 @@ export type Database = {
           change_note?: string | null
           changed_by?: string | null
           created_at?: string | null
+          expiry_date?: string | null
           id?: string
           new_percentage?: number | null
           previous_percentage?: number | null
@@ -215,6 +217,7 @@ export type Database = {
           change_note?: string | null
           changed_by?: string | null
           created_at?: string | null
+          expiry_date?: string | null
           id?: string
           new_percentage?: number | null
           previous_percentage?: number | null
@@ -225,8 +228,22 @@ export type Database = {
             foreignKeyName: "discount_history_changed_by_fkey"
             columns: ["changed_by"]
             isOneToOne: false
+            referencedRelation: "discount_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "discount_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "discount_analytics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "discount_history_user_id_fkey"
@@ -766,6 +783,7 @@ export type Database = {
           avatar_url: string | null
           balance: number
           created_at: string
+          discount_expires_at: string | null
           discount_note: string | null
           discount_percentage: number | null
           discount_updated_at: string | null
@@ -781,6 +799,7 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
+          discount_expires_at?: string | null
           discount_note?: string | null
           discount_percentage?: number | null
           discount_updated_at?: string | null
@@ -796,6 +815,7 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           created_at?: string
+          discount_expires_at?: string | null
           discount_note?: string | null
           discount_percentage?: number | null
           discount_updated_at?: string | null
@@ -808,6 +828,13 @@ export type Database = {
           username?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_discount_updated_by_fkey"
+            columns: ["discount_updated_by"]
+            isOneToOne: false
+            referencedRelation: "discount_analytics"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "profiles_discount_updated_by_fkey"
             columns: ["discount_updated_by"]
@@ -1114,7 +1141,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      discount_analytics: {
+        Row: {
+          discount_expires_at: string | null
+          discount_note: string | null
+          discount_percentage: number | null
+          discount_updated_at: string | null
+          email: string | null
+          full_name: string | null
+          order_count: number | null
+          total_discount_amount: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          discount_expires_at?: string | null
+          discount_note?: string | null
+          discount_percentage?: number | null
+          discount_updated_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          order_count?: never
+          total_discount_amount?: never
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          discount_expires_at?: string | null
+          discount_note?: string | null
+          discount_percentage?: number | null
+          discount_updated_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          order_count?: never
+          total_discount_amount?: never
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_loyalty_points: {
@@ -1136,11 +1201,18 @@ export type Database = {
         Returns: boolean
       }
       admin_update_user_discount: {
-        Args: {
-          p_user_id: string
-          p_discount_percentage: number
-          p_discount_note: string
-        }
+        Args:
+          | {
+              p_user_id: string
+              p_discount_percentage: number
+              p_discount_note: string
+            }
+          | {
+              p_user_id: string
+              p_discount_percentage: number
+              p_discount_note: string
+              p_expires_at?: string
+            }
         Returns: string
       }
       calculate_loyalty_discount: {
@@ -1184,6 +1256,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_expired_discounts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       update_opened_at_if_needed: {
         Args: Record<PropertyKey, never>
