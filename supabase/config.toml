@@ -1,77 +1,75 @@
 
+# This is your Supabase project's configuration file
+
 project_id = "epwggtbgdtaxietedjcn"
 
+# Apply migrations when pushing
+migrations.migrate_on_push = true
+
 [api]
-enabled = true
+# Port to use for the API URL.
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+# Enable JWT verification for all API requests.
+# If false, it will still be enforced for all protected endpoints.
+verify_jwt = true
 
 [db]
+# Port to use for the database.
 port = 54322
-shadow_port = 54320
+# The database major version to use. This has to be the same as your remote database's.
 major_version = 15
 
 [studio]
-enabled = true
+# Port to use for Supabase Studio.
 port = 54323
-api_url = "http://127.0.0.1"
 
+# Email testing server
 [inbucket]
-enabled = true
+# Port to use for the email testing server web interface.
 port = 54324
 
+[storage]
+# The maximum file size allowed (in bytes).
+file_size_limit = 5242880
+
 [auth]
-enabled = true
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# The base URL of your website. Used as an allow-list for redirects (no trailing slash).
+site_url = "http://localhost:3000"
+# List of additional redirect URLs that users can sign in from (no trailing slash, leave empty for no additional URLs).
+additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
+# Allow/disallow new user signups to your project.
 enable_signup = true
 
 [auth.email]
+# Allow/disallow new user signups via email to your project.
 enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old and new email addresses.
+# If disabled, only the new email is required to confirm.
 double_confirm_changes = true
-enable_confirmations = false
-
-[auth.sms]
-enable_signup = true
+# If enabled, users need to confirm their email address before signing in.
 enable_confirmations = true
 
-[auth.external.github]
-enabled = true
-client_id = "env(SUPABASE_AUTH_GITHUB_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_GITHUB_SECRET)"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
-
-[auth.external.google]
-enabled = true
-client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
-
-[analytics]
+# Use an external OAuth provider. The full list of providers are: "apple", "azure", "bitbucket",
+# "discord", "facebook", "github", "gitlab", "google", "keycloak", "linkedin", "notion",
+# "twitch", "twitter", "slack", "spotify", "workos", "zoom".
+[auth.external.apple]
 enabled = false
-port = 54327
-vector_port = 54328
-backend = "postgres"
-
-[experimental]
-orioledb_version = ""
+client_id = ""
+secret = ""
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
 
 [functions]
-serve_floats_as_decimals = true
-
-[functions.process-transaction]
+# Relative path to look for functions (in format ./{file}) from project root.
+dir = "./supabase/functions"
+[functions.calculate-loyalty-discount]
 verify_jwt = true
-
-[functions.taphoammo-api]
+[functions.award-loyalty-points]
 verify_jwt = true
-
-[functions.process-taphoammo-order]
-verify_jwt = true
-
-[functions.update-exchange-rates]
+[functions.check-user-tier]
 verify_jwt = true

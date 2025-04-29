@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, AlertTriangle, ShieldCheck, CreditCard } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ShieldCheck, CreditCard, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useLoyalty } from '@/hooks/useLoyalty';
+import { LoyaltyDiscountInfo } from '@/components/checkout/LoyaltyDiscountInfo';
 import CheckoutEmpty from '@/components/checkout/CheckoutEmpty';
 import OrderSummary from '@/components/checkout/OrderSummary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -43,6 +45,16 @@ const Checkout = () => {
     validStock: true
   });
   const { isProcessing, executePurchase } = usePurchaseProduct();
+  const { calculateDiscount, isLoadingDiscount } = useLoyalty();
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState<{
+    discount: number;
+    loyaltyInfo: any;
+    potentialPoints: number;
+  }>({
+    discount: 0,
+    loyaltyInfo: null,
+    potentialPoints: 0
+  });
   
   // Check if we have a direct product purchase
   const directProduct = location.state?.product;
@@ -79,7 +91,26 @@ const Checkout = () => {
         
         // Get items and total price
         const productPrice = directProduct ? directProduct.price : 0;
-        const total = productPrice * quantity;
+        const totalBeforeDiscount = productPrice * quantity;
+        
+        // Calculate loyalty discount if user is logged in
+        try {
+          if (user && totalBeforeDiscount > 0) {
+            const discountResult = await calculateDiscount(totalBeforeDiscount);
+            if (discountResult) {
+              setLoyaltyDiscount({
+                discount: discountResult.discount || 0,
+                loyaltyInfo: discountResult.loyaltyInfo,
+                potentialPoints: discountResult.potentialPoints || 0
+              });
+            }
+          }
+        } catch (discountError) {
+          console.error('Error calculating loyalty discount:', discountError);
+        }
+        
+        // Calculate final total after loyalty discount
+        const total = totalBeforeDiscount - (loyaltyDiscount?.discount || 0);
         
         // Validate checkout data
         validateCheckout(data.balance || 0, directProduct, total);
@@ -98,9 +129,15 @@ const Checkout = () => {
     fetchBalance();
   }, [user, navigate, location, toast, directProduct, quantity]);
 
-  // Get total price
-  const total = directProduct ? directProduct.price * quantity : 0;
+  // Get total price before discount
+  const totalBeforeDiscount = directProduct ? directProduct.price * quantity : 0;
+  
+  // Get total price after loyalty discount
+  const total = totalBeforeDiscount - (loyaltyDiscount?.discount || 0);
+  
   const totalUSD = convertVNDtoUSD(total);
+  const totalBeforeDiscountUSD = convertVNDtoUSD(totalBeforeDiscount);
+  const loyaltyDiscountUSD = convertVNDtoUSD(loyaltyDiscount?.discount || 0);
   const balanceUSD = convertVNDtoUSD(userBalance);
   const hasEnoughBalance = userBalance >= total;
 
@@ -189,7 +226,7 @@ const Checkout = () => {
               price: convertVNDtoUSD(directProduct.price),
               total: convertVNDtoUSD(directProduct.price * quantity)
             }],
-            total: convertVNDtoUSD(directProduct.price * quantity),
+            total: convertVNDtoUSD(total), // Use total after loyalty discount
             payment_method: 'Account Balance'
           }
         }
@@ -271,7 +308,22 @@ const Checkout = () => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Tổng đơn hàng</span>
-                    <span className="font-medium">{formatUSD(totalUSD)}</span>
+                    <span className="font-medium">{formatUSD(totalBeforeDiscountUSD)}</span>
+                  </div>
+                  
+                  {loyaltyDiscount.discount > 0 && (
+                    <div className="flex items-center justify-between text-green-600">
+                      <div className="flex items-center">
+                        <Award className="mr-2 h-4 w-4" />
+                        <span className="text-sm">Giảm giá thành viên ({loyaltyDiscount.loyaltyInfo?.current_tier_discount || 0}%)</span>
+                      </div>
+                      <span className="font-medium">-{formatUSD(loyaltyDiscountUSD)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between border-t border-primary pt-4">
+                    <span className="font-medium">Số tiền thanh toán</span>
+                    <span className="font-bold text-lg">{formatUSD(totalUSD)}</span>
                   </div>
                   
                   <div className="flex items-center justify-between border-t pt-4">
@@ -319,7 +371,7 @@ const Checkout = () => {
             </Card>
           </div>
 
-          <div>
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Thông tin đơn hàng</CardTitle>
@@ -355,6 +407,14 @@ const Checkout = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Loyalty discount card */}
+            <LoyaltyDiscountInfo
+              loyaltyDiscount={loyaltyDiscountUSD}
+              loyaltyInfo={loyaltyDiscount.loyaltyInfo}
+              potentialPoints={loyaltyDiscount.potentialPoints}
+              isLoading={isLoadingDiscount}
+            />
           </div>
         </div>
       </div>
