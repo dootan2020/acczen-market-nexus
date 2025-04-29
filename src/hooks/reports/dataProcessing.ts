@@ -48,7 +48,7 @@ export function processDepositsChartData(deposits: any[]): DayData[] {
   }
   
   // Group deposits by day
-  const depositsByDay = deposits.reduce((acc: Record<string, DayData>, deposit) => {
+  const depositsByDay = deposits.reduce<Record<string, DayData>>((acc, deposit) => {
     if (!deposit || !deposit.created_at) return acc;
     
     const date = format(new Date(deposit.created_at), 'yyyy-MM-dd');
@@ -76,7 +76,7 @@ export function processOrdersChartData(orders: any[]): DayData[] {
   }
   
   // Group orders by day
-  const ordersByDay = orders.reduce((acc: Record<string, DayData>, order) => {
+  const ordersByDay = orders.reduce<Record<string, DayData>>((acc, order) => {
     if (!order || !order.created_at) return acc;
     
     const date = format(new Date(order.created_at), 'yyyy-MM-dd');
