@@ -10,7 +10,6 @@ import ProductInventoryStatus from "@/components/products/ProductInventoryStatus
 import ProductBenefits from "@/components/products/ProductBenefits";
 import { Card, CardContent } from "@/components/ui/card";
 import RelatedProducts from "@/components/products/RelatedProducts";
-import TrustBadges from "@/components/trust/TrustBadges";
 import StockSoldBadges from "@/components/products/inventory/StockSoldBadges";
 import ProductBadge from "@/components/products/ProductBadge";
 import { stripHtmlTags } from '@/utils/htmlUtils';
@@ -23,7 +22,6 @@ import {
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
 import { Home, ShieldCheck, Lock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import ProductHeader from "@/components/products/ProductHeader";
 import ProductPricing from "@/components/products/ProductPricing";
 
@@ -157,16 +155,16 @@ const ProductDetail = () => {
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {isFeatured && (
-                <ProductBadge type="featured" label="Featured" />
+                <ProductBadge type="featured" />
               )}
               {isOnSale && (
                 <ProductBadge type="sale" label={`-${discountPercentage}%`} />
               )}
               {isNew && (
-                <ProductBadge type="new" label="New" />
+                <ProductBadge type="new" />
               )}
               {isBestSeller && (
-                <ProductBadge type="bestseller" label="Best Seller" />
+                <ProductBadge type="bestSeller" />
               )}
             </div>
           </div>
