@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,9 +14,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { USDTPresetAmounts } from '../usdt/USDTPresetAmounts';
 import { useAuth } from "@/contexts/AuthContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
+// Define the validation schema
+const depositSchema = z.object({
+  amount: z
+    .string()
+    .refine(val => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num > 0;
+    }, { message: "Số tiền phải lớn hơn 0" })
+    .refine(val => {
+      const num = parseFloat(val);
+      return num <= 10000;
+    }, { message: "Số tiền không được vượt quá $10,000" })
+});
+
+type DepositFormValues = z.infer<typeof depositSchema>;
 
 const PayPalDeposit = () => {
-  const [customAmount, setCustomAmount] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -27,6 +46,17 @@ const PayPalDeposit = () => {
   const FEE_PERCENTAGE = 0.044; // 4.4%
   const FEE_FIXED = 0.30; // $0.30 USD
 
+  // Initialize form
+  const form = useForm<DepositFormValues>({
+    resolver: zodResolver(depositSchema),
+    defaultValues: {
+      amount: '',
+    },
+    mode: "onChange"
+  });
+  
+  const watchAmount = form.watch("amount");
+
   const calculateTotal = (amount: number) => {
     if (amount <= 0) return 0;
     const fee = (amount * FEE_PERCENTAGE) + FEE_FIXED;
@@ -34,14 +64,17 @@ const PayPalDeposit = () => {
   };
 
   useEffect(() => {
-    const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
+    const amount = selectedAmount || (watchAmount ? parseFloat(watchAmount) : 0);
     setTotalAmount(calculateTotal(amount));
-  }, [selectedAmount, customAmount]);
+  }, [selectedAmount, watchAmount]);
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setCustomAmount(value);
-    setSelectedAmount(null);
+    // Only allow numbers and up to 2 decimal places
+    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+      form.setValue("amount", value, { shouldValidate: true });
+      setSelectedAmount(null);
+    }
   };
 
   const handlePaymentSuccess = async (orderDetails: any, amount: number): Promise<void> => {
@@ -96,7 +129,13 @@ const PayPalDeposit = () => {
     }
   };
 
-  const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
+  const onPresetAmountSelect = (value: string) => {
+    setSelectedAmount(parseFloat(value));
+    form.setValue("amount", value, { shouldValidate: true });
+  };
+
+  const amount = selectedAmount || (watchAmount ? parseFloat(watchAmount) : 0);
+  const formIsValid = form.formState.isValid;
 
   return (
     <PayPalScriptProvider options={PAYPAL_OPTIONS}>
@@ -120,57 +159,64 @@ const PayPalDeposit = () => {
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="amount" className="font-medium">
-                Số tiền muốn nạp (USD)
-              </Label>
-              <Input
-                id="amount"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Nhập số tiền..."
-                value={customAmount}
-                onChange={handleCustomAmountChange}
-                className="bg-white mt-1.5"
+          <Form {...form}>
+            <form className="space-y-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label htmlFor="amount" className="font-medium">
+                      Số tiền muốn nạp (USD)
+                    </Label>
+                    <FormControl>
+                      <Input
+                        id="amount"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Nhập số tiền..."
+                        value={field.value}
+                        onChange={handleCustomAmountChange}
+                        className="bg-white mt-1.5"
+                        disabled={isProcessing}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <USDTPresetAmounts
+                selectedAmount={form.getValues("amount")}
+                onAmountSelect={onPresetAmountSelect}
                 disabled={isProcessing}
               />
-            </div>
 
-            <USDTPresetAmounts
-              selectedAmount={customAmount ? customAmount : selectedAmount?.toString() || ''}
-              onAmountSelect={(value) => {
-                setSelectedAmount(parseFloat(value));
-                setCustomAmount('');
-              }}
-              disabled={isProcessing}
-            />
-
-            <Card className="bg-muted/30 border-border/40">
-              <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Phí giao dịch:</span>
-                    <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+              <Card className="bg-muted/30 border-border/40">
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Phí giao dịch:</span>
+                      <span className="font-medium">{(FEE_PERCENTAGE * 100).toFixed(1)}% + ${FEE_FIXED.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <span className="font-medium">Tổng thanh toán:</span>
+                      <span className="text-lg font-bold text-green-600">
+                        ${totalAmount.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                    <span className="font-medium">Tổng thanh toán:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      ${totalAmount.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
 
           {isProcessing ? (
             <div className="py-4 flex items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
               <span>Đang xử lý thanh toán...</span>
             </div>
-          ) : amount > 0 ? (
+          ) : amount > 0 && formIsValid ? (
             <div className="pt-2">
               <PayPalErrorBoundary amount={amount} onSuccess={handlePaymentSuccess}>
                 <PayPalButtonWrapper amount={amount} onSuccess={handlePaymentSuccess} />

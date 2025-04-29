@@ -3,25 +3,52 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, AlertCircle, Loader } from "lucide-react";
+import { Package, AlertCircle, Loader, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+// Define the form validation schema with Zod
+const loginSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Email không hợp lệ" })
+    .min(5, { message: "Email quá ngắn" }),
+  password: z
+    .string()
+    .min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự" }),
+  rememberMe: z.boolean().default(true),
+});
+
+// Define type for form data
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loginAttempts, setLoginAttempts] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Initialize react-hook-form
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: true,
+    },
+    mode: "onChange", // Validate on change for immediate feedback
+  });
 
   // Get the previous path from localStorage or default to home
   const getPreviousPath = () => {
@@ -39,8 +66,11 @@ const Login = () => {
 
   // Reset error message when inputs change
   useEffect(() => {
-    if (errorMessage) setErrorMessage(null);
-  }, [email, password]);
+    const subscription = form.watch(() => {
+      if (errorMessage) setErrorMessage(null);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, errorMessage]);
 
   // Check if maximum login attempts reached
   useEffect(() => {
@@ -55,17 +85,8 @@ const Login = () => {
     }
   }, [loginAttempts]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (formData: LoginFormValues) => {
     if (loginAttempts >= 5) {
-      return;
-    }
-    
-    if (!email || !password) {
-      toast.error("Lỗi đăng nhập", {
-        description: "Vui lòng nhập email và mật khẩu"
-      });
       return;
     }
     
@@ -73,8 +94,8 @@ const Login = () => {
     setErrorMessage(null);
     
     try {
-      console.log("Đang thực hiện đăng nhập với:", { email });
-      const result = await signIn(email, password, rememberMe);
+      console.log("Đang thực hiện đăng nhập với:", { email: formData.email });
+      const result = await signIn(formData.email, formData.password, formData.rememberMe);
       
       if (result?.error) {
         console.error("Login error details:", result.error);
@@ -112,6 +133,8 @@ const Login = () => {
     return `Còn ${5 - loginAttempts} lần thử trước khi tạm khóa`;
   };
 
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -128,88 +151,128 @@ const Login = () => {
               Nhập email và mật khẩu để truy cập vào tài khoản của bạn
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading || loginAttempts >= 5}
-                  className="focus-visible:ring-primary"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <CardContent className="space-y-4">
+                {errorMessage && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="name@example.com"
+                          {...field}
+                          disabled={isLoading || loginAttempts >= 5}
+                          className="focus-visible:ring-primary"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mật khẩu</Label>
-                  <Link to="/reset-password" className="text-xs text-primary hover:underline">
-                    Quên mật khẩu?
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Mật khẩu</FormLabel>
+                        <Link to="/reset-password" className="text-xs text-primary hover:underline">
+                          Quên mật khẩu?
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            disabled={isLoading || loginAttempts >= 5}
+                            className="focus-visible:ring-primary"
+                          />
+                          <button 
+                            type="button"
+                            className="absolute inset-y-0 right-0 flex items-center px-3"
+                            onClick={togglePasswordVisibility}
+                            tabIndex={-1}
+                            disabled={isLoading || loginAttempts >= 5}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      {getHelperText() && (
+                        <p className="text-xs text-muted-foreground mt-1">{getHelperText()}</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex items-start space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading || loginAttempts >= 5}
+                          id="rememberMe"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel 
+                          htmlFor="rememberMe" 
+                          className="text-sm font-medium leading-none"
+                        >
+                          Ghi nhớ đăng nhập
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-4">
+                <Button 
+                  type="submit" 
+                  className="w-full group" 
+                  disabled={isLoading || loginAttempts >= 5 || !form.formState.isValid}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Đang đăng nhập...
+                    </>
+                  ) : (
+                    "Đăng nhập"
+                  )}
+                </Button>
+                <div className="text-center text-sm">
+                  Chưa có tài khoản?{" "}
+                  <Link to="/register" className="text-primary hover:underline">
+                    Đăng ký
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading || loginAttempts >= 5}
-                  className="focus-visible:ring-primary"
-                />
-                {getHelperText() && (
-                  <p className="text-xs text-muted-foreground mt-1">{getHelperText()}</p>
-                )}
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="rememberMe" 
-                  checked={rememberMe} 
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                  disabled={isLoading || loginAttempts >= 5}
-                />
-                <label
-                  htmlFor="rememberMe"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Ghi nhớ đăng nhập
-                </label>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full group" 
-                disabled={isLoading || loginAttempts >= 5}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Đang đăng nhập...
-                  </>
-                ) : (
-                  "Đăng nhập"
-                )}
-              </Button>
-              <div className="text-center text-sm">
-                Chưa có tài khoản?{" "}
-                <Link to="/register" className="text-primary hover:underline">
-                  Đăng ký
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
+              </CardFooter>
+            </form>
+          </Form>
         </Card>
       </div>
     </div>

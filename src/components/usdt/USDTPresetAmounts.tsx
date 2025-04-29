@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 export interface USDTPresetAmountsProps {
   selectedAmount: string;
   onAmountSelect: (value: string) => void;
-  disabled?: boolean; // Add disabled as optional prop
+  disabled?: boolean;
 }
 
-export function USDTPresetAmounts({ selectedAmount, onAmountSelect, disabled }: USDTPresetAmountsProps) {
+export function USDTPresetAmounts({ selectedAmount, onAmountSelect, disabled = false }: USDTPresetAmountsProps) {
   const presetAmounts = ['10', '20', '50', '100', '250', '500'];
+  
+  // Helper to determine if a preset amount is selected
+  const isSelected = (amount: string): boolean => {
+    return selectedAmount === amount;
+  };
   
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -17,7 +22,7 @@ export function USDTPresetAmounts({ selectedAmount, onAmountSelect, disabled }: 
         <Button
           key={amount}
           type="button"
-          variant={selectedAmount === amount ? "default" : "outline"}
+          variant={isSelected(amount) ? "default" : "outline"}
           className="w-full"
           onClick={() => onAmountSelect(amount)}
           disabled={disabled}

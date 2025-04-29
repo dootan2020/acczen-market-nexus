@@ -7,11 +7,16 @@ import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Wallet, Lock, CreditCard, Clock, InfoIcon, AlertCircle } from "lucide-react";
+import { Wallet, Lock, CreditCard, Clock, InfoIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { USDTPresetAmounts } from './usdt/USDTPresetAmounts';
 import { USDTWalletInfo } from './usdt/USDTWalletInfo';
-import { USDTTransactionForm } from './usdt/USDTTransactionForm';
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { usePayment } from '@/contexts/PaymentContext';
 
 export interface DepositResponse {
@@ -48,20 +53,49 @@ interface VerificationResult {
   };
 }
 
+// Define schema for USDT deposit form
+const usdtDepositSchema = z.object({
+  amount: z
+    .string()
+    .refine(val => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num > 0;
+    }, { message: "Số tiền phải lớn hơn 0" })
+    .refine(val => {
+      const num = parseFloat(val);
+      return num <= 50000;
+    }, { message: "Số tiền không được vượt quá $50,000" }),
+  txid: z
+    .string()
+    .min(64, { message: "Transaction hash phải có đúng 64 ký tự" })
+    .max(64, { message: "Transaction hash phải có đúng 64 ký tự" })
+    .regex(/^[0-9a-fA-F]+$/, { message: "Transaction hash phải là chuỗi kí tự hex" })
+});
+
+type USDTDepositFormValues = z.infer<typeof usdtDepositSchema>;
+
 const USDTDeposit = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [amount, setAmount] = useState<string>('');
-  const [txid, setTxid] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationAttempts, setVerificationAttempts] = useState<number>(0);
   const [depositId, setDepositId] = useState<string>('');
-  const { refreshDeposits, getDepositStatus } = usePayment();
+  const { refreshDeposits } = usePayment();
+  
+  // Initialize form
+  const form = useForm<USDTDepositFormValues>({
+    resolver: zodResolver(usdtDepositSchema),
+    defaultValues: {
+      amount: '',
+      txid: ''
+    },
+    mode: "onChange"
+  });
   
   const walletAddress = "TPmnvx4m1AgrNUvj5dCrAkL5aNbN61FGAs";
 
   const depositMutation = useMutation({
-    mutationFn: async (txid: string): Promise<VerificationResult> => {
+    mutationFn: async (formData: USDTDepositFormValues): Promise<VerificationResult> => {
       if (!user) throw new Error('User not authenticated');
 
       // Create deposit record first
@@ -69,9 +103,9 @@ const USDTDeposit = () => {
         .from('deposits')
         .insert({
           user_id: user.id,
-          amount: parseFloat(amount),
+          amount: parseFloat(formData.amount),
           payment_method: 'USDT',
-          transaction_hash: txid,
+          transaction_hash: formData.txid,
           status: 'pending'
         })
         .select()
@@ -87,8 +121,8 @@ const USDTDeposit = () => {
       try {
         const verifyResponse = await supabase.functions.invoke<DepositResponse>('verify-usdt-transaction', {
           body: {
-            txid,
-            expected_amount: parseFloat(amount),
+            txid: formData.txid,
+            expected_amount: parseFloat(formData.amount),
             user_id: user.id,
             deposit_id: depositData.id,
             wallet_address: walletAddress
@@ -133,10 +167,9 @@ const USDTDeposit = () => {
     onSuccess: (result) => {
       if (result.success && result.data) {
         toast.success('USDT Deposit Successful', {
-          description: `$${amount} USDT has been added to your balance`
+          description: `$${form.getValues("amount")} USDT has been added to your balance`
         });
-        setAmount('');
-        setTxid('');
+        form.reset();
         navigate('/deposit/success', { 
           state: { 
             deposit: result.data.deposit,
@@ -163,15 +196,12 @@ const USDTDeposit = () => {
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !txid) {
-      toast.error('Missing Information', {
-        description: 'Please fill in all fields'
-      });
-      return;
-    }
-    depositMutation.mutate(txid);
+  const handleSubmit = (formData: USDTDepositFormValues) => {
+    depositMutation.mutate(formData);
+  };
+
+  const onPresetAmountSelect = (value: string) => {
+    form.setValue("amount", value, { shouldValidate: true });
   };
 
   return (
@@ -197,60 +227,130 @@ const USDTDeposit = () => {
 
         <USDTWalletInfo walletAddress={walletAddress} />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <USDTTransactionForm
-            amount={amount}
-            txid={txid}
-            onAmountChange={setAmount}
-            onTxidChange={setTxid}
-          />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center">
+                      <Wallet className="h-4 w-4 mr-1.5" /> Amount (USDT)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                            field.onChange(value);
+                          }
+                        }}
+                        disabled={depositMutation.isPending || isVerifying}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <USDTPresetAmounts
-            selectedAmount={amount}
-            onAmountSelect={setAmount}
-          />
+              <USDTPresetAmounts
+                selectedAmount={form.getValues("amount")}
+                onAmountSelect={onPresetAmountSelect}
+                disabled={depositMutation.isPending || isVerifying}
+              />
 
-          {depositId && depositMutation.isSuccess && (
-            <Alert className="bg-blue-50/50 border-blue-200">
-              <InfoIcon className="h-4 w-4 text-blue-500" />
-              <AlertTitle className="text-blue-700">Transaction Submitted</AlertTitle>
-              <AlertDescription className="text-blue-600">
-                Your transaction is currently being processed. You can check its status on the transactions page.
-              </AlertDescription>
-            </Alert>
-          )}
+              <FormField
+                control={form.control}
+                name="txid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CreditCard className="h-4 w-4 mr-1.5" /> Transaction Hash
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="link" 
+                        className="p-0 h-auto text-xs text-muted-foreground"
+                        onClick={() => {
+                          window.open('https://tronscan.org/#/', '_blank');
+                        }}
+                      >
+                        Where to find?
+                      </Button>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter your TRC20 transaction hash here..."
+                        className="font-mono resize-none"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^[0-9a-fA-F]*$/.test(value)) {
+                            field.onChange(value.trim());
+                          }
+                        }}
+                        disabled={depositMutation.isPending || isVerifying}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Paste the TRC20 transaction hash from your wallet after sending USDT.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={depositMutation.isPending || isVerifying}
-          >
-            {depositMutation.isPending || isVerifying ? (
-              <>
-                <Clock className="mr-2 h-4 w-4 animate-spin" />
-                {isVerifying ? 'Đang xác minh...' : 'Đang xử lý...'}
-              </>
-            ) : (
-              'Xác nhận nạp tiền'
+            {depositId && depositMutation.isSuccess && (
+              <Alert className="bg-blue-50/50 border-blue-200">
+                <InfoIcon className="h-4 w-4 text-blue-500" />
+                <AlertTitle className="text-blue-700">Transaction Submitted</AlertTitle>
+                <AlertDescription className="text-blue-600">
+                  Your transaction is currently being processed. You can check its status on the transactions page.
+                </AlertDescription>
+              </Alert>
             )}
-          </Button>
 
-          <div className="flex flex-col items-center space-y-4 pt-2 text-center">
             <Button
-              variant="ghost"
-              className="text-primary hover:text-primary/90 w-full"
-              onClick={() => navigate('/deposit')}
+              type="submit"
+              className="w-full"
+              disabled={depositMutation.isPending || isVerifying || !form.formState.isValid}
             >
-              <CreditCard className="mr-2 h-4 w-4" />
-              Chọn phương thức khác
+              {depositMutation.isPending || isVerifying ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  {isVerifying ? 'Đang xác minh...' : 'Đang xử lý...'}
+                </>
+              ) : (
+                'Xác nhận nạp tiền'
+              )}
             </Button>
 
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4" />
-              <span>Kết nối bảo mật SSL 256-bit</span>
+            <div className="flex flex-col items-center space-y-4 pt-2 text-center">
+              <Button
+                variant="ghost"
+                type="button"
+                className="text-primary hover:text-primary/90 w-full"
+                onClick={() => navigate('/deposit')}
+                disabled={depositMutation.isPending || isVerifying}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                Chọn phương thức khác
+              </Button>
+
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4" />
+                <span>Kết nối bảo mật SSL 256-bit</span>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

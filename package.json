@@ -81,7 +81,7 @@
     "vaul": "^0.9.3",
     "vitest": "^3.1.2",
     "xlsx": "^0.18.5",
-    "zod": "^3.23.8"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
