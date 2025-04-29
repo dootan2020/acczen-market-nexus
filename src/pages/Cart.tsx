@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useCart } from '@/hooks/useCart';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
@@ -5,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const Cart: React.FC = () => {
-  const { cart, removeItem, updateQuantity } = useCart();
+  const { cartItems, totalPrice, removeItem, updateQuantity } = useCart();
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
-  const { items, totalPrice } = cart;
 
-  if (items.length === 0) {
+  if (cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Giỏ hàng của bạn trống</h1>
@@ -26,7 +26,7 @@ const Cart: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6">Giỏ hàng của bạn</h1>
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
-          {items.map((item) => (
+          {cartItems.map((item) => (
             <div 
               key={item.id} 
               className="flex items-center border-b py-4 hover:bg-secondary/10 transition-colors"

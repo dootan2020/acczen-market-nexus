@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType, markProxySuccess, markProxyFailure } from '@/utils/corsProxy';
+import { ProxyType, getProxyUrl } from '@/utils/corsProxy';
 import { TaphoammoApiCache } from './TaphoammoApiCache';
 import { TaphoammoResponseValidator } from './TaphoammoResponseValidator';
 
@@ -78,7 +78,7 @@ export class TaphoammoApiClient {
       // Handle possible errors
       if (error) {
         console.error(`[TaphoammoApiClient] Error in ${method}:`, error);
-        markProxyFailure(proxyType);
+        
         throw new TaphoammoError(
           error.message || 'API request failed',
           TaphoammoErrorCodes.NETWORK_ERROR,
@@ -94,9 +94,6 @@ export class TaphoammoApiClient {
       if (useCache) {
         this.apiCache.set(cacheKey, data);
       }
-      
-      // Mark proxy as successful
-      markProxySuccess(proxyType);
       
       // Return formatted response
       return {

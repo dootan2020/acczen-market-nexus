@@ -18,8 +18,7 @@ import { formatCurrency } from "@/utils/formatters";
 
 const CartDropdown = () => {
   const [open, setOpen] = useState(false);
-  const { cart, removeItem, updateQuantity } = useCart();
-  const { items, totalPrice, totalItems } = cart;
+  const { cartItems, totalPrice, totalItems, removeItem, updateQuantity } = useCart();
 
   const handleRemove = (id: string) => {
     removeItem(id);
@@ -47,11 +46,11 @@ const CartDropdown = () => {
       <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel>Giỏ hàng của bạn</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {items.length > 0 ? (
+        {cartItems.length > 0 ? (
           <>
             <ScrollArea className="h-[300px]">
               <DropdownMenuGroup>
-                {items.map((item) => (
+                {cartItems.map((item) => (
                   <DropdownMenuItem key={item.id} className="flex flex-col items-start p-0" onSelect={(e) => e.preventDefault()}>
                     <div className="flex w-full p-2 gap-2">
                       <img 

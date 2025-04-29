@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -7,8 +8,8 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 export function CartButton() {
-  const { cart } = useCart()
-  const itemCount = cart.totalItems
+  const { totalItems } = useCart()
+  const itemCount = totalItems
 
   return (
     <Link to="/cart">

@@ -1,7 +1,7 @@
 
 import { useContext } from 'react';
 import { CartContext } from '@/providers/CartProvider';
-import { CartState, CartItem } from '@/types/cart';
+import { CartItem } from '@/types/cart';
 
 interface UseCartReturn {
   cartItems: CartItem[];

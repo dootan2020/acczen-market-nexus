@@ -49,15 +49,15 @@ export const useApiCommon = () => {
         // Switch to next proxy option if CORS-related error
         if (err.message?.includes('CORS') || err.message?.includes('network')) {
           // Try to switch to next proxy option
-          if (currentProxy === 'cloudflare') {
+          if (currentProxy === 'allorigins') {
+            setStoredProxy('corsproxy');
+            console.log('Switching proxy to corsproxy for next request');
+          } else if (currentProxy === 'corsproxy') {
             setStoredProxy('cors-anywhere');
             console.log('Switching proxy to cors-anywhere for next request');
-          } else if (currentProxy === 'cors-anywhere') {
-            setStoredProxy('direct');
-            console.log('Switching proxy to direct connection for next request');
           } else {
-            setStoredProxy('cloudflare');
-            console.log('Switching back to cloudflare proxy for next request');
+            setStoredProxy('allorigins');
+            console.log('Switching back to allorigins proxy for next request');
           }
           
           toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');
