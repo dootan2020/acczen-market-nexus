@@ -1,88 +1,120 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Form } from "@/components/ui/form";
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { ExtendedProduct } from '@/pages/admin/ProductsImport';
-import { Tables } from '@/types/supabase';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { importProductFormSchema, ImportProductFormValues } from './types';
-import ImportPreviewHeader from './ImportPreviewHeader';
 import ProductBasicInfo from './ProductBasicInfo';
 import ProductCategoryFields from './ProductCategoryFields';
-import ProductMetaFields from './ProductMetaFields';
-import ProductImageUpload from './ProductImageUpload';
 import ProductDescription from './ProductDescription';
+import ProductImageUpload from './ProductImageUpload';
+import ProductMetaFields from './ProductMetaFields';
+import ImportPreviewHeader from './ImportPreviewHeader';
 
 interface ImportPreviewProps {
   product: ExtendedProduct;
-  categories: Tables<'categories'>[];
+  categories: any[];
   categoriesLoading: boolean;
   onPrevious: () => void;
-  onNext: (product: ExtendedProduct) => void;
+  onNext: (updatedProduct: ExtendedProduct) => void;
 }
 
-export default function ImportPreview({
+const ImportPreview: React.FC<ImportPreviewProps> = ({
   product,
   categories,
   categoriesLoading,
   onPrevious,
-  onNext
-}: ImportPreviewProps) {
-  const form = useForm<ImportProductFormValues>({
-    resolver: zodResolver(importProductFormSchema),
-    defaultValues: {
-      name: product.name,
-      description: product.description || '',
-      category_id: product.category_id || '',
-      subcategory_id: product.subcategory_id || '',
-      price: product.price,
-      selling_price: product.selling_price || product.price,
-      stock_quantity: product.stock_quantity,
-      status: product.status || 'active',
-      image_url: product.image_url || '',
-      sku: product.sku,
-      slug: product.slug,
-      kiosk_token: product.kiosk_token
-    }
-  });
+  onNext,
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [updatedProduct, setUpdatedProduct] = useState<ExtendedProduct>(product);
 
-  const onSubmit = async (data: ImportProductFormValues) => {
-    const processedProduct = {
-      ...product,
-      ...data
-    };
-    onNext(processedProduct);
+  const handleUpdate = (field: keyof ExtendedProduct, value: any) => {
+    setUpdatedProduct((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
+  const handleNext = async () => {
+    setIsLoading(true);
+    
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    onNext(updatedProduct);
+    setIsLoading(false);
+  };
+
+  if (categoriesLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <ImportPreviewHeader product={product} />
+    <div className="space-y-6">
+      <ImportPreviewHeader product={updatedProduct} />
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ProductBasicInfo form={form} />
-            <ProductCategoryFields 
-              form={form}
-              categories={categories}
-              categoriesLoading={categoriesLoading}
-            />
-            <ProductMetaFields form={form} />
-            <ProductImageUpload form={form} />
-            <ProductDescription form={form} />
-          </div>
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2 space-y-6">
+          <ProductBasicInfo 
+            product={updatedProduct}
+            onUpdate={handleUpdate}
+          />
           
-          <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onPrevious}>
-              Quay lại
-            </Button>
-            <Button type="submit">
-              Tiếp tục
-            </Button>
-          </div>
-        </form>
-      </Form>
+          <ProductDescription 
+            description={updatedProduct.description || ''}
+            onUpdate={(value) => handleUpdate('description', value)}
+          />
+          
+          <ProductMetaFields
+            product={updatedProduct}
+            onUpdate={handleUpdate}
+          />
+        </div>
+        
+        <div className="space-y-6">
+          <ProductCategoryFields
+            product={updatedProduct}
+            categories={categories}
+            onUpdate={handleUpdate}
+          />
+          
+          <ProductImageUpload
+            imageUrl={updatedProduct.image_url || ''}
+            onUpdate={(value) => handleUpdate('image_url', value)}
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-between pt-6">
+        <Button 
+          variant="outline" 
+          onClick={onPrevious}
+          disabled={isLoading}
+        >
+          Quay lại
+        </Button>
+        
+        <Button 
+          onClick={handleNext} 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Đang xử lý...
+            </>
+          ) : (
+            'Tiếp tục'
+          )}
+        </Button>
+      </div>
     </div>
   );
-}
+};
+
+export default ImportPreview;

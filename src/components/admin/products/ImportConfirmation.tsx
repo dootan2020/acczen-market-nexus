@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Check, AlertCircle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ExtendedProduct } from '@/pages/admin/ProductsImport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ExtendedProduct } from '@/pages/admin/ProductsImport';
 
 interface ImportConfirmationProps {
   product: ExtendedProduct;
@@ -12,183 +14,146 @@ interface ImportConfirmationProps {
   onComplete: () => void;
 }
 
-export default function ImportConfirmation({ product, onPrevious, onComplete }: ImportConfirmationProps) {
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{success: boolean; message: string} | null>(null);
+const ImportConfirmation: React.FC<ImportConfirmationProps> = ({ 
+  product, 
+  onPrevious, 
+  onComplete 
+}) => {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const handleImport = async () => {
-    setImporting(true);
-    setResult(null);
+  const importProduct = async () => {
+    setStatus('loading');
+    setErrorMessage(null);
     
     try {
-      // Convert product to database format
-      const productToInsert = {
-        name: product.name,
-        description: product.description || '',
-        category_id: product.category_id || null,
-        price: product.price,
-        sale_price: product.selling_price !== product.price ? product.selling_price : null,
-        stock_quantity: product.stock_quantity,
-        status: product.status,
-        image_url: product.image_url || null,
-        kiosk_token: product.kiosk_token,
-        slug: product.slug,
-        sku: product.sku
-      };
-      
-      // Check if a product with this kiosk_token already exists
-      const { data: existingProduct } = await supabase
+      // Creating the product in Supabase
+      const { data: newProduct, error } = await supabase
         .from('products')
-        .select('id')
-        .eq('kiosk_token', product.kiosk_token)
+        .insert({
+          name: product.name,
+          description: product.description || '',
+          price: product.price,
+          sale_price: product.selling_price,
+          stock_quantity: product.stock_quantity,
+          slug: product.slug,
+          category_id: product.category_id || null,
+          subcategory_id: product.subcategory_id || null,
+          status: product.status || 'active',
+          sku: product.sku,
+          kiosk_token: product.kiosk_token,
+          image_url: product.image_url || null,
+        })
+        .select()
         .single();
-        
-      let response;
       
-      if (existingProduct) {
-        // Update existing product
-        response = await supabase
-          .from('products')
-          .update(productToInsert)
-          .eq('id', existingProduct.id);
-          
-        if (response.error) throw new Error(response.error.message);
-        
-        setResult({
-          success: true,
-          message: `Đã cập nhật sản phẩm "${product.name}" thành công!`
-        });
-      } else {
-        // Insert new product
-        response = await supabase
-          .from('products')
-          .insert(productToInsert);
-          
-        if (response.error) throw new Error(response.error.message);
-        
-        setResult({
-          success: true,
-          message: `Đã thêm sản phẩm "${product.name}" thành công!`
-        });
-      }
+      if (error) throw new Error(error.message);
       
-      toast.success(result?.message || 'Đã import thành công!');
-    } catch (error) {
-      console.error('Import error:', error);
-      setResult({
-        success: false,
-        message: error instanceof Error ? error.message : 'Lỗi không xác định khi import sản phẩm'
-      });
-      toast.error(`Lỗi: ${result?.message || 'Không thể import sản phẩm'}`);
-    } finally {
-      setImporting(false);
+      // Success!
+      setStatus('success');
+      toast.success('Sản phẩm đã được import thành công!');
+      
+      // Wait 2 seconds before completing
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Error importing product:', err);
+      setStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Unknown error occurred');
+      toast.error('Không thể import sản phẩm');
     }
   };
-  
+
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Xác nhận thông tin sản phẩm</h2>
-      
-      <div className="bg-card border rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+    <div className="space-y-6">
+      <div className="bg-muted p-6 rounded-lg">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-sm text-muted-foreground">Tên sản phẩm:</span>
-            <p className="font-medium">{product.name}</p>
+            <p className="text-sm font-medium mb-1">Tên sản phẩm</p>
+            <p className="text-lg font-semibold">{product.name}</p>
           </div>
           
           <div>
-            <span className="text-sm text-muted-foreground">SKU:</span>
-            <p className="font-medium">{product.sku}</p>
+            <p className="text-sm font-medium mb-1">Token</p>
+            <p className="text-lg font-mono">{product.kiosk_token}</p>
           </div>
           
           <div>
-            <span className="text-sm text-muted-foreground">Giá gốc:</span>
-            <p className="font-medium">{product.price.toLocaleString('vi-VN')} VND</p>
+            <p className="text-sm font-medium mb-1">Giá</p>
+            <p className="text-lg font-semibold">{product.price.toLocaleString('vi-VN')} VNĐ</p>
           </div>
           
           <div>
-            <span className="text-sm text-muted-foreground">Giá bán:</span>
-            <p className="font-medium">{(product.selling_price || product.price).toLocaleString('vi-VN')} VND</p>
+            <p className="text-sm font-medium mb-1">SKU</p>
+            <p className="text-lg font-mono">{product.sku}</p>
           </div>
           
           <div>
-            <span className="text-sm text-muted-foreground">Số lượng:</span>
-            <p className="font-medium">{product.stock_quantity}</p>
+            <p className="text-sm font-medium mb-1">Số lượng tồn kho</p>
+            <p className="text-lg font-semibold">{product.stock_quantity}</p>
           </div>
           
           <div>
-            <span className="text-sm text-muted-foreground">Trạng thái:</span>
-            <p className="font-medium">{product.status === 'active' ? 'Đang bán' : 'Chưa bán'}</p>
+            <p className="text-sm font-medium mb-1">Trạng thái</p>
+            <p className="text-lg font-semibold">
+              {product.status === 'active' ? 'Đang bán' : 'Không hoạt động'}
+            </p>
           </div>
-          
-          <div className="col-span-2">
-            <span className="text-sm text-muted-foreground">Kiosk Token:</span>
-            <p className="font-medium">{product.kiosk_token}</p>
-          </div>
-          
-          {product.category_id && (
-            <div className="col-span-2">
-              <span className="text-sm text-muted-foreground">Danh mục:</span>
-              <p className="font-medium">ID: {product.category_id}</p>
-            </div>
-          )}
-          
-          {product.image_url && (
-            <div className="col-span-2">
-              <span className="text-sm text-muted-foreground">Hình ảnh:</span>
-              <p className="font-medium break-all">{product.image_url}</p>
-              <div className="mt-2">
-                <img 
-                  src={product.image_url} 
-                  alt={product.name} 
-                  className="h-24 object-cover rounded border"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.svg';
-                  }}
-                />
-              </div>
-            </div>
-          )}
-          
-          {product.description && (
-            <div className="col-span-2 mt-2">
-              <span className="text-sm text-muted-foreground">Mô tả:</span>
-              <p className="text-sm whitespace-pre-wrap">{product.description}</p>
-            </div>
-          )}
         </div>
       </div>
       
-      {result && (
-        <Alert variant={result.success ? "default" : "destructive"} className="mb-6">
-          {result.success ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-          <AlertDescription>{result.message}</AlertDescription>
+      {status === 'success' && (
+        <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <AlertTitle>Thành công!</AlertTitle>
+          <AlertDescription>
+            Sản phẩm đã được import thành công vào cơ sở dữ liệu.
+          </AlertDescription>
         </Alert>
       )}
       
-      <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={onPrevious} disabled={importing}>
-          Quay lại chỉnh sửa
+      {status === 'error' && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Lỗi khi import sản phẩm</AlertTitle>
+          <AlertDescription>
+            {errorMessage || 'Đã có lỗi xảy ra khi import sản phẩm. Vui lòng thử lại.'}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="flex justify-between pt-6">
+        <Button 
+          variant="outline" 
+          onClick={onPrevious}
+          disabled={status === 'loading' || status === 'success'}
+        >
+          Quay lại
         </Button>
         
-        {result?.success ? (
-          <Button type="button" onClick={onComplete}>
-            <Check className="mr-2 h-4 w-4" />
-            Hoàn thành
+        {status === 'idle' || status === 'error' ? (
+          <Button 
+            onClick={importProduct} 
+            disabled={status === 'loading'}
+          >
+            {status === 'error' ? 'Thử lại' : 'Import sản phẩm'}
+          </Button>
+        ) : status === 'loading' ? (
+          <Button disabled>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Đang import...
           </Button>
         ) : (
-          <Button type="button" onClick={handleImport} disabled={importing}>
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang import...
-              </>
-            ) : (
-              'Import vào database'
-            )}
+          <Button disabled>
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Đã import thành công
           </Button>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default ImportConfirmation;

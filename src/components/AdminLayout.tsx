@@ -134,7 +134,7 @@ const AdminLayout = memo(() => {
         </div>
         
         <div className="bg-background py-3 px-6 border-b">
-          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle()}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle(location.pathname)}</h1>
         </div>
         
         <main className="flex-1 overflow-y-auto p-6">
@@ -147,9 +147,7 @@ const AdminLayout = memo(() => {
 
 AdminLayout.displayName = 'AdminLayout';
 
-const getCurrentPageTitle = () => {
-  const location = useLocation();
-  
+const getCurrentPageTitle = (pathname: string) => {
   const titles = {
     '/admin': 'Dashboard',
     '/admin/products': 'Products Management',
@@ -164,7 +162,7 @@ const getCurrentPageTitle = () => {
     '/admin/exchange-rates': 'Exchange Rates Management',
   };
 
-  return titles[location.pathname] || 'Dashboard';
+  return titles[pathname as keyof typeof titles] || 'Dashboard';
 };
 
 export default AdminLayout;

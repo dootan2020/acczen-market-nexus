@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 const ProductIntegration = () => {
   const [activeTab, setActiveTab] = useState('taphoammo');
@@ -45,6 +44,12 @@ const ProductIntegration = () => {
   });
 
   const handleSaveConfig = () => {
+    // Store in local storage for demo purposes
+    localStorage.setItem('taphoammo_api_key', apiKey);
+    localStorage.setItem('taphoammo_api_secret', apiSecret);
+    localStorage.setItem('taphoammo_auto_sync', isAutoSync.toString());
+    localStorage.setItem('taphoammo_test_mode', isTestMode.toString());
+    
     toast.success('Cấu hình đã được lưu thành công!', {
       description: 'Các thay đổi sẽ được áp dụng ngay lập tức.'
     });
@@ -73,25 +78,17 @@ const ProductIntegration = () => {
   };
 
   // Initial API key fetch effect
-  useEffect(() => {
-    const fetchApiConfig = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('api_settings')
-          .select('api_key, api_secret')
-          .eq('provider', 'taphoammo')
-          .single();
-          
-        if (data) {
-          setApiKey(data.api_key || '');
-          setApiSecret(data.api_secret || '');
-        }
-      } catch (err) {
-        console.error("Error fetching API settings:", err);
-      }
-    };
+  React.useEffect(() => {
+    // Get saved values from local storage
+    const savedApiKey = localStorage.getItem('taphoammo_api_key');
+    const savedApiSecret = localStorage.getItem('taphoammo_api_secret');
+    const savedAutoSync = localStorage.getItem('taphoammo_auto_sync');
+    const savedTestMode = localStorage.getItem('taphoammo_test_mode');
     
-    fetchApiConfig();
+    if (savedApiKey) setApiKey(savedApiKey);
+    if (savedApiSecret) setApiSecret(savedApiSecret);
+    if (savedAutoSync) setIsAutoSync(savedAutoSync === 'true');
+    if (savedTestMode) setIsTestMode(savedTestMode === 'true');
   }, []);
 
   return (
