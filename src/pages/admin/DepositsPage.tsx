@@ -74,7 +74,7 @@ const DepositsPage = () => {
           />
 
           <AdminDepositsList
-            deposits={filteredDeposits}
+            deposits={filteredDeposits || []}
             isLoading={isLoading}
             onApprove={actions.approve}
             onReject={actions.reject}

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
@@ -16,8 +17,18 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await requestPasswordReset(email);
-    setIsLoading(false);
+    try {
+      await requestPasswordReset(email);
+      toast.success("Reset link sent", {
+        description: "Please check your email for the password reset link."
+      });
+    } catch (error: any) {
+      toast.error("Failed to send reset link", {
+        description: error.message || "Please try again later."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

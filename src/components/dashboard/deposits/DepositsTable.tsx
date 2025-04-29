@@ -61,7 +61,7 @@ export function DepositsTable({ deposits, isLoading }: DepositsTableProps) {
             <TableCell>${deposit.amount.toFixed(2)}</TableCell>
             <TableCell>{deposit.payment_method}</TableCell>
             <TableCell>
-              <Badge variant={getStatusBadgeVariant(deposit.status) as "default" | "destructive" | "outline" | "secondary" | "success"}>
+              <Badge variant={getStatusBadgeVariant(deposit.status) as any}>
                 {deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}
               </Badge>
             </TableCell>

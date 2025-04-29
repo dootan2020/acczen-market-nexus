@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Deposit } from '@/hooks/useDeposits';
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +24,7 @@ export const useDepositsHistory = () => {
           payment_method,
           status,
           created_at,
+          updated_at,
           paypal_payer_email,
           transaction_hash
         `)
@@ -56,7 +58,7 @@ export const useDepositsHistory = () => {
       
       if (error) throw error;
       
-      return { deposits, count: count ?? 0 };
+      return { deposits: deposits as Deposit[], count: count ?? 0 };
     },
     enabled: !!user,
   });

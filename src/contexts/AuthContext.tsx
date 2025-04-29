@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,7 @@ interface AuthContextType {
   user: any | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isAdmin: boolean;  // Added isAdmin property
+  isAdmin: boolean;  
   login: (args: any) => Promise<any>;
   logout: () => Promise<void>;
   register: (args: any) => Promise<any>;
@@ -16,12 +17,12 @@ interface AuthContextType {
   role: string;
   username: string;
   fullName: string;
-  userDisplayName: string; // Added userDisplayName property
+  userDisplayName: string;
   refreshUser: () => Promise<void>;
-  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>; // Added signIn method
-  signOut: (redirect?: boolean) => Promise<void>; // Added signOut method
-  signUp: (email: string, password: string, fullName?: string) => Promise<any>; // Added signUp method
-  updateUserEmail: (email: string) => Promise<{error: any | null}>; // Added updateUserEmail method
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
+  signOut: (redirect?: boolean) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<any>;
+  updateUserEmail: (email: string) => Promise<{error: any | null}>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -123,7 +124,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         password,
         options: {
-          persistSession: rememberMe
+          // Use the options format that matches the Supabase SDK version
+          autoRefreshToken: rememberMe
         }
       });
       if (error) throw error;
