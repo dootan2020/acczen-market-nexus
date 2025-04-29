@@ -7,18 +7,28 @@ import { cartReducer, initialState } from '@/reducers/cartReducer';
 export const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, dispatch] = useReducer(cartReducer, initialState, () => {
+  // Make sure we're explicitly using React.useReducer here to avoid any reference issues
+  const [cart, dispatch] = React.useReducer(cartReducer, initialState, () => {
     // Load cart from localStorage on init
     if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('cart');
-      return savedCart ? JSON.parse(savedCart) : initialState;
+      try {
+        const savedCart = localStorage.getItem('cart');
+        return savedCart ? JSON.parse(savedCart) : initialState;
+      } catch (e) {
+        console.error('Failed to load cart from localStorage:', e);
+        return initialState;
+      }
     }
     return initialState;
   });
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    try {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    } catch (e) {
+      console.error('Failed to save cart to localStorage:', e);
+    }
   }, [cart]);
 
   const addItem = (item: Omit<CartItem, 'quantity'>) => {

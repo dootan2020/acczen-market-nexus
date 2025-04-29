@@ -7,6 +7,7 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import { Toaster } from 'sonner';
+import { CartProvider } from './providers/CartProvider';
 
 function App() {
   return (
@@ -15,8 +16,10 @@ function App() {
         <AuthProvider>
           <CurrencyProvider>
             <PaymentProvider>
-              <AppRoutes />
-              <Toaster />
+              <CartProvider>
+                <AppRoutes />
+                <Toaster />
+              </CartProvider>
             </PaymentProvider>
           </CurrencyProvider>
         </AuthProvider>
