@@ -1,3 +1,4 @@
+export type DatabaseRoleType = 'admin' | 'user';
 
 export interface UserProfile {
   id: string;

@@ -38,6 +38,11 @@ export function EditRoleDialog({
 }: EditRoleDialogProps) {
   const [selectedRole, setSelectedRole] = useState<UserRoleType>(currentUser?.role || 'user');
 
+  // Function to check if the role is supported by the database
+  const isRoleSupported = (role: UserRoleType): boolean => {
+    return role === 'admin' || role === 'user';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -45,6 +50,12 @@ export function EditRoleDialog({
           <DialogTitle>Change User Role</DialogTitle>
           <DialogDescription>
             Update the role for user {currentUser?.email}
+            {!isRoleSupported(selectedRole) && (
+              <div className="text-amber-500 mt-2 text-sm">
+                Warning: The selected role may not be fully supported by the database.
+                Only "admin" and "user" roles are guaranteed to work correctly.
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

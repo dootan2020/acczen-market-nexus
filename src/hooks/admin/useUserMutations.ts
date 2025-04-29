@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { UserProfile } from './types/userManagement.types';
+import { UserProfile, DatabaseRoleType } from './types/userManagement.types';
 
 // Use the UserProfile['role'] type to ensure consistency
 type UserRoleType = UserProfile['role'];
@@ -13,11 +13,18 @@ export const useUserMutations = () => {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string, role: UserRoleType }) => {
-      // Cast the role to string to accommodate database schema differences
-      // This ensures compatibility between our frontend types and the database enum
+      // Safe casting between frontend and database role types
+      // First check if the role is compatible with the database
+      if (role !== 'admin' && role !== 'user') {
+        throw new Error(`Role "${role}" is not supported in the database. Only "admin" and "user" roles are allowed.`);
+      }
+      
+      // Now we can safely cast to the database type
+      const dbRole: DatabaseRoleType = role;
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ role: role as string })
+        .update({ role: dbRole })
         .eq('id', id);
       
       if (error) throw error;
