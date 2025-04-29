@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -12,11 +13,11 @@ export const useUserMutations = () => {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string, role: UserRoleType }) => {
-      // We need to cast the role to string to match the Supabase enum type
-      // This ensures compatibility with both our TypeScript types and the database
+      // Looking at the database schema, profiles.role is likely an enum in Supabase
+      // We need to pass the role without casting, as it should match the expected enum values
       const { error } = await supabase
         .from('profiles')
-        .update({ role: role as string })
+        .update({ role })
         .eq('id', id);
       
       if (error) throw error;
