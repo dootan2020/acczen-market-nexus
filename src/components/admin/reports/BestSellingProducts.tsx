@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonTable } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -157,13 +157,7 @@ export function BestSellingProducts({ dateRange }: BestSellingProductsProps) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
+          <SkeletonTable rows={5} columns={4} />
         ) : (
           <div className="overflow-x-auto">
             <Table>

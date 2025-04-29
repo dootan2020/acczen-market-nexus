@@ -2,9 +2,9 @@
 import React, { Suspense } from 'react';
 import { ReportsContent } from "@/components/admin/reports/ReportsContent";
 import { useReports } from "@/hooks/admin/reports/useReports";
-import { Loader2 } from 'lucide-react';
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
+import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
 
 const AdminReports = () => {
   const {
@@ -48,18 +48,23 @@ const AdminReports = () => {
       />
       
       {isLoading ? (
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-muted-foreground">Đang tải dữ liệu báo cáo...</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-8">
+          <SkeletonStats />
+          <Card>
+            <CardContent className="py-6">
+              <SkeletonChartLine />
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <Suspense fallback={
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="space-y-8">
+            <SkeletonStats />
+            <Card>
+              <CardContent className="py-6">
+                <SkeletonChartLine />
+              </CardContent>
+            </Card>
           </div>
         }>
           <ReportsContent

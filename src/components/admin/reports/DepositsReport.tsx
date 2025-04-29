@@ -7,7 +7,12 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Skeleton, 
+  SkeletonChartLine, 
+  SkeletonChartBar,
+  SkeletonTable 
+} from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -75,7 +80,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-80 w-full" />
+            <SkeletonChartLine />
           ) : !hasData ? (
             <div className="flex items-center justify-center h-80 text-muted-foreground">
               No deposit data available for the selected period
@@ -141,7 +146,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-60 w-full" />
+              <SkeletonChartBar />
             ) : !hasData || !hasDepositsData ? (
               <div className="flex items-center justify-center h-60 text-muted-foreground">
                 No PayPal deposit data available
@@ -197,7 +202,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-60 w-full" />
+              <SkeletonChartBar />
             ) : !hasData || !hasDepositsData ? (
               <div className="flex items-center justify-center h-60 text-muted-foreground">
                 No USDT deposit data available
@@ -252,11 +257,7 @@ export function DepositsReport({ depositsChartData, isLoading, depositsData }: D
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
+            <SkeletonTable rows={5} columns={4} />
           ) : !hasDepositsData ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               No deposit data available

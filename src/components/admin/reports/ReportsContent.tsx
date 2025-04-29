@@ -10,6 +10,7 @@ import { DashboardOverview } from "@/components/admin/dashboard/DashboardOvervie
 import { Suspense, lazy } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { SkeletonTable } from "@/components/ui/skeleton";
 
 interface ReportsContentProps {
   activeTab: string;
@@ -74,8 +75,8 @@ export function ReportsContent({
       <TabsContent value="products">
         <Suspense fallback={
           <Card>
-            <CardContent className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <CardContent className="py-6">
+              <SkeletonTable rows={5} columns={4} />
             </CardContent>
           </Card>
         }>

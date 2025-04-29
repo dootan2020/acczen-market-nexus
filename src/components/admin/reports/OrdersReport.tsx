@@ -7,7 +7,11 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Skeleton, 
+  SkeletonChartLine, 
+  SkeletonTable 
+} from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -104,7 +108,7 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-80 w-full" />
+            <SkeletonChartLine />
           ) : !hasData ? (
             <div className="flex items-center justify-center h-80 text-muted-foreground">
               No order data available for the selected period
@@ -171,13 +175,7 @@ export function OrdersReport({ ordersChartData, isLoading }: OrdersReportProps) 
         </CardHeader>
         <CardContent>
           {isLoading || isOrdersLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
+            <SkeletonTable rows={5} columns={5} />
           ) : !recentOrders || recentOrders.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               No orders found
