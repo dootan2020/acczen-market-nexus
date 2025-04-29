@@ -6,13 +6,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReviewForm } from './review/ReviewForm';
 import { ReviewsList } from './review/ReviewsList';
+import { Review } from './review/types';
 
 interface ProductReviewsProps {
   productId: string;
 }
 
 const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [userHasReviewed, setUserHasReviewed] = useState(false);
@@ -34,7 +35,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
         .from('product_reviews')
         .select(`
           *,
-          profiles:user_id (
+          user:user_id (
             username,
             avatar_url
           )
@@ -46,8 +47,10 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
       
       const reviewsWithProfiles = data.map(review => ({
         ...review,
-        username: review.profiles?.username || 'Anonymous',
-        avatar_url: review.profiles?.avatar_url || null,
+        user: {
+          username: review.user?.username || 'Anonymous',
+          avatar_url: review.user?.avatar_url || null,
+        },
       }));
       
       setReviews(reviewsWithProfiles);
@@ -77,7 +80,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
     }
   };
 
-  const handleReviewSubmitted = (newReview: any) => {
+  const handleReviewSubmitted = (newReview: Review) => {
     setReviews([newReview, ...reviews]);
     setUserHasReviewed(true);
     setShowForm(false);
@@ -107,7 +110,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
 
       <ReviewsList 
         reviews={reviews} 
-        isLoading={isLoading} 
+        onReviewUpdated={fetchReviews} 
       />
     </div>
   );

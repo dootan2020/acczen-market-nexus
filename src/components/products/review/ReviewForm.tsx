@@ -7,10 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { StarRating } from './StarRating';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { Review } from './types';
 
 interface ReviewFormProps {
   productId: string;
-  onReviewSubmitted: (review: any) => void;
+  onReviewSubmitted: (review: Review) => void;
 }
 
 export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmitted }) => {
@@ -61,11 +62,13 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
       // Add profile info to the returned review for UI
       const reviewWithProfile = {
         ...data,
-        username: profile?.username || 'Anonymous',
-        avatar_url: profile?.avatar_url || null,
+        user: {
+          username: profile?.username || 'Anonymous',
+          avatar_url: profile?.avatar_url || null,
+        },
       };
       
-      onReviewSubmitted(reviewWithProfile);
+      onReviewSubmitted(reviewWithProfile as Review);
       setRating(0);
       setComment('');
     } catch (err) {
@@ -82,7 +85,11 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
       
       <div>
         <label className="block text-sm font-medium mb-1">Rating</label>
-        <StarRating rating={rating} onRatingChange={setRating} editable />
+        <StarRating 
+          value={rating} 
+          onChange={setRating} 
+          interactive={true}
+        />
       </div>
       
       <div>
