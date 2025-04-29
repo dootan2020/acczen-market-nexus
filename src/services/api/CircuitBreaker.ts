@@ -188,24 +188,16 @@ export class CircuitBreaker {
    */
   private async transitionToHalfOpen(): Promise<void> {
     try {
-      // Basic update without using the custom function
+      // Update the database directly instead of using RPC
       await supabase
         .from('api_health')
         .update({
           is_open: false,
           half_open: true,
+          consecutive_success: 0,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
-
-      // Try to use the stored procedure if available, but handle errors gracefully
-      try {
-        // Use raw SQL query instead of RPC
-        await supabase.rpc('set_circuit_half_open', { api_name_param: this.apiName });
-      } catch (halfOpenErr) {
-        console.log('Half-open state stored procedure not available, using fallback behavior', halfOpenErr);
-        // The update above already set the half-open state
-      }
         
       // Log transition
       await supabase.from('api_logs').insert({
@@ -228,11 +220,48 @@ export class CircuitBreaker {
   }
 
   /**
+   * Record a successful call in half-open state
+   */
+  public async recordSuccess(): Promise<void> {
+    try {
+      // Get current circuit state
+      const { data: apiHealth } = await supabase
+        .from('api_health')
+        .select('half_open, consecutive_success')
+        .eq('api_name', this.apiName)
+        .single();
+      
+      if (!apiHealth || !apiHealth.half_open) {
+        return; // Only increment success count in half-open state
+      }
+      
+      // Increment consecutive successes
+      const newSuccessCount = (apiHealth.consecutive_success || 0) + 1;
+      
+      // Update consecutive success count
+      await supabase
+        .from('api_health')
+        .update({
+          consecutive_success: newSuccessCount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('api_name', this.apiName);
+      
+      // If enough consecutive successes, reset the circuit
+      if (newSuccessCount >= 3) { // 3 consecutive successes to close circuit
+        await this.reset();
+      }
+    } catch (err) {
+      console.error('Error recording success in circuit breaker:', err);
+    }
+  }
+
+  /**
    * Reset the circuit breaker after successful calls
    */
   public async reset(): Promise<void> {
     try {
-      // Check if half_open column exists
+      // Check if we were in open state
       let wasOpen = false;
       
       try {
@@ -248,7 +277,7 @@ export class CircuitBreaker {
         console.error('Error checking circuit state:', err);
       }
       
-      // Reset circuit state
+      // Reset circuit state directly with SQL update
       await supabase
         .from('api_health')
         .update({
@@ -260,16 +289,7 @@ export class CircuitBreaker {
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
-       
-      // Try to use the stored procedure if available, but handle errors gracefully
-      try {
-        // Use raw SQL query instead of RPC
-        await supabase.rpc('reset_circuit_half_open', { api_name_param: this.apiName });
-      } catch (halfOpenErr) {
-        console.log('Reset half-open state stored procedure not available, using fallback behavior', halfOpenErr);
-        // The update above already reset the half-open state
-      }
-        
+      
       // Clear cached state
       this.cachedState = null;
       this.notifiedUser = false;

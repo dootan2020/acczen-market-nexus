@@ -139,10 +139,9 @@ export class RetryService {
     // If we get here, we've failed after all retries
     const totalTime = Date.now() - startTime;
     
-    // Create a new error object instead of modifying read-only properties
+    // Create a new error with retry information instead of modifying read-only properties
     let finalError: TaphoammoError;
     
-    // If we have a TaphoammoError, create a new one with the retry information
     if (lastError instanceof TaphoammoError) {
       // Create a new error instance rather than modifying the readonly properties
       finalError = new TaphoammoError(
