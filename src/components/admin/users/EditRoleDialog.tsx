@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -17,54 +16,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserProfile } from "@/hooks/admin/types/userManagement.types";
-
-type UserRoleType = UserProfile['role'];
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 
 interface EditRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (role: UserRoleType) => void;
+  onConfirm: (role: UserProfile['role']) => void;
   isLoading: boolean;
   currentUser: UserProfile | null;
 }
 
-export function EditRoleDialog({ 
-  open, 
-  onOpenChange, 
-  onConfirm, 
-  isLoading, 
-  currentUser 
+export function EditRoleDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  isLoading,
+  currentUser,
 }: EditRoleDialogProps) {
-  const [selectedRole, setSelectedRole] = useState<UserRoleType>(currentUser?.role || 'user');
+  const [selectedRole, setSelectedRole] = useState<UserProfile['role']>(
+    currentUser?.role || 'user'
+  );
 
-  // Function to check if the role is supported by the database
-  const isRoleSupported = (role: UserRoleType): boolean => {
-    return role === 'admin' || role === 'user';
+  // Update selected role when currentUser changes
+  React.useEffect(() => {
+    if (currentUser) {
+      setSelectedRole(currentUser.role);
+    }
+  }, [currentUser]);
+
+  const handleConfirm = () => {
+    onConfirm(selectedRole);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change User Role</DialogTitle>
+          <DialogTitle>Edit User Role</DialogTitle>
           <DialogDescription>
-            Update the role for user {currentUser?.email}
-            {!isRoleSupported(selectedRole) && (
-              <div className="text-amber-500 mt-2 text-sm">
-                Warning: The selected role may not be fully supported by the database.
-                Only "admin" and "user" roles are guaranteed to work correctly.
-              </div>
-            )}
+            Change the role for user: {currentUser?.email || 'Selected user'}
           </DialogDescription>
         </DialogHeader>
+
         <div className="py-4">
           <Select
             value={selectedRole}
-            onValueChange={(value) => setSelectedRole(value as UserRoleType)}
+            onValueChange={(value) => setSelectedRole(value as UserProfile['role'])}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="user">User</SelectItem>
@@ -74,20 +74,13 @@ export function EditRoleDialog({
             </SelectContent>
           </Select>
         </div>
+
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button 
-            onClick={() => onConfirm(selectedRole)}
-            disabled={isLoading || selectedRole === currentUser?.role}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent mr-2"></div>
-                Updating...
-              </>
-            ) : 'Update Role'}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? "Updating..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
