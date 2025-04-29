@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, MinusCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CartItemType } from '@/types/cart';
+import { CartItem as CartItemType } from '@/types/cart';
 
 type CartItemProps = {
   item: CartItemType;

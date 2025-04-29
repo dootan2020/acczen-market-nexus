@@ -17,6 +17,14 @@ export const BottomNav = () => {
     return false;
   };
 
+  const handleMenuClick = () => {
+    // Use querySelector to find the mobile menu button and simulate a click
+    const mobileMenuButton = document.querySelector('[data-dropdown-toggle="mobileMenu"]');
+    if (mobileMenuButton && mobileMenuButton instanceof HTMLElement) {
+      mobileMenuButton.click();
+    }
+  };
+
   return (
     <div className="fixed bottom-0 left-0 z-40 w-full md:hidden">
       <div className="flex h-16 items-center justify-around bg-background border-t shadow-lg">
@@ -71,7 +79,7 @@ export const BottomNav = () => {
         
         <button
           className="flex flex-col items-center justify-center w-1/5 h-full pt-1 pb-1 text-muted-foreground focus:outline-none"
-          onClick={() => document.querySelector('[data-dropdown-toggle="mobileMenu"]')?.click()}
+          onClick={handleMenuClick}
         >
           <Menu size={20} />
           <span className="text-xs mt-1">More</span>

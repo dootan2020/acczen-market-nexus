@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
+import { CartProvider } from './providers/CartProvider';
 import App from './App.tsx';
 import './index.css';
 
@@ -34,9 +35,11 @@ createRoot(rootElement).render(
           <AuthProvider>
             <CurrencyProvider>
               <PaymentProvider>
-                <TooltipProvider>
-                  <App />
-                </TooltipProvider>
+                <CartProvider>
+                  <TooltipProvider>
+                    <App />
+                  </TooltipProvider>
+                </CartProvider>
               </PaymentProvider>
             </CurrencyProvider>
           </AuthProvider>
