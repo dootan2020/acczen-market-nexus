@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import ProductHeader from "./ProductHeader";
 import ProductPricing from "./ProductPricing";
@@ -35,26 +34,11 @@ const ProductInfo = ({
   soldCount = 0,
   kiosk_token
 }: ProductInfoProps) => {
-  const { addItem } = useCart();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
   const isOutOfStock = stockQuantity === 0;
   const effectivePrice = salePrice || price;
-
-  const handleAddToCart = () => {
-    addItem({
-      id,
-      name,
-      price: effectivePrice,
-      image
-    });
-
-    toast({
-      title: "Added to cart",
-      description: `${quantity} x ${name}`,
-    });
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -81,7 +65,7 @@ const ProductInfo = ({
       
       <ProductActions
         isOutOfStock={isOutOfStock}
-        onAddToCart={handleAddToCart}
+        onAddToCart={() => {}}
         productId={id}
         productName={name}
         productPrice={effectivePrice}

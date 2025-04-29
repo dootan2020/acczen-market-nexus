@@ -44,3 +44,41 @@ export const exportToCsv = (data: any[], filename: string) => {
   link.click();
   document.body.removeChild(link);
 };
+
+/**
+ * Export orders to CSV file with formatting
+ * @param orders Array of order objects to export
+ * @param filename Filename without extension
+ */
+export const exportOrdersToCsv = (orders: any[], filename: string) => {
+  if (!orders || orders.length === 0) {
+    console.error('No orders to export');
+    return;
+  }
+  
+  // Format orders for CSV export
+  const formattedOrders = orders.map(order => {
+    // Format date
+    const orderDate = new Date(order.created_at).toLocaleDateString();
+    
+    // Format items if available
+    let itemsText = '';
+    if (order.items && Array.isArray(order.items)) {
+      itemsText = order.items.map((item: any) => 
+        `${item.name} (${item.quantity})`).join('; ');
+    }
+    
+    // Return formatted order
+    return {
+      'Order ID': order.id,
+      'Date': orderDate,
+      'Customer': order.user?.username || order.user?.email || 'Unknown',
+      'Items': itemsText,
+      'Total': order.total_amount ? `$${order.total_amount.toFixed(2)}` : '$0.00',
+      'Status': order.status.charAt(0).toUpperCase() + order.status.slice(1)
+    };
+  });
+  
+  // Export the formatted orders
+  exportToCsv(formattedOrders, filename);
+};

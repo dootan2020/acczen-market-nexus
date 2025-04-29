@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { PurchaseConfirmModal } from "./PurchaseConfirmModal";
 
@@ -17,7 +18,6 @@ interface ProductActionsProps {
 
 const ProductActions = ({
   isOutOfStock,
-  onAddToCart,
   productId,
   productName,
   productPrice,
@@ -25,22 +25,40 @@ const ProductActions = ({
   quantity,
   kioskToken
 }: ProductActionsProps) => {
+  const navigate = useNavigate();
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
   const handleBuyNow = () => {
     setIsPurchaseModalOpen(true);
   };
 
+  const handleGoToCheckout = () => {
+    navigate('/checkout', { 
+      state: { 
+        product: {
+          id: productId,
+          name: productName,
+          price: productPrice,
+          image: productImage,
+          quantity,
+          kiosk_token: kioskToken
+        },
+        quantity 
+      } 
+    });
+  };
+
   return (
-    <div className="flex flex-col-reverse gap-4 sm:flex-row sm:gap-4">
+    <div className="flex flex-col-reverse gap-4 sm:flex-row sm:gap-4 mt-6">
       <Button 
+        variant="outline"
         className="w-full shadow-sm font-bold"
         size="lg"
-        onClick={onAddToCart}
+        onClick={handleGoToCheckout}
         disabled={isOutOfStock}
       >
         <ShoppingCart className="mr-2 h-5 w-5" />
-        Add to Cart
+        Thanh toán
       </Button>
 
       <Button 
@@ -49,7 +67,7 @@ const ProductActions = ({
         disabled={isOutOfStock}
         onClick={handleBuyNow}
       >
-        Buy Now
+        Mua ngay
         <ArrowRight className="ml-2 h-5 w-5" />
       </Button>
 
