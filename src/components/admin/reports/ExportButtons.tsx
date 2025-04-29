@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
+import { Download } from "lucide-react";
 import { 
   exportToCsv, 
   formatDepositsForExport,
@@ -9,6 +9,7 @@ import {
   formatProductsForExport
 } from "@/utils/export/csvExport";
 import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
 
 interface ExportButtonsProps {
   activeTab: string;
@@ -16,7 +17,7 @@ interface ExportButtonsProps {
   ordersData?: any[];
   productsData?: any[];
   isLoading: boolean;
-  dateRange?: { from: Date; to: Date } | undefined;
+  dateRange?: DateRange | undefined;
 }
 
 export function ExportButtons({

@@ -100,7 +100,7 @@ export function BestSellingProducts({ dateRange, productsData }: BestSellingProd
     },
     enabled: !!dateRange?.from, // Only require from date to be present
     staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
-    cacheTime: 10 * 60 * 1000, // Keep cache for 10 minutes
+    gcTime: 10 * 60 * 1000, // Keep cache for 10 minutes (replaced cacheTime)
   });
 
   return (

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useReportsData } from "@/hooks/useReportsData";
 import { DashboardOverview } from '@/components/admin/dashboard/DashboardOverview';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,10 @@ import { DepositsReport } from "@/components/admin/reports/DepositsReport";
 import { Loader2 } from 'lucide-react';
 
 const AdminHome = () => {
+  // Add pagination state for the dashboard summary views
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5); // Smaller page size for dashboard
+  
   // Get report data from the hook with safe fallbacks
   const { 
     statsData, 
@@ -84,7 +88,12 @@ const AdminHome = () => {
           <CardContent>
             <OrdersReport 
               ordersChartData={safeOrdersData} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              totalItems={safeOrdersData.length} 
             />
           </CardContent>
         </Card>
@@ -98,7 +107,12 @@ const AdminHome = () => {
           <DepositsReport 
             depositsChartData={safeDepositsData} 
             isLoading={isLoading} 
-            depositsData={safeDepositsData} 
+            depositsData={safeDepositsData}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            totalItems={safeDepositsData.length} 
           />
         </CardContent>
       </Card>
