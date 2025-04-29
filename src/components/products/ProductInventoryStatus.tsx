@@ -97,7 +97,6 @@ export default function ProductInventoryStatus({
           <div className="flex items-center gap-2">
             <Badge 
               variant={stockQuantity > 0 ? "success" : "destructive"}
-              className={stockQuantity > 0 ? "bg-green-500" : ""}
             >
               {stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}
             </Badge>
