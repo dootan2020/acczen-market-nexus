@@ -4,12 +4,27 @@ export interface Review {
   user_id: string;
   product_id: string;
   rating: number;
-  comment: string;
+  comment: string | null;
   created_at: string;
+  helpful_count: number | null;
+  is_verified_purchase: boolean | null;
   user?: {
     username?: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   };
-  helpful_count?: number;
-  is_verified_purchase?: boolean;
+}
+
+export interface ReviewFormProps {
+  productId: string;
+  onReviewSubmitted: (review: Review) => void;
+}
+
+export interface ReviewsListProps {
+  reviews: Review[];
+  onReviewUpdated: () => void;
+}
+
+export interface ReviewItemProps {
+  review: Review;
+  onReviewUpdated: () => void;
 }

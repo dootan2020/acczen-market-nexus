@@ -49,6 +49,12 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
       
       if (reviewsError) throw reviewsError;
       
+      if (!reviewsData) {
+        setReviews([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Then get the profile information for all users who left reviews
       const reviewsWithProfiles = await Promise.all(
         reviewsData.map(async (review) => {
@@ -57,7 +63,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
             .from('profiles')
             .select('username, avatar_url')
             .eq('id', review.user_id)
-            .single();
+            .maybeSingle();
           
           // Return the review with the associated user profile data
           return {
@@ -66,13 +72,18 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
               username: profileData?.username || 'Anonymous',
               avatar_url: profileData?.avatar_url || null,
             }
-          };
+          } as Review;
         })
       );
       
       setReviews(reviewsWithProfiles);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      toast({
+        title: "Error loading reviews",
+        description: "Couldn't load product reviews. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -125,10 +136,20 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
         />
       )}
 
-      <ReviewsList 
-        reviews={reviews} 
-        onReviewUpdated={fetchReviews} 
-      />
+      {isLoading ? (
+        <div className="py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-24 bg-gray-200 rounded"></div>
+            <div className="h-24 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      ) : (
+        <ReviewsList 
+          reviews={reviews} 
+          onReviewUpdated={fetchReviews} 
+        />
+      )}
     </div>
   );
 };

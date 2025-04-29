@@ -7,12 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { StarRating } from './StarRating';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { Review } from './types';
-
-interface ReviewFormProps {
-  productId: string;
-  onReviewSubmitted: (review: Review) => void;
-}
+import { Review, ReviewFormProps } from './types';
 
 export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmitted }) => {
   const [rating, setRating] = useState(0);
@@ -50,7 +45,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmi
         product_id: productId,
         user_id: user.id,
         rating,
-        comment: comment.trim(),
+        comment: comment.trim() || null,
       };
       
       const { data, error } = await supabase

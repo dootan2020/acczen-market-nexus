@@ -1,13 +1,9 @@
 
-import { Review } from "./types";
-import { ReviewItem } from "./ReviewItem";
+import React from 'react';
+import { ReviewsListProps } from './types';
+import { ReviewItem } from './ReviewItem';
 
-interface ReviewsListProps {
-  reviews: Review[];
-  onReviewUpdated: () => void;
-}
-
-export function ReviewsList({ reviews, onReviewUpdated }: ReviewsListProps) {
+export const ReviewsList: React.FC<ReviewsListProps> = ({ reviews, onReviewUpdated }) => {
   if (reviews.length === 0) {
     return (
       <div className="py-8 text-center">

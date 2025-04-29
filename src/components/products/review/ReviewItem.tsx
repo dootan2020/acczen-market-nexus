@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User, ThumbsUp, Flag } from "lucide-react";
@@ -6,14 +7,9 @@ import { StarRating } from "./StarRating";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Review } from "./types";
+import { ReviewItemProps } from "./types";
 
-interface ReviewItemProps {
-  review: Review;
-  onReviewUpdated: () => void;
-}
-
-export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
+export const ReviewItem: React.FC<ReviewItemProps> = ({ review, onReviewUpdated }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -26,7 +22,7 @@ export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
     });
   };
   
-  const handleHelpful = async (reviewId: string, currentCount = 0) => {
+  const handleHelpful = async (reviewId: string, currentCount: number = 0) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -52,6 +48,11 @@ export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
       onReviewUpdated();
     } catch (error) {
       console.error('Error marking review as helpful:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark review as helpful. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -73,6 +74,11 @@ export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
       });
     } catch (error) {
       console.error('Error reporting review:', error);
+      toast({
+        title: "Error",
+        description: "Failed to report review. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -116,7 +122,7 @@ export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
             variant="ghost" 
             size="sm" 
             className="h-8 px-2 text-xs"
-            onClick={() => handleHelpful(review.id, review.helpful_count)}
+            onClick={() => handleHelpful(review.id, review.helpful_count || 0)}
           >
             <ThumbsUp className="h-3 w-3 mr-1" />
             Helpful {review.helpful_count ? `(${review.helpful_count})` : ''}
@@ -134,4 +140,4 @@ export function ReviewItem({ review, onReviewUpdated }: ReviewItemProps) {
       </div>
     </div>
   );
-}
+};
