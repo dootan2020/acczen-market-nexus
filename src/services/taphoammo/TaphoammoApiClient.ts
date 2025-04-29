@@ -81,7 +81,7 @@ export class TaphoammoApiClient {
         
         throw new TaphoammoError(
           error.message || 'API request failed',
-          TaphoammoErrorCodes.NETWORK_ERROR,
+          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
           0,
           0
         );

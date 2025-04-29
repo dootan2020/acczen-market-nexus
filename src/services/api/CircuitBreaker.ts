@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -127,7 +128,7 @@ export class CircuitBreaker {
       // Get current error count
       const { data: apiHealth } = await supabase
         .from('api_health')
-        .select('error_count, is_open')
+        .select('error_count, is_open, opened_at')
         .eq('api_name', this.apiName)
         .single();
         
@@ -141,7 +142,7 @@ export class CircuitBreaker {
       
       // Check if we should open the circuit
       const shouldOpenCircuit = newErrorCount >= this.failureThreshold && !apiHealth.is_open;
-      const openedAt = shouldOpenCircuit ? new Date().toISOString() : null;
+      const openedAt = shouldOpenCircuit ? new Date().toISOString() : (apiHealth.opened_at || null);
       
       // Update database record
       await supabase
@@ -150,7 +151,7 @@ export class CircuitBreaker {
           error_count: newErrorCount,
           last_error: error.message,
           is_open: shouldOpenCircuit || apiHealth.is_open,
-          opened_at: shouldOpenCircuit ? openedAt : apiHealth.is_open ? apiHealth.opened_at : null,
+          opened_at: openedAt,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
@@ -187,20 +188,23 @@ export class CircuitBreaker {
    */
   private async transitionToHalfOpen(): Promise<void> {
     try {
-      // Check if half_open column exists in the table
-      const { data, error } = await supabase
+      // Basic update without using the custom function
+      await supabase
         .from('api_health')
         .update({
           is_open: false,
+          half_open: true,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
-        
-      // Try to update half_open field if it exists
+
+      // Try to use the stored procedure if available, but handle errors gracefully
       try {
+        // Use raw SQL query instead of RPC
         await supabase.rpc('set_circuit_half_open', { api_name_param: this.apiName });
       } catch (halfOpenErr) {
-        console.log('Half-open state not supported in current DB schema, using fallback behavior');
+        console.log('Half-open state stored procedure not available, using fallback behavior', halfOpenErr);
+        // The update above already set the half-open state
       }
         
       // Log transition
@@ -249,17 +253,21 @@ export class CircuitBreaker {
         .from('api_health')
         .update({
           is_open: false,
+          half_open: false,
           error_count: 0,
           opened_at: null,
+          consecutive_success: 0,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
        
-      // Try to reset half_open field if it exists
+      // Try to use the stored procedure if available, but handle errors gracefully
       try {
+        // Use raw SQL query instead of RPC
         await supabase.rpc('reset_circuit_half_open', { api_name_param: this.apiName });
       } catch (halfOpenErr) {
-        console.log('Half-open state not supported in current DB schema');
+        console.log('Reset half-open state stored procedure not available, using fallback behavior', halfOpenErr);
+        // The update above already reset the half-open state
       }
         
       // Clear cached state
@@ -298,7 +306,9 @@ export class CircuitBreaker {
         .insert({
           api_name: this.apiName,
           is_open: false,
+          half_open: false,
           error_count: 0,
+          consecutive_success: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

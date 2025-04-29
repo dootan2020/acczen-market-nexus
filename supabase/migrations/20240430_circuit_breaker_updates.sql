@@ -19,6 +19,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.set_circuit_half_open(api_name_param TEXT)
 RETURNS void
 LANGUAGE sql
+SECURITY DEFINER
 AS $$
   UPDATE public.api_health 
   SET half_open = true, 
@@ -31,6 +32,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.reset_circuit_half_open(api_name_param TEXT)
 RETURNS void
 LANGUAGE sql
+SECURITY DEFINER
 AS $$
   UPDATE public.api_health 
   SET half_open = false, 
@@ -43,6 +45,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.increment_consecutive_success(api_name_param TEXT)
 RETURNS integer
 LANGUAGE sql
+SECURITY DEFINER
 AS $$
   UPDATE public.api_health 
   SET consecutive_success = consecutive_success + 1,
@@ -50,3 +53,16 @@ AS $$
   WHERE api_name = api_name_param
   RETURNING consecutive_success;
 $$;
+
+-- Grant access to the functions
+GRANT EXECUTE ON FUNCTION public.set_circuit_half_open TO service_role;
+GRANT EXECUTE ON FUNCTION public.set_circuit_half_open TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_circuit_half_open TO anon;
+
+GRANT EXECUTE ON FUNCTION public.reset_circuit_half_open TO service_role;
+GRANT EXECUTE ON FUNCTION public.reset_circuit_half_open TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reset_circuit_half_open TO anon;
+
+GRANT EXECUTE ON FUNCTION public.increment_consecutive_success TO service_role;
+GRANT EXECUTE ON FUNCTION public.increment_consecutive_success TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_consecutive_success TO anon;

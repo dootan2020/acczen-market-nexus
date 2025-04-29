@@ -144,6 +144,7 @@ export class RetryService {
     
     // If we have a TaphoammoError, create a new one with the retry information
     if (lastError instanceof TaphoammoError) {
+      // Create a new error instance rather than modifying the readonly properties
       finalError = new TaphoammoError(
         lastError.message,
         lastError.code,

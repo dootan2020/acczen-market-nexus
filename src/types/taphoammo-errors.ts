@@ -8,7 +8,9 @@ export enum TaphoammoErrorCodes {
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   STOCK_UNAVAILABLE = 'STOCK_UNAVAILABLE',
   TIMEOUT = 'TIMEOUT',
-  API_TEMP_DOWN = 'API_TEMP_DOWN'
+  API_TEMP_DOWN = 'API_TEMP_DOWN',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  RATE_LIMIT = 'RATE_LIMIT'
 }
 
 export class TaphoammoError extends Error {
