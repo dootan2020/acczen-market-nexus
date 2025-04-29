@@ -1,11 +1,15 @@
 
 import { toast } from 'sonner';
+import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 
 export interface RetryOptions {
   baseDelay?: number;
   maxRetries?: number;
   maxDelay?: number;
   jitter?: boolean;
+  timeout?: number;
+  retryableErrors?: string[];
+  showToasts?: boolean;
 }
 
 export interface RetryResult<T> {
@@ -15,6 +19,10 @@ export interface RetryResult<T> {
   success: boolean;
 }
 
+/**
+ * Provides retry functionality with exponential backoff,
+ * timeout handling, and jitter for API requests
+ */
 export class RetryService {
   /**
    * Execute a function with automatic retries and exponential backoff
@@ -27,17 +35,44 @@ export class RetryService {
     const {
       baseDelay = 1000,
       maxDelay = 30000,
-      jitter = true
+      jitter = true,
+      timeout = 30000,
+      showToasts = true,
+      retryableErrors = []
     } = options;
     
     let retries = 0;
     let lastError: Error | null = null;
     const startTime = Date.now();
 
+    // Add timeout wrapper
+    const executeWithTimeout = async (): Promise<T> => {
+      return new Promise<T>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new TaphoammoError(
+            'Request timed out',
+            TaphoammoErrorCodes.TIMEOUT,
+            retries,
+            timeout
+          ));
+        }, timeout);
+        
+        fn()
+          .then(result => {
+            clearTimeout(timeoutId);
+            resolve(result);
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            reject(err);
+          });
+      });
+    };
+
     while (retries <= maxRetries) {
       try {
-        // Execute the function
-        const result = await fn();
+        // Execute the function with timeout
+        const result = await executeWithTimeout();
         
         const responseTime = Date.now() - startTime;
         
@@ -50,12 +85,33 @@ export class RetryService {
         };
       } catch (error: any) {
         lastError = error;
-        retries++;
         
-        if (retries > maxRetries) {
-          // We've exhausted all retries
+        // Check if we've exhausted all retries
+        if (retries >= maxRetries) {
           break;
         }
+        
+        // Check if error is retryable
+        const errorMessage = error?.message?.toLowerCase() || '';
+        const isRetryable = 
+          // Network errors are always retryable
+          errorMessage.includes('network') ||
+          errorMessage.includes('cors') ||
+          errorMessage.includes('connection') ||
+          errorMessage.includes('timeout') ||
+          // Check against custom list of retryable errors
+          retryableErrors.some(errMsg => errorMessage.includes(errMsg.toLowerCase())) ||
+          // Specific TaphoammoError codes
+          (error instanceof TaphoammoError && 
+            error.code !== TaphoammoErrorCodes.KIOSK_PENDING &&
+            error.code !== TaphoammoErrorCodes.ORDER_PROCESSING);
+            
+        // If error is not retryable, don't retry
+        if (!isRetryable) {
+          break;
+        }
+        
+        retries++;
 
         // Calculate the backoff delay with exponential increase
         let delay = Math.min(
@@ -71,7 +127,7 @@ export class RetryService {
         console.log(`Retry ${retries}/${maxRetries} in ${Math.round(delay / 1000)}s...`, error);
         
         // Only show toast for user-visible retries (not the first one)
-        if (retries > 1) {
+        if (showToasts && retries > 1) {
           toast.info(`Yêu cầu bị lỗi. Đang thử lại lần ${retries}/${maxRetries}...`);
         }
         
@@ -82,7 +138,21 @@ export class RetryService {
 
     // If we get here, we've failed after all retries
     const totalTime = Date.now() - startTime;
-    throw lastError || new Error('Maximum retries exceeded');
+    
+    // If we have a TaphoammoError, enhance it with retry information
+    if (lastError instanceof TaphoammoError) {
+      lastError.retryCount = retries;
+      lastError.responseTime = totalTime;
+      throw lastError;
+    }
+    
+    // Wrap other errors in TaphoammoError
+    throw new TaphoammoError(
+      lastError?.message || 'Unknown error after maximum retries',
+      TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+      retries,
+      totalTime
+    );
   }
 
   /**

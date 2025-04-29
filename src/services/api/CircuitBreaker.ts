@@ -14,12 +14,23 @@ export interface CircuitBreakerOptions {
   monitorInterval?: number;
 }
 
+/**
+ * CircuitBreaker prevents cascading failures by stopping API calls 
+ * when the external service is unstable.
+ * 
+ * It implements three states:
+ * - CLOSED: Normal operation, requests pass through
+ * - OPEN: Service considered unavailable, requests fail fast
+ * - HALF_OPEN: Testing if service has recovered
+ */
 export class CircuitBreaker {
   private apiName = 'taphoammo'; // Default API name
   private failureThreshold: number;
   private resetTimeout: number;
   private monitorInterval: number;
   private notifiedUser: boolean = false;
+  private lastStatusCheck: number = 0;
+  private cachedState: { isOpen: boolean; openedAt: string | null } | null = null;
 
   constructor(options: CircuitBreakerOptions = {}) {
     this.failureThreshold = options.failureThreshold || 3;
@@ -32,24 +43,44 @@ export class CircuitBreaker {
    */
   public async isOpen(): Promise<boolean> {
     try {
+      // Throttle database calls - use cached state if checked recently
+      const now = Date.now();
+      if (this.cachedState && now - this.lastStatusCheck < this.monitorInterval) {
+        return this.cachedState.isOpen;
+      }
+
+      // Fetch current circuit state from database
       const { data: apiHealth } = await supabase
         .from('api_health')
         .select('*')
         .eq('api_name', this.apiName)
         .single();
         
-      if (apiHealth?.is_open) {
-        const openedAt = new Date(apiHealth.opened_at).getTime();
-        const now = new Date().getTime();
+      if (!apiHealth) {
+        // Initialize circuit breaker record if it doesn't exist
+        await this.initializeCircuitRecord();
+        this.cachedState = { isOpen: false, openedAt: null };
+        this.lastStatusCheck = now;
+        return false;
+      }
         
+      // Check if circuit is open
+      if (apiHealth.is_open) {
+        const openedAt = apiHealth.opened_at ? new Date(apiHealth.opened_at).getTime() : now;
+        
+        // If reset timeout has passed, transition to half-open state
         if (now - openedAt > this.resetTimeout) {
-          // If reset timeout has passed, try to close the circuit
-          // But don't actually close it yet - we'll let the next successful call do that
-          // This implements a "half-open" state
+          console.log('Circuit breaker reset timeout elapsed, transitioning to half-open state');
+          
+          await this.transitionToHalfOpen();
+          
+          // Update cached state
+          this.cachedState = { isOpen: false, openedAt: null };
+          this.lastStatusCheck = now;
           return false;
         }
         
-        // If circuit is open and we haven't notified the user yet, do so
+        // Circuit is open and within reset timeout - notify user if not already done
         if (!this.notifiedUser) {
           toast.warning("Kết nối API tạm thời không khả dụng. Đang sử dụng dữ liệu cache.", {
             duration: 5000,
@@ -58,11 +89,16 @@ export class CircuitBreaker {
           this.notifiedUser = true;
         }
         
+        // Update cached state
+        this.cachedState = { isOpen: true, openedAt: apiHealth.opened_at };
+        this.lastStatusCheck = now;
         return true;
       }
       
-      // Reset the notification flag when circuit is closed
+      // Circuit is closed
       this.notifiedUser = false;
+      this.cachedState = { isOpen: false, openedAt: null };
+      this.lastStatusCheck = now;
       return false;
     } catch (err) {
       console.error('Error checking circuit breaker state:', err);
@@ -75,17 +111,33 @@ export class CircuitBreaker {
    */
   public async recordFailure(error: Error): Promise<void> {
     try {
-      const { data: errorCountData } = await supabase.rpc('increment_error_count');
-      const { data: shouldOpenCircuit } = await supabase.rpc('check_if_should_open_circuit');
-      const { data: openedAtValue } = await supabase.rpc('update_opened_at_if_needed');
+      // Get current error count
+      const { data: apiHealth } = await supabase
+        .from('api_health')
+        .select('error_count, is_open')
+        .eq('api_name', this.apiName)
+        .single();
+        
+      if (!apiHealth) {
+        await this.initializeCircuitRecord();
+        return;
+      }
       
+      // Increment error count
+      const newErrorCount = (apiHealth.error_count || 0) + 1;
+      
+      // Check if we should open the circuit
+      const shouldOpenCircuit = newErrorCount >= this.failureThreshold && !apiHealth.is_open;
+      const openedAt = shouldOpenCircuit ? new Date().toISOString() : null;
+      
+      // Update database record
       await supabase
         .from('api_health')
         .update({
-          error_count: errorCountData || 1,
+          error_count: newErrorCount,
           last_error: error.message,
-          is_open: shouldOpenCircuit || false,
-          opened_at: openedAtValue || null,
+          is_open: shouldOpenCircuit || apiHealth.is_open,
+          opened_at: shouldOpenCircuit ? openedAt : apiHealth.is_open ? apiHealth.opened_at : null,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
@@ -93,16 +145,19 @@ export class CircuitBreaker {
       // Log the failure
       await supabase.from('api_logs').insert({
         api: this.apiName,
-        endpoint: 'unknown',
+        endpoint: 'circuit_breaker',
         status: 'error',
         details: {
           error: error.message,
-          circuit_opened: shouldOpenCircuit || false
+          circuit_opened: shouldOpenCircuit
         }
       });
       
+      // Invalidate cache
+      this.cachedState = null;
+      
       // If circuit just opened, notify the user
-      if (shouldOpenCircuit && !this.notifiedUser) {
+      if (shouldOpenCircuit) {
         toast.error("Kết nối API không ổn định. Đang chuyển sang sử dụng dữ liệu cache.", {
           duration: 8000,
           id: "circuit-breaker-open-notification"
@@ -115,21 +170,67 @@ export class CircuitBreaker {
   }
 
   /**
+   * Transition circuit to half-open state to test recovery
+   */
+  private async transitionToHalfOpen(): Promise<void> {
+    try {
+      // Set half_open flag to true in database
+      await supabase
+        .from('api_health')
+        .update({
+          half_open: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('api_name', this.apiName);
+        
+      // Log transition
+      await supabase.from('api_logs').insert({
+        api: this.apiName,
+        endpoint: 'circuit_breaker',
+        status: 'half_open',
+        details: {
+          message: 'Transitioning to half-open state to test recovery'
+        }
+      });
+      
+      // Notify user
+      toast.info("Đang thử kết nối lại với API...", {
+        duration: 3000,
+        id: "circuit-half-open-notification"
+      });
+    } catch (err) {
+      console.error('Error transitioning to half-open state:', err);
+    }
+  }
+
+  /**
    * Reset the circuit breaker after successful calls
    */
   public async reset(): Promise<void> {
     try {
+      const { data: apiHealth } = await supabase
+        .from('api_health')
+        .select('is_open, half_open')
+        .eq('api_name', this.apiName)
+        .single();
+        
+      // Only notify when transitioning from open/half-open to closed
+      const wasOpen = apiHealth?.is_open || apiHealth?.half_open;
+      
+      // Reset circuit state
       await supabase
         .from('api_health')
         .update({
           is_open: false,
+          half_open: false,
           error_count: 0,
           opened_at: null,
           updated_at: new Date().toISOString()
         })
         .eq('api_name', this.apiName);
         
-      // Reset notification flag
+      // Clear cached state
+      this.cachedState = null;
       this.notifiedUser = false;
       
       // Log circuit reset
@@ -141,8 +242,42 @@ export class CircuitBreaker {
           message: 'Circuit breaker reset'
         }
       });
+      
+      // Notify user if we were previously in open state
+      if (wasOpen) {
+        toast.success("Kết nối API đã được khôi phục.", {
+          duration: 3000,
+          id: "circuit-reset-notification"
+        });
+      }
     } catch (err) {
       console.error('Error resetting circuit breaker:', err);
+    }
+  }
+
+  /**
+   * Initialize circuit breaker record if it doesn't exist
+   */
+  private async initializeCircuitRecord(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('api_health')
+        .insert({
+          api_name: this.apiName,
+          is_open: false,
+          half_open: false,
+          error_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error initializing circuit breaker record:', error);
+      }
+    } catch (err) {
+      console.error('Error initializing circuit breaker record:', err);
     }
   }
 }

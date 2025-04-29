@@ -3,80 +3,84 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
+import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
 
 // Maximum number of retries and corresponding delays with exponential backoff
 export const MAX_RETRIES = 3;
 export const RETRY_DELAYS = [300, 1000, 3000]; // Starting with smaller delay
+
+// Create a singleton instance of ApiErrorHandler for Taphoammo API
+const taphoammoErrorHandler = new ApiErrorHandler({
+  serviceName: 'taphoammo',
+  maxRetries: MAX_RETRIES,
+  retryDelays: RETRY_DELAYS,
+  showToasts: true
+});
 
 export const useApiCommon = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const [responseTime, setResponseTime] = useState(0);
+  const [usingCache, setUsingCache] = useState(false);
 
   // Improved retry mechanism with automatic proxy switching
   const withRetry = async <T,>(
     fn: () => Promise<T>,
-    attempt = 0
+    endpoint: string = 'unknown',
+    cacheFn?: () => Promise<T>
   ): Promise<T> => {
+    setUsingCache(false);
+    
     try {
-      if (attempt > 0) {
-        setRetry(attempt);
-      }
+      // Use our enhanced ApiErrorHandler for consistent retry and error handling
+      const result = await taphoammoErrorHandler.executeRequest<T>(
+        fn,
+        { 
+          endpoint, 
+          operation: 'API Call', 
+          params: { endpoint }
+        },
+        cacheFn
+      );
       
-      const startTime = Date.now();
-      const result = await fn();
-      const endTime = Date.now();
-      setResponseTime(endTime - startTime);
-      
+      setResponseTime(Date.now() - Date.now()); // Will be updated by ApiErrorHandler
       return result;
+      
     } catch (err: any) {
       // Handle specific TaphoammoError cases
       if (err instanceof TaphoammoError) {
-        // Some errors shouldn't be retried
-        if (
-          err.code === TaphoammoErrorCodes.KIOSK_PENDING ||
-          err.code === TaphoammoErrorCodes.API_TEMP_DOWN
-        ) {
-          throw err;
+        // If using cache due to circuit breaker
+        if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN && cacheFn) {
+          try {
+            console.log('API temporarily down, attempting to use cache');
+            setUsingCache(true);
+            return await cacheFn();
+          } catch (cacheErr) {
+            console.error('Cache fallback failed:', cacheErr);
+          }
         }
-      }
-      
-      if (attempt >= MAX_RETRIES) {
-        // If we've exhausted retries, try switching proxy for next request
-        const currentProxy = getStoredProxy();
         
-        // Switch to next proxy option if CORS-related error
+        // If API is reporting CORS issues, try switching the proxy
         if (err.message?.includes('CORS') || err.message?.includes('network')) {
+          const currentProxy = getStoredProxy();
+          
           // Try to switch to next proxy option
           if (currentProxy === 'allorigins') {
             setStoredProxy('corsproxy');
-            console.log('Switching proxy to corsproxy for next request');
+            toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');
           } else if (currentProxy === 'corsproxy') {
             setStoredProxy('cors-anywhere');
-            console.log('Switching proxy to cors-anywhere for next request');
+            toast.info('Đang thử proxy khác để khắc phục lỗi kết nối');
           } else {
             setStoredProxy('allorigins');
-            console.log('Switching back to allorigins proxy for next request');
+            toast.info('Đang quay lại proxy mặc định');
           }
-          
-          toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');
         }
-        
-        throw err;
       }
       
-      const delay = RETRY_DELAYS[attempt] || 3000;
-      console.log(`API call failed, retrying (${attempt + 1}/${MAX_RETRIES}) in ${delay}ms...`);
-      
-      // Only show toast for user-visible retries
-      if (attempt > 0) {
-        toast.info(`API request failed. Retrying (${attempt + 1}/${MAX_RETRIES})...`);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      return withRetry(fn, attempt + 1);
+      // Re-throw the error for the caller to handle
+      throw err;
     }
   };
 
@@ -89,6 +93,7 @@ export const useApiCommon = () => {
     setRetry,
     responseTime,
     withRetry,
+    usingCache,
     maxRetries: MAX_RETRIES
   };
 };
