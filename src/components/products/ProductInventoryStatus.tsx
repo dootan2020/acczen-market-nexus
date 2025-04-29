@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useStockOperations } from '@/hooks/taphoammo/useStockOperations';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { getStoredProxy, setStoredProxy, ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/utils/corsProxy';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import StockBadge from './inventory/StockBadge';
@@ -12,6 +12,28 @@ import StockNotification from './inventory/StockNotification';
 import StockUpdateButton from './inventory/StockUpdateButton';
 import ProxySelector from './inventory/ProxySelector';
 import StockTimestamp from './inventory/StockTimestamp';
+
+// Helper functions to handle proxy storage locally if not using the corsProxy module
+const getLocalStoredProxy = (): ProxyType => {
+  try {
+    const stored = localStorage.getItem('preferred_proxy');
+    if (stored && (stored === 'cloudflare' || stored === 'cors-anywhere' || stored === 'direct')) {
+      return stored as ProxyType;
+    }
+  } catch (err) {
+    console.error('Error retrieving proxy preference:', err);
+  }
+  return 'cloudflare'; // Default
+};
+
+const setLocalStoredProxy = (proxyType: ProxyType): void => {
+  try {
+    localStorage.setItem('preferred_proxy', proxyType);
+    window.dispatchEvent(new Event('storage'));
+  } catch (err) {
+    console.error('Error storing proxy preference:', err);
+  }
+};
 
 interface ProductInventoryStatusProps {
   kioskToken: string;
@@ -30,7 +52,7 @@ const ProductInventoryStatus = ({
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isExpired, setIsExpired] = useState<boolean>(false);
   const [subscribed, setSubscribed] = useState<boolean>(false);
-  const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
+  const [currentProxy, setCurrentProxy] = useState<ProxyType>(getLocalStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const { user } = useAuth();
 
@@ -73,7 +95,7 @@ const ProductInventoryStatus = ({
   }, [stock, productId]);
 
   useEffect(() => {
-    const handler = () => setCurrentProxy(getStoredProxy());
+    const handler = () => setCurrentProxy(getLocalStoredProxy());
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
@@ -97,7 +119,7 @@ const ProductInventoryStatus = ({
   };
   
   const handleChangeProxy = (proxy: ProxyType) => {
-    setStoredProxy(proxy);
+    setLocalStoredProxy(proxy);
     setCurrentProxy(proxy);
     toast.success(`Đã chuyển sang sử dụng proxy: ${proxy}`);
   };

@@ -2,7 +2,29 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
+import { ProxyType } from '@/utils/corsProxy';
+
+// Local helper functions for proxy management
+const getLocalStoredProxy = (): ProxyType => {
+  try {
+    const stored = localStorage.getItem('preferred_proxy');
+    if (stored && (stored === 'cloudflare' || stored === 'cors-anywhere' || stored === 'direct')) {
+      return stored as ProxyType;
+    }
+  } catch (err) {
+    console.error('Error retrieving proxy preference:', err);
+  }
+  return 'cloudflare'; // Default
+};
+
+const setLocalStoredProxy = (proxyType: ProxyType): void => {
+  try {
+    localStorage.setItem('preferred_proxy', proxyType);
+    window.dispatchEvent(new Event('storage'));
+  } catch (err) {
+    console.error('Error storing proxy preference:', err);
+  }
+};
 
 // Maximum number of retries and corresponding delays with exponential backoff
 export const MAX_RETRIES = 3;
@@ -44,20 +66,20 @@ export const useApiCommon = () => {
       
       if (attempt >= MAX_RETRIES) {
         // If we've exhausted retries, try switching proxy for next request
-        const currentProxy = getStoredProxy();
+        const currentProxy = getLocalStoredProxy();
         
         // Only switch if not already using admin or if it's a CORS-related error
         if (currentProxy !== 'admin' && (err.message?.includes('CORS') || err.message?.includes('network'))) {
           // Try to switch to next proxy option
-          if (currentProxy === 'corsproxy.io') {
-            setStoredProxy('codetabs');
-            console.log('Switching proxy to codetabs for next request');
-          } else if (currentProxy === 'codetabs') {
-            setStoredProxy('corsanywhere');
-            console.log('Switching proxy to corsanywhere for next request');
+          if (currentProxy === 'cloudflare') {
+            setLocalStoredProxy('cors-anywhere');
+            console.log('Switching proxy to cors-anywhere for next request');
+          } else if (currentProxy === 'cors-anywhere') {
+            setLocalStoredProxy('direct');
+            console.log('Switching proxy to direct connection for next request');
           } else {
-            setStoredProxy('admin');
-            console.log('Switching to Edge Function (admin) for next request');
+            setLocalStoredProxy('cloudflare');
+            console.log('Switching back to cloudflare proxy for next request');
           }
           
           toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');

@@ -1,5 +1,4 @@
 
-import { ExtendedProduct } from '@/pages/admin/ProductsImport';
 import { z } from 'zod';
 
 export const importProductFormSchema = z.object({
