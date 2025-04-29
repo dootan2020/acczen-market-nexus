@@ -1,158 +1,114 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { StarRating } from "./StarRating";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { StarRating } from './StarRating';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface ReviewFormProps {
   productId: string;
-  userReview: {
-    id?: string;
-    rating: number;
-    comment?: string;
-  };
-  setUserReview: React.Dispatch<React.SetStateAction<{
-    id?: string;
-    rating: number;
-    comment?: string;
-  }>>;
-  onReviewSubmitted: () => void;
-  isEditing?: boolean;
+  onReviewSubmitted: (review: any) => void;
 }
 
-export function ReviewForm({ 
-  productId, 
-  userReview, 
-  setUserReview, 
-  onReviewSubmitted,
-  isEditing = false
-}: ReviewFormProps) {
+export const ReviewForm: React.FC<ReviewFormProps> = ({ productId, onReviewSubmitted }) => {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const handleSubmitReview = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to leave a review",
-        variant: "destructive",
-      });
+      setError('You must be logged in to submit a review');
       return;
     }
     
-    if (userReview.rating === 0) {
-      toast({
-        title: "Rating required",
-        description: "Please select a star rating",
-        variant: "destructive",
-      });
+    if (rating === 0) {
+      setError('Please select a rating');
       return;
     }
     
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      // Check if user has purchased this product
-      const { data: purchaseData } = await supabase
-        .from('order_items')
-        .select('id')
-        .eq('product_id', productId)
-        .eq('order:orders(user_id)', user.id)
-        .limit(1);
-        
-      const isVerifiedPurchase = purchaseData && purchaseData.length > 0;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .maybeSingle();
       
-      if (isEditing && userReview.id) {
-        // Update existing review
-        const { error } = await supabase
-          .from('product_reviews')
-          .update({
-            rating: userReview.rating,
-            comment: userReview.comment
-          })
-          .eq('id', userReview.id);
-          
-        if (error) throw error;
-        
-        toast({
-          title: "Review updated",
-          description: "Thank you for updating your review",
-        });
-      } else {
-        // Create new review
-        const { error } = await supabase
-          .from('product_reviews')
-          .insert({
-            user_id: user.id,
-            product_id: productId,
-            rating: userReview.rating,
-            comment: userReview.comment,
-            is_verified_purchase: isVerifiedPurchase
-          });
-          
-        if (error) throw error;
-        
-        toast({
-          title: "Review submitted",
-          description: "Thank you for sharing your feedback",
-        });
-      }
+      const reviewData = {
+        product_id: productId,
+        user_id: user.id,
+        rating,
+        comment: comment.trim(),
+      };
       
-      // Notify parent component that review was submitted
-      onReviewSubmitted();
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .insert(reviewData)
+        .select()
+        .single();
       
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast({
-        title: "Failed to submit review",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      if (error) throw error;
+      
+      // Add profile info to the returned review for UI
+      const reviewWithProfile = {
+        ...data,
+        username: profile?.username || 'Anonymous',
+        avatar_url: profile?.avatar_url || null,
+      };
+      
+      onReviewSubmitted(reviewWithProfile);
+      setRating(0);
+      setComment('');
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      setError('Failed to submit review. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <div className="p-4 border rounded-md bg-muted/30">
-      {isEditing ? (
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-medium">Edit Your Review</h3>
-        </div>
-      ) : (
-        <h3 className="font-medium mb-2">Write a Review</h3>
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-card border rounded-lg">
+      <h3 className="font-medium text-lg">Write Your Review</h3>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Rating</label>
+        <StarRating rating={rating} onRatingChange={setRating} editable />
+      </div>
+      
+      <div>
+        <label htmlFor="comment" className="block text-sm font-medium mb-1">Your Review</label>
+        <Textarea
+          id="comment"
+          placeholder="Share your experience with this product..."
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={4}
+        />
+      </div>
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
-      <div className="mb-3">
-        <label className="block text-sm mb-1">Your Rating</label>
-        <StarRating 
-          value={userReview.rating} 
-          onChange={rating => setUserReview(prev => ({ ...prev, rating }))} 
-          interactive 
-          size="medium"
-        />
-      </div>
-      
-      <div className="mb-3">
-        <label className="block text-sm mb-1">Your Review</label>
-        <Textarea 
-          value={userReview.comment || ''} 
-          onChange={e => setUserReview(prev => ({ ...prev, comment: e.target.value }))} 
-          placeholder="Share your experience with this product..." 
-          rows={3} 
-        />
-      </div>
-      
       <Button 
-        onClick={handleSubmitReview} 
-        disabled={isSubmitting || userReview.rating === 0}
+        type="submit" 
+        disabled={isSubmitting}
       >
-        {isSubmitting ? 'Submitting...' : isEditing ? 'Update Review' : 'Submit Review'}
+        {isSubmitting ? 'Submitting...' : 'Submit Review'}
       </Button>
-    </div>
+    </form>
   );
-}
+};
