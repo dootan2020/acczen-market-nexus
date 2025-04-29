@@ -40,28 +40,17 @@ const ProductImageGallery = ({
   
   return (
     <div className="flex flex-col space-y-4">
-      {/* Main Image with Zoom Effect */}
+      {/* Main Image with Gradient Background */}
       <div className="relative overflow-hidden rounded-lg border bg-background shadow-sm group">
-        <div className="aspect-[4/3] w-full overflow-hidden">
+        <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] aspect-[4/3] w-full flex items-center justify-center p-6">
           <img 
             src={allImages[activeImageIndex]} 
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            className="max-h-[300px] w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
           />
         </div>
         
-        {/* Product Badges */}
-        {salePrice && (
-          <Badge className="absolute top-4 left-4 bg-destructive hover:bg-destructive/90">
-            Giảm giá
-          </Badge>
-        )}
-        
-        {categoryName && (
-          <Badge className="absolute top-4 right-14 bg-secondary hover:bg-secondary/90">
-            {categoryName}
-          </Badge>
-        )}
+        {/* Product Badges - Moved to parent component for better control */}
         
         {/* Favorite Button */}
         <Button
@@ -91,11 +80,13 @@ const ProductImageGallery = ({
                   )}
                   onClick={() => setActiveImageIndex(index)}
                 >
-                  <img 
-                    src={img} 
-                    alt={`${name} - view ${index + 1}`} 
-                    className="h-full w-full object-cover"
-                  />
+                  <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-full w-full flex items-center justify-center p-1">
+                    <img 
+                      src={img} 
+                      alt={`${name} - view ${index + 1}`} 
+                      className="h-full w-auto max-w-full object-contain"
+                    />
+                  </div>
                 </div>
               </CarouselItem>
             ))}

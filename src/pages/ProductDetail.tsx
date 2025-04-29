@@ -13,6 +13,8 @@ import ProductReviews from "@/components/products/ProductReviews";
 import { Card, CardContent } from "@/components/ui/card";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import TrustBadges from "@/components/trust/TrustBadges";
+import StockSoldBadges from "@/components/products/inventory/StockSoldBadges";
+import ProductBadge from "@/components/products/ProductBadge";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -58,28 +60,90 @@ const ProductDetail = () => {
     );
   }
 
+  // Determine if product is featured, on sale, or new
+  const isFeatured = true; // Example, set based on your criteria
+  const isOnSale = product.sale_price && product.sale_price < product.price;
+  const isNew = false; // Example, could be based on creation date
+  const isBestSeller = false; // Example, could be based on sales metrics
+  
   // Extract product images or use the main image
   const productImages = product.image_url ? [product.image_url] : [];
   
+  // Example sold count (replace with actual data if available)
+  const soldCount = 50;
+  
   return (
-    <div>
+    <div className="bg-background">
       <Container className="py-8 md:py-12">
-        <ProductHeader
-          name={product.name}
-          categoryName={product.category?.name || ''}
-          rating={4.5} // Example rating
-          reviewCount={10} // Example review count
-        />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-12">
-          <ProductImageGallery 
-            imageUrl={product.image_url || '/placeholder.svg'} 
+        {/* Product Header with Breadcrumb */}
+        <div className="mb-6">
+          <ProductHeader
             name={product.name}
-            salePrice={product.sale_price}
-            categoryName={product.category?.name}
+            categoryName={product.category?.name || ''}
+            rating={4.5} // Example rating
+            reviewCount={10} // Example review count
           />
+        </div>
+        
+        {/* Main Product Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-12">
+          {/* Product Gallery */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-md">
+            <div className="relative">
+              <div className="absolute top-4 left-4 flex gap-1.5 flex-wrap z-10">
+                {isFeatured && <ProductBadge type="featured" />}
+                {isNew && <ProductBadge type="new" />}
+                {isBestSeller && <ProductBadge type="bestSeller" />}
+                {isOnSale && <ProductBadge type="sale" />}
+              </div>
+              
+              <ProductImageGallery 
+                imageUrl={product.image_url || '/placeholder.svg'} 
+                name={product.name}
+                salePrice={product.sale_price}
+                categoryName={product.category?.name}
+              />
+            </div>
+            
+            <div className="p-4 border-t border-gray-100">
+              <StockSoldBadges 
+                stock={product.stock_quantity} 
+                soldCount={soldCount} 
+              />
+            </div>
+          </div>
           
-          <div className="space-y-6">
+          {/* Product Information */}
+          <div className="bg-white rounded-xl p-6 shadow-md space-y-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#333333] mb-3 font-sans">
+                {product.name}
+              </h1>
+              
+              {/* Price Section */}
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-3xl font-bold text-[#2ECC71]">
+                  ${product.sale_price || product.price}
+                </span>
+                
+                {isOnSale && (
+                  <span className="text-lg text-muted-foreground line-through">
+                    ${product.price}
+                  </span>
+                )}
+                
+                {isOnSale && (
+                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded-full">
+                    {Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100)}% Off
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="prose prose-sm max-w-none text-[#333333]/70">
+              <p>{product.description || 'No description available.'}</p>
+            </div>
+            
             <ProductInfo 
               id={product.id}
               name={product.name}
@@ -90,7 +154,7 @@ const ProductDetail = () => {
               image={product.image_url || '/placeholder.svg'}
               rating={4.5} // Example rating
               reviewCount={10} // Example review count
-              soldCount={50} // Example sold count
+              soldCount={soldCount}
               kiosk_token={product.kiosk_token}
             />
             
@@ -107,18 +171,32 @@ const ProductDetail = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <div className="lg:col-span-2">
-            <ProductDescription description={product.description || ''} />
-          </div>
+        {/* Product Description */}
+        <div className="grid grid-cols-1 gap-8 mb-12">
+          <Card className="overflow-hidden">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-4 text-[#333333]">Product Description</h2>
+              <div className="prose prose-lg max-w-none">
+                <ProductDescription description={product.description || 'No description available.'} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
+        {/* Reviews Section */}
         <div className="mb-12">
-          <ProductReviews productId={product.id} />
+          <Card className="overflow-hidden">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-4 text-[#333333]">Customer Reviews</h2>
+              <ProductReviews productId={product.id} />
+            </CardContent>
+          </Card>
         </div>
         
+        {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6 text-[#333333]">Related Products</h2>
             <RelatedProducts products={relatedProducts} />
           </div>
         )}
