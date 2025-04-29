@@ -29,7 +29,7 @@ const ProductQuantity = ({
 
   return (
     <div className="flex items-center">
-      <span className="mr-3 font-medium text-gray-700">Số lượng:</span>
+      <span className="mr-3 font-medium text-gray-700">Quantity:</span>
       <div className="flex items-center border rounded-md overflow-hidden">
         <Button 
           type="button" 

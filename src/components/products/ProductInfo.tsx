@@ -71,16 +71,6 @@ const ProductInfo = ({
             stockQuantity={stockQuantity} 
             onQuantityChange={handleQuantityChange} 
           />
-          
-          <div className="text-sm font-medium text-right">
-            {isOutOfStock ? (
-              <span className="text-red-500">Hết hàng</span>
-            ) : stockQuantity <= 5 ? (
-              <span className="text-amber-600">Chỉ còn {stockQuantity} sản phẩm</span>
-            ) : (
-              <span className="text-green-600">Còn {stockQuantity} sản phẩm</span>
-            )}
-          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
@@ -91,7 +81,7 @@ const ProductInfo = ({
             className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base group"
           >
             <ShoppingBag className="mr-2 h-5 w-5 transition-transform group-hover:rotate-12" />
-            {isOutOfStock ? 'Hết hàng' : 'Mua ngay'}
+            {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
           </Button>
           
           <Button 
@@ -111,7 +101,7 @@ const ProductInfo = ({
                 isFavorited ? "fill-[#E74C3C]" : "group-hover:scale-110"
               )} 
             />
-            {isFavorited ? 'Đã yêu thích' : 'Yêu thích'}
+            {isFavorited ? 'Favorited' : 'Add to Favorites'}
           </Button>
         </div>
       </div>
