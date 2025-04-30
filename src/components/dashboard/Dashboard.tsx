@@ -59,7 +59,18 @@ const Dashboard = () => {
         .limit(5);
       
       if (error) throw error;
-      return data as Order[];
+      // Use type assertion with a standard Record type instead of a complex nested type
+      return (data || []) as Array<{
+        id: string;
+        total_amount: number;
+        status: string;
+        created_at: string;
+        order_items: Array<{
+          id: string;
+          price: number;
+          product: { name: string } | null;
+        }>;
+      }>;
     },
     enabled: !!user,
   });
