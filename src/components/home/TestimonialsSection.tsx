@@ -46,7 +46,7 @@ const Testimonial = ({
           
           {verified && (
             <Badge variant="outline" className="ml-auto text-xs py-0 bg-[#F7F7F8] text-[#19C37D] border-[#E5E5E5]">
-              <Check className="mr-1 h-3 w-3" /> Verified
+              <Check className="mr-1 h-3 w-3" /> Đã xác minh
             </Badge>
           )}
         </div>
@@ -54,7 +54,7 @@ const Testimonial = ({
         {purchasedProduct && (
           <div className="mb-3">
             <Badge variant="outline" className="text-xs bg-[#F7F7F8] text-[#8E8EA0] border-[#E5E5E5]">
-              Purchased: {purchasedProduct}
+              Đã mua: {purchasedProduct}
             </Badge>
           </div>
         )}
@@ -84,54 +84,28 @@ const Testimonial = ({
 const TestimonialsSection = () => {
   const testimonials = [
     {
-      quote: "Digital Deals Hub has been a game-changer for our business. Their email accounts are reliable and their customer service is top-notch.",
-      author: "Sarah Johnson",
-      role: "Marketing Director",
+      quote: "AccZen.net đã giúp tôi tiết kiệm rất nhiều thời gian với các tài khoản email sẵn sàng sử dụng. Dịch vụ khách hàng tuyệt vời và giao hàng nhanh chóng.",
+      author: "Nguyễn Văn A",
+      role: "Chuyên gia Marketing",
       rating: 5,
       verified: true,
       purchasedProduct: "Gmail Accounts Bundle"
     },
     {
-      quote: "I've been using their social media accounts for my business and the results have been amazing. Highly recommended!",
-      author: "Michael Chen",
-      role: "E-commerce Entrepreneur",
+      quote: "Tôi đã sử dụng tài khoản mạng xã hội từ AccZen cho doanh nghiệp của mình và kết quả đạt được rất ấn tượng. Rất đáng tin cậy!",
+      author: "Trần Thị B",
+      role: "Chủ doanh nghiệp",
       rating: 5,
       verified: true,
       purchasedProduct: "Instagram Verified Accounts"
     },
     {
-      quote: "The software keys I purchased were delivered instantly and worked perfectly. Will definitely be a returning customer.",
-      author: "David Williams",
+      quote: "Các key phần mềm mà tôi mua được giao ngay lập tức và hoạt động hoàn hảo. Chắc chắn sẽ quay lại mua hàng tiếp.",
+      author: "Lê Văn C",
       role: "IT Specialist",
       rating: 4,
       verified: true,
       purchasedProduct: "Windows 10 Pro Keys"
-    },
-    {
-      quote: "Fantastic service and great prices. Their email accounts have been essential for my freelance work.",
-      author: "Emma Thompson",
-      role: "Freelance Designer",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?img=5",
-      verified: true,
-      purchasedProduct: "Gmail+Outlook Bundle"
-    },
-    {
-      quote: "Their PayPal accounts saved me so much time and hassle. The account was ready to use immediately after purchase.",
-      author: "Robert Garcia",
-      role: "Online Seller",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?img=8",
-      verified: true,
-      purchasedProduct: "PayPal Aged Accounts"
-    },
-    {
-      quote: "I was skeptical at first, but the quality of their products exceeded my expectations. Excellent value for money.",
-      author: "Michelle Kim",
-      role: "Digital Marketer",
-      rating: 4,
-      verified: true,
-      purchasedProduct: "Twitter Accounts Pack"
     }
   ];
 
@@ -139,9 +113,9 @@ const TestimonialsSection = () => {
     <div className="py-20 bg-[#F7F7F8]">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 text-[#202123]">What Our Customers Say</h2>
+          <h2 className="text-3xl font-bold mb-4 text-[#202123]">Khách hàng nói gì về chúng tôi</h2>
           <p className="text-[#8E8EA0] max-w-2xl mx-auto">
-            Trusted by thousands of customers worldwide
+            Đánh giá từ hàng nghìn khách hàng trên toàn thế giới
           </p>
         </div>
         

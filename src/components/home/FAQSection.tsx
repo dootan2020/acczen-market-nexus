@@ -9,37 +9,29 @@ import {
 const FAQSection = () => {
   const faqs = [
     {
-      question: "What kinds of digital products do you offer?",
-      answer: "We offer a wide range of digital products including email accounts, social media accounts, software keys, premium subscriptions, and more. All our products are categorized for easy browsing."
+      question: "Quy trình mua hàng như thế nào?",
+      answer: "Quy trình mua hàng tại AccZen.net rất đơn giản: Chọn sản phẩm, thêm vào giỏ hàng, thanh toán bằng số dư tài khoản hoặc PayPal, và nhận sản phẩm ngay lập tức qua email hoặc dashboard cá nhân của bạn."
     },
     {
-      question: "How quickly will I receive my purchase?",
-      answer: "Our delivery is instant for most products. After a successful payment, you'll receive your digital product details immediately on your dashboard and via email."
+      question: "Tôi nhận sản phẩm bằng cách nào?",
+      answer: "Sau khi hoàn tất thanh toán, sản phẩm số của bạn sẽ được gửi ngay lập tức qua email đăng ký và hiển thị trong mục 'Sản phẩm đã mua' trên trang cá nhân. Bạn có thể truy cập và sử dụng sản phẩm ngay lập tức."
     },
     {
-      question: "Are your products guaranteed to work?",
-      answer: "Yes, all products come with a 100% satisfaction guarantee. If there's any issue with your purchase, our support team will help resolve it or provide a replacement within 24 hours."
+      question: "Các phương thức thanh toán được hỗ trợ?",
+      answer: "AccZen.net hỗ trợ thanh toán qua số dư tài khoản (nạp trước) và thanh toán trực tiếp qua PayPal. Chúng tôi đảm bảo mọi giao dịch đều an toàn và bảo mật."
     },
     {
-      question: "How do I pay for products on AccZen.net?",
-      answer: "You can add funds to your AccZen wallet using PayPal and then use your balance to make purchases. This allows for instant transactions without entering payment details each time."
-    },
-    {
-      question: "What should I do if I encounter an issue with my purchase?",
-      answer: "Contact our 24/7 support team immediately through the help section in your dashboard. We typically respond within an hour and work to resolve any issues as quickly as possible."
-    },
-    {
-      question: "Do you offer refunds for digital products?",
-      answer: "Yes, we offer refunds if the product doesn't work as described. However, due to the digital nature of our products, refunds are not provided if you've already accessed the account details or software keys."
+      question: "Chính sách hoàn tiền như thế nào?",
+      answer: "Chúng tôi cung cấp hoàn tiền nếu sản phẩm không hoạt động như mô tả. Tuy nhiên, do tính chất của sản phẩm số, chúng tôi không hoàn tiền nếu bạn đã truy cập và sử dụng thông tin tài khoản hoặc key phần mềm."
     },
   ];
 
   return (
     <div className="bg-white py-20">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-2 text-[#202123]">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-bold text-center mb-2 text-[#202123]">Câu hỏi thường gặp</h2>
         <p className="text-center text-[#8E8EA0] mb-12 max-w-2xl mx-auto">
-          Find answers to common questions about our digital products, purchase process, and support services
+          Tìm câu trả lời cho các câu hỏi phổ biến về sản phẩm số, quy trình mua hàng và dịch vụ hỗ trợ của chúng tôi
         </p>
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="w-full">

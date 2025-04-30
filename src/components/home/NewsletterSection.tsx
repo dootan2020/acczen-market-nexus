@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const NewsletterSection = () => {
   const [email, setEmail] = React.useState("");
@@ -11,10 +12,10 @@ const NewsletterSection = () => {
     e.preventDefault();
     if (email) {
       // In a real application, you would send this to your backend
-      toast.success("Thanks for subscribing!");
+      toast.success("Cảm ơn bạn đã đăng ký!");
       setEmail("");
     } else {
-      toast.error("Please enter a valid email address");
+      toast.error("Vui lòng nhập địa chỉ email hợp lệ");
     }
   };
 
@@ -22,17 +23,29 @@ const NewsletterSection = () => {
     <div className="bg-[#19C37D] py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Stay Updated</h2>
+          <h2 className="text-3xl font-bold mb-4">Bắt đầu với AccZen.net ngay hôm nay</h2>
           <p className="mb-8 text-white/90">
-            Subscribe to our newsletter to receive updates on new products, special offers, and exclusive discounts.
+            Đăng ký tài khoản để trải nghiệm mua sắm sản phẩm số dễ dàng và nhanh chóng
           </p>
+          
+          <div className="mb-8">
+            <Button 
+              asChild
+              size="lg"
+              className="whitespace-nowrap bg-white hover:bg-white/90 text-[#19C37D] font-medium px-8"
+            >
+              <Link to="/register">
+                Đăng ký ngay
+              </Link>
+            </Button>
+          </div>
           
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
+              placeholder="Nhập địa chỉ email của bạn"
               className="bg-white border-0 focus-visible:ring-[#15a76b] text-[#343541]"
               required
             />
@@ -40,12 +53,12 @@ const NewsletterSection = () => {
               type="submit" 
               className="whitespace-nowrap bg-[#343541] hover:bg-[#202123] text-white"
             >
-              Subscribe
+              Đăng ký nhận tin
             </Button>
           </form>
           
           <p className="mt-4 text-sm text-white/75">
-            We respect your privacy. Unsubscribe at any time.
+            Chúng tôi tôn trọng quyền riêng tư của bạn. Hủy đăng ký bất kỳ lúc nào.
           </p>
         </div>
       </div>
