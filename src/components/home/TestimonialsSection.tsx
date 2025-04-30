@@ -17,7 +17,7 @@ interface TestimonialProps {
   author: string;
   role: string;
   rating: number;
-  avatar?: string;
+  avatar?: string;  // Make avatar optional with ?
   verified?: boolean;
   purchasedProduct?: string;
 }
@@ -129,7 +129,6 @@ const TestimonialsSection = () => {
                     author={testimonial.author}
                     role={testimonial.role}
                     rating={testimonial.rating}
-                    avatar={testimonial.avatar}
                     verified={testimonial.verified}
                     purchasedProduct={testimonial.purchasedProduct}
                   />
