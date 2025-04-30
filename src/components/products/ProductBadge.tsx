@@ -13,7 +13,7 @@ const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
   const getBadgeStyles = (): string => {
     switch (type) {
       case 'featured':
-        return 'bg-[#2ECC71] hover:bg-[#27AE60]';
+        return 'bg-[#19C37D] hover:bg-[#15a76b]';
       case 'new':
         return 'bg-[#3498DB] hover:bg-[#2980B9]';
       case 'bestSeller':
@@ -21,7 +21,7 @@ const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
       case 'sale':
         return 'bg-rose-500 hover:bg-rose-600';
       default:
-        return 'bg-[#2ECC71] hover:bg-[#27AE60]';
+        return 'bg-[#19C37D] hover:bg-[#15a76b]';
     }
   };
 

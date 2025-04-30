@@ -64,7 +64,7 @@ const ProductPricing = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-2xl sm:text-3xl font-bold text-primary cursor-help">
+                <span className="text-2xl sm:text-3xl font-bold text-[#19C37D] cursor-help">
                   {formattedUsdSalePrice || formattedUsdPrice}
                 </span>
               </TooltipTrigger>
@@ -105,22 +105,22 @@ const ProductPricing = ({
             isOutOfStock 
               ? "border-destructive text-destructive" 
               : isLowStock
-              ? "bg-[#e6f7ef] border-[#27ae60] text-[#27ae60]"
-              : "bg-[#e6f7ef] border-[#27ae60] text-[#27ae60]"
+              ? "bg-[#e6f7ef] border-[#19C37D] text-[#19C37D]"
+              : "bg-[#e6f7ef] border-[#19C37D] text-[#19C37D]"
           )}
         >
           {isOutOfStock 
-            ? "Out of Stock" 
+            ? "Hết hàng" 
             : isLowStock
-            ? `Only ${stockQuantity} left in stock`
-            : `In Stock (${stockQuantity} available)`}
+            ? `Chỉ còn ${stockQuantity} sản phẩm`
+            : `Còn hàng (${stockQuantity} sản phẩm)`}
         </Badge>
         
         <Badge 
           variant="outline" 
           className="py-1.5 px-3 bg-[#e6f3f9] border-[#3498db] text-[#3498db]"
         >
-          Sold: {soldCount}
+          Đã bán: {soldCount}
         </Badge>
       </div>
     </>

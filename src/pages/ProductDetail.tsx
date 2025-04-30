@@ -50,7 +50,7 @@ const ProductDetail = () => {
     return (
       <Container className="py-8">
         <div className="flex flex-col items-center justify-center min-h-[300px]">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-16 h-16 border-4 border-[#19C37D] border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-lg font-medium text-gray-600">Đang tải thông tin sản phẩm...</p>
         </div>
       </Container>
@@ -68,7 +68,7 @@ const ProductDetail = () => {
           </div>
           <h3 className="text-xl font-bold text-red-800 mb-2">Không thể tải thông tin sản phẩm</h3>
           <p className="text-red-600 mb-4">Vui lòng thử lại sau hoặc chọn sản phẩm khác</p>
-          <Link to="/products" className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md transition-colors">
+          <Link to="/products" className="px-4 py-2 bg-[#19C37D] hover:bg-[#15a76b] text-white rounded-md transition-colors">
             Xem sản phẩm khác
           </Link>
         </div>
@@ -113,7 +113,7 @@ const ProductDetail = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/" className="hover:text-primary flex items-center">
+                <Link to="/" className="hover:text-[#19C37D] flex items-center">
                   <Home className="h-3.5 w-3.5 mr-1" />
                   <span>Trang chủ</span>
                 </Link>
@@ -122,7 +122,7 @@ const ProductDetail = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/products" className="hover:text-primary">Sản phẩm</Link>
+                <Link to="/products" className="hover:text-[#19C37D]">Sản phẩm</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -132,7 +132,7 @@ const ProductDetail = () => {
                   <BreadcrumbLink asChild>
                     <Link 
                       to={`/categories/${product.category?.id}`} 
-                      className="hover:text-primary"
+                      className="hover:text-[#19C37D]"
                     >
                       {product.category?.name}
                     </Link>
@@ -180,7 +180,7 @@ const ProductDetail = () => {
             {/* Right column - Product Info */}
             <div className="md:w-3/5 p-6 md:border-l border-gray-200">
               <div className="flex justify-between items-start">
-                <h1 className="text-2xl font-bold text-gray-800 font-poppins mb-2">{product.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-800 font-sans mb-2">{product.name}</h1>
                 <ProductInventoryStatus stockQuantity={product.stock_quantity} variant="badge" />
               </div>
               
@@ -204,36 +204,19 @@ const ProductDetail = () => {
               />
               
               {/* Pricing */}
-              <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span className="text-3xl font-bold text-primary">
-                    {isOnSale ? (
-                      `${product.sale_price?.toLocaleString()}đ`
-                    ) : (
-                      `${product.price?.toLocaleString()}đ`
-                    )}
-                  </span>
-                  
-                  {isOnSale && (
-                    <>
-                      <span className="text-lg text-muted-foreground line-through">
-                        {product.price?.toLocaleString()}đ
-                      </span>
-                      
-                      <Badge variant="destructive" className="ml-2">
-                        -{discountPercentage}%
-                      </Badge>
-                    </>
-                  )}
-                </div>
-              </div>
+              <ProductPricing 
+                price={product.price}
+                salePrice={product.sale_price}
+                stockQuantity={product.stock_quantity}
+                soldCount={soldCount}
+              />
               
               {/* Buy/Favorite buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <Button 
                   onClick={() => {}}
                   size="lg"
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base"
+                  className="flex-1 bg-[#19C37D] hover:bg-[#15a76b] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base"
                   disabled={product.stock_quantity <= 0}
                 >
                   <ShoppingBag className="mr-2 h-5 w-5 transition-transform hover:rotate-12" />
@@ -289,15 +272,27 @@ const ProductDetail = () => {
               <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
                 <TabsTrigger 
                   value="description" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
                 >
                   Mô tả sản phẩm
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="specifications" 
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
+                >
+                  Thông số kỹ thuật
+                </TabsTrigger>
+                <TabsTrigger 
                   value="reviews" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
                 >
                   Đánh giá ({reviewCount})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="faq" 
+                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
+                >
+                  FAQ
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -310,6 +305,18 @@ const ProductDetail = () => {
                   <p className="text-gray-500 italic">Không có thông tin mô tả cho sản phẩm này.</p>
                 )}
               </div>
+            </TabsContent>
+            
+            <TabsContent value="specifications" className="p-6">
+              {specifications ? (
+                <div className="prose max-w-none">
+                  <RichTextContent content={specifications} />
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 italic">Không có thông số kỹ thuật cho sản phẩm này.</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="reviews" className="p-6">
@@ -401,6 +408,27 @@ const ProductDetail = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="faq" className="p-6">
+              <div className="space-y-4">
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-medium mb-2">Tài khoản email này có thể sử dụng được bao lâu?</h3>
+                  <p className="text-gray-600">Tài khoản email của chúng tôi được đảm bảo hoạt động ít nhất 6 tháng. Nếu có vấn đề trong thời gian đó, chúng tôi sẽ cung cấp tài khoản thay thế miễn phí.</p>
+                </div>
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-medium mb-2">Làm cách nào để nhận thông tin tài khoản sau khi mua?</h3>
+                  <p className="text-gray-600">Sau khi thanh toán thành công, thông tin tài khoản sẽ được gửi tự động đến email đăng ký của bạn. Ngoài ra, bạn cũng có thể xem thông tin này trong lịch sử mua hàng trên trang cá nhân.</p>
+                </div>
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-medium mb-2">Tôi có thể thay đổi mật khẩu sau khi nhận tài khoản không?</h3>
+                  <p className="text-gray-600">Có, bạn có thể thay đổi mật khẩu sau khi nhận tài khoản. Chúng tôi khuyến nghị bạn nên thay đổi mật khẩu ngay sau khi nhận được thông tin đăng nhập để đảm bảo tính bảo mật.</p>
+                </div>
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-medium mb-2">Tôi cần làm gì nếu tài khoản bị khóa hoặc gặp sự cố?</h3>
+                  <p className="text-gray-600">Nếu tài khoản gặp sự cố, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi qua email support@acczen.net hoặc chat trực tuyến trên trang web. Chúng tôi sẽ hỗ trợ giải quyết trong thời gian sớm nhất.</p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

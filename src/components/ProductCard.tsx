@@ -1,5 +1,6 @@
+
 import { Link } from "react-router-dom";
-import { Info, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -96,7 +97,7 @@ const ProductCard = ({
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
         <Link to={`/products/${id}`} className="block">
-          <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] h-[180px] w-full flex items-center justify-center p-4">
+          <div className="bg-gradient-to-r from-[#3498DB] to-[#19C37D] h-[180px] w-full flex items-center justify-center p-4">
             <img
               src={image || "/placeholder.svg"}
               alt={name}
@@ -121,10 +122,10 @@ const ProductCard = ({
       
       <CardContent className="p-4 flex-grow">
         <Link to={`/products/${id}`}>
-          <h3 className="font-medium text-lg line-clamp-2 hover:text-primary transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
+          <h3 className="font-medium text-lg line-clamp-2 hover:text-[#19C37D] transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
         </Link>
         
-        <StockSoldBadges stock={stock} soldCount={soldCount} />
+        <StockSoldBadges stock={stock} soldCount={soldCount} variant="compact" />
         
         {description && (
           <p className="text-[#333333]/70 text-sm line-clamp-2 mb-3">
@@ -133,7 +134,7 @@ const ProductCard = ({
         )}
         
         <div className="flex items-end justify-between mt-2">
-          <span className="text-xl font-bold text-[#2ECC71] font-sans">
+          <span className="text-xl font-bold text-[#19C37D] font-sans">
             {formattedSalePrice || formattedPrice}
           </span>
           
@@ -148,7 +149,7 @@ const ProductCard = ({
       <CardFooter className="p-4 pt-0 grid grid-cols-3 gap-2 mt-auto">
         <Button
           variant="outline"
-          className="w-full border-[#2ECC71] text-[#2ECC71] hover:bg-[#2ECC71]/10"
+          className="w-full border-[#19C37D] text-[#19C37D] hover:bg-[#19C37D]/10"
           disabled={stock === 0}
           onClick={handleViewDetails}
         >
@@ -156,7 +157,7 @@ const ProductCard = ({
         </Button>
         
         <Button 
-          className="w-full col-span-2 bg-[#2ECC71] hover:bg-[#27AE60] text-white uppercase font-medium" 
+          className="w-full col-span-2 bg-[#19C37D] hover:bg-[#15a76b] text-white uppercase font-medium" 
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
