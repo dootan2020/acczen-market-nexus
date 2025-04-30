@@ -12,7 +12,9 @@ import {
   LayoutDashboard, 
   ShoppingCart, 
   History, 
-  Settings 
+  Settings,
+  User,
+  CreditCard
 } from "lucide-react";
 
 export function DashboardSidebar() {
@@ -27,10 +29,10 @@ export function DashboardSidebar() {
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Overview" isActive={currentPath === "/dashboard"}>
+            <SidebarMenuButton asChild tooltip="Account Overview" isActive={currentPath === "/dashboard"}>
               <a href="/dashboard">
                 <LayoutDashboard className="w-4 h-4" />
-                <span>Overview</span>
+                <span>Account Overview</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -54,10 +56,19 @@ export function DashboardSidebar() {
           </SidebarMenuItem>
           
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings" isActive={currentPath === "/dashboard/settings"}>
+            <SidebarMenuButton asChild tooltip="Account Settings" isActive={currentPath === "/dashboard/settings"}>
               <a href="/dashboard/settings">
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
+                <User className="w-4 h-4" />
+                <span>Account Settings</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Deposit" isActive={currentPath === "/deposit"}>
+              <a href="/deposit">
+                <CreditCard className="w-4 h-4" />
+                <span>Deposit Funds</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

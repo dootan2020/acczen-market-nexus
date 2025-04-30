@@ -27,7 +27,7 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
   }, [balance, formatVND]);
   
   return (
-    <Card>
+    <Card className="shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
         <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -37,7 +37,7 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <div 
-                className="text-2xl font-bold cursor-help" 
+                className="text-2xl font-bold cursor-help text-chatgpt-primary" 
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
@@ -51,7 +51,7 @@ export function AccountBalance({ balance }: AccountBalanceProps) {
           </Tooltip>
         </TooltipProvider>
         <Link to="/deposit">
-          <Button className="mt-2 w-full">Deposit</Button>
+          <Button className="mt-2 w-full bg-chatgpt-primary hover:bg-chatgpt-primary/90">Deposit</Button>
         </Link>
       </CardContent>
     </Card>

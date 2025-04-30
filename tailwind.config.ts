@@ -1,6 +1,5 @@
-
 import { type Config } from "tailwindcss";
-import { fontFamily } from "tailwindcss/defaultTheme";
+import { fontFamily } from "tailwindcss/defaultThemes";
 
 export default {
   darkMode: ["class"],
@@ -21,6 +20,7 @@ export default {
     extend: {
       fontFamily: {
         inter: ["Inter", ...fontFamily.sans],
+        poppins: ["Poppins", ...fontFamily.sans]
       },
       colors: {
         border: "hsl(var(--border))",
@@ -55,6 +55,10 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        chatgpt: {
+          primary: "#19C37D",
+          secondary: "#343541",
         },
       },
       borderRadius: {
