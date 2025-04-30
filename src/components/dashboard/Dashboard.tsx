@@ -15,17 +15,19 @@ import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
-// Define simplified interfaces for the order data structure
+// Define simplified interfaces with exactly what we need
 interface ProductInfo {
   name: string;
 }
 
 interface OrderItem {
   product: ProductInfo;
+  id: string;
+  price: number;
 }
 
-// Define the order type without referencing complex DB types
-interface OrderWithItems {
+// Define a simpler order type without complex nesting
+interface Order {
   id: string;
   total_amount: number;
   status: string;
@@ -48,6 +50,8 @@ const Dashboard = () => {
           status,
           created_at,
           order_items (
+            id,
+            price,
             product:products(name)
           )
         `)
@@ -55,7 +59,7 @@ const Dashboard = () => {
         .limit(5);
       
       if (error) throw error;
-      return data as OrderWithItems[];
+      return data as Order[];
     },
     enabled: !!user,
   });
