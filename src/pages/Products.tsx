@@ -71,8 +71,11 @@ const Products = () => {
         break;
       case 'popular':
         result.sort((a, b) => {
-          const aSold = a.metadata?.sold_count || 0;
-          const bSold = b.metadata?.sold_count || 0;
+          // Fixed type issue: safely extract sold_count from metadata
+          const aSold = typeof a.metadata === 'object' && a.metadata !== null ? 
+            (a.metadata.sold_count || 0) : 0;
+          const bSold = typeof b.metadata === 'object' && b.metadata !== null ? 
+            (b.metadata.sold_count || 0) : 0;
           return bSold - aSold;
         });
         break;
@@ -160,7 +163,10 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/">Trang chủ</BreadcrumbLink>
+              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
+              <BreadcrumbLink asChild>
+                <Link to="/">Trang chủ</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -203,7 +209,10 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/">Trang chủ</BreadcrumbLink>
+              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
+              <BreadcrumbLink asChild>
+                <Link to="/">Trang chủ</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -232,7 +241,10 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/">Trang chủ</BreadcrumbLink>
+              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
+              <BreadcrumbLink asChild>
+                <Link to="/">Trang chủ</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -261,7 +273,10 @@ const Products = () => {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink as={Link} to="/">Trang chủ</BreadcrumbLink>
+            {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
+            <BreadcrumbLink asChild>
+              <Link to="/">Trang chủ</Link>
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -335,7 +350,8 @@ const Products = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {currentProducts.map((product) => {
               // Safely extract metadata properties with type checking
-              const metadata = product.metadata as Record<string, any> || {};
+              const metadata = typeof product.metadata === 'object' && product.metadata !== null ? 
+                product.metadata : {};
               
               return (
                 <ProductCard
@@ -366,10 +382,15 @@ const Products = () => {
             <Pagination className="mt-8">
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  />
+                  {/* Use a Button with onClick instead of passing disabled to PaginationPrevious */}
+                  {currentPage === 1 ? (
+                    <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                      <span className="sr-only">Go to previous page</span>
+                      <span className="text-sm">Previous</span>
+                    </Button>
+                  ) : (
+                    <PaginationPrevious onClick={() => handlePageChange(Math.max(1, currentPage - 1))} />
+                  )}
                 </PaginationItem>
                 
                 {/* First page */}
@@ -417,10 +438,15 @@ const Products = () => {
                 )}
                 
                 <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                  />
+                  {/* Use a Button with onClick instead of passing disabled to PaginationNext */}
+                  {currentPage === totalPages ? (
+                    <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                      <span className="sr-only">Go to next page</span>
+                      <span className="text-sm">Next</span>
+                    </Button>
+                  ) : (
+                    <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} />
+                  )}
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
