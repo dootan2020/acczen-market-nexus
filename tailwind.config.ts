@@ -1,17 +1,15 @@
 
+import { type Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
-import type { Config } from "tailwindcss";
-import plugin from "tailwindcss/plugin";
 
-const config: Config = {
+export default {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
-  prefix: "",
   theme: {
     container: {
       center: true,
@@ -21,6 +19,9 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        inter: ["Inter", ...fontFamily.sans],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -55,31 +56,11 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // ChatGPT colors
-        chatgpt: {
-          primary: "#19C37D",     // green
-          secondary: "#343541",   // dark gray
-          text: "#202123",        // near black
-          muted: "#8E8EA0",       // muted text
-          light: "#F7F7F8",       // very light gray
-          border: "#E5E5E5",      // light gray for borders
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-      },
-      fontFamily: {
-        sans: ["Inter", ...fontFamily.sans],
-        poppins: ["Poppins", ...fontFamily.sans],
-        inter: ["Inter", ...fontFamily.sans],
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "fade-in": "fade-in 0.5s ease-out",
       },
       keyframes: {
         "accordion-down": {
@@ -90,65 +71,12 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-subtle": {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.9", transform: "scale(1.03)" },
-        },
-        "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" }
-        },
       },
-      typography: {
-        DEFAULT: {
-          css: {
-            maxWidth: 'none',
-            color: 'hsl(var(--foreground))',
-            a: {
-              color: 'hsl(var(--primary))',
-              '&:hover': {
-                color: 'hsl(var(--primary))',
-              },
-            },
-            'h1, h2, h3, h4, h5, h6': {
-              color: 'hsl(var(--foreground))',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: '600',
-            },
-          },
-        },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-    require('@tailwindcss/typography'),
-    plugin(({ addBase }) => {
-      addBase({
-        ".min-h-screen": {
-          minHeight: "100dvh",
-        },
-        ".h-screen": {
-          height: "100dvh", 
-        },
-        "html": {
-          colorScheme: "light dark"
-        },
-        "html.dark": {
-          colorScheme: "dark"
-        },
-        '@font-face': [
-          {
-            fontFamily: 'Inter',
-            fontWeight: '400 700',
-            fontStyle: 'normal',
-            fontDisplay: 'swap',
-            src: 'url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap")'
-          }
-        ],
-      })
-    })
-  ],
-}
-
-export default config;
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config;

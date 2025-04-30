@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
 import DiscountAnalyticsPage from '@/pages/admin/DiscountAnalyticsPage';
+import Index from '@/pages/Index'; // Đảm bảo import đúng trang Index
 
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
@@ -14,7 +15,6 @@ const MainLayout = () => {
 };
 
 // Create placeholder components for routes that are missing
-const HomePage = () => <div>Home Page</div>;
 const LoginPage = () => <div>Login Page</div>;
 const RegisterPage = () => <div>Register Page</div>;
 const ProductsPage = () => <div>Products Page</div>;
@@ -50,7 +50,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: '',
-            element: <HomePage />,
+            element: <Index />,  // Đảm bảo đúng component trang chủ
           },
           {
             path: 'products',
