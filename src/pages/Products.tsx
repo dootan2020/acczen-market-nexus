@@ -73,9 +73,9 @@ const Products = () => {
         result.sort((a, b) => {
           // Fixed type issue: safely extract sold_count from metadata
           const aSold = typeof a.metadata === 'object' && a.metadata !== null ? 
-            (a.metadata.sold_count || 0) : 0;
+            (typeof a.metadata === 'object' && 'sold_count' in a.metadata ? Number(a.metadata.sold_count) : 0) : 0;
           const bSold = typeof b.metadata === 'object' && b.metadata !== null ? 
-            (b.metadata.sold_count || 0) : 0;
+            (typeof b.metadata === 'object' && 'sold_count' in b.metadata ? Number(b.metadata.sold_count) : 0) : 0;
           return bSold - aSold;
         });
         break;
@@ -163,7 +163,6 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
               <BreadcrumbLink asChild>
                 <Link to="/">Trang chủ</Link>
               </BreadcrumbLink>
@@ -209,7 +208,6 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
               <BreadcrumbLink asChild>
                 <Link to="/">Trang chủ</Link>
               </BreadcrumbLink>
@@ -241,7 +239,6 @@ const Products = () => {
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
-              {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
               <BreadcrumbLink asChild>
                 <Link to="/">Trang chủ</Link>
               </BreadcrumbLink>
@@ -273,7 +270,6 @@ const Products = () => {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            {/* Fixed BreadcrumbLink by using asChild prop and putting Link inside */}
             <BreadcrumbLink asChild>
               <Link to="/">Trang chủ</Link>
             </BreadcrumbLink>
@@ -349,9 +345,16 @@ const Products = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {currentProducts.map((product) => {
-              // Safely extract metadata properties with type checking
+              // Safely extract metadata properties with improved type checking
               const metadata = typeof product.metadata === 'object' && product.metadata !== null ? 
                 product.metadata : {};
+              
+              // Safely extract sold_count with better type checking
+              let soldCount = 0;
+              if (typeof metadata === 'object' && metadata !== null && 'sold_count' in metadata) {
+                soldCount = typeof metadata.sold_count === 'number' ? 
+                  metadata.sold_count : Number(metadata.sold_count) || 0;
+              }
               
               return (
                 <ProductCard
@@ -371,7 +374,7 @@ const Products = () => {
                   isNew={!!metadata.is_new}
                   isBestSeller={!!metadata.is_best_seller}
                   description={product.description?.substring(0, 100)}
-                  soldCount={typeof metadata.sold_count === 'number' ? metadata.sold_count : 0}
+                  soldCount={soldCount}
                 />
               );
             })}
@@ -381,8 +384,8 @@ const Products = () => {
           {totalPages > 1 && (
             <Pagination className="mt-8">
               <PaginationContent>
+                {/* Previous page button */}
                 <PaginationItem>
-                  {/* Use a Button with onClick instead of passing disabled to PaginationPrevious */}
                   {currentPage === 1 ? (
                     <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
                       <span className="sr-only">Go to previous page</span>
@@ -437,8 +440,8 @@ const Products = () => {
                   </>
                 )}
                 
+                {/* Next page button */}
                 <PaginationItem>
-                  {/* Use a Button with onClick instead of passing disabled to PaginationNext */}
                   {currentPage === totalPages ? (
                     <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
                       <span className="sr-only">Go to next page</span>
