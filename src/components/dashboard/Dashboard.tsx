@@ -51,7 +51,7 @@ const Dashboard = () => {
         .from('orders')
         .select('total_amount')
         .eq('user_id', user?.id)
-        .is('status', 'completed');
+        .eq('status', 'completed');
       
       if (spendError) throw spendError;
       
