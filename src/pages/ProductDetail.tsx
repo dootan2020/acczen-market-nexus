@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container } from "@/components/ui/container";
 import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
@@ -31,7 +31,20 @@ import RichTextContent from "@/components/RichTextContent";
 import { cn } from "@/lib/utils";
 
 const ProductDetail = () => {
+  console.log("ProductDetail component rendering");
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  
+  // Ensure we have a valid slug
+  useEffect(() => {
+    if (!slug) {
+      console.error("No product slug provided");
+      navigate('/products');
+    } else {
+      console.log(`Product detail page for slug: ${slug}`);
+    }
+  }, [slug, navigate]);
+  
   const { data: product, isLoading, error } = useProduct(slug || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
@@ -41,6 +54,15 @@ const ProductDetail = () => {
     product?.category_id || '',
     product?.id || ''
   );
+  
+  console.log("Product detail state:", { 
+    slug,
+    isLoading, 
+    hasError: !!error,
+    productFound: !!product,
+    productName: product?.name,
+    relatedCount: relatedProducts?.length || 0
+  });
   
   // Mock rating data (in a real app this would come from API)
   const rating = 4.5;
@@ -58,6 +80,7 @@ const ProductDetail = () => {
   }
   
   if (error || !product) {
+    console.error("Product detail error:", error);
     return (
       <Container className="py-8">
         <div className="flex flex-col items-center justify-center min-h-[300px] bg-red-50 rounded-lg p-8">
@@ -66,7 +89,9 @@ const ProductDetail = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-red-800 mb-2">Không thể tải thông tin sản phẩm</h3>
+          <h3 className="text-xl font-bold text-red-800 mb-2">
+            {error ? `Lỗi: ${String(error)}` : 'Không tìm thấy sản phẩm'}
+          </h3>
           <p className="text-red-600 mb-4">Vui lòng thử lại sau hoặc chọn sản phẩm khác</p>
           <Link to="/products" className="px-4 py-2 bg-[#19C37D] hover:bg-[#15a76b] text-white rounded-md transition-colors">
             Xem sản phẩm khác
@@ -214,7 +239,22 @@ const ProductDetail = () => {
               {/* Buy/Favorite buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <Button 
-                  onClick={() => {}}
+                  onClick={() => {
+                    console.log("Buy now clicked", product);
+                    navigate('/checkout', { 
+                      state: { 
+                        product: {
+                          id: product.id,
+                          name: product.name,
+                          price: product.sale_price || product.price,
+                          image: product.image_url,
+                          stock_quantity: product.stock_quantity,
+                          kiosk_token: product.kiosk_token
+                        },
+                        quantity: 1
+                      } 
+                    });
+                  }}
                   size="lg"
                   className="flex-1 bg-[#19C37D] hover:bg-[#15a76b] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base"
                   disabled={product.stock_quantity <= 0}

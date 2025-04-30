@@ -6,6 +6,7 @@ export function useProduct(id: string) {
   return useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
+      console.log(`Fetching product detail for ID: ${id}`);
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -16,12 +17,15 @@ export function useProduct(id: string) {
         .single();
 
       if (error) {
+        console.error(`Error fetching product ${id}:`, error);
         throw error;
       }
       
+      console.log("Product detail fetched:", data?.name);
       return data;
     },
     enabled: !!id,
+    retry: 2,
   });
 }
 
@@ -29,6 +33,7 @@ export function useRelatedProducts(categoryId: string, currentProductId: string)
   return useQuery({
     queryKey: ["related-products", categoryId, currentProductId],
     queryFn: async () => {
+      console.log(`Fetching related products for category: ${categoryId}, excluding product: ${currentProductId}`);
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -42,11 +47,14 @@ export function useRelatedProducts(categoryId: string, currentProductId: string)
         .limit(4);
 
       if (error) {
+        console.error("Error fetching related products:", error);
         throw error;
       }
       
-      return data;
+      console.log("Related products fetched:", data?.length || 0);
+      return data || [];
     },
     enabled: !!categoryId && !!currentProductId,
+    retry: 2,
   });
 }

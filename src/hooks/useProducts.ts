@@ -6,6 +6,7 @@ export function useProducts() {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
+      console.log("Fetching products data...");
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -16,9 +17,15 @@ export function useProducts() {
         .eq("status", "active")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
+      }
+      
+      console.log("Products fetched:", data?.length || 0);
+      return data || [];
     },
+    retry: 2,
   });
 }
 
@@ -26,13 +33,20 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
+      console.log("Fetching categories data...");
       const { data, error } = await supabase
         .from("categories")
         .select("*");
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching categories:", error);
+        throw error;
+      }
+      
+      console.log("Categories fetched:", data?.length || 0);
+      return data || [];
     },
+    retry: 2,
   });
 }
 
@@ -40,6 +54,7 @@ export function useProductsByCategory(categorySlug?: string, subcategorySlug?: s
   return useQuery({
     queryKey: ["products", "category", categorySlug, "subcategory", subcategorySlug],
     queryFn: async () => {
+      console.log(`Fetching products by category: ${categorySlug}, subcategory: ${subcategorySlug}`);
       let query = supabase
         .from("products")
         .select(`
@@ -59,10 +74,16 @@ export function useProductsByCategory(categorySlug?: string, subcategorySlug?: s
 
       const { data, error } = await query.order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching products by category:", error);
+        throw error;
+      }
+      
+      console.log("Category products fetched:", data?.length || 0);
+      return data || [];
     },
     enabled: !!categorySlug,
+    retry: 2,
   });
 }
 
@@ -70,6 +91,7 @@ export function useProductsBySubcategory(subcategorySlug?: string) {
   return useQuery({
     queryKey: ["products", "subcategory", subcategorySlug],
     queryFn: async () => {
+      console.log(`Fetching products by subcategory: ${subcategorySlug}`);
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -81,9 +103,15 @@ export function useProductsBySubcategory(subcategorySlug?: string) {
         .eq("subcategory.slug", subcategorySlug)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching products by subcategory:", error);
+        throw error;
+      }
+      
+      console.log("Subcategory products fetched:", data?.length || 0);
+      return data || [];
     },
     enabled: !!subcategorySlug,
+    retry: 2,
   });
 }

@@ -32,6 +32,7 @@ import { Link } from 'react-router-dom';
 const PRODUCTS_PER_PAGE = 12;
 
 const Products = () => {
+  console.log("Products component rendering");
   const { data: allProducts, isLoading, error } = useProducts();
   const { data: categories } = useCategories();
   
@@ -43,7 +44,12 @@ const Products = () => {
   
   // Filter and sort products whenever dependencies change
   useEffect(() => {
-    if (!allProducts) return;
+    if (!allProducts) {
+      console.log("No products data available yet");
+      return;
+    }
+    
+    console.log(`Filtering products: ${allProducts.length} total, search: "${searchQuery}", category: "${selectedCategory}", sort: "${sortOrder}"`);
     
     let result = [...allProducts];
     
@@ -97,6 +103,7 @@ const Products = () => {
         break;
     }
     
+    console.log(`Filtered products count: ${result.length}`);
     setFilteredProducts(result);
     
     // Reset to first page when filters change
@@ -155,11 +162,18 @@ const Products = () => {
     });
   };
 
+  console.log("Render state:", { 
+    isLoading, 
+    error, 
+    productsCount: allProducts?.length || 0, 
+    filteredCount: filteredProducts?.length || 0,
+    currentProducts: currentProducts?.length || 0 
+  });
+
   // Render loading skeleton
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 lg:p-8">
-        {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -176,7 +190,6 @@ const Products = () => {
       
         <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
         
-        {/* Filter skeleton */}
         <Card className="mb-8">
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -203,6 +216,7 @@ const Products = () => {
 
   // Render error state
   if (error) {
+    console.error("Product list error:", error);
     return (
       <div className="container mx-auto p-6 lg:p-8">
         <Breadcrumb className="mb-6">
@@ -225,7 +239,7 @@ const Products = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Lỗi</AlertTitle>
           <AlertDescription>
-            Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.
+            Không thể tải danh sách sản phẩm. Vui lòng thử lại sau. Lỗi: {String(error)}
           </AlertDescription>
         </Alert>
       </div>
@@ -266,7 +280,6 @@ const Products = () => {
   // Render product grid
   return (
     <div className="container mx-auto p-6 lg:p-8" id="products-section">
-      {/* Breadcrumb */}
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -283,11 +296,9 @@ const Products = () => {
       
       <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
       
-      {/* Filters */}
       <Card className="mb-8">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search filter */}
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -298,7 +309,6 @@ const Products = () => {
               />
             </div>
             
-            {/* Category filter */}
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Chọn danh mục" />
@@ -313,7 +323,6 @@ const Products = () => {
               </SelectContent>
             </Select>
             
-            {/* Sort order */}
             <Select value={sortOrder} onValueChange={handleSortChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Sắp xếp theo" />
@@ -326,21 +335,18 @@ const Products = () => {
               </SelectContent>
             </Select>
             
-            {/* Filter button (for mobile) */}
             <Button variant="outline" className="lg:hidden flex items-center justify-center">
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               Lọc thêm
             </Button>
           </div>
           
-          {/* Results count */}
           <div className="mt-4 text-sm text-muted-foreground">
             Hiển thị {currentProducts.length} trong {filteredProducts.length} sản phẩm
           </div>
         </CardContent>
       </Card>
       
-      {/* Products grid */}
       {filteredProducts.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -380,7 +386,6 @@ const Products = () => {
             })}
           </div>
           
-          {/* Pagination */}
           {totalPages > 1 && (
             <Pagination className="mt-8">
               <PaginationContent>
