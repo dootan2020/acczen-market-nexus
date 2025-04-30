@@ -7,7 +7,9 @@ import Layout from '@/components/Layout';
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
 import DiscountAnalyticsPage from '@/pages/admin/DiscountAnalyticsPage';
-import Index from '@/pages/Index'; // Đảm bảo import đúng trang Index
+import Index from '@/pages/Index'; 
+import Products from '@/pages/Products';
+import ProductDetail from '@/pages/ProductDetail';
 
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
@@ -17,8 +19,6 @@ const MainLayout = () => {
 // Create placeholder components for routes that are missing
 const LoginPage = () => <div>Login Page</div>;
 const RegisterPage = () => <div>Register Page</div>;
-const ProductsPage = () => <div>Products Page</div>;
-const ProductDetailsPage = () => <div>Product Details Page</div>;
 const CategoriesPage = () => <div>Categories Page</div>;
 const ProfilePage = () => <div>Profile Page</div>;
 const AdminHomePage = () => <div>Admin Home Page</div>;
@@ -50,15 +50,15 @@ const router = createBrowserRouter([
         children: [
           {
             path: '',
-            element: <Index />,  // Đảm bảo đúng component trang chủ
+            element: <Index />,
           },
           {
             path: 'products',
-            element: <ProductsPage />,
+            element: <Products />,
           },
           {
             path: 'products/:slug',
-            element: <ProductDetailsPage />,
+            element: <ProductDetail />,
           },
           {
             path: 'categories',

@@ -7,25 +7,50 @@ export function useProduct(id: string) {
     queryKey: ["product", id],
     queryFn: async () => {
       console.log(`Fetching product detail for ID: ${id}`);
-      const { data, error } = await supabase
+      
+      // Try to get product by ID first
+      const { data: productById, error: idError } = await supabase
         .from("products")
         .select(`
           *,
           category:categories(*)
         `)
         .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error(`Error fetching product ${id}:`, error);
-        throw error;
+        .maybeSingle();
+      
+      // If found by ID, return it
+      if (productById) {
+        console.log("Product detail fetched by ID:", productById?.name);
+        return productById;
       }
       
-      console.log("Product detail fetched:", data?.name);
-      return data;
+      // If not found by ID, try by slug
+      const { data: productBySlug, error: slugError } = await supabase
+        .from("products")
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .eq("slug", id)
+        .maybeSingle();
+        
+      if (slugError) {
+        console.error(`Error fetching product ${id}:`, slugError);
+        throw slugError;
+      }
+      
+      if (!productBySlug) {
+        console.error(`Product not found with ID or slug: ${id}`);
+        throw new Error(`Product not found with ID or slug: ${id}`);
+      }
+      
+      console.log("Product detail fetched by slug:", productBySlug?.name);
+      return productBySlug;
     },
     enabled: !!id,
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -55,6 +80,8 @@ export function useRelatedProducts(categoryId: string, currentProductId: string)
       return data || [];
     },
     enabled: !!categoryId && !!currentProductId,
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

@@ -25,7 +25,9 @@ export function useProducts() {
       console.log("Products fetched:", data?.length || 0);
       return data || [];
     },
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -46,7 +48,9 @@ export function useCategories() {
       console.log("Categories fetched:", data?.length || 0);
       return data || [];
     },
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -83,7 +87,9 @@ export function useProductsByCategory(categorySlug?: string, subcategorySlug?: s
       return data || [];
     },
     enabled: !!categorySlug,
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -112,6 +118,8 @@ export function useProductsBySubcategory(subcategorySlug?: string) {
       return data || [];
     },
     enabled: !!subcategorySlug,
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
