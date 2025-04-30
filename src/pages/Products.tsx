@@ -314,7 +314,7 @@ const Products = () => {
                 <SelectValue placeholder="Chọn danh mục" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tất cả danh mục</SelectItem>
+                <SelectItem value="all">Tất cả danh mục</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
