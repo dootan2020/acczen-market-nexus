@@ -44,7 +44,7 @@ const HeroSection = () => {
             <img 
               src="/lovable-uploads/49957701-a503-4364-874c-3e14ec190eed.png" 
               alt="Digital Products Illustration" 
-              className="rounded-lg shadow-lg max-w-full h-auto hover-lift"
+              className="rounded-lg shadow-lg max-w-full h-auto hover:scale-105 transition-transform duration-300"
             />
           </div>
         </div>

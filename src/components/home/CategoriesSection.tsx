@@ -15,7 +15,7 @@ const CategoryCard = ({
   description: string; 
   link: string;
 }) => (
-  <Card className="overflow-hidden border border-[#E5E5E5] hover:border-[#19C37D] transition-all hover:shadow-md group hover-lift">
+  <Card className="overflow-hidden border border-[#E5E5E5] hover:border-[#19C37D] transition-all hover:shadow-md group hover:scale-105 transition-transform duration-300">
     <Link to={link}>
       <CardContent className="p-6 flex flex-col items-center text-center">
         <div className="mb-4 p-3 rounded-full bg-[#F7F7F8] text-[#19C37D] group-hover:bg-[#19C37D] group-hover:text-white transition-colors">
