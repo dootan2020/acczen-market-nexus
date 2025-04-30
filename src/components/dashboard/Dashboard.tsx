@@ -14,9 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
-import { Tables } from "@/types/supabase";
 
-// Define explicit interfaces for the nested types
+// Define simplified interfaces for the order data structure
 interface ProductInfo {
   name: string;
 }
@@ -25,7 +24,7 @@ interface OrderItem {
   product: ProductInfo;
 }
 
-// Define the OrderWithItems type with explicit structure
+// Define the order type without referencing complex DB types
 interface OrderWithItems {
   id: string;
   total_amount: number;
