@@ -16,12 +16,22 @@ import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Tables } from "@/types/supabase";
 
-type OrderWithItems = Tables<'orders'> & {
-  order_items: {
-    product: {
-      name: string;
-    };
-  }[];
+// Define explicit interfaces for the nested types
+interface ProductInfo {
+  name: string;
+}
+
+interface OrderItem {
+  product: ProductInfo;
+}
+
+// Define the OrderWithItems type with explicit structure
+interface OrderWithItems {
+  id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItem[];
 }
 
 const Dashboard = () => {
