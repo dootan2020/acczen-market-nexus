@@ -14,6 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { Tables } from "@/types/supabase";
+
+type OrderWithItems = Tables<'orders'> & {
+  order_items: {
+    product: {
+      name: string;
+    };
+  }[];
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -37,7 +46,7 @@ const Dashboard = () => {
         .limit(5);
       
       if (error) throw error;
-      return data;
+      return data as OrderWithItems[];
     },
     enabled: !!user,
   });
