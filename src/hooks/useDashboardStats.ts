@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -109,6 +110,59 @@ export const useDashboardStats = () => {
         
       if (periodOrdersError) throw periodOrdersError;
       
+      // Get products data
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          id, 
+          name,
+          stock_quantity,
+          category_id
+        `);
+      
+      if (productsError) throw productsError;
+      
+      // Get categories for category data
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name');
+      
+      if (categoriesError) throw categoriesError;
+      
+      // Create recent activity data
+      const recentActivity = [
+        ...orders.slice(0, 3).map(order => ({
+          id: `order-${order.id}`,
+          title: `New order #${order.id}`,
+          timestamp: order.created_at,
+          type: 'order'
+        })),
+        ...newUsers.slice(0, 3).map(user => ({
+          id: `user-${user.id}`,
+          title: `New user registered: ${user.email || user.username || user.id}`,
+          timestamp: user.created_at,
+          type: 'user'
+        }))
+      ]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 5);
+      
+      // Calculate category data
+      const categoryData = (categories || []).map(category => {
+        const categoryOrders = orders.filter(order => {
+          const productIds = (products || [])
+            .filter(product => product.category_id === category.id)
+            .map(product => product.id);
+          
+          return productIds.includes(order.id);
+        });
+        
+        return {
+          name: category.name,
+          value: categoryOrders.length
+        };
+      });
+      
       // Get deposits data
       const { data: deposits, error: depositsError } = await supabase
         .from('deposits')
@@ -207,6 +261,13 @@ export const useDashboardStats = () => {
           .reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0)
       };
       
+      // Add product stats
+      const productStats = {
+        total: products?.length || 0,
+        inStock: products?.filter(p => Number(p.stock_quantity) > 0).length || 0,
+        lowStock: products?.filter(p => Number(p.stock_quantity) > 0 && Number(p.stock_quantity) < 5).length || 0
+      };
+      
       // Calculate percent changes from previous period
       const getPreviousPeriodData = async () => {
         const previousFromDate = formatDate(
@@ -239,10 +300,18 @@ export const useDashboardStats = () => {
           .gte('created_at', previousFromDate)
           .lte('created_at', previousToDate);
           
+        // Get products from previous period
+        const { data: prevProducts } = await supabase
+          .from('products')
+          .select('id')
+          .gte('created_at', previousFromDate)
+          .lte('created_at', previousToDate);
+          
         return {
           orders: prevOrders || [],
           deposits: prevDeposits || [],
-          users: prevUsers || []
+          users: prevUsers || [],
+          products: prevProducts || []
         };
       };
       
@@ -255,7 +324,8 @@ export const useDashboardStats = () => {
         newUsers: prevPeriodData.users.length,
         orderCount: prevPeriodData.orders.length,
         orderRevenue: prevCompletedOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
-        depositAmount: prevCompletedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0)
+        depositAmount: prevCompletedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0),
+        productCount: prevPeriodData.products.length
       };
       
       // Calculate percent changes
@@ -274,7 +344,10 @@ export const useDashboardStats = () => {
         depositAmount: getPercentChange(
           periodDeposits?.filter(d => d.status === 'completed').reduce((sum, d) => sum + Number(d.amount || 0), 0),
           prevPeriodStats.depositAmount
-        )
+        ),
+        // Add the missing properties
+        userGrowth: getPercentChange(userStats.new, prevPeriodStats.newUsers),
+        productGrowth: getPercentChange(products?.length || 0, prevPeriodStats.productCount)
       };
       
       return {
@@ -286,7 +359,10 @@ export const useDashboardStats = () => {
         depositsData,
         recentOrders,
         percentChanges,
-        timeRange
+        timeRange,
+        recentActivity,
+        categoryData,
+        productStats
       };
     }
   });

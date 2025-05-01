@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -51,7 +50,7 @@ const Dashboard = () => {
   // Fetch recent orders
   const { data: recentOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ['recent-orders'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from('orders')
         .select(`

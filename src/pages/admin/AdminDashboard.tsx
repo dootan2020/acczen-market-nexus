@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +33,8 @@ import {
   Plus,
   Eye,
   User,
-  Activity
+  Activity,
+  LayoutDashboard
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useDashboardStats, TimeRange } from '@/hooks/useDashboardStats';
@@ -42,6 +42,56 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+
+// Define proper types for dashboard stats
+interface DashboardStats {
+  userStats: { 
+    total: number; 
+    new: number; 
+  };
+  orderStats: { 
+    total: number;
+    completed: number;
+    pending: number; 
+    revenue: number;
+  };
+  depositStats: { 
+    total: number;
+    completed: number; 
+    amount: number;
+    paypal: number;
+    usdt: number;
+  };
+  salesData: any[];
+  ordersData: any[];
+  depositsData: any[];
+  recentOrders: any[];
+  percentChanges: { 
+    newUsers: number; 
+    orderCount: number; 
+    revenue: number;
+    depositAmount: number;
+    // Add missing properties
+    userGrowth: number;
+    productGrowth: number;
+  };
+  recentActivity: Array<{
+    id: string;
+    title: string;
+    timestamp: string;
+    type: string;
+  }>;
+  categoryData: Array<{
+    name: string;
+    value: number;
+  }>;
+  productStats: {
+    total: number;
+    inStock: number;
+    lowStock: number;
+  };
+  timeRange: TimeRange;
+}
 
 const AdminDashboard = () => {
   const { data: stats, isLoading, error, timeRange, setTimeRange } = useDashboardStats();
@@ -92,6 +142,8 @@ const AdminDashboard = () => {
       description: `${action} functionality will be implemented soon.`,
     });
   };
+
+  const typedStats = stats as unknown as DashboardStats;
 
   if (isLoading) {
     return (
@@ -188,38 +240,38 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
-          value={formatNumber(stats?.userStats?.total || 0)}
+          value={formatNumber(typedStats?.userStats?.total || 0)}
           icon={<Users className="h-5 w-5" />}
-          description={`+${formatNumber(stats?.userStats?.new || 0)} new`}
-          percentChange={stats?.percentChanges?.userGrowth || 0}
-          trend={stats?.percentChanges?.userGrowth > 0 ? 'up' : stats?.percentChanges?.userGrowth < 0 ? 'down' : 'neutral'}
+          description={`+${formatNumber(typedStats?.userStats?.new || 0)} new`}
+          percentChange={typedStats?.percentChanges?.userGrowth || 0}
+          trend={typedStats?.percentChanges?.userGrowth > 0 ? 'up' : typedStats?.percentChanges?.userGrowth < 0 ? 'down' : 'neutral'}
         />
         
         <StatCard
           title="Total Orders"
-          value={formatNumber(stats?.orderStats?.total || 0)}
+          value={formatNumber(typedStats?.orderStats?.total || 0)}
           icon={<ShoppingCart className="h-5 w-5" />}
-          percentChange={stats?.percentChanges?.orderCount || 0}
-          trend={stats?.percentChanges?.orderCount > 0 ? 'up' : stats?.percentChanges?.orderCount < 0 ? 'down' : 'neutral'}
+          percentChange={typedStats?.percentChanges?.orderCount || 0}
+          trend={typedStats?.percentChanges?.orderCount > 0 ? 'up' : typedStats?.percentChanges?.orderCount < 0 ? 'down' : 'neutral'}
           description="from previous period"
         />
         
         <StatCard
           title="Total Revenue"
-          value={formatCurrency(stats?.orderStats?.revenue || 0)}
+          value={formatCurrency(typedStats?.orderStats?.revenue || 0)}
           icon={<DollarSign className="h-5 w-5" />}
-          percentChange={stats?.percentChanges?.revenue || 0}
-          trend={stats?.percentChanges?.revenue > 0 ? 'up' : stats?.percentChanges?.revenue < 0 ? 'down' : 'neutral'}
+          percentChange={typedStats?.percentChanges?.revenue || 0}
+          trend={typedStats?.percentChanges?.revenue > 0 ? 'up' : typedStats?.percentChanges?.revenue < 0 ? 'down' : 'neutral'}
           description="from previous period"
         />
         
         <StatCard
           title="Products in Stock"
-          value={formatNumber(stats?.productStats?.inStock || 0)}
+          value={formatNumber(typedStats?.productStats?.inStock || 0)}
           icon={<Package className="h-5 w-5" />}
-          description={`${formatNumber(stats?.productStats?.lowStock || 0)} low stock`}
-          percentChange={stats?.percentChanges?.productGrowth || 0}
-          trend={stats?.percentChanges?.productGrowth > 0 ? 'up' : stats?.percentChanges?.productGrowth < 0 ? 'down' : 'neutral'}
+          description={`${formatNumber(typedStats?.productStats?.lowStock || 0)} low stock`}
+          percentChange={typedStats?.percentChanges?.productGrowth || 0}
+          trend={typedStats?.percentChanges?.productGrowth > 0 ? 'up' : typedStats?.percentChanges?.productGrowth < 0 ? 'down' : 'neutral'}
         />
       </div>
       
@@ -265,7 +317,7 @@ const AdminDashboard = () => {
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={350}>
                 <AreaChart
-                  data={stats?.salesData}
+                  data={typedStats?.salesData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <defs>
@@ -303,7 +355,7 @@ const AdminDashboard = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
-                data={stats?.categoryData || []}
+                data={typedStats?.categoryData || []}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -324,10 +376,10 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats?.recentActivity?.length === 0 ? (
+              {typedStats?.recentActivity?.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">No recent activity</p>
               ) : (
-                stats?.recentActivity?.map((activity: any) => (
+                typedStats?.recentActivity?.map((activity: any) => (
                   <div key={activity.id} className="flex items-center justify-between border-b pb-3">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">{activity.title}</p>
@@ -352,7 +404,7 @@ const AdminDashboard = () => {
               )}
               
               {/* Show more link if there are activities */}
-              {stats?.recentActivity?.length > 0 && (
+              {typedStats?.recentActivity?.length > 0 && (
                 <div className="text-center pt-2">
                   <Button variant="ghost" size="sm" className="text-chatgpt-primary hover:text-chatgpt-primary/90">
                     View all activity
