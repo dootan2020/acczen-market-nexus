@@ -137,12 +137,8 @@ const TestimonialsSection = () => {
             ))}
           </CarouselContent>
           <div className="flex justify-center gap-4 mt-6">
-            <div className="static">
-              <CarouselPrevious className="static transform-none bg-white border-[#E5E5E5] text-[#343541] hover:bg-[#F7F7F8] hover:text-[#19C37D]" />
-            </div>
-            <div className="static">
-              <CarouselNext className="static transform-none bg-white border-[#E5E5E5] text-[#343541] hover:bg-[#F7F7F8] hover:text-[#19C37D]" />
-            </div>
+            <CarouselPrevious className="static transform-none bg-white border-[#E5E5E5] text-[#343541] hover:bg-[#F7F7F8] hover:text-[#19C37D]" />
+            <CarouselNext className="static transform-none bg-white border-[#E5E5E5] text-[#343541] hover:bg-[#F7F7F8] hover:text-[#19C37D]" />
           </div>
         </Carousel>
       </div>
