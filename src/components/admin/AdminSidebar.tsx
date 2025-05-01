@@ -21,7 +21,7 @@ import {
   BarChart,
   ActivitySquare,
   Import,
-  CurrencyDollar,
+  DollarSign,
   Puzzle,
 } from 'lucide-react';
 
@@ -102,12 +102,12 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
         { 
           name: 'Exchange Rates', 
           href: '/admin/exchange-rates', 
-          icon: <CurrencyDollar className="h-5 w-5" /> 
+          icon: <DollarSign className="h-5 w-5" /> 
         },
         { 
           name: 'Transactions', 
           href: '/admin/transactions', 
-          icon: <CurrencyDollar className="h-5 w-5" /> 
+          icon: <DollarSign className="h-5 w-5" /> 
         },
       ]
     },
