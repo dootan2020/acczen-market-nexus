@@ -17,7 +17,7 @@ interface TestimonialProps {
   author: string;
   role: string;
   rating: number;
-  avatar?: string;  // Make avatar optional with ?
+  avatar?: string;
   verified?: boolean;
   purchasedProduct?: string;
 }
