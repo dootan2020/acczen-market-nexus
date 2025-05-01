@@ -22,9 +22,9 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useOrderManagementEnhanced } from '@/hooks/admin/useOrderManagementEnhanced';
-import { OrdersTableEnhanced } from '@/components/admin/orders/OrdersTableEnhanced';
+import { OrdersTable, OrdersTableEnhanced } from '@/components/admin/orders/OrdersTableEnhanced';
 import { OrderFiltersEnhanced } from '@/components/admin/orders/OrderFiltersEnhanced';
-import { OrderDetailsDialogEnhanced } from '@/components/admin/orders/OrderDetailsDialogEnhanced';
+import { OrderDetailsDialog, OrderDetailsDialogEnhanced } from '@/components/admin/orders/OrderDetailsDialogEnhanced';
 import { OrderStatusDialog } from '@/components/admin/orders/OrderActions';
 import { exportOrdersToCsv } from '@/utils/exportUtils';
 import { OrderStatus } from '@/types/orders';
@@ -81,7 +81,9 @@ const OrdersPage: React.FC = () => {
 
       // Apply filters
       if (statusFilter) {
-        query = query.eq('status', statusFilter);
+        // Cast statusFilter to the valid OrderStatus type
+        const validStatus = statusFilter as OrderStatus;
+        query = query.eq('status', validStatus);
       }
 
       if (dateRange?.from) {

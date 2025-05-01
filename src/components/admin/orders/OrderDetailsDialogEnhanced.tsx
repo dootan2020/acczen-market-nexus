@@ -48,7 +48,8 @@ export const OrderDetailsDialog = ({
       pending: { variant: 'secondary', label: 'Pending' },
       processing: { variant: 'secondary', label: 'Processing' },
       cancelled: { variant: 'destructive', label: 'Cancelled' },
-      refunded: { variant: 'outline', label: 'Refunded' }
+      refunded: { variant: 'outline', label: 'Refunded' },
+      failed: { variant: 'destructive', label: 'Failed' }
     } as const;
     
     const config = statusConfig[status as keyof typeof statusConfig] || 
@@ -232,3 +233,6 @@ export const OrderDetailsDialog = ({
     </Dialog>
   );
 };
+
+// Also export this as OrderDetailsDialogEnhanced to match the import
+export const OrderDetailsDialogEnhanced = OrderDetailsDialog;

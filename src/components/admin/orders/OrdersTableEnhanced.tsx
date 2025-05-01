@@ -27,6 +27,7 @@ interface OrdersTableProps {
   isLoading: boolean;
 }
 
+// Export as OrdersTable, not OrdersTableEnhanced, for simplicity
 export const OrdersTable = ({ orders, onViewOrder, onUpdateStatusDialog, isLoading }: OrdersTableProps) => {
   // Function to render status badge with appropriate color
   const renderStatusBadge = (status: string) => {
@@ -35,7 +36,8 @@ export const OrdersTable = ({ orders, onViewOrder, onUpdateStatusDialog, isLoadi
       pending: { variant: 'secondary', label: 'Pending' },
       processing: { variant: 'secondary', label: 'Processing' },
       cancelled: { variant: 'destructive', label: 'Cancelled' },
-      refunded: { variant: 'outline', label: 'Refunded' }
+      refunded: { variant: 'outline', label: 'Refunded' },
+      failed: { variant: 'destructive', label: 'Failed' }
     } as const;
     
     const config = statusConfig[status as keyof typeof statusConfig] || 
@@ -160,3 +162,6 @@ export const OrdersTable = ({ orders, onViewOrder, onUpdateStatusDialog, isLoadi
     </Table>
   );
 };
+
+// Also export this as OrdersTableEnhanced to match the import
+export const OrdersTableEnhanced = OrdersTable;

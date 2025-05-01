@@ -8,14 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { DateRange } from 'react-day-picker';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 interface OrderFiltersEnhancedProps {
   searchQuery: string;
@@ -86,6 +81,7 @@ export const OrderFiltersEnhanced = ({
             <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
             <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
@@ -93,9 +89,10 @@ export const OrderFiltersEnhanced = ({
       
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
-          <DatePickerWithRange 
+          <DateRangePicker 
             date={dateRange} 
-            onChange={onDateRangeChange}
+            onDateChange={onDateRangeChange}
+            align="start"
             className="w-full"
           />
         </div>
