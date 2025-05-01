@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -14,6 +13,9 @@ import ProductDetail from '@/pages/ProductDetail';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 
+// Import our updated AdminHome
+import AdminHome from '@/pages/admin/AdminHome';
+
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
   return (
@@ -26,7 +28,6 @@ const MainLayout = () => {
 // Create placeholder components for routes that are missing
 const CategoriesPage = () => <div>Categories Page</div>;
 const ProfilePage = () => <div>Profile Page</div>;
-const AdminHomePage = () => <div>Admin Home Page</div>;
 const AdminProductsPage = () => <div>Admin Products Page</div>;
 const AdminCategoriesPage = () => <div>Admin Categories Page</div>;
 const AdminOrdersPage = () => <div>Admin Orders Page</div>;
@@ -44,7 +45,7 @@ const DepositDetailsPage = () => <div>Deposit Details Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
 
-// Import our new pages
+// Import our existing pages
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminSettings from "./pages/admin/AdminSettings";
 
@@ -99,7 +100,7 @@ const router = createBrowserRouter([
             index: true,
             element: (
               <AdminProtectedRoute>
-                <AdminHomePage />
+                <AdminHome />
               </AdminProtectedRoute>
             ),
           },

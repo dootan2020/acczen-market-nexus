@@ -35,32 +35,13 @@ export const AdminNavbar = ({
   const { userDisplayName } = useAuth();
   const location = useLocation();
   
-  // Navigation items for breadcrumbs
-  const navItems = [
-    { name: 'AccZen.net', href: '/' },
-    { name: 'Admin', href: '/admin' },
-    { name: 'Dashboard', href: '/admin' },
-    { name: 'Products', href: '/admin/products' },
-    { name: 'Import Products', href: '/admin/products-import' },
-    { name: 'Categories', href: '/admin/categories' },
-    { name: 'Orders', href: '/admin/orders' },
-    { name: 'Users', href: '/admin/users' },
-    { name: 'Deposits', href: '/admin/deposits' },
-    { name: 'Reports', href: '/admin/reports' },
-    { name: 'Integrations', href: '/admin/integrations' },
-    { name: 'API Monitoring', href: '/admin/api-monitoring' },
-    { name: 'Exchange Rates', href: '/admin/exchange-rates' },
-    { name: 'Transactions', href: '/admin/transactions' },
-    { name: 'Settings', href: '/admin/settings' },
-  ];
-
+  // Simplified breadcrumb navigation
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     
     if (pathSegments.length === 0) return null;
     
     const breadcrumbs = [];
-    let currentPath = '';
     
     // Add AccZen.net as first item
     breadcrumbs.push({
@@ -71,33 +52,20 @@ export const AdminNavbar = ({
     
     // Add Admin as second item if we're in admin section
     if (pathSegments[0] === 'admin') {
-      currentPath = `/${pathSegments[0]}`;
       breadcrumbs.push({
         name: 'Admin',
-        path: currentPath,
+        path: '/admin',
         isCurrentPage: pathSegments.length === 1
       });
       
-      // Add additional path segments
-      for (let i = 1; i < pathSegments.length; i++) {
-        currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
-        const navItem = navItems.find(item => item.href === currentPath);
-        
-        if (navItem) {
-          breadcrumbs.push({
-            name: navItem.name,
-            path: currentPath,
-            isCurrentPage: i === pathSegments.length - 1
-          });
-        } else {
-          // Handle special cases or dynamic paths
-          const segment = pathSegments[i];
-          breadcrumbs.push({
-            name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
-            path: currentPath,
-            isCurrentPage: i === pathSegments.length - 1
-          });
-        }
+      // Add the current page as the final item
+      if (pathSegments.length > 1) {
+        breadcrumbs.push({
+          name: currentPageTitle || pathSegments[pathSegments.length - 1].charAt(0).toUpperCase() + 
+                pathSegments[pathSegments.length - 1].slice(1).replace(/-/g, ' '),
+          path: location.pathname,
+          isCurrentPage: true
+        });
       }
     }
     

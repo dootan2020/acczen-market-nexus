@@ -60,13 +60,11 @@ const AdminLayout = memo(() => {
           currentPageTitle={currentPageTitle}
         />
         
-        {/* Page title section with improved styling */}
-        <div className="bg-background py-4 px-6 border-b">
-          <h1 className="text-2xl font-bold tracking-tight text-[#343541]">{currentPageTitle}</h1>
-        </div>
-        
+        {/* Main content with improved spacing and styling */}
         <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+          <div className="bg-background rounded-lg shadow-sm p-6 mt-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
