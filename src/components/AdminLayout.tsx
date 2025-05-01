@@ -62,7 +62,7 @@ const AdminLayout = memo(() => {
         
         {/* Main content with improved spacing and styling */}
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="bg-background rounded-lg shadow-sm p-6 mt-6">
+          <div className="bg-background rounded-lg shadow-sm p-6 mt-2">
             <Outlet />
           </div>
         </main>
