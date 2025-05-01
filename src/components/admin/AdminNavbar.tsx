@@ -26,7 +26,7 @@ export const AdminNavbar = ({
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 w-full border-b shadow-sm">
       <div className="px-4 h-16 flex items-center justify-between">
-        {/* Left side - Logo & Brand */}
+        {/* Left side - Mobile menu button and brand */}
         <div className="flex items-center">
           {setSidebarOpen && (
             <Button 
@@ -39,11 +39,12 @@ export const AdminNavbar = ({
             </Button>
           )}
           
-          <Link to="/admin" className="flex items-center gap-2 mr-6 lg:mr-8">
+          {/* Only show logo on mobile or when sidebar is closed */}
+          <Link to="/admin" className="flex items-center gap-2 mr-6 lg:hidden">
             <div className="w-8 h-8 bg-[#19C37D] rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg">A</span>
             </div>
-            <span className="text-xl font-bold text-[#19C37D] hidden md:inline-block">AccZen.net</span>
+            <span className="text-xl font-bold text-[#19C37D]">AccZen.net</span>
           </Link>
         </div>
         
