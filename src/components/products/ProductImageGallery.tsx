@@ -31,36 +31,72 @@ const ProductImageGallery = ({
   const [favorited, setFavorited] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   
   // Combine main image with additional images
-  const allImages = imageUrl ? [imageUrl, ...images] : images;
+  const allImages = imageUrl ? [imageUrl, ...images.filter(img => img !== imageUrl)] : images;
 
   // Use placeholder if no images available
   if (allImages.length === 0) {
     allImages.push('/placeholder.svg');
   }
+
+  // Handle mouse move for zoom effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed) return;
+    
+    const container = e.currentTarget;
+    const rect = container.getBoundingClientRect();
+    
+    // Calculate relative position (0 to 1)
+    const relativeX = (e.clientX - rect.left) / rect.width;
+    const relativeY = (e.clientY - rect.top) / rect.height;
+    
+    // Adjust position to ensure the image doesn't leave the viewport
+    setZoomPosition({
+      x: Math.max(0, Math.min(100, relativeX * 100)),
+      y: Math.max(0, Math.min(100, relativeY * 100)),
+    });
+  };
   
   return (
     <div className="flex flex-col space-y-4">
       {/* Main Image with Zoom Effect */}
       <div className="relative overflow-hidden rounded-lg bg-white">
-        <AspectRatio ratio={1} className="cursor-zoom-in" onClick={() => setIsZoomed(!isZoomed)}>
-          <div className={cn(
-            "w-full h-full flex items-center justify-center transition-all duration-500",
-            isZoomed ? "scale-150" : "scale-100"
-          )}>
-            <div className="relative w-full h-full bg-gradient-to-b from-gray-50 to-gray-100">
-              <img 
-                src={allImages[activeImageIndex]} 
-                alt={name}
-                className={cn(
-                  "absolute inset-0 w-full h-full object-contain transition-transform duration-500 p-6",
-                  isZoomed ? "transform scale-100" : "group-hover:scale-110"
-                )}
+        <div 
+          className={cn(
+            "cursor-zoom-in relative",
+            isZoomed ? "overflow-hidden" : ""
+          )}
+          onClick={() => setIsZoomed(!isZoomed)}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => isZoomed && setIsZoomed(false)}
+        >
+          <AspectRatio ratio={1} className="bg-gradient-to-b from-gray-50 to-gray-100">
+            <img 
+              src={allImages[activeImageIndex]} 
+              alt={name}
+              className={cn(
+                "w-full h-full object-contain transition-all duration-300 p-4",
+                !isZoomed && "group-hover:scale-110"
+              )}
+            />
+          </AspectRatio>
+          
+          {isZoomed && (
+            <div className="absolute inset-0 bg-white">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${allImages[activeImageIndex]})`,
+                  backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                  backgroundSize: "200%",
+                  backgroundRepeat: "no-repeat",
+                }}
               />
             </div>
-          </div>
-        </AspectRatio>
+          )}
+        </div>
         
         {/* Favorite Button */}
         <Button

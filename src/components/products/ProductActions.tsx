@@ -58,7 +58,7 @@ const ProductActions = ({
         disabled={isOutOfStock}
       >
         <ShoppingCart className="mr-2 h-5 w-5" />
-        Thanh toán
+        Checkout
       </Button>
 
       <Button 
@@ -67,7 +67,7 @@ const ProductActions = ({
         disabled={isOutOfStock}
         onClick={handleBuyNow}
       >
-        Mua ngay
+        Buy Now
         <ArrowRight className="ml-2 h-5 w-5" />
       </Button>
 

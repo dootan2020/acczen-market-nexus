@@ -15,6 +15,7 @@ import StockSoldBadges from "@/components/products/inventory/StockSoldBadges";
 import ProductBadge from "@/components/products/ProductBadge";
 import { stripHtmlTags } from '@/utils/htmlUtils';
 import ProductPricing from '@/components/products/ProductPricing';
+import ProductReviews from '@/components/products/ProductReviews';
 import { 
   Breadcrumb,
   BreadcrumbList,
@@ -73,7 +74,7 @@ const ProductDetail = () => {
       <Container className="py-8">
         <div className="flex flex-col items-center justify-center min-h-[300px]">
           <div className="w-16 h-16 border-4 border-[#19C37D] border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-lg font-medium text-gray-600">Đang tải thông tin sản phẩm...</p>
+          <p className="mt-4 text-lg font-medium text-gray-600">Loading product details...</p>
         </div>
       </Container>
     );
@@ -90,11 +91,11 @@ const ProductDetail = () => {
             </svg>
           </div>
           <h3 className="text-xl font-bold text-red-800 mb-2">
-            {error ? `Lỗi: ${String(error)}` : 'Không tìm thấy sản phẩm'}
+            {error ? `Error: ${String(error)}` : 'Product not found'}
           </h3>
-          <p className="text-red-600 mb-4">Vui lòng thử lại sau hoặc chọn sản phẩm khác</p>
+          <p className="text-red-600 mb-4">Please try again later or choose another product</p>
           <Link to="/products" className="px-4 py-2 bg-[#19C37D] hover:bg-[#15a76b] text-white rounded-md transition-colors">
-            Xem sản phẩm khác
+            View other products
           </Link>
         </div>
       </Container>
@@ -140,14 +141,14 @@ const ProductDetail = () => {
               <BreadcrumbLink asChild>
                 <Link to="/" className="hover:text-[#19C37D] flex items-center">
                   <Home className="h-3.5 w-3.5 mr-1" />
-                  <span>Trang chủ</span>
+                  <span>Home</span>
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/products" className="hover:text-[#19C37D]">Sản phẩm</Link>
+                <Link to="/products" className="hover:text-[#19C37D]">Products</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -183,7 +184,7 @@ const ProductDetail = () => {
                     <ProductBadge type="featured" />
                   </div>
                 )}
-                {isOnSale && (
+                {isOnSale && discountPercentage > 0 && (
                   <div className="absolute top-4 right-4 z-10">
                     <ProductBadge type="sale" label={`-${discountPercentage}%`} />
                   </div>
@@ -219,7 +220,7 @@ const ProductDetail = () => {
                     />
                   ))}
                 </div>
-                <span className="text-gray-600 text-sm">{rating} ({reviewCount} đánh giá)</span>
+                <span className="text-gray-600 text-sm">{rating} ({reviewCount} reviews)</span>
               </div>
               
               {/* Inventory info */}
@@ -236,71 +237,20 @@ const ProductDetail = () => {
                 soldCount={soldCount}
               />
               
-              {/* Buy/Favorite buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <Button 
-                  onClick={() => {
-                    console.log("Buy now clicked", product);
-                    navigate('/checkout', { 
-                      state: { 
-                        product: {
-                          id: product.id,
-                          name: product.name,
-                          price: product.sale_price || product.price,
-                          image: product.image_url,
-                          stock_quantity: product.stock_quantity,
-                          kiosk_token: product.kiosk_token
-                        },
-                        quantity: 1
-                      } 
-                    });
-                  }}
-                  size="lg"
-                  className="flex-1 bg-[#19C37D] hover:bg-[#15a76b] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base"
-                  disabled={product.stock_quantity <= 0}
-                >
-                  <ShoppingBag className="mr-2 h-5 w-5 transition-transform hover:rotate-12" />
-                  {product.stock_quantity <= 0 ? 'Hết hàng' : 'Mua ngay'}
-                </Button>
-                
-                <Button 
-                  onClick={handleFavoriteToggle}
-                  variant="outline"
-                  size="lg"
-                  className={cn(
-                    "flex-1 transition-all duration-300 border-2 h-12",
-                    isFavorited 
-                      ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/5 hover:bg-[#E74C3C]/10" 
-                      : "border-accent text-accent hover:bg-accent/5"
-                  )}
-                >
-                  <Heart 
-                    className={cn(
-                      "mr-2 h-5 w-5 transition-all duration-300", 
-                      isFavorited ? "fill-[#E74C3C]" : ""
-                    )} 
-                  />
-                  {isFavorited ? 'Đã yêu thích' : 'Yêu thích'}
-                </Button>
-              </div>
-              
-              {/* Security info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-start mb-3">
-                  <ShieldCheck className="text-gray-700 h-5 w-5 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-800 text-sm">Bảo hành an toàn</h4>
-                    <p className="text-gray-600 text-xs">Hoàn tiền 100% nếu tài khoản bị khóa trong 30 ngày</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <Lock className="text-gray-700 h-5 w-5 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-800 text-sm">Giao hàng tức thì</h4>
-                    <p className="text-gray-600 text-xs">Thông tin tài khoản được gửi tự động qua email</p>
-                  </div>
-                </div>
-              </div>
+              {/* Product Info component with Buy/Favorite buttons */}
+              <ProductInfo 
+                id={product.id}
+                name={product.name}
+                description={product.description || ''}
+                price={product.price}
+                salePrice={product.sale_price}
+                stockQuantity={product.stock_quantity}
+                image={product.image_url || ''}
+                rating={rating}
+                reviewCount={reviewCount}
+                soldCount={soldCount}
+                kiosk_token={product.kiosk_token}
+              />
             </div>
           </div>
         </div>
@@ -314,19 +264,19 @@ const ProductDetail = () => {
                   value="description" 
                   className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
                 >
-                  Mô tả sản phẩm
+                  Product Description
                 </TabsTrigger>
                 <TabsTrigger 
                   value="specifications" 
                   className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
                 >
-                  Thông số kỹ thuật
+                  Specifications
                 </TabsTrigger>
                 <TabsTrigger 
                   value="reviews" 
                   className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
                 >
-                  Đánh giá ({reviewCount})
+                  Reviews ({reviewCount})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="faq" 
@@ -342,7 +292,7 @@ const ProductDetail = () => {
                 {product.description ? (
                   <RichTextContent content={product.description} />
                 ) : (
-                  <p className="text-gray-500 italic">Không có thông tin mô tả cho sản phẩm này.</p>
+                  <p className="text-gray-500 italic">No description available for this product.</p>
                 )}
               </div>
             </TabsContent>
@@ -354,7 +304,7 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 italic">Không có thông số kỹ thuật cho sản phẩm này.</p>
+                  <p className="text-gray-500 italic">No specifications available for this product.</p>
                 </div>
               )}
             </TabsContent>
@@ -372,13 +322,13 @@ const ProductDetail = () => {
                         />
                       ))}
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">{reviewCount} đánh giá</div>
+                    <div className="text-sm text-gray-500 mt-1">{reviewCount} reviews</div>
                   </div>
                   
                   <div className="flex-1 md:ml-4 w-full">
                     {[5, 4, 3, 2, 1].map((stars) => (
                       <div className="flex items-center mb-2" key={stars}>
-                        <div className="text-sm font-medium w-14">{stars} sao</div>
+                        <div className="text-sm font-medium w-14">{stars} stars</div>
                         <div className="flex-1 h-2.5 bg-gray-200 rounded-full">
                           <div 
                             className="h-2.5 bg-amber-400 rounded-full" 
@@ -394,33 +344,32 @@ const ProductDetail = () => {
                 </div>
               </div>
               
-              {/* Review Comments (example) */}
+              {/* Review Comments */}
               <div className="space-y-6">
-                {/* These would be real reviews from your database */}
                 {[
                   { 
                     id: 1, 
-                    name: 'Trần Hoàng', 
-                    initials: 'TH', 
+                    name: 'John Smith', 
+                    initials: 'JS', 
                     date: '14/05/2023', 
                     rating: 5, 
-                    comment: 'Tài khoản hoạt động rất tốt, có đầy đủ tính năng như mô tả. Tôi đã thay đổi mật khẩu và thông tin cá nhân thành công. Hỗ trợ khách hàng phản hồi nhanh khi tôi có thắc mắc. Rất hài lòng với sản phẩm này!' 
+                    comment: 'Account works perfectly as described. I changed the password and personal information successfully. Customer support responded quickly when I had questions. Very satisfied with this product!' 
                   },
                   { 
                     id: 2, 
-                    name: 'Nguyễn Thảo', 
-                    initials: 'NT', 
+                    name: 'Emma Williams', 
+                    initials: 'EW', 
                     date: '02/05/2023', 
                     rating: 5, 
-                    comment: 'Nhận tài khoản ngay sau khi thanh toán. Hướng dẫn chi tiết và dễ hiểu. Tôi đã sử dụng được Gmail và các dịch vụ Google khác mà không gặp vấn đề gì. Đặc biệt hài lòng với chế độ bảo hành 30 ngày.' 
+                    comment: 'Received account immediately after payment. Instructions were detailed and easy to understand. I was able to use Gmail and other Google services without any issues. Especially happy with the 30-day warranty.' 
                   },
                   { 
                     id: 3, 
-                    name: 'Lê Minh', 
-                    initials: 'LM', 
+                    name: 'Michael Brown', 
+                    initials: 'MB', 
                     date: '27/04/2023', 
                     rating: 4, 
-                    comment: 'Tài khoản hoạt động tốt, chỉ có một vài vấn đề nhỏ khi thay đổi thông tin khôi phục. Đã liên hệ với bộ phận hỗ trợ và họ đã giúp tôi giải quyết nhanh chóng. Giá cả hợp lý cho một tài khoản đã xác minh đầy đủ.' 
+                    comment: 'Account works well, just had a few minor issues when changing recovery information. Contacted support and they helped me resolve it quickly. Fair price for a fully verified account.' 
                   }
                 ].map((review) => (
                   <div key={review.id} className="border-b border-gray-200 pb-6">
@@ -454,20 +403,20 @@ const ProductDetail = () => {
             <TabsContent value="faq" className="p-6">
               <div className="space-y-4">
                 <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">Tài khoản email này có thể sử dụng được bao lâu?</h3>
-                  <p className="text-gray-600">Tài khoản email của chúng tôi được đảm bảo hoạt động ít nhất 6 tháng. Nếu có vấn đề trong thời gian đó, chúng tôi sẽ cung cấp tài khoản thay thế miễn phí.</p>
+                  <h3 className="text-lg font-medium mb-2">How long can this email account be used?</h3>
+                  <p className="text-gray-600">Our email accounts are guaranteed to work for at least 6 months. If there are any issues during this period, we will provide a free replacement account.</p>
                 </div>
                 <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">Làm cách nào để nhận thông tin tài khoản sau khi mua?</h3>
-                  <p className="text-gray-600">Sau khi thanh toán thành công, thông tin tài khoản sẽ được gửi tự động đến email đăng ký của bạn. Ngoài ra, bạn cũng có thể xem thông tin này trong lịch sử mua hàng trên trang cá nhân.</p>
+                  <h3 className="text-lg font-medium mb-2">How do I receive account information after purchase?</h3>
+                  <p className="text-gray-600">After successful payment, account information will be automatically sent to your registered email. You can also view this information in your purchase history on your personal page.</p>
                 </div>
                 <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">Tôi có thể thay đổi mật khẩu sau khi nhận tài khoản không?</h3>
-                  <p className="text-gray-600">Có, bạn có thể thay đổi mật khẩu sau khi nhận tài khoản. Chúng tôi khuyến nghị bạn nên thay đổi mật khẩu ngay sau khi nhận được thông tin đăng nhập để đảm bảo tính bảo mật.</p>
+                  <h3 className="text-lg font-medium mb-2">Can I change the password after receiving the account?</h3>
+                  <p className="text-gray-600">Yes, you can change the password after receiving the account. We recommend changing the password immediately after receiving the login information to ensure security.</p>
                 </div>
                 <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">Tôi cần làm gì nếu tài khoản bị khóa hoặc gặp sự cố?</h3>
-                  <p className="text-gray-600">Nếu tài khoản gặp sự cố, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi qua email support@acczen.net hoặc chat trực tuyến trên trang web. Chúng tôi sẽ hỗ trợ giải quyết trong thời gian sớm nhất.</p>
+                  <h3 className="text-lg font-medium mb-2">What should I do if the account is locked or encounters issues?</h3>
+                  <p className="text-gray-600">If the account encounters issues, please contact our support team via email at support@acczen.net or through live chat on the website. We will resolve it as soon as possible.</p>
                 </div>
               </div>
             </TabsContent>
@@ -477,7 +426,7 @@ const ProductDetail = () => {
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Sản phẩm tương tự</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">Related Products</h2>
             <RelatedProducts products={relatedProducts} />
           </div>
         )}
