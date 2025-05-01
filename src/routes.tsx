@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           {
-            path: '',
+            index: true,
             element: <Index />,
           },
           {
@@ -86,7 +87,7 @@ const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
           {
-            path: '',
+            index: true,
             element: <AdminProtectedRoute><AdminHomePage /></AdminProtectedRoute>,
           },
           {
