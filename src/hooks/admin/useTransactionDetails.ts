@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,4 +162,12 @@ const generateMockTransactionDetail = (id: string): TransactionDetail => {
     notes,
     attachments
   };
+};
+
+const formatCurrency = (amount: string | number): string => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(numAmount);
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
@@ -291,4 +290,12 @@ const generateMockTransactions = (): Transaction[] => {
       status: statuses[Math.floor(Math.random() * statuses.length)]
     };
   });
+};
+
+const formatCurrency = (amount: string | number): string => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(numAmount);
 };
