@@ -14,14 +14,16 @@ interface CategoryCardProps {
 const CategoryCard = ({ icon, title, description, link }: CategoryCardProps) => (
   <Card className="overflow-hidden border border-[#E5E5E5] hover:border-[#19C37D] transition-all hover:shadow-md group hover:scale-105 transition-transform duration-300">
     <CardContent className="p-6 flex flex-col items-center text-center">
-      <Link to={link} className="w-full">
-        <div className="mb-4 p-3 rounded-full bg-[#F7F7F8] text-[#19C37D] group-hover:bg-[#19C37D] group-hover:text-white transition-colors">
-          {icon}
-        </div>
-        <h3 className="text-xl font-semibold mb-2 text-[#202123]">{title}</h3>
-        <p className="text-[#8E8EA0] mb-4">{description}</p>
-        <span className="text-[#19C37D] font-medium group-hover:underline">Xem thêm</span>
-      </Link>
+      <div className="w-full">
+        <Link to={link} className="block w-full">
+          <div className="mb-4 p-3 rounded-full bg-[#F7F7F8] text-[#19C37D] group-hover:bg-[#19C37D] group-hover:text-white transition-colors">
+            {icon}
+          </div>
+          <h3 className="text-xl font-semibold mb-2 text-[#202123]">{title}</h3>
+          <p className="text-[#8E8EA0] mb-4">{description}</p>
+          <span className="text-[#19C37D] font-medium group-hover:underline">Xem thêm</span>
+        </Link>
+      </div>
     </CardContent>
   </Card>
 );

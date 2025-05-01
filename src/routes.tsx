@@ -155,24 +155,16 @@ const router = createBrowserRouter([
             element: <AdminProtectedRoute><AdminExchangeRatesPage /></AdminProtectedRoute>,
           },
           {
-            path: "discount-analytics",
+            path: 'discount-analytics',
             element: <AdminProtectedRoute><DiscountAnalyticsPage /></AdminProtectedRoute>,
           },
           {
-            path: "admin/transactions",
-            element: (
-              <AdminProtectedRoute>
-                <AdminTransactions />
-              </AdminProtectedRoute>
-            ),
+            path: 'transactions',
+            element: <AdminProtectedRoute><AdminTransactions /></AdminProtectedRoute>,
           },
           {
-            path: "admin/settings",
-            element: (
-              <AdminProtectedRoute>
-                <AdminSettings />
-              </AdminProtectedRoute>
-            ),
+            path: 'settings',
+            element: <AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>,
           },
         ],
       },
