@@ -8,6 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from '@/components/mode-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 interface AdminNavbarProps {
   searchQuery: string;
@@ -125,30 +133,34 @@ export const AdminNavbar = ({
         
         {/* Breadcrumb Navigation */}
         {breadcrumbs && (
-          <div className="hidden lg:flex items-center flex-1 admin-breadcrumb">
-            {breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={crumb.path}>
-                <div className={cn("admin-breadcrumb-item", 
-                  crumb.isCurrentPage ? "admin-breadcrumb-active" : ""
-                )}>
-                  {crumb.isCurrentPage ? (
-                    <span>{crumb.name}</span>
-                  ) : (
-                    <Link 
-                      to={crumb.path} 
-                      className="text-[#343541] hover:text-[#19C37D] transition-colors"
-                    >
-                      {crumb.name}
-                    </Link>
-                  )}
-                </div>
-                {idx < breadcrumbs.length - 1 && (
-                  <span className="admin-breadcrumb-separator">
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
+          <div className="hidden lg:flex items-center flex-1">
+            <Breadcrumb className="admin-breadcrumb">
+              <BreadcrumbList>
+                {breadcrumbs.map((crumb, idx) => (
+                  <BreadcrumbItem key={crumb.path} className="admin-breadcrumb-item">
+                    {crumb.isCurrentPage ? (
+                      <BreadcrumbPage className="admin-breadcrumb-active">
+                        {crumb.name}
+                      </BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <Link 
+                          to={crumb.path} 
+                          className="text-[#343541] hover:text-[#19C37D] transition-colors"
+                        >
+                          {crumb.name}
+                        </Link>
+                      </BreadcrumbLink>
+                    )}
+                    {idx < breadcrumbs.length - 1 && (
+                      <BreadcrumbSeparator className="admin-breadcrumb-separator">
+                        <ChevronRight className="h-4 w-4" />
+                      </BreadcrumbSeparator>
+                    )}
+                  </BreadcrumbItem>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         )}
         
@@ -192,7 +204,8 @@ export const AdminNavbar = ({
         </div>
       </div>
 
-      <style jsx>{`
+      {/* Using CSS classes directly instead of <style jsx> */}
+      <style dangerouslySetInnerHTML={{ __html: `
         .admin-breadcrumb {
           display: flex;
           align-items: center;
@@ -214,7 +227,7 @@ export const AdminNavbar = ({
           color: #19C37D;
           font-weight: 500;
         }
-      `}</style>
+      `}} />
     </header>
   );
 };
