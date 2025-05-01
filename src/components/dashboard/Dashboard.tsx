@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -43,22 +42,6 @@ interface UserStats {
 
 interface Profile {
   balance: number;
-}
-
-// Define Query results interfaces to prevent excessive type instantiation
-interface OrdersQueryResult {
-  data: Order[] | null;
-  error: Error | null;
-}
-
-interface StatsQueryResult {
-  data: UserStats | null;
-  error: Error | null;
-}
-
-interface ProfileQueryResult {
-  data: Profile | null;
-  error: Error | null;
 }
 
 const Dashboard = () => {

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DATE_RANGES } from "@/hooks/useReportsData";
 
 interface ReportFiltersProps {
@@ -49,9 +49,9 @@ export function ReportFilters({
       </Select>
       
       {dateRangeType === DATE_RANGES.CUSTOM && (
-        <DatePickerWithRange
+        <DateRangePicker
           date={dateRange}
-          onChange={onDateRangePickerChange}
+          onDateChange={onDateRangePickerChange}
         />
       )}
       
