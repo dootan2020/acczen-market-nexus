@@ -11,8 +11,8 @@ interface ProductBadgeProps {
 }
 
 const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label, percentage }) => {
-  // Don't show sale badge if percentage is 0
-  if (type === 'sale' && percentage === 0) {
+  // Don't show sale badge if percentage is 0 or undefined
+  if (type === 'sale' && (!percentage || percentage <= 0)) {
     return null;
   }
   

@@ -1,12 +1,13 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import ProductQuantity from "./ProductQuantity";
 import { PurchaseConfirmModal } from "./purchase/PurchaseConfirmModal";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import ProductActions from './ProductActions';
 
 interface ProductInfoProps {
   id: string;
@@ -43,22 +44,6 @@ const ProductInfo = ({
   
   const finalPrice = salePrice || price;
   const isOutOfStock = stockQuantity <= 0;
-  const isLowStock = stockQuantity > 0 && stockQuantity < 10;
-  const discountPercentage = salePrice ? Math.round(((price - salePrice) / price) * 100) : 0;
-  
-  const handleBuyNow = () => {
-    if (!user) {
-      navigate('/login', { state: { redirectTo: `/products/${id}` } });
-      return;
-    }
-    setShowPurchaseModal(true);
-  };
-
-  const handleAddToCart = () => {
-    // In a real app, this would add the product to the cart
-    console.log(`Product ${id} added to cart with quantity ${quantity}`);
-    // Implement cart functionality or navigate to cart
-  };
   
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
@@ -83,39 +68,6 @@ const ProductInfo = ({
             />
           </div>
           
-          <div className="text-sm font-medium text-right">
-            {isOutOfStock ? (
-              <span className="text-red-500 font-semibold">Out of Stock</span>
-            ) : isLowStock ? (
-              <span className="text-amber-600 font-semibold">Only {stockQuantity} items left</span>
-            ) : (
-              <span className="text-green-600 font-semibold">In Stock ({stockQuantity} items)</span>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button 
-            onClick={handleAddToCart} 
-            disabled={isOutOfStock}
-            size="lg"
-            variant="outline"
-            className="flex-1 border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10 font-medium transition-all duration-300 h-12 text-base group"
-          >
-            <ShoppingCart className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-            Add to Cart
-          </Button>
-          
-          <Button 
-            onClick={handleBuyNow} 
-            disabled={isOutOfStock}
-            size="lg"
-            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base group"
-          >
-            <ShoppingBag className="mr-2 h-5 w-5 transition-transform group-hover:rotate-12" />
-            {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
-          </Button>
-          
           <Button 
             onClick={toggleFavorite}
             variant="outline"
@@ -136,6 +88,16 @@ const ProductInfo = ({
             <span className="sr-only">{isFavorited ? 'Remove from favorites' : 'Add to favorites'}</span>
           </Button>
         </div>
+        
+        <ProductActions
+          isOutOfStock={isOutOfStock}
+          productId={id}
+          productName={name}
+          productPrice={finalPrice}
+          productImage={image}
+          quantity={quantity}
+          kioskToken={kiosk_token || null}
+        />
 
         {/* Product benefits */}
         <div className="bg-gray-50 p-4 rounded-lg mt-6 shadow-sm">

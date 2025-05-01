@@ -4,13 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselPrevious, 
-  CarouselNext 
-} from "@/components/ui/carousel";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ProductImageGalleryProps {
@@ -18,7 +11,6 @@ interface ProductImageGalleryProps {
   name?: string;
   salePrice?: number | null;
   categoryName?: string;
-  images?: string[];
 }
 
 const ProductImageGallery = ({
@@ -26,29 +18,13 @@ const ProductImageGallery = ({
   name = "Product",
   salePrice,
   categoryName,
-  images = [],
 }: ProductImageGalleryProps) => {
   const [favorited, setFavorited] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   
-  // Combine main image with additional images
-  const allImages = imageUrl ? [imageUrl, ...images.filter(img => img !== imageUrl)] : images;
-
-  // Use placeholder if no images available
-  if (allImages.length === 0) {
-    allImages.push('/placeholder.svg');
-  }
-
-  // Add sample images for demo if only one image is available
-  if (allImages.length === 1) {
-    allImages.push(
-      'https://images.unsplash.com/photo-1582562124811-c09040d0a901',
-      'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9',
-      'https://images.unsplash.com/photo-1721322800607-8c38375eef04'
-    );
-  }
+  // Use provided image or fallback to placeholder
+  const image = imageUrl || '/placeholder.svg';
 
   // Handle mouse move for zoom effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -83,7 +59,7 @@ const ProductImageGallery = ({
         >
           <AspectRatio ratio={1} className="bg-gradient-to-b from-gray-50 to-gray-100">
             <img 
-              src={allImages[activeImageIndex]} 
+              src={image} 
               alt={name}
               className={cn(
                 "w-full h-full object-contain transition-all duration-300 p-4",
@@ -97,7 +73,7 @@ const ProductImageGallery = ({
               <div
                 className="absolute inset-0"
                 style={{
-                  backgroundImage: `url(${allImages[activeImageIndex]})`,
+                  backgroundImage: `url(${image})`,
                   backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                   backgroundSize: "200%",
                   backgroundRepeat: "no-repeat",
@@ -130,51 +106,6 @@ const ProductImageGallery = ({
           <span className="sr-only">Add to favorites</span>
         </Button>
       </div>
-      
-      {/* Thumbnail Gallery */}
-      {allImages.length > 1 && (
-        <div className="px-4">
-          <Carousel className="w-full">
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {allImages.map((img, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/4 sm:basis-1/5 md:basis-1/6">
-                  <div 
-                    className={cn(
-                      "cursor-pointer rounded-md overflow-hidden transition-all border-2",
-                      activeImageIndex === index 
-                        ? "border-primary ring-2 ring-primary/30 shadow-md scale-105" 
-                        : "border-transparent hover:border-primary/50"
-                    )}
-                    onClick={() => setActiveImageIndex(index)}
-                  >
-                    <AspectRatio ratio={1}>
-                      <div className="bg-gradient-to-b from-gray-50 to-gray-100 h-full w-full flex items-center justify-center p-1">
-                        <img 
-                          src={img} 
-                          alt={`${name} - view ${index + 1}`} 
-                          className="h-full w-auto max-w-full object-contain"
-                        />
-                      </div>
-                    </AspectRatio>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            
-            <div className="flex justify-center gap-2 mt-2">
-              <CarouselPrevious className="relative inset-0 translate-y-0 h-8 w-8 bg-white hover:bg-gray-50 border border-gray-200" />
-              <CarouselNext className="relative inset-0 translate-y-0 h-8 w-8 bg-white hover:bg-gray-50 border border-gray-200" />
-            </div>
-          </Carousel>
-        </div>
-      )}
-      
-      {/* Image count indicator */}
-      {allImages.length > 1 && (
-        <div className="text-center text-sm text-gray-500">
-          {activeImageIndex + 1} / {allImages.length}
-        </div>
-      )}
     </div>
   );
 };
