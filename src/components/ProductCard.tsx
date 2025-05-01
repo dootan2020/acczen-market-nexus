@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 import ProductBadge from "./products/ProductBadge";
 import StockSoldBadges from "./products/inventory/StockSoldBadges";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ProductCardProps {
   id: string;
@@ -71,7 +70,7 @@ const ProductCard = ({
   // Process the description to remove HTML tags and truncate
   const cleanDescription = useMemo(() => {
     // First strip HTML tags and decode entities, then truncate
-    return truncateText(stripHtmlTags(description), 150);
+    return truncateText(stripHtmlTags(description), 80);
   }, [description]);
 
   const handleBuyNow = () => {
@@ -95,10 +94,10 @@ const ProductCard = ({
   };
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
         <Link to={`/products/${id}`} className="block">
-          <AspectRatio ratio={4/3} className="bg-gradient-to-r from-[#3498DB]/90 to-[#19C37D]/90 overflow-hidden">
+          <div className="h-[180px] bg-gradient-to-r from-[#3498DB]/10 to-[#19C37D]/10 overflow-hidden">
             <div className="absolute inset-0 w-full h-full p-4 flex items-center justify-center">
               <img
                 src={image || "/placeholder.svg"}
@@ -112,7 +111,7 @@ const ProductCard = ({
                 loading="lazy"
               />
             </div>
-          </AspectRatio>
+          </div>
         </Link>
         
         <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap max-w-[calc(100%-1rem)]">
@@ -134,7 +133,16 @@ const ProductCard = ({
           <h3 className="font-medium text-lg line-clamp-2 hover:text-[#19C37D] transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
         </Link>
         
-        <StockSoldBadges stock={stock} soldCount={soldCount} variant="compact" />
+        <div className="mb-2">
+          <span className="text-sm text-muted-foreground">
+            In stock: {stock}
+          </span>
+          {soldCount > 0 && (
+            <span className="text-sm text-muted-foreground ml-2">
+              • Sold: {soldCount}
+            </span>
+          )}
+        </div>
         
         {description && (
           <p className="text-[#333333]/70 text-sm line-clamp-2 mb-3">

@@ -32,13 +32,13 @@ const ProductBadge: React.FC<ProductBadgeProps> = ({ type, label }) => {
     
     switch (type) {
       case 'featured':
-        return 'Nổi bật';
+        return 'Featured';
       case 'new':
-        return 'Mới';
+        return 'New';
       case 'bestSeller':
-        return 'Bán chạy';
+        return 'Best Seller';
       case 'sale':
-        return 'Giảm giá';
+        return 'Sale';
       default:
         return '';
     }

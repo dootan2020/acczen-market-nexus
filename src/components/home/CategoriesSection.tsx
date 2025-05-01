@@ -13,7 +13,7 @@ interface CategoryCardProps {
 }
 
 const CategoryCard = ({ icon, title, description, link }: CategoryCardProps) => (
-  <Card className="overflow-hidden border border-[#E5E5E5] hover:border-[#19C37D] transition-all hover:shadow-md group hover:scale-105 transition-transform duration-300">
+  <Card className="overflow-hidden border border-[#E5E5E5] hover:border-[#19C37D] transition-all hover:shadow-md group hover:scale-105 duration-300">
     <CardContent className="p-6 flex flex-col items-center text-center">
       <div className="w-full">
         <Link to={link} className="block w-full">
