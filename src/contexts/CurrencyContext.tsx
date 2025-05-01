@@ -2,6 +2,7 @@
 import { createContext, useContext, ReactNode } from "react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { CurrencyContextType } from "@/types/currency";
+import { formatCurrency } from "@/utils/formatters";
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 

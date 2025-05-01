@@ -87,7 +87,6 @@ export const PurchasesPagination = ({
             aria-disabled={currentPage === 1}
             tabIndex={currentPage === 1 ? -1 : undefined}
             className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-            icon={<ChevronLeft className="h-4 w-4" />}
           />
         </PaginationItem>
         
@@ -127,7 +126,6 @@ export const PurchasesPagination = ({
             aria-disabled={currentPage === totalPages}
             tabIndex={currentPage === totalPages ? -1 : undefined}
             className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-            icon={<ChevronRight className="h-4 w-4" />}
           />
         </PaginationItem>
       </PaginationContent>
