@@ -126,10 +126,10 @@ const AdminLayout = memo(() => {
                   <React.Fragment key={crumb.path}>
                     <BreadcrumbItem>
                       {crumb.isCurrentPage ? (
-                        <BreadcrumbPage className="font-medium">{crumb.name}</BreadcrumbPage>
+                        <BreadcrumbPage className="font-medium text-[#19C37D]">{crumb.name}</BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink asChild>
-                          <Link to={crumb.path}>{crumb.name}</Link>
+                          <Link to={crumb.path} className="text-[#343541] hover:text-[#19C37D] transition-colors">{crumb.name}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
