@@ -1,31 +1,106 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Bell, Menu, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from '@/components/mode-toggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface AdminNavbarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   sidebarOpen?: boolean;
   setSidebarOpen?: (open: boolean) => void;
+  currentPageTitle?: string;
 }
 
 export const AdminNavbar = ({ 
   searchQuery, 
   setSearchQuery, 
   sidebarOpen, 
-  setSidebarOpen 
+  setSidebarOpen,
+  currentPageTitle
 }: AdminNavbarProps) => {
   const { userDisplayName } = useAuth();
+  const location = useLocation();
+  
+  // Navigation items for breadcrumbs
+  const navItems = [
+    { name: 'AccZen.net', href: '/' },
+    { name: 'Admin', href: '/admin' },
+    { name: 'Dashboard', href: '/admin' },
+    { name: 'Products', href: '/admin/products' },
+    { name: 'Import Products', href: '/admin/products-import' },
+    { name: 'Categories', href: '/admin/categories' },
+    { name: 'Orders', href: '/admin/orders' },
+    { name: 'Users', href: '/admin/users' },
+    { name: 'Deposits', href: '/admin/deposits' },
+    { name: 'Reports', href: '/admin/reports' },
+    { name: 'Integrations', href: '/admin/integrations' },
+    { name: 'API Monitoring', href: '/admin/api-monitoring' },
+    { name: 'Exchange Rates', href: '/admin/exchange-rates' },
+    { name: 'Transactions', href: '/admin/transactions' },
+    { name: 'Settings', href: '/admin/settings' },
+  ];
+
+  const getBreadcrumbs = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    
+    if (pathSegments.length === 0) return null;
+    
+    const breadcrumbs = [];
+    let currentPath = '';
+    
+    // Add AccZen.net as first item
+    breadcrumbs.push({
+      name: 'AccZen.net',
+      path: '/',
+      isCurrentPage: false
+    });
+    
+    // Add Admin as second item if we're in admin section
+    if (pathSegments[0] === 'admin') {
+      currentPath = `/${pathSegments[0]}`;
+      breadcrumbs.push({
+        name: 'Admin',
+        path: currentPath,
+        isCurrentPage: pathSegments.length === 1
+      });
+      
+      // Add additional path segments
+      for (let i = 1; i < pathSegments.length; i++) {
+        currentPath = `/${pathSegments.slice(0, i + 1).join('/')}`;
+        const navItem = navItems.find(item => item.href === currentPath);
+        
+        if (navItem) {
+          breadcrumbs.push({
+            name: navItem.name,
+            path: currentPath,
+            isCurrentPage: i === pathSegments.length - 1
+          });
+        } else {
+          // Handle special cases or dynamic paths
+          const segment = pathSegments[i];
+          breadcrumbs.push({
+            name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
+            path: currentPath,
+            isCurrentPage: i === pathSegments.length - 1
+          });
+        }
+      }
+    }
+    
+    return breadcrumbs;
+  };
+  
+  const breadcrumbs = getBreadcrumbs();
   
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 w-full border-b shadow-sm">
-      <div className="px-4 h-16 flex items-center justify-between">
+      <div className="px-4 h-16 flex items-center">
         {/* Left side - Mobile menu button and brand */}
         <div className="flex items-center">
           {setSidebarOpen && (
@@ -48,6 +123,35 @@ export const AdminNavbar = ({
           </Link>
         </div>
         
+        {/* Breadcrumb Navigation */}
+        {breadcrumbs && (
+          <div className="hidden lg:flex items-center flex-1 admin-breadcrumb">
+            {breadcrumbs.map((crumb, idx) => (
+              <React.Fragment key={crumb.path}>
+                <div className={cn("admin-breadcrumb-item", 
+                  crumb.isCurrentPage ? "admin-breadcrumb-active" : ""
+                )}>
+                  {crumb.isCurrentPage ? (
+                    <span>{crumb.name}</span>
+                  ) : (
+                    <Link 
+                      to={crumb.path} 
+                      className="text-[#343541] hover:text-[#19C37D] transition-colors"
+                    >
+                      {crumb.name}
+                    </Link>
+                  )}
+                </div>
+                {idx < breadcrumbs.length - 1 && (
+                  <span className="admin-breadcrumb-separator">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+        
         {/* Center - Search bar */}
         <div className="hidden md:block flex-1 max-w-md mx-4">
           <div className="relative">
@@ -63,7 +167,7 @@ export const AdminNavbar = ({
         </div>
         
         {/* Right side - Notification, theme toggle and user menu */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-auto">
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#19C37D] text-[10px] font-medium flex items-center justify-center text-white">
@@ -87,6 +191,30 @@ export const AdminNavbar = ({
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .admin-breadcrumb {
+          display: flex;
+          align-items: center;
+          margin-left: 1rem;
+          font-size: 0.875rem;
+          font-family: Inter, sans-serif;
+        }
+        .admin-breadcrumb-item {
+          display: flex;
+          align-items: center;
+        }
+        .admin-breadcrumb-separator {
+          margin: 0 0.5rem;
+          color: #8E8EA0;
+          display: flex;
+          align-items: center;
+        }
+        .admin-breadcrumb-active {
+          color: #19C37D;
+          font-weight: 500;
+        }
+      `}</style>
     </header>
   );
 };
