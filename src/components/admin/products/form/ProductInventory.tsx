@@ -31,7 +31,7 @@ const ProductInventory = ({ stockQuantity, status, onChange, onStatusChange }: P
         <Label htmlFor="status">Status</Label>
         <Select 
           name="status" 
-          value={status}
+          value={status || "active"} // Ensure we always have a default value
           onValueChange={onStatusChange}
         >
           <SelectTrigger>

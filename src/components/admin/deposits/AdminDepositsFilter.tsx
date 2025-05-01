@@ -45,7 +45,7 @@ export function AdminDepositsFilter({
       
       <div className="flex flex-col sm:flex-row gap-4">
         <Select
-          value={statusFilter}
+          value={statusFilter || "all"}
           onValueChange={onStatusChange}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
@@ -60,7 +60,7 @@ export function AdminDepositsFilter({
         </Select>
         
         <Select
-          value={methodFilter}
+          value={methodFilter || "all"}
           onValueChange={onMethodChange}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
@@ -74,7 +74,7 @@ export function AdminDepositsFilter({
         </Select>
         
         <Select
-          value={dateFilter}
+          value={dateFilter || "all"}
           onValueChange={onDateChange}
         >
           <SelectTrigger className="w-full sm:w-[180px]">

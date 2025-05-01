@@ -24,12 +24,12 @@ export default function SubcategoryTabs({
 
   return (
     <Tabs
-      value={selectedSubcategory}
+      value={selectedSubcategory || "all"}
       onValueChange={onSelectSubcategory}
       className={cn("w-full", className)}
     >
       <TabsList className="w-full overflow-x-auto flex flex-nowrap">
-        <TabsTrigger value="">All</TabsTrigger>
+        <TabsTrigger value="all">All</TabsTrigger>
         {subcategories.map((subcategory) => (
           <TabsTrigger key={subcategory.id} value={subcategory.id} className="whitespace-nowrap">
             {subcategory.name}

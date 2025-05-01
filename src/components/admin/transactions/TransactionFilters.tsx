@@ -124,14 +124,14 @@ export const TransactionFilters = ({
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
-          value={typeFilter || ""}
-          onValueChange={(value) => onTypeFilterChange(value || null)}
+          value={typeFilter || "all"}
+          onValueChange={(value) => onTypeFilterChange(value === "all" ? null : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Transaction Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="deposit">Deposit</SelectItem>
             <SelectItem value="purchase">Purchase</SelectItem>
             <SelectItem value="refund">Refund</SelectItem>
@@ -140,14 +140,14 @@ export const TransactionFilters = ({
         </Select>
         
         <Select
-          value={statusFilter || ""}
-          onValueChange={(value) => onStatusFilterChange(value || null)}
+          value={statusFilter || "all"}
+          onValueChange={(value) => onStatusFilterChange(value === "all" ? null : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="failed">Failed</SelectItem>
@@ -155,14 +155,14 @@ export const TransactionFilters = ({
         </Select>
         
         <Select
-          value={methodFilter || ""}
-          onValueChange={(value) => onMethodFilterChange(value || null)}
+          value={methodFilter || "all"}
+          onValueChange={(value) => onMethodFilterChange(value === "all" ? null : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Payment Method" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Methods</SelectItem>
+            <SelectItem value="all">All Methods</SelectItem>
             <SelectItem value="paypal">PayPal</SelectItem>
             <SelectItem value="crypto">Cryptocurrency</SelectItem>
             <SelectItem value="manual">Manual Adjustment</SelectItem>

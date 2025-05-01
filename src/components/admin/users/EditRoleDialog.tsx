@@ -40,7 +40,7 @@ export function EditRoleDialog({
   // Update selected role when currentUser changes
   React.useEffect(() => {
     if (currentUser) {
-      setSelectedRole(currentUser.role);
+      setSelectedRole(currentUser.role || 'user');
     }
   }, [currentUser]);
 
@@ -60,7 +60,7 @@ export function EditRoleDialog({
 
         <div className="py-4">
           <Select
-            value={selectedRole}
+            value={selectedRole || 'user'}
             onValueChange={(value) => setSelectedRole(value as UserProfile['role'])}
           >
             <SelectTrigger>
