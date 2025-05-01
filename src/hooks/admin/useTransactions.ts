@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
@@ -275,8 +276,8 @@ const generateMockTransactions = (): Transaction[] => {
     const type = types[Math.floor(Math.random() * types.length)];
     const isRefund = type === 'refund';
     const amount = isRefund 
-      ? -(Math.random() * 500 + 10).toFixed(2) 
-      : (Math.random() * 500 + 10).toFixed(2);
+      ? -parseFloat((Math.random() * 500 + 10).toFixed(2))
+      : parseFloat((Math.random() * 500 + 10).toFixed(2));
     
     return {
       id: `trans-${Math.random().toString(36).substring(2, 10)}`,
@@ -285,17 +286,16 @@ const generateMockTransactions = (): Transaction[] => {
       userEmail: `user${i}@example.com`,
       userName: `User ${i + 1}`,
       type,
-      amount: parseFloat(amount),
+      amount,
       method: methods[Math.floor(Math.random() * methods.length)],
       status: statuses[Math.floor(Math.random() * statuses.length)]
     };
   });
 };
 
-const formatCurrency = (amount: string | number): string => {
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
-  }).format(numAmount);
+  }).format(amount);
 };

@@ -30,6 +30,7 @@ interface Order {
   status: string;
   total_amount: number;
   items?: OrderItem[];
+  order_items?: any[]; // Added to align with expected type
 }
 
 interface UserStats {
@@ -49,10 +50,11 @@ const Dashboard = () => {
   const { data: recentOrders } = useQuery<Order[]>({
     queryKey: ['recentOrders'],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
       const { data } = await supabase
         .from('orders')
         .select('*')
-        .eq('user_id', supabase.auth.getUser().data?.user?.id)
+        .eq('user_id', userData?.user?.id)
         .order('created_at', { ascending: false })
         .limit(5);
       
@@ -64,10 +66,11 @@ const Dashboard = () => {
   const { data: profile } = useQuery<Profile>({
     queryKey: ['userProfile'],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', supabase.auth.getUser().data?.user?.id)
+        .eq('id', userData?.user?.id)
         .single();
       
       return data as Profile;
@@ -78,12 +81,21 @@ const Dashboard = () => {
   const { data: userStats } = useQuery<UserStats>({
     queryKey: ['userStats'],
     queryFn: async () => {
-      const { data } = await supabase
-        .rpc('get_user_stats', {
-          user_id: supabase.auth.getUser().data?.user?.id
-        });
+      const { data: userData } = await supabase.auth.getUser();
       
-      return data as UserStats || { total_orders: 0, total_spent: 0 };
+      // Use a standard Supabase query instead of RPC since get_user_stats doesn't seem to exist
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('user_id', userData?.user?.id);
+      
+      // Calculate stats manually since the RPC isn't available
+      const stats: UserStats = {
+        total_orders: ordersData?.length || 0,
+        total_spent: ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+      };
+      
+      return stats;
     }
   });
   
@@ -94,8 +106,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <AccountBalance balance={profile?.balance || 0} />
         <OrderStatistics 
-          totalOrders={userStats?.total_orders || 0}
-          totalSpent={userStats?.total_spent || 0}
+          orderCount={userStats?.total_orders || 0}
         />
         <QuickActions />
       </div>

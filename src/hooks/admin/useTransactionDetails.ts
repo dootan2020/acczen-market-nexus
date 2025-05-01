@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,8 +95,8 @@ const generateMockTransactionDetail = (id: string): TransactionDetail => {
   const status = statuses[Math.floor(Math.random() * statuses.length)];
   const isRefund = type === 'refund';
   const amount = isRefund 
-    ? -(Math.random() * 500 + 10).toFixed(2) 
-    : (Math.random() * 500 + 10).toFixed(2);
+    ? -parseFloat((Math.random() * 500 + 10).toFixed(2)) 
+    : parseFloat((Math.random() * 500 + 10).toFixed(2));
   
   const createdAt = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString();
   
@@ -154,7 +155,7 @@ const generateMockTransactionDetail = (id: string): TransactionDetail => {
     userEmail: `customer${Math.floor(Math.random() * 1000)}@example.com`,
     userName: `Customer ${Math.floor(Math.random() * 1000)}`,
     type,
-    amount: parseFloat(amount),
+    amount,
     method,
     status,
     paymentDetails,
@@ -164,10 +165,9 @@ const generateMockTransactionDetail = (id: string): TransactionDetail => {
   };
 };
 
-const formatCurrency = (amount: string | number): string => {
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
-  }).format(numAmount);
+  }).format(amount);
 };
