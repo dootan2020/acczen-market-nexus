@@ -34,9 +34,7 @@ const NewsletterSection = () => {
               size="lg"
               className="whitespace-nowrap bg-white hover:bg-white/90 text-[#19C37D] font-medium px-8"
             >
-              <Link to="/register">
-                Đăng ký ngay
-              </Link>
+              <Link to="/register">Đăng ký ngay</Link>
             </Button>
           </div>
           
