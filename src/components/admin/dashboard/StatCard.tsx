@@ -43,7 +43,7 @@ export function StatCard({
               <div className="text-sm font-medium text-muted-foreground">
                 {title}
               </div>
-              <div className="p-2 rounded-full bg-primary/10 text-primary">
+              <div className="p-2 rounded-full bg-chatgpt-primary/10 text-chatgpt-primary">
                 {icon}
               </div>
             </div>

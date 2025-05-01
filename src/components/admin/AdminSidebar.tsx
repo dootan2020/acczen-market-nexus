@@ -111,7 +111,7 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
       )}>
         <div className="flex h-16 items-center border-b px-6">
           <Link to="/admin" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-primary">Digital Deals Hub</span>
+            <span className="text-xl font-bold text-chatgpt-primary">Digital Deals Hub</span>
           </Link>
         </div>
         
@@ -125,11 +125,16 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-                    location.pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground"
+                    location.pathname === item.href ? "bg-chatgpt-primary bg-opacity-10 text-chatgpt-primary" : "text-foreground"
                   )}
                 >
-                  {item.icon}
-                  <span className="ml-3">{item.name}</span>
+                  <div className={cn(
+                    "mr-3 flex-shrink-0",
+                    location.pathname === item.href ? "text-chatgpt-primary" : "text-muted-foreground group-hover:text-foreground"
+                  )}>
+                    {item.icon}
+                  </div>
+                  <span>{item.name}</span>
                 </Link>
               ))}
             </div>
@@ -143,12 +148,15 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
           </Link>
           <Button
             variant="ghost"
-            className="flex w-full items-center justify-start gap-2"
+            className="flex w-full items-center justify-start gap-2 text-sm font-medium"
             onClick={() => signOut()}
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
           </Button>
+          <div className="mt-3 text-center text-xs text-muted-foreground">
+            Version 1.0.0
+          </div>
         </div>
       </div>
     </>

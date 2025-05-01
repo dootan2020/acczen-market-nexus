@@ -1,8 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { StatCard } from "@/components/admin/dashboard/StatCard";
+import { Button } from "@/components/ui/button";
 import {
   AreaChart,
   Area,
@@ -26,12 +29,19 @@ import {
   ArrowDownRight, 
   Calendar, 
   Wallet, 
-  AlertTriangle
+  AlertTriangle,
+  Package,
+  Plus,
+  Eye,
+  User,
+  Activity
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useDashboardStats, TimeRange } from '@/hooks/useDashboardStats';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 const AdminDashboard = () => {
   const { data: stats, isLoading, error, timeRange, setTimeRange } = useDashboardStats();
@@ -69,45 +79,38 @@ const AdminDashboard = () => {
   const COLORS = ['#2ECC71', '#3498DB', '#F1C40F', '#E74C3C'];
   
   const formatNumber = (num: number) => {
-    return num.toLocaleString('en-US');
+    return num?.toLocaleString('en-US') || '0';
   };
   
   const formatCurrency = (num: number) => {
-    return `$${num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+    return `$${(num || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
   };
   
-  const renderPercentChange = (value: number) => {
-    if (value > 0) {
-      return (
-        <span className="text-green-500 inline-flex items-center">
-          <ArrowUpRight className="mr-1 h-4 w-4" />
-          {value.toFixed(1)}%
-        </span>
-      );
-    } else if (value < 0) {
-      return (
-        <span className="text-red-500 inline-flex items-center">
-          <ArrowDownRight className="mr-1 h-4 w-4" />
-          {Math.abs(value).toFixed(1)}%
-        </span>
-      );
-    }
-    return <span>0%</span>;
+  const handleQuickAction = (action: string) => {
+    toast({
+      title: "Quick Action",
+      description: `${action} functionality will be implemented soon.`,
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-20" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-24 mb-2" />
-                <Skeleton className="h-4 w-32" />
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -126,8 +129,10 @@ const AdminDashboard = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
         <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error loading dashboard data</AlertTitle>
           <AlertDescription>
             {(error as Error).message}
@@ -138,71 +143,89 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.orderStats.revenue || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              {renderPercentChange(stats?.percentChanges.revenue || 0)}
-              {' '} from previous period
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(stats?.userStats.total || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500 inline-flex items-center">
-                +{formatNumber(stats?.userStats.new || 0)}
-              </span>
-              {' '} new this period
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(stats?.orderStats.total || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              {renderPercentChange(stats?.percentChanges.orderCount || 0)}
-              {' '} from previous period
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.depositStats.amount || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              {renderPercentChange(stats?.percentChanges.depositAmount || 0)}
-              {' '} from previous period
-            </p>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-chatgpt-primary/10">
+            <LayoutDashboard className="h-6 w-6 text-chatgpt-primary" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        </div>
       </div>
       
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Link to="/admin/products">
+          <Button className="bg-chatgpt-primary hover:bg-chatgpt-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </Link>
+        
+        <Link to="/admin/orders">
+          <Button variant="outline">
+            <Eye className="mr-2 h-4 w-4" />
+            View Orders
+          </Button>
+        </Link>
+        
+        <Link to="/admin/users">
+          <Button variant="outline">
+            <User className="mr-2 h-4 w-4" />
+            User Management
+          </Button>
+        </Link>
+        
+        <Link to="/admin/api-monitoring">
+          <Button variant="outline">
+            <Activity className="mr-2 h-4 w-4" />
+            API Monitoring
+          </Button>
+        </Link>
+      </div>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Users"
+          value={formatNumber(stats?.userStats?.total || 0)}
+          icon={<Users className="h-5 w-5" />}
+          description={`+${formatNumber(stats?.userStats?.new || 0)} new`}
+          percentChange={stats?.percentChanges?.userGrowth || 0}
+          trend={stats?.percentChanges?.userGrowth > 0 ? 'up' : stats?.percentChanges?.userGrowth < 0 ? 'down' : 'neutral'}
+        />
+        
+        <StatCard
+          title="Total Orders"
+          value={formatNumber(stats?.orderStats?.total || 0)}
+          icon={<ShoppingCart className="h-5 w-5" />}
+          percentChange={stats?.percentChanges?.orderCount || 0}
+          trend={stats?.percentChanges?.orderCount > 0 ? 'up' : stats?.percentChanges?.orderCount < 0 ? 'down' : 'neutral'}
+          description="from previous period"
+        />
+        
+        <StatCard
+          title="Total Revenue"
+          value={formatCurrency(stats?.orderStats?.revenue || 0)}
+          icon={<DollarSign className="h-5 w-5" />}
+          percentChange={stats?.percentChanges?.revenue || 0}
+          trend={stats?.percentChanges?.revenue > 0 ? 'up' : stats?.percentChanges?.revenue < 0 ? 'down' : 'neutral'}
+          description="from previous period"
+        />
+        
+        <StatCard
+          title="Products in Stock"
+          value={formatNumber(stats?.productStats?.inStock || 0)}
+          icon={<Package className="h-5 w-5" />}
+          description={`${formatNumber(stats?.productStats?.lowStock || 0)} low stock`}
+          percentChange={stats?.percentChanges?.productGrowth || 0}
+          trend={stats?.percentChanges?.productGrowth > 0 ? 'up' : stats?.percentChanges?.productGrowth < 0 ? 'down' : 'neutral'}
+        />
+      </div>
+      
+      {/* Alerts */}
       {(lowStockProducts?.length || apiErrors?.length) ? (
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4">
           {lowStockProducts?.length ? (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -225,7 +248,8 @@ const AdminDashboard = () => {
         </div>
       ) : null}
       
-      <Tabs defaultValue={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)} className="mb-6">
+      {/* Revenue Chart */}
+      <Tabs defaultValue={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Sales Overview</h2>
           <TabsList>
@@ -246,19 +270,19 @@ const AdminDashboard = () => {
                 >
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2ECC71" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#2ECC71" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#19C37D" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#19C37D" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
                   <Area 
                     type="monotone" 
                     dataKey="value" 
                     name="Revenue"
-                    stroke="#2ECC71" 
+                    stroke="#19C37D" 
                     fillOpacity={1} 
                     fill="url(#colorRevenue)" 
                   />
@@ -269,102 +293,80 @@ const AdminDashboard = () => {
         </TabsContent>
       </Tabs>
       
+      {/* Charts and Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Orders by Category */}
         <Card>
           <CardHeader>
-            <CardTitle>Orders vs Deposits</CardTitle>
+            <CardTitle>Orders by Category</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
-                data={[
-                  ...(stats?.ordersData || []).slice(-7).map(item => ({
-                    name: item.name,
-                    Orders: item.value
-                  })),
-                  ...(stats?.depositsData || []).slice(-7).map(item => ({
-                    name: item.name,
-                    Deposits: item.value
-                  }))
-                ].reduce((acc, curr) => {
-                  const existingItem = acc.find(item => item.name === curr.name);
-                  if (existingItem) {
-                    return acc.map(item => 
-                      item.name === curr.name 
-                        ? { ...item, ...curr } 
-                        : item
-                    );
-                  }
-                  return [...acc, curr];
-                }, [] as any[])
-                .sort((a, b) => a.name.localeCompare(b.name))
-              }
+                data={stats?.categoryData || []}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value) => [`$${value}`, undefined]} 
-                />
+                <Tooltip />
                 <Legend />
-                <Bar 
-                  dataKey="Orders" 
-                  fill="#3498DB" 
-                  name="Orders" 
-                />
-                <Bar 
-                  dataKey="Deposits" 
-                  fill="#2ECC71" 
-                  name="Deposits" 
-                />
+                <Bar dataKey="value" name="Orders" fill="#19C37D" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
         
+        {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Methods</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'PayPal', value: stats?.depositStats.paypal || 0 },
-                    { name: 'USDT', value: stats?.depositStats.usdt || 0 }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {[0, 1].map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-4 w-full mt-2">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">PayPal</p>
-                <p className="text-lg font-medium">{formatCurrency(stats?.depositStats.paypal || 0)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">USDT</p>
-                <p className="text-lg font-medium">{formatCurrency(stats?.depositStats.usdt || 0)}</p>
-              </div>
+          <CardContent>
+            <div className="space-y-4">
+              {stats?.recentActivity?.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No recent activity</p>
+              ) : (
+                stats?.recentActivity?.map((activity: any) => (
+                  <div key={activity.id} className="flex items-center justify-between border-b pb-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p 
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          activity.type === 'order' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 
+                          activity.type === 'user' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100' : 
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                        }`}
+                      >
+                        {activity.type}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              
+              {/* Show more link if there are activities */}
+              {stats?.recentActivity?.length > 0 && (
+                <div className="text-center pt-2">
+                  <Button variant="ghost" size="sm" className="text-chatgpt-primary hover:text-chatgpt-primary/90">
+                    View all activity
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
       
+      {/* Order Status and Recent Orders */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Recent Orders */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg font-medium">Recent Orders</CardTitle>
@@ -400,6 +402,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
+        {/* Order Status */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium">Order Status</CardTitle>
@@ -409,8 +412,8 @@ const AdminDashboard = () => {
               <PieChart>
                 <Pie
                   data={[
-                    { name: 'Completed', value: stats?.orderStats.completed || 0 },
-                    { name: 'Pending', value: stats?.orderStats.pending || 0 }
+                    { name: 'Completed', value: stats?.orderStats?.completed || 0 },
+                    { name: 'Pending', value: stats?.orderStats?.pending || 0 }
                   ]}
                   cx="50%"
                   cy="50%"
@@ -418,29 +421,30 @@ const AdminDashboard = () => {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  <Cell fill="#2ECC71" />
+                  <Cell fill="#19C37D" />
                   <Cell fill="#F1C40F" />
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
             
-            <div className="space-y-4">
+            <div className="space-y-4 mt-4">
               <div className="flex items-center">
                 <span className="h-3 w-3 rounded-full bg-green-500 mr-2"></span>
                 <span className="text-sm text-muted-foreground mr-auto">Completed</span>
-                <span className="font-medium">{formatNumber(stats?.orderStats.completed || 0)}</span>
+                <span className="font-medium">{formatNumber(stats?.orderStats?.completed || 0)}</span>
               </div>
               <div className="flex items-center">
                 <span className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></span>
                 <span className="text-sm text-muted-foreground mr-auto">Pending</span>
-                <span className="font-medium">{formatNumber(stats?.orderStats.pending || 0)}</span>
+                <span className="font-medium">{formatNumber(stats?.orderStats?.pending || 0)}</span>
               </div>
               <div className="border-t pt-2 mt-2">
                 <div className="flex items-center">
                   <span className="text-sm text-muted-foreground mr-auto">Total</span>
-                  <span className="font-medium">{formatNumber(stats?.orderStats.total || 0)}</span>
+                  <span className="font-medium">{formatNumber(stats?.orderStats?.total || 0)}</span>
                 </div>
               </div>
             </div>

@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
 
 // Define simplified interfaces with exactly what we need
 interface ProductInfo {
@@ -21,7 +20,7 @@ interface ProductInfo {
 }
 
 interface OrderItem {
-  product: ProductInfo;
+  product: ProductInfo | null;
   id: string;
   price: number;
 }
@@ -33,6 +32,17 @@ interface Order {
   status: string;
   created_at: string;
   order_items: OrderItem[];
+}
+
+// Define the stats return type to avoid deep instantiation
+interface UserStats {
+  totalSpend: number;
+  totalProducts: number;
+  totalOrders: number;
+}
+
+interface Profile {
+  balance: number;
 }
 
 const Dashboard = () => {
@@ -59,26 +69,15 @@ const Dashboard = () => {
         .limit(5);
       
       if (error) throw error;
-      // Use type assertion with a standard Record type instead of a complex nested type
-      return (data || []) as Array<{
-        id: string;
-        total_amount: number;
-        status: string;
-        created_at: string;
-        order_items: Array<{
-          id: string;
-          price: number;
-          product: { name: string } | null;
-        }>;
-      }>;
+      return (data || []) as Order[];
     },
     enabled: !!user,
   });
 
-  // Fetch user stats
+  // Fetch user stats with explicit return type
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: ['user-stats'],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserStats> => {
       // Get total spend
       const { data: totalSpend, error: spendError } = await supabase
         .from('orders')
@@ -96,7 +95,7 @@ const Dashboard = () => {
       
       if (productError) throw productError;
       
-      // Explicitly define the return type to avoid deep type instantiation
+      // Return with explicit type
       return {
         totalSpend: totalSpend?.reduce((sum, order) => sum + order.total_amount, 0) || 0,
         totalProducts: productCount?.length || 0,
@@ -109,7 +108,7 @@ const Dashboard = () => {
   // Fetch user profile
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['user-profile'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Profile | null> => {
       const { data, error } = await supabase
         .from('profiles')
         .select('balance')
