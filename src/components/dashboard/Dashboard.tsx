@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -47,8 +48,8 @@ interface Profile {
 const Dashboard = () => {
   const { user } = useAuth();
 
-  // Fetch recent orders
-  const { data: recentOrders, isLoading: isLoadingOrders } = useQuery({
+  // Fetch recent orders with explicit type annotations
+  const { data: recentOrders, isLoading: isLoadingOrders } = useQuery<Order[], Error>({
     queryKey: ['recent-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
