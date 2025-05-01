@@ -6,6 +6,7 @@ import App from './App';
 import Layout from '@/components/Layout'; 
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import DiscountAnalyticsPage from '@/pages/admin/DiscountAnalyticsPage';
 import Index from '@/pages/Index'; 
 import Products from '@/pages/Products';
@@ -74,7 +75,11 @@ const router = createBrowserRouter([
           },
           {
             path: 'profile',
-            element: <ProfilePage />,
+            element: (
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            ),
           },
         ],
       },
