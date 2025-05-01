@@ -1,9 +1,13 @@
 
 import React from 'react';
-import APIMonitoringPage from './APIMonitoringPage';
+import { ApiMonitoring } from '@/components/admin/monitoring/ApiMonitoring';
 
-const ApiMonitoring: React.FC = () => {
-  return <APIMonitoringPage />;
+const ApiMonitoringPage: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <ApiMonitoring />
+    </div>
+  );
 };
 
-export default ApiMonitoring;
+export default ApiMonitoringPage;
