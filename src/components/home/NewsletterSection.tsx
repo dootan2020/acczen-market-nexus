@@ -31,6 +31,7 @@ const NewsletterSection = () => {
           <div className="mb-8">
             <Button 
               className="whitespace-nowrap bg-white hover:bg-white/90 text-[#19C37D] font-medium px-8"
+              asChild
             >
               <Link to="/register">Đăng ký ngay</Link>
             </Button>

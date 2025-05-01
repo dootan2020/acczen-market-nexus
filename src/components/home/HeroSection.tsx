@@ -19,6 +19,7 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 className="text-base font-medium bg-[#19C37D] hover:bg-[#15a76b] text-white shadow-sm"
+                asChild
               >
                 <Link to="/products" className="flex items-center">
                   <ShoppingCart className="mr-2 h-5 w-5" />
@@ -28,6 +29,7 @@ const HeroSection = () => {
               <Button 
                 variant="outline" 
                 className="text-base font-medium border-[#E5E5E5] text-[#202123] hover:bg-[#F7F7F8]"
+                asChild
               >
                 <Link to="/register" className="flex items-center">
                   <Search className="mr-2 h-5 w-5" />

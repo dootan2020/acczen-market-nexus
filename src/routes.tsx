@@ -10,6 +10,8 @@ import DiscountAnalyticsPage from '@/pages/admin/DiscountAnalyticsPage';
 import Index from '@/pages/Index'; 
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
 
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
@@ -21,8 +23,6 @@ const MainLayout = () => {
 };
 
 // Create placeholder components for routes that are missing
-const LoginPage = () => <div>Login Page</div>;
-const RegisterPage = () => <div>Register Page</div>;
 const CategoriesPage = () => <div>Categories Page</div>;
 const ProfilePage = () => <div>Profile Page</div>;
 const AdminHomePage = () => <div>Admin Home Page</div>;

@@ -60,7 +60,7 @@ const FeaturedProducts = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-12">
           <h2 className="text-3xl font-bold text-[#202123]">Sản phẩm nổi bật</h2>
-          <Button variant="ghost" className="flex items-center gap-1 text-[#19C37D] hover:bg-[#F7F7F8]/80">
+          <Button variant="ghost" className="flex items-center gap-1 text-[#19C37D] hover:bg-[#F7F7F8]/80" asChild>
             <Link to="/products" className="flex items-center">
               Xem tất cả
               <ChevronRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ const FeaturedProducts = () => {
           ))}
         </div>
         <div className="flex justify-center mt-12">
-          <Button className="bg-[#19C37D] hover:bg-[#15a76b]">
+          <Button className="bg-[#19C37D] hover:bg-[#15a76b]" asChild>
             <Link to="/products" className="flex items-center">
               Xem tất cả sản phẩm
             </Link>
