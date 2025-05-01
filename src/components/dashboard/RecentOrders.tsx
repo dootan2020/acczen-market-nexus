@@ -2,20 +2,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface OrderItem {
+// Update the interface to match the Order type from Dashboard.tsx
+interface Order {
   id: string;
   total_amount: number;
   status: string;
   created_at: string;
-  order_items: {
-    product: {
-      name: string;
-    };
-  }[];
+  order_items?: any[]; // Make this optional to match the Order type
 }
 
 interface RecentOrdersProps {
-  orders: OrderItem[];
+  orders: Order[];
   isLoading?: boolean;
 }
 
@@ -60,7 +57,11 @@ export function RecentOrders({ orders, isLoading = false }: RecentOrdersProps) {
           {orders.map(order => (
             <div key={order.id} className="flex items-center justify-between p-2 border rounded">
               <div>
-                <div className="font-medium">{order.order_items[0]?.product?.name || "Unknown Product"}</div>
+                <div className="font-medium">
+                  {order.order_items && order.order_items[0]?.product?.name 
+                    ? order.order_items[0].product.name 
+                    : "Unknown Product"}
+                </div>
                 <div className="text-sm text-muted-foreground">
                   {new Date(order.created_at).toLocaleDateString()}
                 </div>
