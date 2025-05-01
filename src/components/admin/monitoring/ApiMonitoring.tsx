@@ -3,27 +3,15 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ApiLog } from '@/types/api-logs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { format, subDays } from 'date-fns';
-import { Loader, RefreshCw, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent
-} from '@/components/ui/chart';
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
-
-interface ApiStats {
-  total: number;
-  success: number;
-  failed: number;
-  avgResponseTime: number;
-  lastSync?: string;
-}
+import { RefreshCw } from 'lucide-react';
+import { ApiStatsCards } from './components/ApiStatsCards';
+import { ApiPerformanceChart } from './components/ApiPerformanceChart';
+import { LogsTable } from './components/LogsTable';
+import { ApiStats, ChartData } from './types';
 
 export function ApiMonitoring() {
   const [timeRange, setTimeRange] = React.useState<number>(7);
@@ -107,23 +95,6 @@ export function ApiMonitoring() {
     });
   }, [apiLogs, timeRange]);
   
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Success</Badge>;
-      case 'error':
-      case 'api-error':
-      case 'transaction-error':
-        return <Badge variant="destructive">Error</Badge>;
-      case 'critical-error':
-        return <Badge variant="destructive" className="bg-red-700">Critical</Badge>;
-      case 'started':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">Started</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -138,190 +109,13 @@ export function ApiMonitoring() {
         </Button>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="h-full">
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{apiStats.total}</p>
-            <p className="text-xs text-muted-foreground">Last {timeRange} days</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-full">
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {apiStats.total > 0 ? 
-                `${Math.round((apiStats.success / apiStats.total) * 100)}%` : 
-                'N/A'}
-            </p>
-            <div className="flex items-center">
-              <CheckCircle className="mr-1 h-3 w-3 text-green-500" />
-              <p className="text-xs text-muted-foreground">
-                {apiStats.success} successful / {apiStats.failed} failed
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-full">
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {apiStats.avgResponseTime > 0 ? 
-                `${apiStats.avgResponseTime.toFixed(0)}ms` : 
-                'N/A'}
-            </p>
-            <p className="text-xs text-muted-foreground">Across all endpoints</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-full">
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium">Last Sync</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {apiStats.lastSync ? 
-                format(new Date(apiStats.lastSync), 'HH:mm:ss') : 
-                'Never'}
-            </p>
-            {apiStats.lastSync && (
-              <p className="text-xs text-muted-foreground">
-                {format(new Date(apiStats.lastSync), 'yyyy-MM-dd')}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <ApiStatsCards apiStats={apiStats} timeRange={timeRange} />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>API Performance</CardTitle>
-          <div className="flex space-x-2">
-            <Button 
-              variant={timeRange === 7 ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setTimeRange(7)}
-            >
-              7 days
-            </Button>
-            <Button 
-              variant={timeRange === 14 ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setTimeRange(14)}
-            >
-              14 days
-            </Button>
-            <Button 
-              variant={timeRange === 30 ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setTimeRange(30)}
-            >
-              30 days
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            {chartData.length > 0 ? (
-              <ChartContainer
-                config={{
-                  calls: {
-                    label: "API Calls"
-                  },
-                  successRate: {
-                    color: "#22c55e",
-                    label: "Success Rate"
-                  },
-                  avgTime: {
-                    color: "#3b82f6",
-                    label: "Avg Response Time"
-                  }
-                }}
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={(date) => format(new Date(date), 'MMM dd')}
-                      height={40}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis 
-                      yAxisId="left" 
-                      orientation="left"
-                      tick={{ fontSize: 12 }}
-                      label={{ value: 'API Calls', angle: -90, position: 'insideLeft', dy: 50, fontSize: 12 }}
-                    />
-                    <YAxis 
-                      yAxisId="right" 
-                      orientation="right"
-                      tick={{ fontSize: 12 }}
-                      label={{ value: 'Success % / Time (ms)', angle: -90, position: 'insideRight', dx: -10, fontSize: 12 }}
-                    />
-                    <ChartTooltip 
-                      content={
-                        <ChartTooltipContent 
-                          formatter={(value: number, name: string) => {
-                            if (name === 'successRate') return [`${value.toFixed(0)}%`, 'Success Rate'];
-                            if (name === 'avgTime') return [`${value.toFixed(0)}ms`, 'Avg Response Time'];
-                            return [value.toString(), 'API Calls'];
-                          }}
-                        />
-                      }
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="calls"
-                      name="calls"
-                      stroke="#6b7280"
-                      strokeWidth={2}
-                      yAxisId="left"
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="successRate"
-                      name="successRate"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      yAxisId="right"
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avgTime"
-                      name="avgTime"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      yAxisId="right"
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No data available for the selected period</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ApiPerformanceChart 
+        chartData={chartData} 
+        timeRange={timeRange}
+        setTimeRange={setTimeRange}
+      />
       
       <Tabs defaultValue="all">
         <TabsList>
@@ -335,7 +129,6 @@ export function ApiMonitoring() {
           <LogsTable 
             logs={apiLogs || []} 
             isLoading={isLoading} 
-            getStatusBadge={getStatusBadge} 
           />
         </TabsContent>
         
@@ -345,7 +138,6 @@ export function ApiMonitoring() {
               ['error', 'api-error', 'critical-error', 'transaction-error'].includes(log.status)
             )} 
             isLoading={isLoading} 
-            getStatusBadge={getStatusBadge} 
           />
         </TabsContent>
         
@@ -355,7 +147,6 @@ export function ApiMonitoring() {
               log.endpoint === 'sync' || log.endpoint === 'sync-all'
             )} 
             isLoading={isLoading} 
-            getStatusBadge={getStatusBadge} 
           />
         </TabsContent>
         
@@ -365,113 +156,9 @@ export function ApiMonitoring() {
               log.endpoint === 'process-order'
             )} 
             isLoading={isLoading} 
-            getStatusBadge={getStatusBadge} 
           />
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-interface LogsTableProps {
-  logs: ApiLog[];
-  isLoading: boolean;
-  getStatusBadge: (status: string) => React.ReactNode;
-}
-
-function LogsTable({ logs, isLoading, getStatusBadge }: LogsTableProps) {
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Endpoint</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Response Time</TableHead>
-            <TableHead>Details</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
-                <Loader className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-              </TableCell>
-            </TableRow>
-          ) : logs.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
-                No logs found
-              </TableCell>
-            </TableRow>
-          ) : (
-            logs.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                  {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
-                </TableCell>
-                <TableCell>{log.endpoint}</TableCell>
-                <TableCell>{getStatusBadge(log.status)}</TableCell>
-                <TableCell>
-                  {log.response_time ? `${Math.round(log.response_time)}ms` : "N/A"}
-                </TableCell>
-                <TableCell className="max-w-md">
-                  {log.details ? (
-                    <JsonViewer data={log.details} />
-                  ) : (
-                    "No details"
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-interface JsonViewerProps {
-  data: any;
-}
-
-function JsonViewer({ data }: JsonViewerProps) {
-  const [expanded, setExpanded] = React.useState(false);
-  
-  // Format the JSON with proper indentation for display
-  const formattedJson = React.useMemo(() => {
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch (e) {
-      return String(data);
-    }
-  }, [data]);
-  
-  return (
-    <div className="relative font-mono text-xs">
-      <div className="flex items-center mb-1">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-6 p-1 text-xs" 
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
-          {expanded ? 'Collapse' : 'Expand'}
-        </Button>
-      </div>
-      
-      {expanded ? (
-        <pre className="bg-muted p-2 rounded-md overflow-x-auto max-h-[300px] overflow-y-auto whitespace-pre">
-          {formattedJson}
-        </pre>
-      ) : (
-        <div className="bg-muted p-2 rounded-md overflow-hidden text-ellipsis whitespace-nowrap">
-          {typeof data === 'object' ? `${Object.keys(data).length} keys` : String(data).slice(0, 50)}
-          {typeof data === 'object' && Object.keys(data).length > 0 && '...'}
-        </div>
-      )}
     </div>
   );
 }
