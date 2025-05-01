@@ -17,7 +17,7 @@ import RegisterPage from '@/pages/RegisterPage';
 // Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
 import ProductsPage from '@/pages/admin/ProductsPage';
-import ApiMonitoringPage from '@/pages/admin/ApiMonitoringPage';
+import APIMonitoringPage from '@/pages/admin/APIMonitoringPage';
 import ProductsImport from '@/pages/admin/ProductsImport';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import AdminOrders from '@/pages/admin/AdminOrders';
@@ -219,7 +219,7 @@ const router = createBrowserRouter([
             path: 'api-monitoring',
             element: (
               <AdminProtectedRoute>
-                <ApiMonitoringPage />
+                <APIMonitoringPage />
               </AdminProtectedRoute>
             ),
           },
