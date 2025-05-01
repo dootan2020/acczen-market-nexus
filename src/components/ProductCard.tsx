@@ -115,7 +115,7 @@ const ProductCard = ({
         
         {stock <= 0 && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex items-center justify-center">
-            <Badge variant="destructive" className="text-base py-1 px-3 font-semibold">Hết hàng</Badge>
+            <Badge variant="destructive" className="text-base py-1 px-3 font-semibold">Out of Stock</Badge>
           </div>
         )}
       </div>
@@ -153,7 +153,7 @@ const ProductCard = ({
           disabled={stock === 0}
           onClick={handleViewDetails}
         >
-          Chi tiết
+          Details
         </Button>
         
         <Button 
@@ -161,7 +161,7 @@ const ProductCard = ({
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
-          Mua Ngay
+          Buy Now
         </Button>
       </CardFooter>
     </Card>

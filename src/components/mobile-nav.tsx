@@ -19,7 +19,7 @@ export function MobileNav() {
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="h-5 w-5" />
-          <span className="sr-only">Mở menu</span>
+          <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col w-full max-w-full sm:max-w-sm p-0">
@@ -30,8 +30,8 @@ export function MobileNav() {
               className="flex items-center space-x-1"
               onClick={() => setOpen(false)}
             >
-              <span className="text-xl font-bold text-primary">Digital</span>
-              <span className="text-xl font-bold">Deals</span>
+              <span className="text-xl font-bold text-primary font-poppins">AccZen</span>
+              <span className="text-xl font-bold font-poppins">.net</span>
             </Link>
           </SheetTitle>
         </SheetHeader>
@@ -39,7 +39,7 @@ export function MobileNav() {
         <div className="relative p-4 border-b">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Tìm kiếm sản phẩm..."
+            placeholder="Search products..."
             className="pl-9 bg-background"
           />
         </div>
@@ -55,11 +55,11 @@ export function MobileNav() {
                 )}
                 onClick={() => setOpen(false)}
               >
-                Trang chủ
+                Home
               </Link>
               
               <div className="px-3 py-2">
-                <span className="text-base font-medium mb-2 block">Sản phẩm</span>
+                <span className="text-base font-medium mb-2 block">Products</span>
                 <div className="grid gap-1 pl-1">
                   <Link
                     to="/products?category=email"
@@ -67,7 +67,7 @@ export function MobileNav() {
                     onClick={() => setOpen(false)}
                   >
                     <span>Email Account</span>
-                    <Badge variant="outline" className="ml-auto text-xs font-normal">Mới</Badge>
+                    <Badge variant="outline" className="ml-auto text-xs font-normal">New</Badge>
                   </Link>
                   <Link
                     to="/products?category=social"
@@ -88,7 +88,7 @@ export function MobileNav() {
                     className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setOpen(false)}
                   >
-                    Xem tất cả
+                    View All
                   </Link>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export function MobileNav() {
                 )}
                 onClick={() => setOpen(false)}
               >
-                Hỗ trợ
+                Support
               </Link>
 
               <Link
@@ -112,7 +112,7 @@ export function MobileNav() {
                 )}
                 onClick={() => setOpen(false)}
               >
-                Liên hệ
+                Contact
               </Link>
             </div>
           </div>
@@ -130,14 +130,14 @@ export function MobileNav() {
                   className="flex items-center justify-between rounded-md px-3 py-2 text-base hover:bg-accent hover:text-accent-foreground"
                   onClick={() => setOpen(false)}
                 >
-                  <span>Tài khoản</span>
+                  <span>My Account</span>
                 </Link>
                 <Link 
                   to="/dashboard/purchases" 
                   className="flex items-center justify-between rounded-md px-3 py-2 text-base hover:bg-accent hover:text-accent-foreground"
                   onClick={() => setOpen(false)}
                 >
-                  <span>Đơn hàng</span>
+                  <span>Orders</span>
                 </Link>
                 {isAdmin && (
                   <Link 
@@ -156,7 +156,7 @@ export function MobileNav() {
                     // Handle logout
                   }}
                 >
-                  Đăng xuất
+                  Logout
                 </Button>
               </div>
             </>
@@ -172,7 +172,7 @@ export function MobileNav() {
                   to="/login"
                   onClick={() => setOpen(false)}
                 >
-                  Đăng nhập
+                  Login
                 </Link>
               </Button>
               <Button 
@@ -184,7 +184,7 @@ export function MobileNav() {
                   to="/register" 
                   onClick={() => setOpen(false)}
                 >
-                  Đăng ký
+                  Register
                 </Link>
               </Button>
             </div>

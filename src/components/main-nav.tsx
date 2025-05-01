@@ -31,14 +31,14 @@ export function MainNav({ className }: { className?: string }) {
                 isActive('/') && "bg-accent/50"
               )}
             >
-              Trang chủ
+              Home
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
           <NavigationMenuTrigger className={isActive('/products') ? "bg-accent/50" : ""}>
-            Sản phẩm
+            Products
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 p-4 md:grid-cols-2">
@@ -51,7 +51,7 @@ export function MainNav({ className }: { className?: string }) {
                     Email Account
                   </div>
                   <p className="text-sm leading-tight text-primary-foreground/90">
-                    Tài khoản email chuyên nghiệp từ nhiều nhà cung cấp
+                    Professional email accounts from various providers
                   </p>
                 </Link>
               </li>
@@ -62,7 +62,7 @@ export function MainNav({ className }: { className?: string }) {
                 >
                   <div className="text-sm font-medium leading-none">Social Account</div>
                   <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                    Tài khoản mạng xã hội đã xác minh cho doanh nghiệp
+                    Verified social media accounts for businesses
                   </p>
                 </Link>
               </li>
@@ -73,7 +73,7 @@ export function MainNav({ className }: { className?: string }) {
                 >
                   <div className="text-sm font-medium leading-none">Software & Key</div>
                   <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                    Key bản quyền cho phần mềm phổ biến với giá tốt
+                    Licensed keys for popular software at great prices
                   </p>
                 </Link>
               </li>
@@ -82,9 +82,9 @@ export function MainNav({ className }: { className?: string }) {
                   to="/products"
                   className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                 >
-                  <div className="text-sm font-medium leading-none">Xem tất cả</div>
+                  <div className="text-sm font-medium leading-none">View All</div>
                   <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                    Khám phá toàn bộ sản phẩm của chúng tôi
+                    Explore our complete product catalog
                   </p>
                 </Link>
               </li>
@@ -100,7 +100,7 @@ export function MainNav({ className }: { className?: string }) {
                 isActive('/help') && "bg-accent/50"
               )}
             >
-              Hỗ trợ
+              Support
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
@@ -113,7 +113,7 @@ export function MainNav({ className }: { className?: string }) {
                 isActive('/contact') && "bg-accent/50"
               )}
             >
-              Liên hệ
+              Contact
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>

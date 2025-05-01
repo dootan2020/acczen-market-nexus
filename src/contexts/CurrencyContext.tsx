@@ -16,14 +16,9 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }
   
-  // Add the formatVND function
+  // Add the formatVND function that uses our updated formatter
   const formatVND = (amount: number): string => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatCurrency(amount, 'VND');
   };
   
   const value: CurrencyContextType = {

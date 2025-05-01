@@ -110,17 +110,17 @@ const ProductPricing = ({
           )}
         >
           {isOutOfStock 
-            ? "Hết hàng" 
+            ? "Out of Stock" 
             : isLowStock
-            ? `Chỉ còn ${stockQuantity} sản phẩm`
-            : `Còn hàng (${stockQuantity} sản phẩm)`}
+            ? `Only ${stockQuantity} items left`
+            : `In Stock (${stockQuantity} items)`}
         </Badge>
         
         <Badge 
           variant="outline" 
           className="py-1.5 px-3 bg-[#e6f3f9] border-[#3498db] text-[#3498db]"
         >
-          Đã bán: {soldCount}
+          Sold: {soldCount}
         </Badge>
       </div>
     </>

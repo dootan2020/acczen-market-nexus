@@ -21,7 +21,7 @@ const CategoryCard = ({ icon, title, description, link }: CategoryCardProps) => 
           </div>
           <h3 className="text-xl font-semibold mb-2 text-[#202123]">{title}</h3>
           <p className="text-[#8E8EA0] mb-4">{description}</p>
-          <span className="text-[#19C37D] font-medium group-hover:underline">Xem thêm</span>
+          <span className="text-[#19C37D] font-medium group-hover:underline">View More</span>
         </Link>
       </div>
     </CardContent>
@@ -33,19 +33,19 @@ const CategoriesSection = () => {
     {
       icon: <Mail className="h-8 w-8" />,
       title: "Email Accounts",
-      description: "Tài khoản email xác minh cho MMO",
+      description: "Verified email accounts for MMO",
       link: "/products?category=email"
     },
     {
       icon: <Users className="h-8 w-8" />,
       title: "Social Accounts",
-      description: "Tài khoản mạng xã hội đa nền tảng",
+      description: "Multi-platform social media accounts",
       link: "/products?category=social"
     },
     {
       icon: <Key className="h-8 w-8" />,
       title: "Software Keys",
-      description: "Key kích hoạt phần mềm chính hãng",
+      description: "Genuine software activation keys",
       link: "/products?category=software"
     }
   ];
@@ -54,9 +54,9 @@ const CategoriesSection = () => {
     <div className="bg-white py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 text-[#202123]">Danh mục sản phẩm</h2>
+          <h2 className="text-3xl font-bold mb-4 text-[#202123]">Product Categories</h2>
           <p className="text-[#8E8EA0] max-w-2xl mx-auto">
-            Khám phá các sản phẩm số đa dạng của chúng tôi được phân loại theo danh mục
+            Explore our digital products categorized for your needs
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

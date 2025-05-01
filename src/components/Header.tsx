@@ -22,8 +22,8 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-primary">Digital</span>
-            <span className="text-xl font-bold">Deals</span>
+            <span className="text-xl font-bold text-primary font-poppins">AccZen</span>
+            <span className="text-xl font-bold font-poppins">.net</span>
           </Link>
         </div>
         
@@ -115,7 +115,17 @@ export function Header() {
               )}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Help
+              Support
+            </Link>
+            <Link 
+              to="/contact" 
+              className={cn(
+                "flex w-full items-center px-3 py-2 text-sm font-medium rounded-md",
+                location.pathname === "/contact" ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent/50"
+              )}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
             </Link>
             <div className="pt-2">
               <DepositButton className="w-full justify-center" />
