@@ -11,6 +11,7 @@ interface ProductImageGalleryProps {
   name?: string;
   salePrice?: number | null;
   categoryName?: string;
+  images?: string[]; // Add the missing images property
 }
 
 const ProductImageGallery = ({
@@ -18,6 +19,7 @@ const ProductImageGallery = ({
   name = "Product",
   salePrice,
   categoryName,
+  images = [], // Add default empty array
 }: ProductImageGalleryProps) => {
   const [favorited, setFavorited] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
