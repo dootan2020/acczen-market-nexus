@@ -16,6 +16,9 @@ import RegisterPage from '@/pages/RegisterPage';
 // Import our updated AdminHome
 import AdminHome from '@/pages/admin/AdminHome';
 
+// Import our updated ProductsPage
+import ProductsPage from '@/pages/admin/ProductsPage';
+
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
   return (
@@ -108,7 +111,7 @@ const router = createBrowserRouter([
             path: 'products',
             element: (
               <AdminProtectedRoute>
-                <AdminProductsPage />
+                <ProductsPage />
               </AdminProtectedRoute>
             ),
           },
