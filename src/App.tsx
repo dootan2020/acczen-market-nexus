@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom'; 
 import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { ReactQueryProvider } from './contexts/ReactQueryContext';
@@ -12,7 +12,7 @@ import { CartProvider } from './providers/CartProvider';
 function App() {
   return (
     <ReactQueryProvider>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme="light" storageKey="digital-deals-theme">
         <AuthProvider>
           <CurrencyProvider>
             <PaymentProvider>
