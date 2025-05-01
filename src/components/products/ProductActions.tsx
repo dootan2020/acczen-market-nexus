@@ -18,6 +18,7 @@ interface ProductActionsProps {
 
 const ProductActions = ({
   isOutOfStock,
+  onAddToCart,
   productId,
   productName,
   productPrice,
@@ -49,26 +50,26 @@ const ProductActions = ({
   };
 
   return (
-    <div className="flex flex-col-reverse gap-4 sm:flex-row sm:gap-4 mt-6">
+    <div className="flex flex-col-reverse sm:flex-row sm:gap-4 mt-6 space-y-3 space-y-reverse sm:space-y-0">
       <Button 
         variant="outline"
-        className="w-full shadow-sm font-bold"
+        className="w-full shadow-sm font-bold border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10 transition-all duration-300"
         size="lg"
-        onClick={handleGoToCheckout}
+        onClick={onAddToCart}
         disabled={isOutOfStock}
       >
-        <ShoppingCart className="mr-2 h-5 w-5" />
-        Checkout
+        <ShoppingCart className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
+        Add to Cart
       </Button>
 
       <Button 
-        className="w-full bg-[#F97316] hover:bg-[#EA580C] shadow-md font-bold"
+        className="w-full bg-[#2ECC71] hover:bg-[#27AE60] shadow-md font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
         size="lg"
         disabled={isOutOfStock}
         onClick={handleBuyNow}
       >
         Buy Now
-        <ArrowRight className="ml-2 h-5 w-5" />
+        <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:rotate-12" />
       </Button>
 
       <PurchaseConfirmModal

@@ -44,6 +44,7 @@ const ProductInfo = ({
   const finalPrice = salePrice || price;
   const isOutOfStock = stockQuantity <= 0;
   const isLowStock = stockQuantity > 0 && stockQuantity < 10;
+  const discountPercentage = salePrice ? Math.round(((price - salePrice) / price) * 100) : 0;
   
   const handleBuyNow = () => {
     if (!user) {
@@ -73,19 +74,22 @@ const ProductInfo = ({
     <>
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-4">
-          <ProductQuantity 
-            quantity={quantity} 
-            stockQuantity={stockQuantity} 
-            onQuantityChange={handleQuantityChange} 
-          />
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-gray-700">Quantity:</span>
+            <ProductQuantity 
+              quantity={quantity} 
+              stockQuantity={stockQuantity} 
+              onQuantityChange={handleQuantityChange} 
+            />
+          </div>
           
           <div className="text-sm font-medium text-right">
             {isOutOfStock ? (
-              <span className="text-red-500">Out of Stock</span>
+              <span className="text-red-500 font-semibold">Out of Stock</span>
             ) : isLowStock ? (
-              <span className="text-amber-600">Only {stockQuantity} items left</span>
+              <span className="text-amber-600 font-semibold">Only {stockQuantity} items left</span>
             ) : (
-              <span className="text-green-600">In Stock ({stockQuantity} items)</span>
+              <span className="text-green-600 font-semibold">In Stock ({stockQuantity} items)</span>
             )}
           </div>
         </div>
@@ -96,9 +100,9 @@ const ProductInfo = ({
             disabled={isOutOfStock}
             size="lg"
             variant="outline"
-            className="flex-1 border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10 font-medium transition-all duration-300 h-12 text-base"
+            className="flex-1 border-2 border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/10 font-medium transition-all duration-300 h-12 text-base group"
           >
-            <ShoppingCart className="mr-2 h-5 w-5" />
+            <ShoppingCart className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
             Add to Cart
           </Button>
           
@@ -106,7 +110,7 @@ const ProductInfo = ({
             onClick={handleBuyNow} 
             disabled={isOutOfStock}
             size="lg"
-            className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base group"
+            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] h-12 text-base group"
           >
             <ShoppingBag className="mr-2 h-5 w-5 transition-transform group-hover:rotate-12" />
             {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
@@ -120,7 +124,7 @@ const ProductInfo = ({
               "transition-all duration-300 border-2 h-12 w-12",
               isFavorited 
                 ? "border-[#E74C3C] text-[#E74C3C] bg-[#E74C3C]/5 hover:bg-[#E74C3C]/10" 
-                : "border-accent text-accent hover:bg-accent/5"
+                : "border-[#3498DB] text-[#3498DB] hover:bg-[#3498DB]/5"
             )}
           >
             <Heart 
@@ -134,7 +138,7 @@ const ProductInfo = ({
         </div>
 
         {/* Product benefits */}
-        <div className="bg-gray-50 p-4 rounded-lg mt-6">
+        <div className="bg-gray-50 p-4 rounded-lg mt-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 mt-1">
@@ -191,6 +195,19 @@ const ProductInfo = ({
                 <p className="text-xs text-gray-600">24/7 assistance for any issues</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Delivery time estimation */}
+        <div className="bg-green-50 p-3 rounded-md border border-green-200 flex items-center">
+          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm text-green-800 font-medium">Instant Delivery</p>
+            <p className="text-xs text-green-600">Get your account details immediately after payment</p>
           </div>
         </div>
       </div>

@@ -41,6 +41,15 @@ const ProductImageGallery = ({
     allImages.push('/placeholder.svg');
   }
 
+  // Add sample images for demo if only one image is available
+  if (allImages.length === 1) {
+    allImages.push(
+      'https://images.unsplash.com/photo-1582562124811-c09040d0a901',
+      'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9',
+      'https://images.unsplash.com/photo-1721322800607-8c38375eef04'
+    );
+  }
+
   // Handle mouse move for zoom effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isZoomed) return;
@@ -62,10 +71,10 @@ const ProductImageGallery = ({
   return (
     <div className="flex flex-col space-y-4">
       {/* Main Image with Zoom Effect */}
-      <div className="relative overflow-hidden rounded-lg bg-white">
+      <div className="relative overflow-hidden rounded-lg bg-white shadow-md">
         <div 
           className={cn(
-            "cursor-zoom-in relative",
+            "cursor-zoom-in relative min-h-[500px]",
             isZoomed ? "overflow-hidden" : ""
           )}
           onClick={() => setIsZoomed(!isZoomed)}
@@ -84,7 +93,7 @@ const ProductImageGallery = ({
           </AspectRatio>
           
           {isZoomed && (
-            <div className="absolute inset-0 bg-white">
+            <div className="absolute inset-0 bg-white z-10">
               <div
                 className="absolute inset-0"
                 style={{
@@ -102,7 +111,7 @@ const ProductImageGallery = ({
         <Button
           size="icon"
           className={cn(
-            "absolute top-4 right-4 h-10 w-10 rounded-full shadow-md transition-all duration-300",
+            "absolute top-4 right-4 h-10 w-10 rounded-full shadow-md transition-all duration-300 z-20",
             favorited 
               ? "bg-[#E74C3C]/90 text-white hover:bg-[#E74C3C]" 
               : "bg-white/90 text-gray-700 hover:bg-white"
@@ -132,7 +141,9 @@ const ProductImageGallery = ({
                   <div 
                     className={cn(
                       "cursor-pointer rounded-md overflow-hidden transition-all border-2",
-                      activeImageIndex === index ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-primary/50"
+                      activeImageIndex === index 
+                        ? "border-primary ring-2 ring-primary/30 shadow-md scale-105" 
+                        : "border-transparent hover:border-primary/50"
                     )}
                     onClick={() => setActiveImageIndex(index)}
                   >

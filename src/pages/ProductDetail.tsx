@@ -6,13 +6,10 @@ import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductInfo from "@/components/products/ProductInfo";
 import ProductDescription from "@/components/products/ProductDescription";
-import ProductInventoryStatus from "@/components/products/ProductInventoryStatus";
-import ProductBenefits from "@/components/products/ProductBenefits";
-import { Card, CardContent } from "@/components/ui/card";
+import ProductBadge from "@/components/products/ProductBadge";
+import { Card } from "@/components/ui/card";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import TrustBadges from "@/components/trust/TrustBadges";
-import StockSoldBadges from "@/components/products/inventory/StockSoldBadges";
-import ProductBadge from "@/components/products/ProductBadge";
 import { stripHtmlTags } from '@/utils/htmlUtils';
 import ProductPricing from '@/components/products/ProductPricing';
 import ProductReviews from '@/components/products/ProductReviews';
@@ -25,8 +22,6 @@ import {
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
 import { Home, ShieldCheck, Lock, Heart, ShoppingBag, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RichTextContent from "@/components/RichTextContent";
 import { cn } from "@/lib/utils";
@@ -50,6 +45,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isTabsSticky, setIsTabsSticky] = useState(false);
   
   const { data: relatedProducts } = useRelatedProducts(
     product?.category_id || '',
@@ -64,6 +60,20 @@ const ProductDetail = () => {
     productName: product?.name,
     relatedCount: relatedProducts?.length || 0
   });
+  
+  // Monitor scroll position for sticky tabs
+  useEffect(() => {
+    const handleScroll = () => {
+      const tabsElement = document.getElementById('product-tabs');
+      if (tabsElement) {
+        const tabsPosition = tabsElement.getBoundingClientRect().top;
+        setIsTabsSticky(tabsPosition <= 0);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Mock rating data (in a real app this would come from API)
   const rating = 4.5;
@@ -102,10 +112,16 @@ const ProductDetail = () => {
     );
   }
 
+  // Fix product name for internationalization
+  const productName = product.name.includes("ngầm trầu") 
+    ? "Telegram Premium Account (1-7 days)" 
+    : product.name;
+
   // Determine if product is featured, on sale, or new
   const isFeatured = true; // Example, set based on your criteria
   const isOnSale = product.sale_price && product.sale_price < product.price;
   const isNew = false; // Example, could be based on creation date
+  const isBestSeller = product.stock_quantity > 0 && product.stock_quantity < 50; // Example condition
   
   // Extract product images or use the main image
   const productImages = product.image_url ? [product.image_url] : [];
@@ -117,10 +133,6 @@ const ProductDetail = () => {
   const discountPercentage = isOnSale 
     ? Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100) 
     : 0;
-
-  const handleFavoriteToggle = () => {
-    setIsFavorited(!isFavorited);
-  };
 
   // Extract specifications and usage instructions from metadata
   const specifications = product.metadata && typeof product.metadata === 'object' 
@@ -139,7 +151,7 @@ const ProductDetail = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/" className="hover:text-[#19C37D] flex items-center">
+                <Link to="/" className="hover:text-[#2ECC71] flex items-center">
                   <Home className="h-3.5 w-3.5 mr-1" />
                   <span>Home</span>
                 </Link>
@@ -148,7 +160,7 @@ const ProductDetail = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/products" className="hover:text-[#19C37D]">Products</Link>
+                <Link to="/products" className="hover:text-[#2ECC71]">Products</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -158,7 +170,7 @@ const ProductDetail = () => {
                   <BreadcrumbLink asChild>
                     <Link 
                       to={`/categories/${product.category?.id}`} 
-                      className="hover:text-[#19C37D]"
+                      className="hover:text-[#2ECC71]"
                     >
                       {product.category?.name}
                     </Link>
@@ -168,265 +180,280 @@ const ProductDetail = () => {
               </>
             )}
             <BreadcrumbItem>
-              <BreadcrumbPage>{product.name}</BreadcrumbPage>
+              <BreadcrumbPage>{productName}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
         {/* Product Main Section */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-10">
-          <div className="md:flex">
-            {/* Left column - Product Images */}
-            <div className="md:w-2/5 p-6">
-              <div className="relative">
-                {isFeatured && (
-                  <div className="absolute top-4 left-4 z-10">
-                    <ProductBadge type="featured" />
-                  </div>
-                )}
-                {isOnSale && discountPercentage > 0 && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <ProductBadge type="sale" label={`-${discountPercentage}%`} />
-                  </div>
-                )}
-                {isNew && (
-                  <div className="absolute top-14 left-4 z-10">
-                    <ProductBadge type="new" />
-                  </div>
-                )}
-                <ProductImageGallery
-                  imageUrl={product.image_url}
-                  name={product.name}
-                  salePrice={product.sale_price}
-                  images={productImages}
-                />
+        <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+          <div className="md:grid md:grid-cols-5 lg:grid-cols-5 gap-0">
+            {/* Left column - Product Images (40%) */}
+            <div className="md:col-span-2 p-6 md:border-r border-gray-200">
+              <div className="sticky top-24">
+                <div className="relative">
+                  {isFeatured && (
+                    <div className="absolute top-4 left-4 z-10">
+                      <ProductBadge type="featured" />
+                    </div>
+                  )}
+                  {isNew && (
+                    <div className="absolute top-4 left-32 z-10">
+                      <ProductBadge type="new" />
+                    </div>
+                  )}
+                  {isBestSeller && (
+                    <div className="absolute top-14 left-4 z-10">
+                      <ProductBadge type="bestSeller" />
+                    </div>
+                  )}
+                  {isOnSale && discountPercentage > 0 && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <ProductBadge type="sale" percentage={discountPercentage} />
+                    </div>
+                  )}
+                  <ProductImageGallery
+                    imageUrl={product.image_url}
+                    name={productName}
+                    salePrice={product.sale_price}
+                    images={productImages}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Right column - Product Info */}
-            <div className="md:w-3/5 p-6 md:border-l border-gray-200">
-              <div className="flex justify-between items-start">
-                <h1 className="text-2xl font-bold text-gray-800 font-sans mb-2">{product.name}</h1>
-                <ProductInventoryStatus stockQuantity={product.stock_quantity} variant="badge" />
-              </div>
-              
-              {/* Rating stars */}
-              <div className="flex items-center mb-4">
-                <div className="flex mr-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-4 w-4 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
-                    />
-                  ))}
+            {/* Right column - Product Info (60%) */}
+            <div className="md:col-span-3 p-8">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 font-sans mb-2 leading-tight">
+                  {productName}
+                </h1>
+                
+                {/* Inventory summary - consolidated */}
+                <div className="flex items-center space-x-2 text-sm mt-2 mb-4">
+                  <span className={cn(
+                    "inline-flex items-center px-2.5 py-0.5 rounded-full font-medium",
+                    product.stock_quantity > 10 
+                      ? "bg-green-100 text-green-800" 
+                      : product.stock_quantity > 0
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-red-100 text-red-800"
+                  )}>
+                    {product.stock_quantity > 0 
+                      ? `In Stock: ${product.stock_quantity} items` 
+                      : "Out of Stock"}
+                  </span>
+                  <span className="text-gray-500">|</span>
+                  <span className="text-gray-600">Sold: {soldCount}</span>
                 </div>
-                <span className="text-gray-600 text-sm">{rating} ({reviewCount} reviews)</span>
+                
+                {/* Rating stars */}
+                <div className="flex items-center mb-6">
+                  <div className="flex mr-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        className={`h-5 w-5 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
+                      />
+                    ))}
+                  </div>
+                  <span className="text-gray-600 text-sm">{rating} ({reviewCount} reviews)</span>
+                </div>
+                
+                {/* Pricing */}
+                <ProductPricing 
+                  price={product.price}
+                  salePrice={product.sale_price}
+                  stockQuantity={product.stock_quantity}
+                  soldCount={soldCount}
+                />
+                
+                {/* Product Info component with Buy/Favorite buttons */}
+                <ProductInfo 
+                  id={product.id}
+                  name={productName}
+                  description={product.description || ''}
+                  price={product.price}
+                  salePrice={product.sale_price}
+                  stockQuantity={product.stock_quantity}
+                  image={product.image_url || ''}
+                  rating={rating}
+                  reviewCount={reviewCount}
+                  soldCount={soldCount}
+                  kiosk_token={product.kiosk_token}
+                />
               </div>
-              
-              {/* Inventory info */}
-              <StockSoldBadges 
-                stock={product.stock_quantity}
-                soldCount={soldCount}
-              />
-              
-              {/* Pricing */}
-              <ProductPricing 
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                soldCount={soldCount}
-              />
-              
-              {/* Product Info component with Buy/Favorite buttons */}
-              <ProductInfo 
-                id={product.id}
-                name={product.name}
-                description={product.description || ''}
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                image={product.image_url || ''}
-                rating={rating}
-                reviewCount={reviewCount}
-                soldCount={soldCount}
-                kiosk_token={product.kiosk_token}
-              />
             </div>
           </div>
         </div>
         
         {/* Description and Reviews Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-10 overflow-hidden">
-          <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
-            <div className="border-b border-gray-200 bg-gray-50">
-              <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
-                <TabsTrigger 
-                  value="description" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
-                >
-                  Product Description
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="specifications" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
-                >
-                  Specifications
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="reviews" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
-                >
-                  Reviews ({reviewCount})
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="faq" 
-                  className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#19C37D] data-[state=active]:bg-transparent"
-                >
-                  FAQ
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="description" className="p-6">
-              <div className="prose max-w-none">
-                {product.description ? (
-                  <RichTextContent content={product.description} />
-                ) : (
-                  <p className="text-gray-500 italic">No description available for this product.</p>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="specifications" className="p-6">
-              {specifications ? (
-                <div className="prose max-w-none">
-                  <RichTextContent content={specifications} />
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 italic">No specifications available for this product.</p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="p-6">
-              <div className="mb-8">
-                <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
-                  <div className="md:mr-4 mb-4 md:mb-0">
-                    <div className="text-5xl font-bold text-gray-800">{rating}</div>
-                    <div className="flex mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`h-4 w-4 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
-                        />
-                      ))}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">{reviewCount} reviews</div>
-                  </div>
-                  
-                  <div className="flex-1 md:ml-4 w-full">
-                    {[5, 4, 3, 2, 1].map((stars) => (
-                      <div className="flex items-center mb-2" key={stars}>
-                        <div className="text-sm font-medium w-14">{stars} stars</div>
-                        <div className="flex-1 h-2.5 bg-gray-200 rounded-full">
-                          <div 
-                            className="h-2.5 bg-amber-400 rounded-full" 
-                            style={{ width: `${stars === 5 ? 85 : stars === 4 ? 10 : stars === 3 ? 3 : stars === 2 ? 1 : 1}%` }}
-                          ></div>
-                        </div>
-                        <div className="text-sm font-medium w-14 text-right">
-                          {stars === 5 ? '85%' : stars === 4 ? '10%' : stars === 3 ? '3%' : stars === 2 ? '1%' : '1%'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        <div id="product-tabs" className="relative">
+          <div className={cn(
+            "bg-white rounded-lg shadow-sm overflow-hidden transition-all", 
+            isTabsSticky ? "sticky top-0 z-30 shadow-md" : ""
+          )}>
+            <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
+              <div className={cn(
+                "border-b border-gray-200 bg-white",
+                isTabsSticky ? "sticky top-0 z-30" : ""
+              )}>
+                <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
+                  <TabsTrigger 
+                    value="description" 
+                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                  >
+                    Product Description
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="specifications" 
+                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                  >
+                    Specifications
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="reviews" 
+                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                  >
+                    Reviews ({reviewCount})
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="faq" 
+                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                  >
+                    FAQ
+                  </TabsTrigger>
+                </TabsList>
               </div>
               
-              {/* Review Comments */}
-              <div className="space-y-6">
-                {[
-                  { 
-                    id: 1, 
-                    name: 'John Smith', 
-                    initials: 'JS', 
-                    date: '14/05/2023', 
-                    rating: 5, 
-                    comment: 'Account works perfectly as described. I changed the password and personal information successfully. Customer support responded quickly when I had questions. Very satisfied with this product!' 
-                  },
-                  { 
-                    id: 2, 
-                    name: 'Emma Williams', 
-                    initials: 'EW', 
-                    date: '02/05/2023', 
-                    rating: 5, 
-                    comment: 'Received account immediately after payment. Instructions were detailed and easy to understand. I was able to use Gmail and other Google services without any issues. Especially happy with the 30-day warranty.' 
-                  },
-                  { 
-                    id: 3, 
-                    name: 'Michael Brown', 
-                    initials: 'MB', 
-                    date: '27/04/2023', 
-                    rating: 4, 
-                    comment: 'Account works well, just had a few minor issues when changing recovery information. Contacted support and they helped me resolve it quickly. Fair price for a fully verified account.' 
-                  }
-                ].map((review) => (
-                  <div key={review.id} className="border-b border-gray-200 pb-6">
-                    <div className="flex justify-between mb-2">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-gray-600 font-medium">{review.initials}</span>
-                        </div>
-                        <div className="ml-3">
-                          <h4 className="font-medium text-gray-800">{review.name}</h4>
-                          <div className="text-xs text-gray-500">{review.date}</div>
-                        </div>
-                      </div>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="text-gray-600 text-sm">
-                      <p>{review.comment}</p>
+              <TabsContent value="description" className="p-6 animate-fade-in">
+                <div className="prose max-w-none">
+                  {product.description ? (
+                    <RichTextContent content={product.description} />
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-semibold mb-4">Telegram Premium Account (1-7 days)</h2>
+                      <p className="mb-4">This premium Telegram account gives you access to all premium features for up to 7 days. Perfect for testing and experiencing the enhanced functionalities.</p>
+                      <h3 className="text-lg font-semibold mb-3">Key Features:</h3>
+                      <ul className="list-disc pl-5 mb-4 space-y-2">
+                        <li>Increased upload limit (4GB per file)</li>
+                        <li>Double the channels limit (1,000)</li>
+                        <li>Access to premium stickers and reactions</li>
+                        <li>Ad-free experience</li>
+                        <li>Faster download speeds</li>
+                        <li>Voice-to-text conversion</li>
+                        <li>Premium badges and profile features</li>
+                      </ul>
+                      <p className="text-gray-700">
+                        All accounts are manually verified and guaranteed to work for the specified duration. After purchase, account details will be delivered instantly to your email.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="specifications" className="p-6 animate-fade-in">
+                {specifications ? (
+                  <div className="prose max-w-none">
+                    <RichTextContent content={specifications} />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Account Specifications</h3>
+                    <div className="bg-gray-50 rounded-lg overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-200">
+                          <tr className="bg-white">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Account Type</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Premium</td>
+                          </tr>
+                          <tr className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Duration</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1-7 days</td>
+                          </tr>
+                          <tr className="bg-white">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">International</td>
+                          </tr>
+                          <tr className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Warranty</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Full period of account validity</td>
+                          </tr>
+                          <tr className="bg-white">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Delivery Method</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Email (Instant)</td>
+                          </tr>
+                          <tr className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Support</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">24/7 via email and chat</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                ))}
+                )}
+              </TabsContent>
+              
+              <TabsContent value="reviews" className="p-6 animate-fade-in">
+                {product.id && <ProductReviews productId={product.id} />}
+              </TabsContent>
+              
+              <TabsContent value="faq" className="p-6 animate-fade-in">
+                <div className="space-y-6">
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium mb-2">How long can this account be used?</h3>
+                    <p className="text-gray-600">The account will remain active for 1-7 days after the first login. This can vary slightly depending on Telegram's policies and updates.</p>
+                  </div>
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium mb-2">How do I receive account information after purchase?</h3>
+                    <p className="text-gray-600">After successful payment, account information will be automatically sent to your registered email. You can also view this information in your purchase history on your personal page.</p>
+                  </div>
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium mb-2">Can I change the password after receiving the account?</h3>
+                    <p className="text-gray-600">Yes, you can change the password after receiving the account. We recommend changing the password immediately after receiving the login information to ensure security.</p>
+                  </div>
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium mb-2">What should I do if the account is locked or encounters issues?</h3>
+                    <p className="text-gray-600">If the account encounters issues, please contact our support team via email at support@acczen.net or through live chat on the website. We will resolve it as soon as possible.</p>
+                  </div>
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium mb-2">Is there a refund policy?</h3>
+                    <p className="text-gray-600">Yes, we offer a 100% refund if the account is locked or becomes unusable within the first 30 days of purchase, provided it wasn't due to user violation of terms.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Can I use this account for business purposes?</h3>
+                    <p className="text-gray-600">Yes, these accounts can be used for both personal and business purposes, though we recommend checking Telegram's terms of service regarding business usage.</p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+
+        {/* Sticky Actions Bar for Mobile */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 shadow-md z-40">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold text-[#2ECC71]">
+                {product.sale_price ? `$${product.sale_price.toFixed(2)}` : `$${product.price.toFixed(2)}`}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="faq" className="p-6">
-              <div className="space-y-4">
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">How long can this email account be used?</h3>
-                  <p className="text-gray-600">Our email accounts are guaranteed to work for at least 6 months. If there are any issues during this period, we will provide a free replacement account.</p>
-                </div>
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">How do I receive account information after purchase?</h3>
-                  <p className="text-gray-600">After successful payment, account information will be automatically sent to your registered email. You can also view this information in your purchase history on your personal page.</p>
-                </div>
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">Can I change the password after receiving the account?</h3>
-                  <p className="text-gray-600">Yes, you can change the password after receiving the account. We recommend changing the password immediately after receiving the login information to ensure security.</p>
-                </div>
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium mb-2">What should I do if the account is locked or encounters issues?</h3>
-                  <p className="text-gray-600">If the account encounters issues, please contact our support team via email at support@acczen.net or through live chat on the website. We will resolve it as soon as possible.</p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              {product.sale_price && (
+                <div className="text-sm text-gray-500 line-through">${product.price.toFixed(2)}</div>
+              )}
+            </div>
+            <button 
+              onClick={() => setActiveTab('description')}
+              className="bg-[#2ECC71] text-white px-5 py-2 rounded-md font-medium hover:bg-[#27AE60] transition-colors"
+            >
+              Buy Now
+            </button>
+          </div>
         </div>
 
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Related Products</h2>
+          <div className="mt-12">
+            <h2 className="text-xl font-bold mb-6">Related Products</h2>
             <RelatedProducts products={relatedProducts} />
           </div>
         )}
