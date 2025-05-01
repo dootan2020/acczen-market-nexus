@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -38,6 +37,10 @@ const AdminOrderDetailsPage = () => <div>Admin Order Details Page</div>;
 const DepositDetailsPage = () => <div>Deposit Details Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
+
+// Import our new pages
+import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const router = createBrowserRouter([
   {
@@ -153,6 +156,22 @@ const router = createBrowserRouter([
           {
             path: "discount-analytics",
             element: <AdminProtectedRoute><DiscountAnalyticsPage /></AdminProtectedRoute>,
+          },
+          {
+            path: "admin/transactions",
+            element: (
+              <AdminProtectedRoute>
+                <AdminTransactions />
+              </AdminProtectedRoute>
+            ),
+          },
+          {
+            path: "admin/settings",
+            element: (
+              <AdminProtectedRoute>
+                <AdminSettings />
+              </AdminProtectedRoute>
+            ),
           },
         ],
       },
