@@ -18,7 +18,7 @@ const useFeaturedProducts = () => {
         `)
         .eq("status", "active")
         .order("created_at", { ascending: false })
-        .limit(8); // Increased from 6 to 8 to show 4x2 grid
+        .limit(8);
 
       if (error) throw error;
       return data;
@@ -40,7 +40,9 @@ const FeaturedProducts = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="border rounded-lg p-4 bg-white shadow-sm">
-                <div className="h-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="relative w-full">
+                  <div className="aspect-[4/3] bg-gray-200 rounded animate-pulse mb-4"></div>
+                </div>
                 <div className="h-6 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
               </div>
@@ -67,9 +69,9 @@ const FeaturedProducts = () => {
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product, index) => (
-            <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
+            <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
               <ProductCard
                 id={product.id}
                 name={product.name}
@@ -79,6 +81,8 @@ const FeaturedProducts = () => {
                 category={product.category?.name || ''}
                 stock={product.stock_quantity}
                 featured={product.status === 'active' && product.stock_quantity > 0}
+                isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+                isBestSeller={product.sold_count > 5}
               />
             </div>
           ))}

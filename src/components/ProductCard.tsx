@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import ProductBadge from "./products/ProductBadge";
 import StockSoldBadges from "./products/inventory/StockSoldBadges";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ProductCardProps {
   id: string;
@@ -97,13 +98,21 @@ const ProductCard = ({
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
       <div className="relative">
         <Link to={`/products/${id}`} className="block">
-          <div className="bg-gradient-to-r from-[#3498DB] to-[#19C37D] h-[180px] w-full flex items-center justify-center p-4">
-            <img
-              src={image || "/placeholder.svg"}
-              alt={name}
-              className="max-h-full w-auto max-w-full object-contain object-center group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
+          <AspectRatio ratio={4/3} className="bg-gradient-to-r from-[#3498DB]/90 to-[#19C37D]/90 overflow-hidden">
+            <div className="absolute inset-0 w-full h-full p-4 flex items-center justify-center">
+              <img
+                src={image || "/placeholder.svg"}
+                alt={name}
+                className="max-h-full w-auto max-w-full object-contain object-center shadow-sm group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = "/placeholder.svg";
+                }}
+                loading="lazy"
+              />
+            </div>
+          </AspectRatio>
         </Link>
         
         <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap max-w-[calc(100%-1rem)]">

@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Mail, Users, Key } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { AspectRatio } from "@/components/ui/aspect-ratio"; 
 
 interface CategoryCardProps { 
   icon: React.ReactNode; 
@@ -16,9 +17,11 @@ const CategoryCard = ({ icon, title, description, link }: CategoryCardProps) => 
     <CardContent className="p-6 flex flex-col items-center text-center">
       <div className="w-full">
         <Link to={link} className="block w-full">
-          <div className="mb-4 p-3 rounded-full bg-[#F7F7F8] text-[#19C37D] group-hover:bg-[#19C37D] group-hover:text-white transition-colors">
-            {icon}
-          </div>
+          <AspectRatio ratio={1/1} className="mb-4 w-16 h-16 mx-auto">
+            <div className="w-full h-full rounded-full bg-[#F7F7F8] text-[#19C37D] group-hover:bg-[#19C37D] group-hover:text-white transition-colors flex items-center justify-center">
+              {icon}
+            </div>
+          </AspectRatio>
           <h3 className="text-xl font-semibold mb-2 text-[#202123]">{title}</h3>
           <p className="text-[#8E8EA0] mb-4">{description}</p>
           <span className="text-[#19C37D] font-medium group-hover:underline">View More</span>
