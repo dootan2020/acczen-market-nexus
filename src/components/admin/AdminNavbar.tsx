@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, BellIcon } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,9 +11,16 @@ import { useAuth } from '@/contexts/AuthContext';
 interface AdminNavbarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (open: boolean) => void;
 }
 
-export const AdminNavbar = ({ searchQuery, setSearchQuery }: AdminNavbarProps) => {
+export const AdminNavbar = ({ 
+  searchQuery, 
+  setSearchQuery, 
+  sidebarOpen, 
+  setSidebarOpen 
+}: AdminNavbarProps) => {
   const { userDisplayName } = useAuth();
   
   return (
@@ -21,13 +28,23 @@ export const AdminNavbar = ({ searchQuery, setSearchQuery }: AdminNavbarProps) =
       <div className="px-4 h-16 flex items-center justify-between">
         {/* Left side - Logo & Brand */}
         <div className="flex items-center">
+          {setSidebarOpen && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="mr-2 lg:hidden"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
           <Link to="/admin" className="flex items-center gap-2 mr-6 lg:mr-8">
-            <span className="text-xl font-bold text-primary">Digital</span>
-            <span className="text-xl font-bold">Deals Hub</span>
+            <div className="w-8 h-8 bg-[#19C37D] rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">A</span>
+            </div>
+            <span className="text-xl font-bold text-[#19C37D] hidden md:inline-block">AccZen.net</span>
           </Link>
-          <div className="hidden md:flex items-center gap-4">
-            <Link to="/admin" className="text-sm font-medium">Admin</Link>
-          </div>
         </div>
         
         {/* Center - Search bar */}
@@ -47,8 +64,8 @@ export const AdminNavbar = ({ searchQuery, setSearchQuery }: AdminNavbarProps) =
         {/* Right side - Notification, theme toggle and user menu */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="relative">
-            <BellIcon className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium flex items-center justify-center text-white">
+            <Bell className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#19C37D] text-[10px] font-medium flex items-center justify-center text-white">
               2
             </span>
           </Button>
@@ -56,9 +73,11 @@ export const AdminNavbar = ({ searchQuery, setSearchQuery }: AdminNavbarProps) =
           <ModeToggle />
           
           <div className="flex items-center gap-3 border-l pl-4 ml-2">
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 bg-[#19C37D]/10">
               <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>{userDisplayName?.slice(0, 2) || 'AD'}</AvatarFallback>
+              <AvatarFallback className="text-[#19C37D] font-medium">
+                {userDisplayName?.slice(0, 2) || 'AD'}
+              </AvatarFallback>
             </Avatar>
             <div className="hidden md:block">
               <p className="text-sm font-medium">Admin: {userDisplayName || 'Administrator'}</p>

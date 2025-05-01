@@ -1,6 +1,6 @@
 
 import React, { useState, memo } from 'react';
-import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
 import {
@@ -27,15 +27,16 @@ const AdminLayout = memo(() => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <Loader2 className="h-12 w-12 animate-spin text-[#19C37D]" />
           <p className="text-muted-foreground">Đang tải trang quản trị...</p>
         </div>
       </div>
     );
   }
   
+  // Navigation items for breadcrumbs
   const navItems = [
-    { name: 'Digital Deals Hub', href: '/' },
+    { name: 'AccZen.net', href: '/' },
     { name: 'Admin', href: '/admin' },
     { name: 'Dashboard', href: '/admin' },
     { name: 'Products', href: '/admin/products' },
@@ -48,6 +49,8 @@ const AdminLayout = memo(() => {
     { name: 'Integrations', href: '/admin/integrations' },
     { name: 'API Monitoring', href: '/admin/api-monitoring' },
     { name: 'Exchange Rates', href: '/admin/exchange-rates' },
+    { name: 'Transactions', href: '/admin/transactions' },
+    { name: 'Settings', href: '/admin/settings' },
   ];
 
   const getBreadcrumbs = () => {
@@ -58,9 +61,9 @@ const AdminLayout = memo(() => {
     const breadcrumbs = [];
     let currentPath = '';
     
-    // Add Digital Deals Hub as first item
+    // Add AccZen.net as first item
     breadcrumbs.push({
-      name: 'Digital Deals Hub',
+      name: 'AccZen.net',
       path: '/',
       isCurrentPage: false
     });
@@ -107,9 +110,14 @@ const AdminLayout = memo(() => {
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className={cn("flex flex-1 flex-col lg:pl-64")}>
-        <AdminNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <AdminNavbar 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
         
-        {/* Remove the bg-background, py-4, px-6, and border-b classes - only have breadcrumbs here */}
+        {/* Breadcrumbs section */}
         <div className="border-b">
           {breadcrumbs && (
             <Breadcrumb className="py-4 px-6">
@@ -133,6 +141,7 @@ const AdminLayout = memo(() => {
           )}
         </div>
         
+        {/* Page title section */}
         <div className="bg-background py-3 px-6 border-b">
           <h1 className="text-2xl font-bold tracking-tight">{getCurrentPageTitle(location.pathname)}</h1>
         </div>
@@ -160,6 +169,8 @@ const getCurrentPageTitle = (pathname: string) => {
     '/admin/integrations': 'Integrations',
     '/admin/api-monitoring': 'API Monitoring',
     '/admin/exchange-rates': 'Exchange Rates Management',
+    '/admin/transactions': 'Transactions Management',
+    '/admin/settings': 'System Settings',
   };
 
   return titles[pathname as keyof typeof titles] || 'Dashboard';
