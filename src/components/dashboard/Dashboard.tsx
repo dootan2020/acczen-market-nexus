@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +51,7 @@ const Dashboard = () => {
   // Fetch recent orders
   const { data: recentOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ['recent-orders'],
-    queryFn: async (): Promise<Order[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -74,9 +75,9 @@ const Dashboard = () => {
   });
 
   // Fetch user stats with explicit return type
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  const { data: stats, isLoading: isLoadingStats } = useQuery<UserStats, Error>({
     queryKey: ['user-stats'],
-    queryFn: async (): Promise<UserStats> => {
+    queryFn: async () => {
       // Get total spend
       const { data: totalSpend, error: spendError } = await supabase
         .from('orders')
@@ -105,9 +106,9 @@ const Dashboard = () => {
   });
 
   // Fetch user profile
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+  const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({
     queryKey: ['user-profile'],
-    queryFn: async (): Promise<Profile | null> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('balance')
