@@ -13,7 +13,11 @@ import ProductDetail from '@/pages/ProductDetail';
 
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
-  return <Layout><Outlet /></Layout>;
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
 
 // Create placeholder components for routes that are missing
@@ -88,83 +92,163 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AdminProtectedRoute><AdminHomePage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminHomePage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'products',
-            element: <AdminProtectedRoute><AdminProductsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminProductsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'products/edit/:id',
-            element: <AdminProtectedRoute><AdminProductEditPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminProductEditPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'products/create',
-            element: <AdminProtectedRoute><AdminProductCreatePage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminProductCreatePage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'products-import',
-            element: <AdminProtectedRoute><ProductsImportPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <ProductsImportPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'categories',
-            element: <AdminProtectedRoute><AdminCategoriesPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminCategoriesPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'categories/edit/:id',
-            element: <AdminProtectedRoute><CategoryEditPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <CategoryEditPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'categories/create',
-            element: <AdminProtectedRoute><CategoryCreatePage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <CategoryCreatePage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'orders',
-            element: <AdminProtectedRoute><AdminOrdersPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminOrdersPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'orders/:id',
-            element: <AdminProtectedRoute><AdminOrderDetailsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminOrderDetailsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'users',
-            element: <AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminUsersPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'deposits',
-            element: <AdminProtectedRoute><AdminDepositsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminDepositsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'deposits/:id',
-            element: <AdminProtectedRoute><DepositDetailsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <DepositDetailsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'reports',
-            element: <AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminReportsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'integrations',
-            element: <AdminProtectedRoute><AdminIntegrationsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminIntegrationsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'api-monitoring',
-            element: <AdminProtectedRoute><AdminAPIMonitoringPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminAPIMonitoringPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'exchange-rates',
-            element: <AdminProtectedRoute><AdminExchangeRatesPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminExchangeRatesPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'discount-analytics',
-            element: <AdminProtectedRoute><DiscountAnalyticsPage /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <DiscountAnalyticsPage />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'transactions',
-            element: <AdminProtectedRoute><AdminTransactions /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminTransactions />
+              </AdminProtectedRoute>
+            ),
           },
           {
             path: 'settings',
-            element: <AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>,
+            element: (
+              <AdminProtectedRoute>
+                <AdminSettings />
+              </AdminProtectedRoute>
+            ),
           },
         ],
       },
