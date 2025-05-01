@@ -5,11 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConnectionTest } from '@/hooks/taphoammo/useConnectionTest';
 
 const APIMonitoringPage: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { testConnection } = useConnectionTest();
   
   if (!isAdmin) {
     return (

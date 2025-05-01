@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { format, subDays } from 'date-fns';
-import { Loader, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Loader, RefreshCw, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   ChartContainer,
   ChartTooltip,
@@ -139,7 +139,7 @@ export function ApiMonitoring() {
       </div>
       
       <div className="grid gap-6 md:grid-cols-4">
-        <Card>
+        <Card className="h-full">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
           </CardHeader>
@@ -149,7 +149,7 @@ export function ApiMonitoring() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="h-full">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
           </CardHeader>
@@ -168,7 +168,7 @@ export function ApiMonitoring() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="h-full">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
           </CardHeader>
@@ -182,7 +182,7 @@ export function ApiMonitoring() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="h-full">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">Last Sync</CardTitle>
           </CardHeader>
@@ -233,27 +233,43 @@ export function ApiMonitoring() {
             {chartData.length > 0 ? (
               <ChartContainer
                 config={{
-                  calls: {},
+                  calls: {
+                    label: "API Calls"
+                  },
                   successRate: {
-                    color: "#22c55e"
+                    color: "#22c55e",
+                    label: "Success Rate"
                   },
                   avgTime: {
-                    color: "#3b82f6"
+                    color: "#3b82f6",
+                    label: "Avg Response Time"
                   }
                 }}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="date" 
                       tickFormatter={(date) => format(new Date(date), 'MMM dd')}
+                      height={40}
+                      tick={{ fontSize: 12 }}
                     />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
+                    <YAxis 
+                      yAxisId="left" 
+                      orientation="left"
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'API Calls', angle: -90, position: 'insideLeft', dy: 50, fontSize: 12 }}
+                    />
+                    <YAxis 
+                      yAxisId="right" 
+                      orientation="right"
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'Success % / Time (ms)', angle: -90, position: 'insideRight', dx: -10, fontSize: 12 }}
+                    />
                     <ChartTooltip 
                       content={
                         <ChartTooltipContent 
@@ -272,7 +288,8 @@ export function ApiMonitoring() {
                       stroke="#6b7280"
                       strokeWidth={2}
                       yAxisId="left"
-                      dot={false}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
                     />
                     <Line
                       type="monotone"
@@ -281,7 +298,8 @@ export function ApiMonitoring() {
                       stroke="#22c55e"
                       strokeWidth={2}
                       yAxisId="right"
-                      dot={false}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
                     />
                     <Line
                       type="monotone"
@@ -290,7 +308,8 @@ export function ApiMonitoring() {
                       stroke="#3b82f6"
                       strokeWidth={2}
                       yAxisId="right"
-                      dot={false}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -397,11 +416,9 @@ function LogsTable({ logs, isLoading, getStatusBadge }: LogsTableProps) {
                 <TableCell>
                   {log.response_time ? `${Math.round(log.response_time)}ms` : "N/A"}
                 </TableCell>
-                <TableCell className="max-w-xs truncate">
+                <TableCell className="max-w-md">
                   {log.details ? (
-                    <pre className="text-xs overflow-x-auto">
-                      {JSON.stringify(log.details, null, 2)}
-                    </pre>
+                    <JsonViewer data={log.details} />
                   ) : (
                     "No details"
                   )}
@@ -411,6 +428,50 @@ function LogsTable({ logs, isLoading, getStatusBadge }: LogsTableProps) {
           )}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+interface JsonViewerProps {
+  data: any;
+}
+
+function JsonViewer({ data }: JsonViewerProps) {
+  const [expanded, setExpanded] = React.useState(false);
+  
+  // Format the JSON with proper indentation for display
+  const formattedJson = React.useMemo(() => {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (e) {
+      return String(data);
+    }
+  }, [data]);
+  
+  return (
+    <div className="relative font-mono text-xs">
+      <div className="flex items-center mb-1">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 p-1 text-xs" 
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+          {expanded ? 'Collapse' : 'Expand'}
+        </Button>
+      </div>
+      
+      {expanded ? (
+        <pre className="bg-muted p-2 rounded-md overflow-x-auto max-h-[300px] overflow-y-auto whitespace-pre">
+          {formattedJson}
+        </pre>
+      ) : (
+        <div className="bg-muted p-2 rounded-md overflow-hidden text-ellipsis whitespace-nowrap">
+          {typeof data === 'object' ? `${Object.keys(data).length} keys` : String(data).slice(0, 50)}
+          {typeof data === 'object' && Object.keys(data).length > 0 && '...'}
+        </div>
+      )}
     </div>
   );
 }
