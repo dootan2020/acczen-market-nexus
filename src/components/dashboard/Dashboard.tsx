@@ -96,6 +96,7 @@ const Dashboard = () => {
       
       if (productError) throw productError;
       
+      // Explicitly define the return type to avoid deep type instantiation
       return {
         totalSpend: totalSpend?.reduce((sum, order) => sum + order.total_amount, 0) || 0,
         totalProducts: productCount?.length || 0,
