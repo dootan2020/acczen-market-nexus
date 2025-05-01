@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -13,11 +14,19 @@ import ProductDetail from '@/pages/ProductDetail';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 
-// Import our updated AdminHome
+// Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
-
-// Import our updated ProductsPage
 import ProductsPage from '@/pages/admin/ProductsPage';
+import ApiMonitoringPage from '@/pages/admin/ApiMonitoringPage';
+import ProductsImport from '@/pages/admin/ProductsImport';
+import AdminCategories from '@/pages/admin/AdminCategories';
+import AdminOrders from '@/pages/admin/AdminOrders';
+import UsersPage from '@/pages/admin/UsersPage';
+import DepositsPage from '@/pages/admin/DepositsPage';
+import ReportsPage from '@/pages/admin/ReportsPage';
+import AdminExchangeRates from '@/pages/admin/AdminExchangeRates';
+import AdminTransactions from '@/pages/admin/AdminTransactions';
+import AdminSettings from '@/pages/admin/AdminSettings';
 
 // Create a Layout component for routes that are missing
 const MainLayout = () => {
@@ -31,26 +40,13 @@ const MainLayout = () => {
 // Create placeholder components for routes that are missing
 const CategoriesPage = () => <div>Categories Page</div>;
 const ProfilePage = () => <div>Profile Page</div>;
-const AdminProductsPage = () => <div>Admin Products Page</div>;
-const AdminCategoriesPage = () => <div>Admin Categories Page</div>;
-const AdminOrdersPage = () => <div>Admin Orders Page</div>;
-const AdminUsersPage = () => <div>Admin Users Page</div>;
-const AdminDepositsPage = () => <div>Admin Deposits Page</div>;
-const AdminReportsPage = () => <div>Admin Reports Page</div>;
 const AdminIntegrationsPage = () => <div>Admin Integrations Page</div>;
-const AdminAPIMonitoringPage = () => <div>Admin API Monitoring Page</div>;
-const AdminExchangeRatesPage = () => <div>Admin Exchange Rates Page</div>;
-const ProductsImportPage = () => <div>Products Import Page</div>;
-const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
 const CategoryEditPage = () => <div>Category Edit Page</div>;
 const AdminOrderDetailsPage = () => <div>Admin Order Details Page</div>;
 const DepositDetailsPage = () => <div>Deposit Details Page</div>;
+const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
-
-// Import our existing pages
-import AdminTransactions from "./pages/admin/AdminTransactions";
-import AdminSettings from "./pages/admin/AdminSettings";
 
 const router = createBrowserRouter([
   {
@@ -135,7 +131,7 @@ const router = createBrowserRouter([
             path: 'products-import',
             element: (
               <AdminProtectedRoute>
-                <ProductsImportPage />
+                <ProductsImport />
               </AdminProtectedRoute>
             ),
           },
@@ -143,7 +139,7 @@ const router = createBrowserRouter([
             path: 'categories',
             element: (
               <AdminProtectedRoute>
-                <AdminCategoriesPage />
+                <AdminCategories />
               </AdminProtectedRoute>
             ),
           },
@@ -167,7 +163,7 @@ const router = createBrowserRouter([
             path: 'orders',
             element: (
               <AdminProtectedRoute>
-                <AdminOrdersPage />
+                <AdminOrders />
               </AdminProtectedRoute>
             ),
           },
@@ -183,7 +179,7 @@ const router = createBrowserRouter([
             path: 'users',
             element: (
               <AdminProtectedRoute>
-                <AdminUsersPage />
+                <UsersPage />
               </AdminProtectedRoute>
             ),
           },
@@ -191,7 +187,7 @@ const router = createBrowserRouter([
             path: 'deposits',
             element: (
               <AdminProtectedRoute>
-                <AdminDepositsPage />
+                <DepositsPage />
               </AdminProtectedRoute>
             ),
           },
@@ -207,7 +203,7 @@ const router = createBrowserRouter([
             path: 'reports',
             element: (
               <AdminProtectedRoute>
-                <AdminReportsPage />
+                <ReportsPage />
               </AdminProtectedRoute>
             ),
           },
@@ -223,7 +219,7 @@ const router = createBrowserRouter([
             path: 'api-monitoring',
             element: (
               <AdminProtectedRoute>
-                <AdminAPIMonitoringPage />
+                <ApiMonitoringPage />
               </AdminProtectedRoute>
             ),
           },
@@ -231,7 +227,7 @@ const router = createBrowserRouter([
             path: 'exchange-rates',
             element: (
               <AdminProtectedRoute>
-                <AdminExchangeRatesPage />
+                <AdminExchangeRates />
               </AdminProtectedRoute>
             ),
           },
