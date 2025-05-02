@@ -26,24 +26,24 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   return (
     <Card className="shadow-md">
       <CardHeader>
-        <CardTitle className="text-xl font-semibold">Thanh toán</CardTitle>
-        <CardDescription>Hoàn tất đơn hàng của bạn</CardDescription>
+        <CardTitle className="text-xl font-semibold">Payment</CardTitle>
+        <CardDescription>Complete your order</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Số dư tài khoản</span>
+            <span className="text-muted-foreground">Account Balance</span>
             <span className="font-medium">${balanceUSD.toFixed(2)} USD</span>
           </div>
           
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Tổng thanh toán</span>
+            <span className="text-muted-foreground">Total Payment</span>
             <span className="font-medium">${totalUSD.toFixed(2)} USD</span>
           </div>
           
           <div className="pt-2 border-t mt-2 flex justify-between items-center">
-            <span className="font-medium">Số dư sau thanh toán</span>
+            <span className="font-medium">Balance After Payment</span>
             <span className={`font-bold ${hasEnoughBalance ? 'text-green-600' : 'text-red-500'}`}>
               ${(balanceUSD - totalUSD).toFixed(2)} USD
             </span>
@@ -54,14 +54,14 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
           <Alert className="bg-green-50 border-green-200">
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
-              Bạn có đủ số dư để hoàn tất đơn hàng này
+              You have sufficient funds to complete this order
             </AlertDescription>
           </Alert>
         ) : (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Số dư không đủ. Vui lòng nạp thêm tiền để tiếp tục.
+              Insufficient balance. Please add more funds to continue.
             </AlertDescription>
           </Alert>
         )}
@@ -77,10 +77,10 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang xử lý...
+                Processing...
               </>
             ) : (
-              "Hoàn tất thanh toán"
+              "Complete Payment"
             )}
           </Button>
         </div>
@@ -90,7 +90,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
             <Link to="/deposit">
               <Button className="w-full" variant="outline">
                 <Wallet className="mr-2 h-4 w-4" />
-                Nạp thêm tiền
+                Add Funds
               </Button>
             </Link>
           </div>

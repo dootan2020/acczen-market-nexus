@@ -93,9 +93,9 @@ export const PurchaseConfirmModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Xác nhận mua sản phẩm</DialogTitle>
+          <DialogTitle>Confirm Purchase</DialogTitle>
           <DialogDescription>
-            Bạn có chắc chắn muốn mua sản phẩm này?
+            Are you sure you want to purchase this product?
           </DialogDescription>
         </DialogHeader>
         
@@ -108,7 +108,7 @@ export const PurchaseConfirmModal = ({
           <div>
             <h3 className="font-medium">{productName}</h3>
             <p className="text-sm text-muted-foreground">
-              Số lượng: {quantity}
+              Quantity: {quantity}
             </p>
             <p className="text-primary font-bold mt-1">
               {formatUSD(convertVNDtoUSD(productPrice * quantity))}
@@ -122,20 +122,20 @@ export const PurchaseConfirmModal = ({
             onClick={() => onOpenChange(false)}
             className="sm:mr-auto"
           >
-            Hủy
+            Cancel
           </Button>
           <Button
             variant="outline"
             onClick={handleGoToCheckout}
           >
-            Tùy chọn thanh toán
+            Payment Options
           </Button>
           <Button 
             onClick={handlePurchase} 
             disabled={isProcessing}
             className="bg-[#F97316] hover:bg-[#EA580C]"
           >
-            {isProcessing ? "Đang xử lý..." : "Mua ngay"}
+            {isProcessing ? "Processing..." : "Buy Now"}
           </Button>
         </DialogFooter>
       </DialogContent>

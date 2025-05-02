@@ -46,7 +46,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
             size="sm"
             onClick={() => onRemove(item.id)}
           >
-            Xóa
+            Remove
           </Button>
         </div>
       </div>
