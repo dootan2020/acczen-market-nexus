@@ -6,6 +6,9 @@ import Products from './pages/Products';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/Dashboard';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import UpdatePasswordPage from './pages/UpdatePasswordPage';
+import Help from './pages/Help';
 
 // Import admin pages
 import AdminHome from './pages/admin/AdminHome';
@@ -39,6 +42,9 @@ const mainRoutes = [
   { path: '/products', element: <Products /> },
   { path: '/categories', element: <CategoriesPage /> },
   { path: '/profile', element: <ProfilePage /> },
+  { path: '/help', element: <Help /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/update-password', element: <UpdatePasswordPage /> },
 ];
 
 // Define routes that don't need the main Layout (like auth pages)
