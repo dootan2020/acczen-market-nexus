@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useProductContext } from "@/contexts/ProductContext";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
+import { PurchaseConfirmModal } from "./products/purchase/PurchaseConfirmModal";
 
 interface ProductCardProps {
   id: string;
@@ -49,6 +50,7 @@ const ProductCard = ({
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
   const { openModal } = useProductContext();
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
   // Using useMemo to optimize price conversions
   const displayPrice = useMemo(() => 
@@ -73,24 +75,18 @@ const ProductCard = ({
   }, [description]);
 
   const handleBuyNow = () => {
-    navigate('/checkout', { 
-      state: { 
-        product: {
-          id,
-          name,
-          price: salePrice || price,
-          image: "",
-          stock_quantity: stock,
-          kiosk_token: kioskToken
-        },
-        quantity: 1
-      } 
-    });
+    if (stock <= 0) {
+      return;
+    }
+    
+    setIsPurchaseModalOpen(true);
   };
 
   const handleViewDetails = () => {
     openModal(id);
   };
+
+  const effectivePrice = displaySalePrice || displayPrice;
 
   return (
     <Card className="h-full flex flex-col border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
@@ -161,6 +157,19 @@ const ProductCard = ({
           <ShoppingBag className="mr-1 h-4 w-4" /> Buy Now
         </Button>
       </div>
+
+      {/* Purchase Confirmation Modal */}
+      <PurchaseConfirmModal
+        open={isPurchaseModalOpen}
+        onOpenChange={setIsPurchaseModalOpen}
+        productId={id}
+        productName={name}
+        productPrice={effectivePrice}
+        productImage="" // We don't use images in this project
+        quantity={1}
+        kioskToken={kioskToken || null}
+        stock={stock}
+      />
     </Card>
   );
 };
