@@ -1,4 +1,3 @@
-
 import ProductCard from "@/components/ProductCard";
 
 interface Product {
@@ -17,16 +16,22 @@ interface RelatedProductsProps {
   categoryId?: string;
   currentProductId?: string;
   products?: Product[];
+  showTitle?: boolean; // Thêm prop để kiểm soát việc hiển thị tiêu đề
 }
 
-const RelatedProducts = ({ categoryId, currentProductId, products = [] }: RelatedProductsProps) => {
+const RelatedProducts = ({ 
+  categoryId, 
+  currentProductId, 
+  products = [], 
+  showTitle = false // Mặc định không hiển thị tiêu đề trong component này
+}: RelatedProductsProps) => {
   if (!products || products.length === 0) {
     return null;
   }
 
   return (
     <div className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+      {showTitle && <h2 className="text-2xl font-bold mb-6">Related Products</h2>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <ProductCard
