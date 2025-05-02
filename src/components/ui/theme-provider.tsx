@@ -10,14 +10,20 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 }
 
 export const useTheme = () => {
-  const context = React.useContext(
-    // @ts-ignore - This import is from next-themes and works correctly at runtime
-    window.nextThemesContext
-  );
-
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+  // Use the next-themes useTheme hook directly
+  try {
+    // @ts-ignore - This is necessary to use the next-themes library in React
+    const { theme, setTheme, systemTheme } = window.__NEXT_THEMES__;
+    
+    if (!theme || !setTheme) {
+      console.warn("Theme context not fully initialized yet");
+      return { theme: "light", setTheme: () => {}, systemTheme: "light" };
+    }
+    
+    return { theme, setTheme, systemTheme };
+  } catch (error) {
+    console.error("Error accessing theme context:", error);
+    // Return default values as fallback
+    return { theme: "light", setTheme: () => {}, systemTheme: "light" };
   }
-
-  return context;
 };

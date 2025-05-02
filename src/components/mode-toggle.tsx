@@ -13,7 +13,7 @@ import { useTheme } from "@/components/ui/theme-provider"
 import { cn } from "@/lib/utils"
 
 export function ModeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme = "light", setTheme = () => {} } = useTheme() || {}
 
   return (
     <DropdownMenu>

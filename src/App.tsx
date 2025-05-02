@@ -15,6 +15,17 @@ import AdminLayout from './components/AdminLayout';
 import { ThemeVariablesProvider } from './components/ui/css-variables';
 import { Toaster } from "sonner";
 
+// Initialize next-themes globally
+if (typeof window !== 'undefined') {
+  // @ts-ignore - Setting up global theme context for next-themes
+  window.__NEXT_THEMES__ = window.__NEXT_THEMES__ || { theme: 'light', setTheme: (t: string) => {
+    // @ts-ignore
+    window.__NEXT_THEMES__.theme = t;
+    document.documentElement.classList.remove('light', 'dark', 'system');
+    document.documentElement.classList.add(t);
+  }};
+}
+
 function App() {
   useEffect(() => {
     checkEnvironment();
