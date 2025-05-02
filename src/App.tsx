@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
-import HomePage from './pages/HomePage';
+import Layout from './components/Layout';
+import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ProductPage from './pages/ProductPage';
-import ProductsPage from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
+import Products from './pages/Products';
 import CartPage from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderComplete from './pages/OrderComplete';
@@ -18,19 +18,19 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <Layout />,
     children: [
       {
         path: '/',
-        element: <HomePage />,
+        element: <Index />,
       },
       {
         path: '/products',
-        element: <ProductsPage />,
+        element: <Products />,
       },
       {
         path: '/product/:slug',
-        element: <ProductPage />,
+        element: <ProductDetail />,
       },
       {
         path: '/cart',
