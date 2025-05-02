@@ -7,12 +7,12 @@ import router from './routes';
 
 function App() {
   return (
-    <>
+    <React.Fragment>
       <TooltipProvider>
         <RouterProvider router={router} />
       </TooltipProvider>
       <Toaster />
-    </>
+    </React.Fragment>
   );
 }
 
