@@ -36,7 +36,7 @@ export function PurchaseModalProduct({
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Số lượng: {quantity}
+          Quantity: {quantity}
         </p>
         <p className="text-base font-bold text-primary mt-1">
           {formatUSD(convertVNDtoUSD(totalPrice))}

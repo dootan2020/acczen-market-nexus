@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Check, Clock, CopyIcon, Loader } from "lucide-react";
+import { Check, Copy, Loader } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,118 +21,84 @@ export function PurchaseResultCard({
   onReset,
   onClose
 }: PurchaseResultCardProps) {
-  const [copySuccess, setCopySuccess] = useState<Record<string, boolean>>({});
-
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast.success('Key copied to clipboard');
-    setCopySuccess({ ...copySuccess, [key]: true });
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  
+  const copyToClipboard = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    toast.success("Copied to clipboard");
+    
     setTimeout(() => {
-      setCopySuccess({ ...copySuccess, [key]: false });
-    }, 3000);
+      setCopiedIndex(null);
+    }, 2000);
   };
-
+  
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-      <div className="flex items-center justify-center mb-4">
-        <div className="bg-green-100 p-3 rounded-full">
-          <Check className="h-6 w-6 text-green-600" />
+    <div className="flex flex-col gap-4">
+      <div className="bg-green-50 border border-green-100 rounded-md p-4 text-green-700 flex items-start gap-3">
+        <Check className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+        <div>
+          <p className="font-semibold">Purchase successful!</p>
+          <p className="text-sm text-green-600 mt-1">Your order #{orderId} has been processed successfully.</p>
         </div>
       </div>
       
-      <div className="text-center mb-4">
-        <h3 className="font-semibold text-lg mb-1">Order Successful!</h3>
-        <p className="text-muted-foreground text-sm">
-          Order ID: <span className="font-medium">{orderId}</span>
-        </p>
-      </div>
-
       {productKeys && productKeys.length > 0 ? (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Your Product Keys:</h4>
-          <div className="bg-white border rounded-md">
-            {productKeys.map((key, index) => (
-              <div 
-                key={index} 
-                className={`
-                  flex items-center justify-between p-3 text-sm 
-                  ${index !== productKeys.length - 1 ? 'border-b' : ''}
-                `}
-              >
-                <span className="font-mono truncate">{key}</span>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => handleCopyKey(key)}
-                  className="h-8 px-2"
+        <div className="border rounded-md overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2 border-b">
+            <h4 className="font-medium text-sm">Your Product Keys</h4>
+          </div>
+          <ul className="divide-y">
+            {productKeys.map((key, i) => (
+              <li key={i} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                <code className="text-sm bg-gray-100 px-2 py-1 rounded font-mono overflow-hidden overflow-ellipsis">{key}</code>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(key, i)}
                 >
-                  {copySuccess[key] ? (
-                    <Check className="h-4 w-4 text-green-600" />
+                  {copiedIndex === i ? (
+                    <Check className="h-4 w-4 text-green-500" />
                   ) : (
-                    <CopyIcon className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                   )}
                 </Button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-            <div className="flex items-start">
-              <Clock className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-amber-800">
-                  Order is being processed
-                </p>
-                <p className="text-xs text-amber-700 mt-1">
-                  Your order is being processed. Product keys will appear here when ready.
-                </p>
-              </div>
+        <div className="border rounded-md p-4 text-center">
+          {isCheckingOrder ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Checking order status...</p>
             </div>
-          </div>
-          
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onCheckOrder}
-              disabled={isCheckingOrder}
-              className="text-xs"
-            >
-              {isCheckingOrder ? (
-                <>
-                  <Loader className="mr-1 h-3 w-3 animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                'Check status'
-              )}
-            </Button>
-          </div>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-3">
+                We're processing your order. Your product keys will appear here soon.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onCheckOrder}
+                className="mx-auto"
+              >
+                Check Status
+              </Button>
+            </>
+          )}
         </div>
       )}
       
-      <div className="flex pt-4 justify-between">
-        {productKeys && productKeys.length > 0 ? (
-          <>
-            <Button variant="outline" size="sm" onClick={onReset}>
-              New Purchase
-            </Button>
-            <Button onClick={onClose} className="bg-primary hover:bg-primary-dark">
-              Close
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" size="sm" onClick={onReset}>
-              Cancel
-            </Button>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              View Order
-            </Button>
-          </>
-        )}
+      <div className="flex justify-end gap-3 mt-2">
+        <Button variant="outline" onClick={onReset} disabled={isCheckingOrder}>
+          Buy Another
+        </Button>
+        <Button onClick={onClose} disabled={isCheckingOrder}>
+          Complete
+        </Button>
       </div>
     </div>
   );

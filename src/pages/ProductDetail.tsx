@@ -11,6 +11,8 @@ import ProductDescription from '@/components/products/ProductDescription';
 import { Skeleton } from '@/components/ui/skeleton';
 import RelatedProducts from '@/components/products/RelatedProducts';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import ProductReviews from '@/components/products/ProductReviews';
+import TrustBadges from '@/components/trust/TrustBadges';
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -74,6 +76,11 @@ const ProductDetail = () => {
             <ProductActions 
               product={product}
             />
+
+            {/* Trust Badges Section */}
+            <div className="mt-6">
+              <TrustBadges variant="compact" />
+            </div>
           </div>
           
           {/* Right Column - Description */}
@@ -85,6 +92,12 @@ const ProductDetail = () => {
               />
             </div>
           </div>
+        </div>
+        
+        {/* Reviews Section */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-semibold mb-6 font-poppins">Customer Reviews</h2>
+          <ProductReviews productId={product.id} />
         </div>
         
         {/* Related Products Section */}
@@ -133,7 +146,15 @@ const ProductDetailSkeleton = () => {
         </div>
         
         <div>
-          <Skeleton className="h-screen/2 w-full rounded-lg" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
+        </div>
+      </div>
+      
+      <div className="mt-16">
+        <Skeleton className="h-8 w-1/4 mb-6" />
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg" />
         </div>
       </div>
     </Container>

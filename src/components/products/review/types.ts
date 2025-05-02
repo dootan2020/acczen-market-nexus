@@ -6,17 +6,17 @@ export interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
-  helpful_count?: number;
+  helpful_count: number;
   is_verified_purchase?: boolean;
-  user?: {
+  user: {
     username: string;
     avatar_url: string | null;
   };
 }
 
-export interface ReviewItemProps {
-  review: Review;
-  onReviewUpdated: () => void;
+export interface ReviewFormProps {
+  productId: string;
+  onReviewSubmitted: (review: Review) => void;
 }
 
 export interface ReviewsListProps {
@@ -24,7 +24,8 @@ export interface ReviewsListProps {
   onReviewUpdated: () => void;
 }
 
-export interface ReviewFormProps {
-  productId: string;
-  onReviewSubmitted: (review: Review) => void;
+export interface ReviewItemProps {
+  review: Review;
+  onHelpfulClick?: (reviewId: string, currentCount: number) => void;
+  currentUserId?: string | null;
 }
