@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Eye, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -89,8 +88,8 @@ const ProductCard = ({
   const effectivePrice = displaySalePrice || displayPrice;
 
   return (
-    <Card className="h-full flex flex-col border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
-      {/* Category Badge - ChatGPT style minimal badge */}
+    <Card className="h-full flex flex-col overflow-hidden border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
+      {/* Category Badge */}
       <div className="mb-3">
         <Badge 
           className="bg-[#f0f0f0] text-[#444444] hover:bg-[#e8e8e8] font-normal text-xs px-2 py-0.5" 
@@ -100,12 +99,12 @@ const ProductCard = ({
         </Badge>
       </div>
       
-      {/* Product Title - Typography focused */}
+      {/* Product Title */}
       <h3 className="font-semibold text-base mb-3 line-clamp-2 h-12 font-poppins text-[#343541]">
         {name}
       </h3>
       
-      {/* Price Section - Clean with accent color */}
+      {/* Price Section */}
       <div className="flex items-baseline mb-3">
         <span className="text-lg font-semibold text-[#2ECC71]">
           {formattedSalePrice || formattedPrice}
@@ -118,14 +117,14 @@ const ProductCard = ({
         )}
       </div>
 
-      {/* Stock information - Simple text */}
+      {/* Stock information */}
       <div className="text-sm text-gray-600 mb-3 font-inter">
         In stock: {stock}
       </div>
       
-      {/* Product Description - Minimal with truncation */}
+      {/* Product Description - with flex grow to push buttons to bottom */}
       {description && (
-        <p className="text-sm text-gray-600 line-clamp-2 mb-4 font-inter min-h-[40px]">
+        <p className="text-sm text-gray-600 line-clamp-2 mb-4 font-inter flex-grow min-h-[40px]">
           {cleanDescription}
         </p>
       )}
@@ -139,18 +138,18 @@ const ProductCard = ({
         </div>
       )}
       
-      {/* Action Buttons - ChatGPT-style buttons */}
-      <div className="flex items-center justify-between gap-2 mt-auto">
+      {/* Action Buttons - Fixed layout with proper sizing */}
+      <div className="flex items-center gap-2 mt-auto w-full">
         <Button
           variant="outline"
-          className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541]"
+          className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541] px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm"
           onClick={handleViewDetails}
         >
           <Eye className="mr-1 h-4 w-4" /> Details
         </Button>
         
         <Button
-          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white"
+          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm"
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
