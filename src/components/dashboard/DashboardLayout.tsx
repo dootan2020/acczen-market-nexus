@@ -14,7 +14,7 @@ export function DashboardLayout() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <div className="flex-1 flex">
-        <SidebarProvider defaultOpen>
+        <SidebarProvider defaultOpen={true}>
           <div className="flex flex-1 w-full">
             <Sidebar>
               <DashboardSidebar />

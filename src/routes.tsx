@@ -15,6 +15,7 @@ import DashboardPage from '@/pages/Dashboard';
 import CartPage from '@/pages/Cart';
 import Checkout from '@/pages/Checkout';
 import OrderComplete from '@/pages/OrderComplete';
+import Deposit from '@/pages/Deposit';
 
 // Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
@@ -81,6 +82,10 @@ const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
+      },
+      {
+        path: 'deposit',
+        element: <ProtectedRoute><Deposit /></ProtectedRoute>,
       },
       {
         path: 'login',
