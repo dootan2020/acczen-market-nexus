@@ -26,13 +26,13 @@ export default function SubcategorySelector({
   }
 
   return (
-    <Select value={value || "default"} onValueChange={onValueChange}>
+    <Select value={value || "none"} onValueChange={onValueChange}>
       <SelectTrigger disabled={isLoading}>
         <SelectValue placeholder="Select subcategory" />
       </SelectTrigger>
       <SelectContent>
         {!subcategories || subcategories.length === 0 ? (
-          <SelectItem value="default">No subcategories available</SelectItem>
+          <SelectItem value="none">No subcategories available</SelectItem>
         ) : (
           subcategories.map((subcategory) => (
             <SelectItem key={subcategory.id} value={subcategory.id}>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
@@ -36,7 +37,7 @@ const Products = () => {
   const { data: categories } = useCategories();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Changed from empty string to 'all'
   const [sortOrder, setSortOrder] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
@@ -62,7 +63,7 @@ const Products = () => {
     }
     
     // Apply category filter
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== 'all') { // Modified to check for 'all'
       result = result.filter(product => 
         product.category?.id === selectedCategory || 
         product.category?.slug === selectedCategory
@@ -313,7 +314,7 @@ const Products = () => {
                 <SelectValue placeholder="Chọn danh mục" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tất cả danh mục</SelectItem>
+                <SelectItem value="all">Tất cả danh mục</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}

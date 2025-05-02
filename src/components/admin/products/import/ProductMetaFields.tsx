@@ -19,7 +19,7 @@ export default function ProductMetaFields({ form }: ProductMetaFieldsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Trạng thái</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value || "active"}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn trạng thái" />
