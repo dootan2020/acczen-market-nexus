@@ -18,12 +18,8 @@ const ProductPricing: React.FC<ProductPricingProps> = ({
   const hasDiscount = salePrice && Number(salePrice) > 0 && Number(salePrice) < price;
   
   // Convert prices using the currency context
-  const formattedPrice = currency.formatVND(price);
-  const formattedSalePrice = hasDiscount ? currency.formatVND(Number(salePrice)) : null;
-  
-  // Calculate a fake "sold" number for display purposes (for demonstration)
-  // In a real app, this would come from actual sales data
-  const soldQuantity = stockQuantity > 10 ? Math.round(stockQuantity * 1.5) : 50;
+  const formattedPrice = currency.formatUSD(currency.convertVNDtoUSD(price));
+  const formattedSalePrice = hasDiscount ? currency.formatUSD(currency.convertVNDtoUSD(Number(salePrice))) : null;
   
   return (
     <div className="flex flex-col gap-2">

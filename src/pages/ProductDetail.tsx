@@ -87,7 +87,7 @@ const ProductDetail = () => {
           </div>
         </div>
         
-        {/* Related Products - Single Instance */}
+        {/* Related Products - Ensure only showing once */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-16">
             <h3 className="text-2xl font-semibold mb-6 font-poppins">Related Products</h3>
