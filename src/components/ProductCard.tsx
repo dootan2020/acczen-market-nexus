@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Eye, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -138,22 +139,22 @@ const ProductCard = ({
         </div>
       )}
       
-      {/* Action Buttons - Fixed layout with proper sizing */}
-      <div className="flex items-center gap-2 mt-auto w-full">
+      {/* Action Buttons - Improved layout with better responsiveness */}
+      <div className="flex items-center gap-1.5 mt-auto w-full">
         <Button
           variant="outline"
-          className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541] px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm"
+          className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541] px-1.5 sm:px-2 py-1.5 h-auto text-[10px] xs:text-xs sm:text-sm"
           onClick={handleViewDetails}
         >
-          <Eye className="mr-1 h-4 w-4" /> Details
+          <Eye className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Details
         </Button>
         
         <Button
-          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm"
+          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white px-1.5 sm:px-2 py-1.5 h-auto text-[10px] xs:text-xs sm:text-sm"
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
-          <ShoppingBag className="mr-1 h-4 w-4" /> Buy Now
+          <ShoppingBag className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Buy Now
         </Button>
       </div>
 

@@ -1,3 +1,4 @@
+
 /* Đã thêm fonts vào index.html, không cần import ở đây nữa */
 /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); */
 
@@ -260,5 +261,13 @@
   
   .sidebar-item-inactive {
     @apply text-foreground hover:bg-[#F7F7F8] dark:hover:bg-[#343541];
+  }
+}
+
+/* Define custom xs breakpoint for very small screens */
+@screen xs {
+  .xs\:text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
 }
