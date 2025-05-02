@@ -6,16 +6,14 @@ import { useProductContext } from "@/contexts/ProductContext";
 import { useProductInfo } from "@/hooks/useProductInfo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X, Info, HelpCircle, ShieldCheck } from "lucide-react";
-import { stripHtmlTags } from "@/utils/htmlUtils";
 
 export const ProductInfoModal = () => {
   const { selectedProductId, isModalOpen, closeModal } = useProductContext();
-  const { data: product, isLoading } = useProductInfo(selectedProductId);
-
-  // Process the description to clean HTML tags
-  const cleanDescription = product?.description 
-    ? stripHtmlTags(product.description) 
-    : '';
+  const { data, isLoading } = useProductInfo(selectedProductId);
+  
+  // Get the product and cleanDescription from data
+  const product = data ? data : null;
+  const cleanDescription = data?.cleanDescription || '';
   
   // Default content for tabs that might not have specific data
   const usageGuide = "Sản phẩm này sẵn sàng để sử dụng ngay sau khi mua. Vui lòng làm theo các hướng dẫn được gửi qua email để kích hoạt sản phẩm. Nếu bạn gặp bất kỳ vấn đề nào, hãy liên hệ với bộ phận hỗ trợ của chúng tôi.";

@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { stripHtmlTags } from "@/utils/htmlUtils";
+import { Product } from "@/types/products";
 
 export function useProductInfo(productId: string | null) {
   return useQuery({
@@ -32,11 +33,16 @@ export function useProductInfo(productId: string | null) {
           product.description = JSON.stringify(product.description);
         }
         
-        // Store the clean description for display purposes
-        product.cleanDescription = stripHtmlTags(product.description);
+        // We'll create a clean description but without modifying the type
+        // by including it in the return object directly
       }
 
-      return product;
+      return {
+        ...product,
+        // Add the clean description as an additional property in the return
+        // Not directly on the product object to avoid type issues
+        cleanDescription: product?.description ? stripHtmlTags(product.description) : ''
+      };
     },
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes

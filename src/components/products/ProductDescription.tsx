@@ -7,7 +7,7 @@ interface ProductDescriptionProps {
 }
 
 const ProductDescription: React.FC<ProductDescriptionProps> = ({ description }) => {
-  // Clean HTML from description
+  // Clean HTML from description when the component renders
   const cleanDescription = stripHtmlTags(description);
   
   return (
