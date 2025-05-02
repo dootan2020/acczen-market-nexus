@@ -1,8 +1,8 @@
 
-import { Button } from "@/components/ui/button";
-import { Check, Clock, CopyIcon, Loader } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Check, Loader2, ExternalLink, Copy, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PurchaseResultCardProps {
   orderId: string;
@@ -13,127 +13,96 @@ interface PurchaseResultCardProps {
   onClose: () => void;
 }
 
-export function PurchaseResultCard({
+export const PurchaseResultCard = ({
   orderId,
   productKeys,
   isCheckingOrder,
   onCheckOrder,
   onReset,
   onClose
-}: PurchaseResultCardProps) {
-  const [copySuccess, setCopySuccess] = useState<Record<string, boolean>>({});
-
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast.success('Key copied to clipboard');
-    setCopySuccess({ ...copySuccess, [key]: true });
-    setTimeout(() => {
-      setCopySuccess({ ...copySuccess, [key]: false });
-    }, 3000);
+}: PurchaseResultCardProps) => {
+  const handleCopyKeys = async () => {
+    if (!productKeys || productKeys.length === 0) return;
+    
+    try {
+      await navigator.clipboard.writeText(productKeys.join('\n'));
+      toast.success('Product keys copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy keys:', error);
+      toast.error('Failed to copy keys to clipboard');
+    }
   };
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-      <div className="flex items-center justify-center mb-4">
-        <div className="bg-green-100 p-3 rounded-full">
+    <div className="space-y-4">
+      {/* Success indicator */}
+      <div className="flex flex-col items-center justify-center py-4">
+        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <Check className="h-6 w-6 text-green-600" />
         </div>
-      </div>
-      
-      <div className="text-center mb-4">
-        <h3 className="font-semibold text-lg mb-1">Order Successful!</h3>
-        <p className="text-muted-foreground text-sm">
-          Order ID: <span className="font-medium">{orderId}</span>
+        <h3 className="text-lg font-medium">Purchase Complete</h3>
+        <p className="text-sm text-muted-foreground text-center">
+          Your order #{orderId} has been processed successfully
         </p>
       </div>
-
+      
+      {/* Product keys section */}
       {productKeys && productKeys.length > 0 ? (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Your Product Keys:</h4>
-          <div className="bg-white border rounded-md">
+        <div className="bg-muted p-3 rounded-md">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">Product Keys</h4>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={handleCopyKeys}
+              className="h-8"
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Copy All
+            </Button>
+          </div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
             {productKeys.map((key, index) => (
               <div 
                 key={index} 
-                className={`
-                  flex items-center justify-between p-3 text-sm 
-                  ${index !== productKeys.length - 1 ? 'border-b' : ''}
-                `}
+                className="bg-background border text-xs p-2 rounded font-mono break-all"
               >
-                <span className="font-mono truncate">{key}</span>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => handleCopyKey(key)}
-                  className="h-8 px-2"
-                >
-                  {copySuccess[key] ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <CopyIcon className="h-4 w-4" />
-                  )}
-                </Button>
+                {key}
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-            <div className="flex items-start">
-              <Clock className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-amber-800">
-                  Order is being processed
-                </p>
-                <p className="text-xs text-amber-700 mt-1">
-                  Your order is being processed. Product keys will appear here when ready.
-                </p>
-              </div>
+        <div className="bg-muted p-4 rounded-md">
+          {isCheckingOrder ? (
+            <div className="flex flex-col items-center justify-center py-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
+              <p className="text-sm text-center">Retrieving your product information...</p>
             </div>
-          </div>
-          
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onCheckOrder}
-              disabled={isCheckingOrder}
-              className="text-xs"
-            >
-              {isCheckingOrder ? (
-                <>
-                  <Loader className="mr-1 h-3 w-3 animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                'Check status'
-              )}
-            </Button>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-2">
+              <Button onClick={onCheckOrder} variant="outline" size="sm" className="mb-2">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Check Order Status
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Your order is being processed. Product keys will appear here shortly.
+              </p>
+            </div>
+          )}
         </div>
       )}
       
-      <div className="flex pt-4 justify-between">
-        {productKeys && productKeys.length > 0 ? (
-          <>
-            <Button variant="outline" size="sm" onClick={onReset}>
-              New Purchase
-            </Button>
-            <Button onClick={onClose} className="bg-primary hover:bg-primary-dark">
-              Close
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" size="sm" onClick={onReset}>
-              Cancel
-            </Button>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              View Order
-            </Button>
-          </>
-        )}
+      {/* Actions */}
+      <div className="flex justify-between pt-2">
+        <Button variant="ghost" size="sm" onClick={onReset}>
+          New Purchase
+        </Button>
+        <Button onClick={onClose} className="bg-primary hover:bg-primary/90">
+          <ExternalLink className="h-4 w-4 mr-2" />
+          View Order
+        </Button>
       </div>
     </div>
   );
-}
+};
