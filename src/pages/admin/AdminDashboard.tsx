@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -138,7 +139,6 @@ const AdminDashboard = () => {
   
   const handleQuickAction = (action: string) => {
     toast({
-      title: "Quick Action",
       description: `${action} functionality will be implemented soon.`,
     });
   };
