@@ -11,6 +11,7 @@ import { checkEnvironment } from './utils/checkEnvironment';
 import { ProductProvider } from "./contexts/ProductContext";
 import { ProductInfoModal } from "./components/products/ProductInfoModal";
 import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 
 function App() {
   useEffect(() => {
@@ -48,14 +49,16 @@ function App() {
                         />
                       ))}
                       
-                      {/* Admin routes */}
-                      {routes.adminRoutes.map((route, index) => (
-                        <Route
-                          key={`admin-${index}`}
-                          path={route.path}
-                          element={route.element}
-                        />
-                      ))}
+                      {/* Admin routes with AdminLayout */}
+                      <Route element={<AdminLayout />}>
+                        {routes.adminRoutes.map((route, index) => (
+                          <Route
+                            key={`admin-${index}`}
+                            path={route.path}
+                            element={route.element}
+                          />
+                        ))}
+                      </Route>
                     </Routes>
                   </div>
                 </ProductProvider>

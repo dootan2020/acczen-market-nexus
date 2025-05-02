@@ -40,8 +40,23 @@ const AdminLayout = memo(() => {
       '/admin/exchange-rates': 'Exchange Rates Management',
       '/admin/transactions': 'Transactions Management',
       '/admin/settings': 'System Settings',
+      '/admin/discount-analytics': 'Discount Analytics',
     };
   
+    // Handle dynamic routes
+    if (pathname.match(/^\/admin\/products\/edit\/[^/]+$/)) {
+      return 'Edit Product';
+    }
+    if (pathname.match(/^\/admin\/categories\/edit\/[^/]+$/)) {
+      return 'Edit Category';
+    }
+    if (pathname.match(/^\/admin\/orders\/[^/]+$/)) {
+      return 'Order Details';
+    }
+    if (pathname.match(/^\/admin\/deposits\/[^/]+$/)) {
+      return 'Deposit Details';
+    }
+
     return titles[pathname as keyof typeof titles] || 'Dashboard';
   };
 
