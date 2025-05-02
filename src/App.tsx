@@ -1,30 +1,71 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom'; 
-import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { CurrencyProvider } from './contexts/CurrencyContext';
-import { PaymentProvider } from './contexts/PaymentContext';
-import { ReactQueryProvider } from './contexts/ReactQueryContext';
-import { Toaster } from 'sonner';
-import { CartProvider } from './providers/CartProvider';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProductPage from './pages/ProductPage';
+import ProductsPage from './pages/Products';
+import CartPage from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderComplete from './pages/OrderComplete';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <MainLayout />,
+    children: [
+      {
+        path: '/',
+        element: <HomePage />,
+      },
+      {
+        path: '/products',
+        element: <ProductsPage />,
+      },
+      {
+        path: '/product/:slug',
+        element: <ProductPage />,
+      },
+      {
+        path: '/cart',
+        element: <CartPage />,
+      },
+      {
+        path: '/checkout',
+        element: <ProtectedRoute><Checkout /></ProtectedRoute>,
+      },
+      {
+        path: '/order-complete',
+        element: <ProtectedRoute><OrderComplete /></ProtectedRoute>,
+      },
+      {
+        path: '/dashboard',
+        element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
+      },
+      {
+        path: '/login',
+        element: <LoginPage />,
+      },
+      {
+        path: '/register',
+        element: <RegisterPage />,
+      },
+    ],
+  },
+]);
 
 function App() {
   return (
-    <ReactQueryProvider>
-      <ThemeProvider defaultTheme="light" storageKey="digital-deals-theme">
-        <AuthProvider>
-          <CurrencyProvider>
-            <PaymentProvider>
-              <CartProvider>
-                <Outlet />
-                <Toaster />
-              </CartProvider>
-            </PaymentProvider>
-          </CurrencyProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </ReactQueryProvider>
+    <TooltipProvider>
+      <RouterProvider router={router} />
+      <Toaster />
+    </TooltipProvider>
   );
 }
 
