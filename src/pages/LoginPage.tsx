@@ -12,6 +12,7 @@ const LoginPage: React.FC = () => {
     return <Navigate to="/" replace />;
   }
   
+  // Return Login component directly, ensuring single element return
   return <Login />;
 };
 

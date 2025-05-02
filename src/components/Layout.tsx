@@ -4,7 +4,8 @@ import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const Layout = () => {
+const Layout: React.FC = () => {
+  // Ensure we return a single div as the root element
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

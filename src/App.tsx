@@ -6,11 +6,14 @@ import { Toaster } from 'sonner';
 import router from './routes';
 
 function App() {
+  // Wrap everything in a Fragment to ensure a single root element
   return (
-    <TooltipProvider>
-      <RouterProvider router={router} />
-      <Toaster />
-    </TooltipProvider>
+    <React.Fragment>
+      <TooltipProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </TooltipProvider>
+    </React.Fragment>
   );
 }
 
