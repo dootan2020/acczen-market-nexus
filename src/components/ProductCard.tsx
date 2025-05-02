@@ -1,13 +1,12 @@
 
 import { Link } from "react-router-dom";
-import { ShoppingBag, Star } from "lucide-react";
+import { Eye, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import ProductBadge from "./products/ProductBadge";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 
 interface ProductCardProps {
@@ -98,36 +97,105 @@ const ProductCard = ({
     return Math.round(((price - salePrice) / price) * 100);
   }, [price, salePrice]);
 
-  return (
-    <Card className="h-full flex flex-col overflow-hidden border border-slate-200 rounded-lg transition-all duration-300 hover:shadow-md group">
-      {/* Product Image Area */}
-      <div className="relative overflow-hidden bg-slate-50">
-        <Link to={`/products/${id}`} className="block">
-          <div className="h-[220px] flex items-center justify-center p-6">
-            <img
-              src={image || "/placeholder.svg"}
-              alt={name}
-              className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src = "/placeholder.svg";
-              }}
-            />
-          </div>
-        </Link>
+  // Determine gradient background color based on category
+  const getGradientBackground = () => {
+    if (category.toLowerCase().includes('social')) {
+      return 'bg-gradient-to-r from-blue-400 to-blue-600';
+    } else if (category.toLowerCase().includes('email')) {
+      return 'bg-gradient-to-r from-blue-700 to-blue-900';
+    } else if (category.toLowerCase().includes('software')) {
+      return 'bg-gradient-to-r from-gray-700 to-gray-900';
+    } else if (category.toLowerCase().includes('instagram')) {
+      return 'bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500';
+    } else {
+      return 'bg-gradient-to-r from-green-400 to-blue-500';
+    }
+  };
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 max-w-[calc(100%-1rem)]">
-          {featured && <ProductBadge type="featured" />}
-          {isNew && <ProductBadge type="new" />}
-          {isBestSeller && <ProductBadge type="bestSeller" />}
-          {discountPercentage > 0 && (
-            <ProductBadge type="sale" percentage={discountPercentage} />
+  return (
+    <Card className="h-full flex flex-col overflow-hidden border border-slate-200 rounded-lg transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+      {/* Category and Discount Badges */}
+      <div className="relative">
+        {/* Category Badge */}
+        <Badge 
+          className="absolute top-2 left-2 z-10 bg-[#3498DB] hover:bg-[#2980B9] text-white" 
+          variant="secondary"
+        >
+          {category}
+        </Badge>
+        
+        {/* Discount Badge */}
+        {discountPercentage > 0 && (
+          <Badge 
+            className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white" 
+            variant="destructive"
+          >
+            -{discountPercentage}%
+          </Badge>
+        )}
+        
+        {featured && !discountPercentage && (
+          <Badge 
+            className="absolute top-2 right-2 z-10 bg-amber-500 hover:bg-amber-600 text-white" 
+            variant="destructive"
+          >
+            HOT
+          </Badge>
+        )}
+
+        {/* Product Image Area with Gradient Background */}
+        <div className={`${getGradientBackground()} h-[150px] flex items-center justify-center p-4`}>
+          <img
+            src={image || "/placeholder.svg"}
+            alt={name}
+            className="max-h-[100px] max-w-[100px] object-contain filter brightness-0 invert"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "/placeholder.svg";
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Product Info */}
+      <div className="p-4 flex flex-col flex-grow">
+        <h3 className="font-semibold text-lg mb-2 line-clamp-2 h-14 font-poppins text-gray-800">
+          {name}
+        </h3>
+        
+        <div className="flex items-baseline mb-2">
+          <span className="text-xl font-bold text-[#2ECC71]">
+            {formattedSalePrice || formattedPrice}
+          </span>
+          
+          {displaySalePrice && (
+            <span className="text-sm text-gray-500 line-through ml-2 font-inter">
+              {formattedPrice}
+            </span>
           )}
         </div>
 
+        <div className="flex space-x-2 mb-3">
+          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+            Còn: {stock}
+          </Badge>
+          
+          {soldCount > 0 && (
+            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+              Đã bán: {soldCount}
+            </Badge>
+          )}
+        </div>
+        
+        {description && (
+          <p className="text-gray-600 text-sm line-clamp-2 mb-4 font-inter min-h-[40px]">
+            {cleanDescription}
+          </p>
+        )}
+
+        {/* Out of stock overlay */}
         {stock <= 0 && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
             <Badge variant="destructive" className="text-base font-medium px-3 py-1">
@@ -135,74 +203,25 @@ const ProductCard = ({
             </Badge>
           </div>
         )}
+        
+        <div className="flex items-center justify-between gap-2 mt-auto">
+          <Button
+            variant="secondary"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800"
+            onClick={handleViewDetails}
+          >
+            <Eye className="mr-1 h-4 w-4" /> Chi tiết
+          </Button>
+          
+          <Button
+            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white transition-all"
+            disabled={stock === 0}
+            onClick={handleBuyNow}
+          >
+            <ShoppingBag className="mr-1 h-4 w-4" /> Mua ngay
+          </Button>
+        </div>
       </div>
-
-      {/* Product Info */}
-      <CardContent className="flex-grow p-4">
-        <div className="mb-1.5 flex items-center space-x-1">
-          <Badge variant="outline" className="text-xs font-normal text-gray-600 bg-slate-50 hover:bg-slate-100">
-            {category}
-          </Badge>
-          
-          {rating > 0 && (
-            <div className="flex items-center text-xs text-amber-500 ml-auto">
-              <Star className="h-3.5 w-3.5 fill-amber-500 mr-0.5" />
-              <span>{rating.toFixed(1)}</span>
-              {reviewCount > 0 && <span className="text-gray-400 ml-0.5">({reviewCount})</span>}
-            </div>
-          )}
-        </div>
-        
-        <Link to={`/products/${id}`}>
-          <h3 className="font-medium text-base line-clamp-2 hover:text-[#19C37D] transition-colors mb-1.5">
-            {name}
-          </h3>
-        </Link>
-
-        <div className="flex items-baseline mt-1.5 mb-2">
-          <span className="text-lg font-bold text-[#19C37D]">
-            {formattedSalePrice || formattedPrice}
-          </span>
-          
-          {displaySalePrice && (
-            <span className="text-sm text-gray-500 line-through ml-2">
-              {formattedPrice}
-            </span>
-          )}
-        </div>
-
-        {description && (
-          <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-            {cleanDescription}
-          </p>
-        )}
-        
-        <div className="flex items-center text-sm text-gray-500 mt-auto space-x-2">
-          <span className="inline-flex items-center">
-            <span className={stock > 0 ? "text-green-600" : "text-red-500"}>
-              {stock > 0 ? `In stock (${stock})` : "Out of stock"}
-            </span>
-          </span>
-          {soldCount > 0 && (
-            <>
-              <span>•</span>
-              <span>Sold: {soldCount}</span>
-            </>
-          )}
-        </div>
-      </CardContent>
-
-      {/* Footer with Buy Button */}
-      <CardFooter className="p-4 pt-0">
-        <Button
-          className="w-full bg-[#2ECC71] hover:bg-[#27AE60] text-white shadow-sm transition-all duration-300"
-          disabled={stock === 0}
-          onClick={handleBuyNow}
-        >
-          <ShoppingBag className="w-4 h-4 mr-2" />
-          Buy Now
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
