@@ -1,12 +1,13 @@
 
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Package } from 'lucide-react';
 
 interface PurchaseModalProductProps {
   productName: string;
   productImage: string;
   quantity: number;
   totalPrice: number;
+  unitPrice: number;
   hasError?: boolean;
   errorMessage?: string;
 }
@@ -16,6 +17,7 @@ export function PurchaseModalProduct({
   productImage,
   quantity,
   totalPrice,
+  unitPrice,
   hasError = false,
   errorMessage
 }: PurchaseModalProductProps) {
@@ -30,17 +32,25 @@ export function PurchaseModalProduct({
       />
       <div className="flex-1">
         <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-primary" />
           <h3 className="font-medium text-gray-900">{productName}</h3>
           {hasError && (
             <AlertTriangle className="h-4 w-4 text-amber-500" />
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Quantity: {quantity}
+        
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+          <span className="text-muted-foreground">Quantity:</span>
+          <span className="font-medium">{quantity}</span>
+          
+          <span className="text-muted-foreground">Unit Price:</span>
+          <span className="font-medium">{formatUSD(convertVNDtoUSD(unitPrice))}</span>
+        </div>
+        
+        <p className="text-base font-bold text-primary mt-2 border-t pt-1">
+          Total: {formatUSD(convertVNDtoUSD(totalPrice))}
         </p>
-        <p className="text-base font-bold text-primary mt-1">
-          {formatUSD(convertVNDtoUSD(totalPrice))}
-        </p>
+        
         {hasError && errorMessage && (
           <p className="text-xs text-red-500 mt-1">{errorMessage}</p>
         )}

@@ -6,7 +6,6 @@ interface PurchaseModalInfoProps {
   stock: number;
   soldCount?: number;
   totalPrice: number;
-  description: string;
   insufficientBalance: boolean;
   userBalance: number;
 }
@@ -15,7 +14,6 @@ export const PurchaseModalInfo = ({
   stock,
   soldCount = 0,
   totalPrice,
-  description,
   insufficientBalance,
   userBalance
 }: PurchaseModalInfoProps) => {
@@ -40,7 +38,7 @@ export const PurchaseModalInfo = ({
         
         <div className="grid grid-cols-2 gap-2 pb-2">
           <span className="text-muted-foreground">Your Balance:</span>
-          <span className="font-medium">
+          <span className={`font-medium ${insufficientBalance ? 'text-red-500' : 'text-green-600'}`}>
             {formatUSD(convertVNDtoUSD(userBalance))}
           </span>
         </div>
@@ -59,13 +57,6 @@ export const PurchaseModalInfo = ({
           <div>
             Insufficient balance to complete this purchase. Please add funds to your account.
           </div>
-        </div>
-      )}
-      
-      {description && (
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium mb-1">Description:</p>
-          <p className="line-clamp-3">{description}</p>
         </div>
       )}
     </div>

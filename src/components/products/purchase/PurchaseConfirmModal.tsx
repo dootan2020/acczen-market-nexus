@@ -20,7 +20,6 @@ interface PurchaseConfirmModalProps {
   productName: string;
   productPrice: number;
   productImage: string;
-  productDescription?: string;
   quantity: number;
   kioskToken: string | null;
   stock?: number;
@@ -34,7 +33,6 @@ export const PurchaseConfirmModal = ({
   productName,
   productPrice,
   productImage,
-  productDescription = "",
   quantity,
   kioskToken,
   stock = 0,
@@ -172,6 +170,7 @@ export const PurchaseConfirmModal = ({
                 productName={productName}
                 productImage={productImage}
                 quantity={quantity}
+                unitPrice={productPrice}
                 totalPrice={totalPrice}
               />
               
@@ -179,7 +178,6 @@ export const PurchaseConfirmModal = ({
                 stock={stock}
                 soldCount={soldCount}
                 totalPrice={totalPrice}
-                description={productDescription}
                 insufficientBalance={insufficientBalance}
                 userBalance={userBalance}
               />
