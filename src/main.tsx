@@ -14,13 +14,15 @@ if (!rootElement) throw new Error("Root element not found");
 
 // Create the React root and render the app with all required providers
 createRoot(rootElement).render(
-  <ReactQueryProvider>
-    <AuthProvider>
-      <CartProvider>
-        <CurrencyContextProvider>
-          <App />
-        </CurrencyContextProvider>
-      </CartProvider>
-    </AuthProvider>
-  </ReactQueryProvider>
+  <React.StrictMode>
+    <ReactQueryProvider>
+      <AuthProvider>
+        <CartProvider>
+          <CurrencyContextProvider>
+            <App />
+          </CurrencyContextProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ReactQueryProvider>
+  </React.StrictMode>
 );
