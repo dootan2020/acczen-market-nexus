@@ -70,7 +70,6 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
         productName={product.name}
         productPrice={effectivePrice}
         productImage={product.image_url || '/placeholder.svg'}
-        productDescription={product.description}
         quantity={parseInt(quantity) || 1}
         kioskToken={product.kiosk_token || null}
         stock={product.stock_quantity}
