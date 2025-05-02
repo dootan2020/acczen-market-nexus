@@ -21,26 +21,26 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <CartProvider>
-            <CurrencyProvider>
-              <QueryClientProvider client={queryClient}>
-                <PaymentProvider>
-                  <BrowserRouter>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <CartProvider>
+                <CurrencyProvider>
+                  <PaymentProvider>
                     <Routes>
                       <Route path="/*" element={<RouterOutlet />} />
                     </Routes>
                     <Toaster />
-                  </BrowserRouter>
-                </PaymentProvider>
-              </QueryClientProvider>
-            </CurrencyProvider>
-          </CartProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+                  </PaymentProvider>
+                </CurrencyProvider>
+              </CartProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 }
 
