@@ -12,7 +12,7 @@ import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 interface ProductCardProps {
   id: string;
   name: string;
-  image: string;
+  image: string; // Keeping the prop for compatibility but not using it
   price: number;
   salePrice?: number; 
   category: string;
@@ -31,7 +31,6 @@ interface ProductCardProps {
 const ProductCard = ({
   id,
   name,
-  image,
   price,
   salePrice,
   category,
@@ -78,7 +77,7 @@ const ProductCard = ({
           id,
           name,
           price: salePrice || price,
-          image,
+          image: "",
           stock_quantity: stock,
           kiosk_token: kioskToken
         },
@@ -97,75 +96,44 @@ const ProductCard = ({
     return Math.round(((price - salePrice) / price) * 100);
   }, [price, salePrice]);
 
-  // Determine gradient background color based on category
-  const getGradientBackground = () => {
-    if (category.toLowerCase().includes('social')) {
-      return 'bg-gradient-to-r from-blue-400 to-blue-600';
-    } else if (category.toLowerCase().includes('email')) {
-      return 'bg-gradient-to-r from-blue-700 to-blue-900';
-    } else if (category.toLowerCase().includes('software')) {
-      return 'bg-gradient-to-r from-gray-700 to-gray-900';
-    } else if (category.toLowerCase().includes('instagram')) {
-      return 'bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500';
-    } else {
-      return 'bg-gradient-to-r from-green-400 to-blue-500';
-    }
-  };
-
   return (
-    <Card className="h-full flex flex-col overflow-hidden border border-slate-200 rounded-lg transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-      {/* Category and Discount Badges */}
-      <div className="relative">
-        {/* Category Badge */}
-        <Badge 
-          className="absolute top-2 left-2 z-10 bg-[#3498DB] hover:bg-[#2980B9] text-white" 
-          variant="secondary"
-        >
-          {category}
-        </Badge>
-        
-        {/* Discount Badge */}
-        {discountPercentage > 0 && (
+    <Card className="h-full flex flex-col overflow-hidden border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-md hover:-translate-y-1 bg-white">
+      <div className="p-4 flex flex-col flex-grow relative">
+        {/* Top Badges */}
+        <div className="flex justify-between mb-3">
+          {/* Category Badge */}
           <Badge 
-            className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white" 
-            variant="destructive"
+            className="bg-[#3498DB] hover:bg-[#2980B9] text-white" 
+            variant="secondary"
           >
-            -{discountPercentage}%
+            {category}
           </Badge>
-        )}
-        
-        {featured && !discountPercentage && (
-          <Badge 
-            className="absolute top-2 right-2 z-10 bg-amber-500 hover:bg-amber-600 text-white" 
-            variant="destructive"
-          >
-            HOT
-          </Badge>
-        )}
-
-        {/* Product Image Area with Gradient Background */}
-        <div className={`${getGradientBackground()} h-[150px] flex items-center justify-center p-4`}>
-          <img
-            src={image || "/placeholder.svg"}
-            alt={name}
-            className="max-h-[100px] max-w-[100px] object-contain filter brightness-0 invert"
-            loading="lazy"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "/placeholder.svg";
-            }}
-          />
+          
+          {/* Discount or Featured Badge */}
+          {discountPercentage > 0 ? (
+            <Badge 
+              className="bg-red-500 hover:bg-red-600 text-white" 
+              variant="destructive"
+            >
+              -{discountPercentage}%
+            </Badge>
+          ) : featured && (
+            <Badge 
+              className="bg-amber-500 hover:bg-amber-600 text-white" 
+              variant="destructive"
+            >
+              HOT
+            </Badge>
+          )}
         </div>
-      </div>
 
-      {/* Product Info */}
-      <div className="p-4 flex flex-col flex-grow">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2 h-14 font-poppins text-gray-800">
+        {/* Product Title */}
+        <h3 className="font-semibold text-lg mb-3 line-clamp-2 h-14 font-poppins text-gray-800">
           {name}
         </h3>
         
-        <div className="flex items-baseline mb-2">
+        {/* Price Section */}
+        <div className="flex items-baseline mb-3">
           <span className="text-xl font-bold text-[#2ECC71]">
             {formattedSalePrice || formattedPrice}
           </span>
@@ -177,6 +145,7 @@ const ProductCard = ({
           )}
         </div>
 
+        {/* Stock and Sold Count Badges */}
         <div className="flex space-x-2 mb-3">
           <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
             Còn: {stock}
@@ -189,6 +158,7 @@ const ProductCard = ({
           )}
         </div>
         
+        {/* Product Description */}
         {description && (
           <p className="text-gray-600 text-sm line-clamp-2 mb-4 font-inter min-h-[40px]">
             {cleanDescription}
@@ -204,6 +174,7 @@ const ProductCard = ({
           </div>
         )}
         
+        {/* Action Buttons */}
         <div className="flex items-center justify-between gap-2 mt-auto">
           <Button
             variant="secondary"
