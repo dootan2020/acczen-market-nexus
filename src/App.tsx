@@ -2,7 +2,7 @@
 import React from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from 'sonner';
 import router from './routes';
 
 function App() {

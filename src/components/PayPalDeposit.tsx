@@ -1,3 +1,2 @@
 
-import PayPalDeposit from './paypal/PayPalDeposit';
-export default PayPalDeposit;
+export { default } from './paypal/PayPalDeposit';
