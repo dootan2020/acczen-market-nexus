@@ -100,7 +100,7 @@ const ProductPurchase: React.FC<ProductPurchaseProps> = ({
 
       {/* Stock information */}
       <div className="flex items-center">
-        <StockBadge stockQuantity={stock} />
+        <StockBadge stock={stock} />
         {stock > 0 && (
           <span className="text-sm text-gray-500 ml-2">
             {stock} items available

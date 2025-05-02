@@ -68,7 +68,7 @@ const ProductDetail: React.FC = () => {
                   name={product?.name}
                   salePrice={product?.sale_price}
                   categoryName={product?.category?.name}
-                  images={product?.images || [product?.image_url].filter(Boolean) as string[]}
+                  images={product?.image_url ? [product?.image_url] : []}
                 />
               </div>
 
