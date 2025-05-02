@@ -99,7 +99,8 @@ const ProductDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2">
           <ProductImageGallery 
-            mainImage={sanitizedImageUrl}
+            imageUrl={sanitizedImageUrl}
+            name={product.name}
           />
           
           <div className="mt-8">
