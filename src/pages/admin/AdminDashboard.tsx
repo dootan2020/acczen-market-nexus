@@ -137,7 +137,10 @@ const AdminDashboard = () => {
   };
   
   const handleQuickAction = (action: string) => {
-    toast(`${action} functionality will be implemented soon.`);
+    toast({
+      title: "Quick Action",
+      description: `${action} functionality will be implemented soon.`,
+    });
   };
 
   const typedStats = stats as unknown as DashboardStats;

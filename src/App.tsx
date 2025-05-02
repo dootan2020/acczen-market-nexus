@@ -1,18 +1,30 @@
 
 import React from 'react';
-import { RouterProvider } from 'react-router-dom';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Outlet } from 'react-router-dom'; 
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
+import { PaymentProvider } from './contexts/PaymentContext';
+import { ReactQueryProvider } from './contexts/ReactQueryContext';
 import { Toaster } from 'sonner';
-import router from './routes';
+import { CartProvider } from './providers/CartProvider';
 
 function App() {
   return (
-    <TooltipProvider>
-      <div>
-        <RouterProvider router={router} />
-        <Toaster />
-      </div>
-    </TooltipProvider>
+    <ReactQueryProvider>
+      <ThemeProvider defaultTheme="light" storageKey="digital-deals-theme">
+        <AuthProvider>
+          <CurrencyProvider>
+            <PaymentProvider>
+              <CartProvider>
+                <Outlet />
+                <Toaster />
+              </CartProvider>
+            </PaymentProvider>
+          </CurrencyProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ReactQueryProvider>
   );
 }
 

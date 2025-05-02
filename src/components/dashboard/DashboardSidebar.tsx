@@ -22,7 +22,7 @@ export function DashboardSidebar() {
   const currentPath = location.pathname;
 
   return (
-    <div>
+    <>
       <SidebarHeader className="border-b p-4">
         <h2 className="text-lg font-semibold">Dashboard</h2>
       </SidebarHeader>
@@ -33,15 +33,6 @@ export function DashboardSidebar() {
               <a href="/dashboard">
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Account Overview</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Profile" isActive={currentPath === "/dashboard/profile"}>
-              <a href="/dashboard/profile">
-                <User className="w-4 h-4" />
-                <span>Profile</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -67,7 +58,7 @@ export function DashboardSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Account Settings" isActive={currentPath === "/dashboard/settings"}>
               <a href="/dashboard/settings">
-                <Settings className="w-4 h-4" />
+                <User className="w-4 h-4" />
                 <span>Account Settings</span>
               </a>
             </SidebarMenuButton>
@@ -83,6 +74,6 @@ export function DashboardSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
-    </div>
+    </>
   );
 }

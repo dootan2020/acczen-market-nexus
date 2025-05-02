@@ -1,65 +1,82 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useCart } from '@/hooks/useCart';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, AlertTriangle, ShieldCheck, CreditCard, Percent } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BalancePaymentTab from '@/components/checkout/BalancePaymentTab';
-import { toast } from 'sonner';
-import { LoadingSpinner } from '@/components/ui/button';
-import { ShoppingBag } from 'lucide-react';
+import CheckoutEmpty from '@/components/checkout/CheckoutEmpty';
+import OrderSummary from '@/components/checkout/OrderSummary';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { z } from 'zod';
+import { usePurchaseProduct } from '@/hooks/usePurchaseProduct';
 
-const Checkout: React.FC = () => {
-  const { cartItems, totalPrice, clearCart } = useCart();
-  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+// Define validation schema for checkout
+const checkoutSchema = z.object({
+  hasEnoughBalance: z.boolean().refine(val => val === true, {
+    message: "Số dư không đủ để hoàn tất giao dịch này"
+  }),
+  hasItems: z.boolean().refine(val => val === true, {
+    message: "Không có sản phẩm nào trong giỏ hàng"
+  }),
+  validStock: z.boolean().refine(val => val === true, {
+    message: "Một số sản phẩm không đủ số lượng"
+  })
+});
+
+type CheckoutValidation = z.infer<typeof checkoutSchema>;
+
+const Checkout = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { toast } = useToast();
   const location = useLocation();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [balanceUSD, setBalanceUSD] = useState(0);
-  const [hasEnoughBalance, setHasEnoughBalance] = useState(false);
-  const totalUSD = convertVNDtoUSD(totalPrice);
+  const navigate = useNavigate();
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+  const [userBalance, setUserBalance] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<CheckoutValidation>({
+    hasEnoughBalance: true,
+    hasItems: true,
+    validStock: true
+  });
+  const [discountData, setDiscountData] = useState<{
+    discountPercentage: number;
+    discountAmount: number;
+    finalAmount: number;
+  }>({
+    discountPercentage: 0,
+    discountAmount: 0,
+    finalAmount: 0
+  });
+  const { isProcessing, executePurchase } = usePurchaseProduct();
   
-  // Check for direct checkout from product page
-  const productFromLocation = location.state?.product;
-  const productQuantity = location.state?.quantity || 1;
+  // Check if we have a direct product purchase
+  const directProduct = location.state?.product;
+  const quantity = location.state?.quantity || 1;
   
-  // Items to process - either from cart or from direct product purchase
-  const itemsToProcess = productFromLocation 
-    ? [{ ...productFromLocation, quantity: productQuantity }]
-    : cartItems;
-    
-  // Calculate total if coming directly from product
-  const checkoutTotal = productFromLocation
-    ? productFromLocation.price * productQuantity
-    : totalPrice;
-    
-  const checkoutTotalUSD = convertVNDtoUSD(checkoutTotal);
-
   useEffect(() => {
-    // Redirect if no items to checkout
-    if (itemsToProcess.length === 0) {
-      navigate('/cart');
+    if (!user) {
+      toast({
+        title: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để hoàn tất mua hàng",
+        variant: "destructive",
+      });
+      // Save current location to redirect back after login
+      localStorage.setItem('previousPath', location.pathname);
+      navigate("/login");
       return;
     }
-
-    // Check user's balance
-    const fetchBalance = async () => {
-      if (!user) return;
-
+    
+    // Fetch user balance and discount
+    const fetchUserData = async () => {
       try {
+        setError(null);
         const { data, error } = await supabase
           .from('profiles')
-          .select('balance')
+          .select('balance, discount_percentage')
           .eq('id', user.id)
           .single();
           
@@ -67,196 +84,342 @@ const Checkout: React.FC = () => {
           throw error;
         }
         
-        if (data) {
-          const userBalanceUSD = convertVNDtoUSD(data.balance);
-          setBalanceUSD(userBalanceUSD);
-          setHasEnoughBalance(userBalanceUSD >= checkoutTotalUSD);
+        setUserBalance(data.balance || 0);
+        
+        // Get items and total price
+        const productPrice = directProduct ? directProduct.price : 0;
+        const total = productPrice * quantity;
+        
+        // Calculate discount if applicable
+        if (data.discount_percentage > 0) {
+          const discountAmount = (total * data.discount_percentage) / 100;
+          const finalAmount = total - discountAmount;
+          
+          setDiscountData({
+            discountPercentage: data.discount_percentage,
+            discountAmount: discountAmount,
+            finalAmount: finalAmount
+          });
+          
+          // Validate checkout data with discounted price
+          validateCheckout(data.balance || 0, directProduct, finalAmount);
+        } else {
+          setDiscountData({
+            discountPercentage: 0,
+            discountAmount: 0,
+            finalAmount: total
+          });
+          
+          // Validate checkout data with regular price
+          validateCheckout(data.balance || 0, directProduct, total);
         }
+        
       } catch (error) {
-        console.error('Error fetching user balance:', error);
-        toast.error('Could not load account balance');
+        console.error('Error fetching user data:', error);
+        setError('Không thể tải thông tin người dùng. Vui lòng thử lại.');
+        toast({
+          title: "Lỗi tải dữ liệu",
+          description: "Vui lòng làm mới trang",
+          variant: "destructive",
+        });
       }
     };
+    
+    fetchUserData();
+  }, [user, navigate, location, toast, directProduct, quantity]);
 
-    fetchBalance();
-  }, [user, checkoutTotalUSD]);
+  // Get total price
+  const total = directProduct ? directProduct.price * quantity : 0;
+  
+  // Use final amount after discount
+  const finalAmount = discountData.finalAmount || total;
+  const totalUSD = convertVNDtoUSD(total);
+  const discountAmountUSD = convertVNDtoUSD(discountData.discountAmount);
+  const finalAmountUSD = convertVNDtoUSD(finalAmount);
+  const balanceUSD = convertVNDtoUSD(userBalance);
+  const hasEnoughBalance = userBalance >= finalAmount;
 
-  // If not logged in, redirect to login
-  useEffect(() => {
-    if (!user) {
-      // Save the current path to redirect back after login
-      localStorage.setItem('previousPath', location.pathname);
-      navigate('/login');
+  const validateCheckout = (balance: number, product: any, totalAfterDiscount: number) => {
+    if (!product) {
+      setError('Không có sản phẩm để thanh toán.');
+      setValidation({
+        hasEnoughBalance: true,
+        hasItems: false,
+        validStock: true
+      });
+      return false;
     }
-  }, [user, navigate, location.pathname]);
+    
+    const newValidation = {
+      hasEnoughBalance: balance >= totalAfterDiscount,
+      hasItems: !!product,
+      validStock: true
+    };
+    
+    // Check for stock availability if we have stock_quantity
+    if (product?.stock_quantity !== undefined && 
+        quantity !== undefined && 
+        product.stock_quantity < quantity) {
+      newValidation.validStock = false;
+    }
+    
+    setValidation(newValidation);
+    
+    // Set error message if validation fails
+    if (!newValidation.hasEnoughBalance) {
+      setError(`Số dư không đủ. Bạn cần ${formatUSD(finalAmountUSD)} nhưng chỉ có ${formatUSD(balanceUSD)}.`);
+    } else if (!newValidation.hasItems) {
+      setError('Không có sản phẩm để thanh toán.');
+    } else if (!newValidation.validStock) {
+      setError(`Sản phẩm "${product.name}" không đủ số lượng.`);
+    } else {
+      setError(null);
+    }
+    
+    return newValidation.hasEnoughBalance && 
+           newValidation.hasItems && 
+           newValidation.validStock;
+  };
 
   const handlePurchase = async () => {
-    if (!user || isProcessing) return;
-    
-    setIsProcessing(true);
-    
-    try {
-      // Format items for the purchase API
-      const purchaseItems = itemsToProcess.map(item => ({
-        id: item.id,
-        quantity: item.quantity
-      }));
-      
-      // Call purchase function API
-      const { data, error } = await supabase.functions.invoke('purchase-product', {
-        body: { items: purchaseItems }
+    // Revalidate before proceeding
+    if (!user) {
+      toast({
+        title: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để hoàn tất mua hàng",
+        variant: "destructive",
       });
-      
-      if (error || !data.success) {
-        throw new Error(error?.message || data?.message || 'Error processing purchase');
-      }
-      
-      // Clear cart if this was a cart purchase
-      if (!productFromLocation) {
-        clearCart();
-      }
-      
-      // Show success message
-      toast.success('Purchase completed successfully');
-      
-      // Redirect to order complete page
-      navigate('/order-complete', { 
-        state: { 
+      localStorage.setItem('previousPath', location.pathname);
+      navigate("/login");
+      return;
+    }
+    
+    if (!directProduct) {
+      toast({
+        title: "Lỗi",
+        description: "Không tìm thấy thông tin sản phẩm",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Execute purchase using the purchase hook
+    const orderId = await executePurchase({
+      id: directProduct.id,
+      name: directProduct.name,
+      price: directProduct.price,
+      kioskToken: directProduct.kiosk_token,
+      quantity: quantity,
+      userDiscount: discountData.discountPercentage
+    });
+
+    if (orderId) {
+      // Navigate to order completion page
+      navigate('/order-complete', {
+        state: {
           orderData: {
-            id: data.order.id,
-            total: checkoutTotalUSD,
-            items: itemsToProcess.map(item => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: convertVNDtoUSD(item.price),
-              total: convertVNDtoUSD(item.price * item.quantity)
-            }))
-          } 
-        } 
+            id: orderId,
+            items: [{
+              name: directProduct.name,
+              quantity: quantity,
+              price: convertVNDtoUSD(directProduct.price),
+              total: convertVNDtoUSD(directProduct.price * quantity)
+            }],
+            total: convertVNDtoUSD(finalAmount),
+            payment_method: 'Account Balance',
+            discount: {
+              percentage: discountData.discountPercentage,
+              amount: discountAmountUSD
+            }
+          }
+        }
       });
-      
-    } catch (error: any) {
-      console.error('Purchase error:', error);
-      toast.error(error.message || 'Failed to complete purchase');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  if (!user) {
+  const handleGoToDeposit = () => {
+    navigate('/deposit', { state: { returnTo: location.pathname, productData: location.state } });
+  };
+
+  if (!directProduct) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="flex items-center justify-center py-10">
-            <div className="text-center">
-              <LoadingSpinner className="mx-auto" />
-              <p className="mt-2">Redirecting to login...</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto py-12 px-4">
+        <CheckoutEmpty />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
-      
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Checkout items summary */}
-        <div className="md:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-              <CardDescription>
-                {itemsToProcess.length} {itemsToProcess.length === 1 ? 'item' : 'items'} in your order
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {itemsToProcess.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      className="w-20 h-20 object-cover rounded" 
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Quantity: {item.quantity}
-                      </p>
-                      <p className="mt-1">
-                        {formatUSD(convertVNDtoUSD(item.price * item.quantity))}
-                      </p>
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate(-1)}
+          className="mb-6"
+          aria-label="Back"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+
+        <h1 className="text-3xl font-bold mb-6">Xác nhận đơn hàng</h1>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Lỗi thanh toán</AlertTitle>
+            <AlertDescription>
+              {error}
+              {!hasEnoughBalance && (
+                <div className="mt-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGoToDeposit}
+                  >
+                    Nạp tiền ngay
+                  </Button>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin thanh toán</CardTitle>
+                <CardDescription>Kiểm tra thông tin trước khi hoàn tất đơn hàng</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Phương thức thanh toán</span>
+                    <div className="flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4 text-primary" />
+                      <span className="font-medium">Số dư tài khoản</span>
                     </div>
                   </div>
-                ))}
+                  
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <span className="text-sm text-muted-foreground">Số dư hiện tại</span>
+                    <span className={`font-medium ${!hasEnoughBalance ? 'text-destructive' : ''}`}>
+                      {formatUSD(balanceUSD)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Tổng đơn hàng</span>
+                    <span className="font-medium">{formatUSD(totalUSD)}</span>
+                  </div>
+                  
+                  {discountData.discountPercentage > 0 && (
+                    <div className="flex items-center justify-between text-green-600">
+                      <span className="text-sm flex items-center">
+                        <Percent className="h-4 w-4 mr-1" />
+                        Giảm giá ({discountData.discountPercentage}%)
+                      </span>
+                      <span className="font-medium">-{formatUSD(discountAmountUSD)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <span className="text-sm font-medium">Số tiền thanh toán</span>
+                    <span className="font-bold text-primary">{formatUSD(finalAmountUSD)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Số dư sau khi thanh toán</span>
+                    <span className={`font-bold ${!hasEnoughBalance ? 'text-destructive' : 'text-primary'}`}>
+                      {hasEnoughBalance ? formatUSD(balanceUSD - finalAmountUSD) : "Không đủ số dư"}
+                    </span>
+                  </div>
+                  
+                  {hasEnoughBalance && (
+                    <div className="flex items-center mt-4 rounded-md bg-green-50 p-3 text-green-700">
+                      <ShieldCheck className="h-5 w-5 mr-2 flex-shrink-0" />
+                      <p className="text-sm">Bạn sẽ nhận được sản phẩm số ngay sau khi hoàn tất thanh toán</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                  className="w-full sm:w-auto"
+                >
+                  Hủy
+                </Button>
                 
-                <div className="pt-4 mt-4 border-t">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span>{formatUSD(checkoutTotalUSD)}</span>
+                {!hasEnoughBalance && (
+                  <Button
+                    variant="default"
+                    onClick={handleGoToDeposit}
+                    className="w-full sm:w-auto"
+                  >
+                    Nạp tiền ngay
+                  </Button>
+                )}
+                
+                <Button
+                  className="w-full sm:w-auto ml-auto bg-[#F97316] hover:bg-[#EA580C]"
+                  disabled={isProcessing || !hasEnoughBalance || !validation.validStock}
+                  onClick={handlePurchase}
+                >
+                  {isProcessing ? "Đang xử lý..." : "Xác nhận thanh toán"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin đơn hàng</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src={directProduct.image}
+                    alt={directProduct.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div>
+                    <h3 className="font-medium line-clamp-2">{directProduct.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Số lượng: {quantity}
+                    </p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Payment options */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Method</CardTitle>
-              <CardDescription>Choose how you want to pay</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="balance">
-                <TabsList className="grid grid-cols-1 mb-4">
-                  <TabsTrigger value="balance">Account Balance</TabsTrigger>
-                </TabsList>
                 
-                <TabsContent value="balance">
-                  <BalancePaymentTab
-                    balanceUSD={balanceUSD}
-                    totalUSD={checkoutTotalUSD}
-                    hasEnoughBalance={hasEnoughBalance}
-                    isProcessing={isProcessing}
-                    onPurchase={handlePurchase}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Giá</span>
+                    <span>{formatUSD(convertVNDtoUSD(directProduct.price))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Số lượng</span>
+                    <span>{quantity}</span>
+                  </div>
+                  
+                  {discountData.discountPercentage > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-sm">Giảm giá</span>
+                      <span>-{formatUSD(discountAmountUSD)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between border-t pt-2 font-medium">
+                    <span>Tổng tiền</span>
+                    <span>{formatUSD(finalAmountUSD)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-8 flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate(-1)}
-        >
-          Back
-        </Button>
-        
-        <Button
-          onClick={handlePurchase}
-          disabled={isProcessing || !hasEnoughBalance}
-          className="min-w-[150px]"
-        >
-          {isProcessing ? (
-            <>
-              <LoadingSpinner className="mr-2" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <ShoppingBag className="mr-2 h-4 w-4" />
-              Complete Purchase
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );

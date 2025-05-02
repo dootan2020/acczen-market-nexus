@@ -1,10 +1,14 @@
 
 import React from 'react';
+import Layout from '../components/Layout';
 import Register from './auth/Register';
 
 const RegisterPage: React.FC = () => {
-  // Return a single element (the Register component)
-  return <Register />;
+  return (
+    <Layout>
+      <Register />
+    </Layout>
+  );
 };
 
 export default RegisterPage;

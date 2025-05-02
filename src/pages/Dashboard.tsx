@@ -1,12 +1,13 @@
 
 import React from 'react';
-import DashboardComponent from '@/components/dashboard/Dashboard';
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import Dashboard from '@/components/dashboard/Dashboard';
 
-const DashboardPage: React.FC = () => {
+const DashboardPage = () => {
   return (
-    <div className="dashboard-container">
-      <DashboardComponent />
-    </div>
+    <DashboardLayout>
+      <Dashboard />
+    </DashboardLayout>
   );
 };
 

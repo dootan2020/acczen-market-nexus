@@ -105,7 +105,7 @@ export function UserAuth() {
   }
 
   return (
-    <React.Fragment>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative rounded-full overflow-hidden">
@@ -152,7 +152,7 @@ export function UserAuth() {
           </DropdownMenuItem>
           
           {isAdmin && (
-            <React.Fragment>
+            <>
               <DropdownMenuSeparator className="my-1" />
               <DropdownMenuItem asChild className="cursor-pointer bg-secondary/20 flex items-center gap-2">
                 <Link to="/admin">
@@ -160,7 +160,7 @@ export function UserAuth() {
                   <span>Quản trị hệ thống</span>
                 </Link>
               </DropdownMenuItem>
-            </React.Fragment>
+            </>
           )}
           
           <DropdownMenuSeparator className="my-1" />
@@ -189,6 +189,6 @@ export function UserAuth() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </React.Fragment>
+    </>
   );
 }

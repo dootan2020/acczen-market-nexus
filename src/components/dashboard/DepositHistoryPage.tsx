@@ -1,11 +1,74 @@
 
 import React from 'react';
+import { useDepositsHistory } from "@/hooks/useDepositsHistory";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DepositsFilter } from "./deposits/DepositsFilter";
+import { DepositsTable } from "./deposits/DepositsTable";
+import { PurchasesPagination } from "./purchases/PurchasesPagination";
 
-const DepositHistoryPage: React.FC = () => {
+const DepositHistoryPage = () => {
+  const {
+    deposits,
+    page,
+    setPage,
+    search,
+    setSearch,
+    isLoading,
+    error,
+    totalPages
+  } = useDepositsHistory();
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <p className="text-red-500">Error loading deposit history. Please try again later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isLoading && !deposits.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <p>You haven't made any deposits yet. Add funds to get started!</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4">Deposit History</h2>
-      <p>Your deposit history will be displayed here.</p>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Deposit History</CardTitle>
+          <CardDescription>View your deposit and transaction history</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DepositsFilter search={search} setSearch={setSearch} />
+          <DepositsTable deposits={deposits} isLoading={isLoading} />
+          <PurchasesPagination 
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
