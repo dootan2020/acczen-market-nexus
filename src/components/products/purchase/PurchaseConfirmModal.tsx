@@ -1,17 +1,17 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseModalHeader } from "./PurchaseModalHeader";
-import { PurchaseModalProduct } from "./PurchaseModalProduct";
-import { PurchaseModalInfo } from "./PurchaseModalInfo";
+import { PurchaseModalProductSimple } from "./PurchaseModalProductSimple";
 import { PurchaseModalActions } from "./PurchaseModalActions";
 import { PurchaseResultCard } from "./PurchaseResultCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchaseConfirmation } from "@/hooks/usePurchaseConfirmation";
 import { useSecureTransaction } from "@/hooks/useSecureTransaction";
+import { Input } from "@/components/ui/input";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -32,18 +32,14 @@ export const PurchaseConfirmModal = ({
   productId,
   productName,
   productPrice,
-  productImage,
-  quantity,
+  quantity: initialQuantity,
   kioskToken,
-  stock = 0,
-  soldCount = 0
+  stock = 0
 }: PurchaseConfirmModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { loading: isProcessing, processPurchase } = useSecureTransaction();
-  const [insufficientBalance, setInsufficientBalance] = useState(false);
-  const [totalPrice] = useState(productPrice * quantity);
-  const [userBalance, setUserBalance] = useState(0);
+  const [quantity, setQuantity] = useState(initialQuantity);
   
   const { 
     purchaseResult,
@@ -58,33 +54,21 @@ export const PurchaseConfirmModal = ({
     resetPurchase,
   } = usePurchaseConfirmation();
 
-  // Check kiosk status and user balance when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (kioskToken) {
-        checkKioskStatus(kioskToken);
-      }
-      validateBalance();
+  // Check kiosk status when dialog opens
+  React.useEffect(() => {
+    if (open && kioskToken) {
+      checkKioskStatus(kioskToken);
     }
   }, [open, kioskToken]);
 
-  // Validate user balance
-  const validateBalance = async () => {
-    if (!user) return;
-    
-    const { data: userData, error } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', user.id)
-      .single();
-      
-    if (error) {
-      console.error("Error fetching user balance:", error);
-      return;
+  const totalPrice = productPrice * quantity;
+
+  // Handle quantity change
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuantity = parseInt(e.target.value);
+    if (!isNaN(newQuantity) && newQuantity > 0 && newQuantity <= stock) {
+      setQuantity(newQuantity);
     }
-    
-    setUserBalance(userData.balance || 0);
-    setInsufficientBalance(userData.balance < totalPrice);
   };
 
   const handleConfirmPurchase = async () => {
@@ -104,7 +88,6 @@ export const PurchaseConfirmModal = ({
         });
         
         if (result.product_keys && result.product_keys.length > 0) {
-          // If we already have product keys, no need to check order status
           toast.success('Purchase successful!', {
             description: `Your order #${result.order_id} is complete`
           });
@@ -120,7 +103,6 @@ export const PurchaseConfirmModal = ({
 
   const handleOrderComplete = () => {
     if (purchaseResult.orderId) {
-      // Navigate to order complete page with order data
       navigate('/order-complete', {
         state: {
           orderData: {
@@ -148,16 +130,6 @@ export const PurchaseConfirmModal = ({
     }
   };
 
-  const handleGoToDeposit = () => {
-    onOpenChange(false);
-    navigate('/deposit', { 
-      state: { 
-        requiredAmount: totalPrice - userBalance,
-        returnUrl: `/products/${productId}`
-      } 
-    });
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -166,29 +138,13 @@ export const PurchaseConfirmModal = ({
         <div className="grid gap-4 py-4">
           {!purchaseResult.orderId ? (
             <>
-              <PurchaseModalProduct
+              <PurchaseModalProductSimple
                 productName={productName}
-                productImage={productImage}
                 quantity={quantity}
+                onQuantityChange={handleQuantityChange}
                 unitPrice={productPrice}
                 totalPrice={totalPrice}
-              />
-              
-              <PurchaseModalInfo
                 stock={stock}
-                soldCount={soldCount}
-                totalPrice={totalPrice}
-                insufficientBalance={insufficientBalance}
-                userBalance={userBalance}
-              />
-              
-              <PurchaseModalActions
-                isProcessing={isProcessing || isCheckingKiosk}
-                onCancel={() => onOpenChange(false)}
-                onConfirm={handleConfirmPurchase}
-                onDeposit={handleGoToDeposit}
-                disabled={kioskActive === false || stock <= 0}
-                insufficientBalance={insufficientBalance}
               />
               
               {purchaseError && (
@@ -196,6 +152,14 @@ export const PurchaseConfirmModal = ({
                   {purchaseError}
                 </div>
               )}
+              
+              <PurchaseModalActions
+                isProcessing={isProcessing || isCheckingKiosk}
+                onCancel={() => onOpenChange(false)}
+                onConfirm={handleConfirmPurchase}
+                disabled={kioskActive === false || stock <= 0}
+                isNewDesign={true}
+              />
             </>
           ) : (
             <PurchaseResultCard
