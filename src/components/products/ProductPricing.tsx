@@ -58,12 +58,12 @@ const ProductPricing = ({
     [salePrice, formatVND]);
 
   return (
-    <div className="mb-6 p-5 rounded-lg bg-white border border-gray-100 shadow-sm">
+    <div className="mb-4">
       <div className="flex items-baseline gap-3 flex-wrap">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-3xl font-bold text-[#19C37D] cursor-help">
+              <span className="text-3xl font-bold text-gray-900 cursor-help">
                 {formattedUsdSalePrice || formattedUsdPrice}
               </span>
             </TooltipTrigger>
@@ -78,7 +78,7 @@ const ProductPricing = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-lg text-gray-600 line-through cursor-help">
+                  <span className="text-lg text-gray-500 line-through cursor-help">
                     {formattedUsdPrice}
                   </span>
                 </TooltipTrigger>

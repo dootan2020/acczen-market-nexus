@@ -29,14 +29,14 @@ const ProductQuantity = ({
 
   return (
     <div className="flex items-center">
-      <span className="mr-3 font-medium text-gray-700">Quantity:</span>
+      <span className="mr-3 text-sm font-medium text-gray-700">Quantity:</span>
       <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white">
         <Button 
           type="button" 
           variant="ghost" 
           size="icon"
           className={cn(
-            "h-10 w-9 rounded-none border-r border-gray-200",
+            "h-9 w-9 rounded-none border-r border-gray-200",
             isMinQuantity || isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
           )}
           onClick={decreaseQuantity}
@@ -49,7 +49,7 @@ const ProductQuantity = ({
           type="number"
           min="1"
           max={stockQuantity}
-          className="h-10 w-14 rounded-none border-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="h-9 w-12 rounded-none border-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0"
           value={quantity}
           onChange={(e) => {
             const value = parseInt(e.target.value);
@@ -65,7 +65,7 @@ const ProductQuantity = ({
           variant="ghost" 
           size="icon" 
           className={cn(
-            "h-10 w-9 rounded-none border-l border-gray-200",
+            "h-9 w-9 rounded-none border-l border-gray-200",
             isMaxQuantity || isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
           )}
           onClick={increaseQuantity}

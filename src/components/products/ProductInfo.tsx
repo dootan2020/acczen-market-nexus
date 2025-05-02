@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import ProductActions from './ProductActions';
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ProductInfoProps {
   id: string;
@@ -77,7 +79,7 @@ const ProductInfo = ({
           <Heart 
             className={cn(
               "h-5 w-5 transition-all duration-300", 
-              isFavorited ? "fill-[#E74C3C]" : "group-hover:scale-110"
+              isFavorited ? "fill-[#E74C3C]" : ""
             )} 
           />
           <span className="sr-only">{isFavorited ? 'Remove from favorites' : 'Add to favorites'}</span>
@@ -94,43 +96,39 @@ const ProductInfo = ({
         kioskToken={kiosk_token || null}
       />
 
-      {/* Product benefits */}
-      <div className="bg-gray-50 rounded-lg border border-gray-100 overflow-hidden shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
-          <div className="p-4 flex items-start">
-            <div className="flex-shrink-0 mt-1 mr-3">
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-green-600" />
-              </div>
+      <Card className="border border-gray-100 shadow-sm">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start">
+            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+              <Shield className="h-4 w-4 text-green-600" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-800">Secure Warranty</h4>
-              <p className="text-sm text-gray-600">100% refund if account is locked within 30 days</p>
+              <h4 className="text-sm font-medium text-gray-800">Secure Warranty</h4>
+              <p className="text-xs text-gray-600">100% refund if account is locked within 30 days</p>
             </div>
           </div>
           
-          <div className="p-4 flex items-start">
-            <div className="flex-shrink-0 mt-1 mr-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <Clock className="h-4 w-4 text-blue-600" />
-              </div>
+          <Separator />
+          
+          <div className="flex items-start">
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+              <Clock className="h-4 w-4 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-800">Instant Delivery</h4>
-              <p className="text-sm text-gray-600">Account details sent automatically via email</p>
+              <h4 className="text-sm font-medium text-gray-800">Instant Delivery</h4>
+              <p className="text-xs text-gray-600">Account details sent automatically via email</p>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Delivery time estimation */}
       <div className="bg-green-50 p-4 rounded-md border border-green-200 flex items-center">
         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
           <CheckCircle className="h-4 w-4 text-green-600" />
         </div>
         <div>
-          <p className="font-medium text-green-800">Instant Delivery</p>
-          <p className="text-sm text-green-700">Get your account details immediately after payment</p>
+          <p className="font-medium text-green-800 text-sm">Instant Delivery</p>
+          <p className="text-xs text-green-700">Get your account details immediately after payment</p>
         </div>
       </div>
     </div>

@@ -9,7 +9,6 @@ import ProductDescription from "@/components/products/ProductDescription";
 import { Card } from "@/components/ui/card";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import TrustBadges from "@/components/trust/TrustBadges";
-import { stripHtmlTags } from '@/utils/htmlUtils';
 import ProductPricing from '@/components/products/ProductPricing';
 import ProductReviews from '@/components/products/ProductReviews';
 import ProductHeader from '@/components/products/ProductHeader';
@@ -21,7 +20,7 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
-import { Home, ShieldCheck, Lock, Heart, ShoppingBag, Star } from "lucide-react";
+import { Home } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RichTextContent from "@/components/RichTextContent";
 import { cn } from "@/lib/utils";
@@ -133,10 +132,10 @@ const ProductDetail = () => {
     : null;
   
   return (
-    <div className="bg-gray-50">
-      <Container className="py-8">
+    <div className="bg-gray-50 py-8">
+      <Container>
         {/* Breadcrumb Navigation */}
-        <Breadcrumb className="mb-6 text-sm text-gray-600">
+        <Breadcrumb className="mb-6 text-sm text-gray-500">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -175,11 +174,11 @@ const ProductDetail = () => {
         </Breadcrumb>
 
         {/* Product Main Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-          <div className="md:grid md:grid-cols-2 gap-0">
-            {/* Left column - Product Images */}
-            <div className="p-6 md:border-r border-gray-100">
-              <div className="sticky top-24">
+        <div className="grid md:grid-cols-12 gap-8">
+          {/* Left column - Product Images */}
+          <div className="md:col-span-5">
+            <Card className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-4">
                 <ProductImageGallery
                   imageUrl={product.image_url}
                   name={productName}
@@ -187,198 +186,206 @@ const ProductDetail = () => {
                   images={productImages}
                 />
               </div>
-            </div>
+            </Card>
+          </div>
 
-            {/* Right column - Product Info */}
-            <div className="p-8">
-              <ProductHeader
-                name={productName}
-                categoryName={product.category?.name}
-                categorySlug={product.category?.slug}
-                rating={rating}
-                reviewCount={reviewCount}
-                stockQuantity={product.stock_quantity}
-                soldCount={soldCount}
-                isNew={isNew}
-                isFeatured={isFeatured}
-                isBestSeller={isBestSeller}
-              />
-              
-              <Separator className="my-6" />
-              
-              {/* Pricing */}
-              <ProductPricing 
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                soldCount={soldCount}
-              />
-              
-              {/* Product Info component with Buy/Favorite buttons */}
-              <ProductInfo 
-                id={product.id}
-                name={productName}
-                description={product.description || ''}
-                price={product.price}
-                salePrice={product.sale_price}
-                stockQuantity={product.stock_quantity}
-                image={product.image_url || ''}
-                rating={rating}
-                reviewCount={reviewCount}
-                soldCount={soldCount}
-                kiosk_token={product.kiosk_token}
-              />
-            </div>
+          {/* Right column - Product Info */}
+          <div className="md:col-span-7">
+            <Card className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-8">
+              <div className="p-6">
+                <ProductHeader
+                  name={productName}
+                  categoryName={product.category?.name}
+                  categorySlug={product.category?.slug}
+                  rating={rating}
+                  reviewCount={reviewCount}
+                  stockQuantity={product.stock_quantity}
+                  soldCount={soldCount}
+                  isNew={isNew}
+                  isFeatured={isFeatured}
+                  isBestSeller={isBestSeller}
+                />
+                
+                <Separator className="my-4" />
+                
+                {/* Pricing */}
+                <ProductPricing 
+                  price={product.price}
+                  salePrice={product.sale_price}
+                  stockQuantity={product.stock_quantity}
+                  soldCount={soldCount}
+                />
+                
+                {/* Product Info component with Buy/Favorite buttons */}
+                <ProductInfo 
+                  id={product.id}
+                  name={productName}
+                  description={product.description || ''}
+                  price={product.price}
+                  salePrice={product.sale_price}
+                  stockQuantity={product.stock_quantity}
+                  image={product.image_url || ''}
+                  rating={rating}
+                  reviewCount={reviewCount}
+                  soldCount={soldCount}
+                  kiosk_token={product.kiosk_token}
+                />
+              </div>
+            </Card>
           </div>
         </div>
         
         {/* Tabs Section */}
-        <div id="product-tabs" className="relative">
-          <div className={cn(
-            "bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 transition-all", 
-            isTabsSticky ? "sticky top-0 z-30 shadow-md" : ""
-          )}>
-            <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
-              <div className={cn(
-                "border-b border-gray-200 bg-white",
-                isTabsSticky ? "sticky top-0 z-30" : ""
-              )}>
-                <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
-                  <TabsTrigger 
-                    value="description" 
-                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
-                  >
-                    Description
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="specifications" 
-                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
-                  >
-                    Specifications
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="reviews" 
-                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
-                  >
-                    Reviews ({reviewCount})
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="faq" 
-                    className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
-                  >
-                    FAQ
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="description" className="p-6 animate-fade-in">
-                <div className="prose max-w-none">
-                  {product.description ? (
-                    <RichTextContent content={product.description} />
-                  ) : (
-                    <>
-                      <h2 className="text-xl font-semibold mb-4">Telegram Premium Account (1-7 days)</h2>
-                      <p className="mb-4">This premium Telegram account gives you access to all premium features for up to 7 days. Perfect for testing and experiencing the enhanced functionalities.</p>
-                      <h3 className="text-lg font-semibold mb-3">Key Features:</h3>
-                      <ul className="list-disc pl-5 mb-4 space-y-2">
-                        <li>Increased upload limit (4GB per file)</li>
-                        <li>Double the channels limit (1,000)</li>
-                        <li>Access to premium stickers and reactions</li>
-                        <li>Ad-free experience</li>
-                        <li>Faster download speeds</li>
-                        <li>Voice-to-text conversion</li>
-                        <li>Premium badges and profile features</li>
-                      </ul>
-                      <p className="text-gray-700">
-                        All accounts are manually verified and guaranteed to work for the specified duration. After purchase, account details will be delivered instantly to your email.
-                      </p>
-                    </>
-                  )}
+        <Card className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mt-8">
+          <div id="product-tabs" className="relative">
+            <div className={cn(
+              "bg-white transition-all", 
+              isTabsSticky ? "sticky top-0 z-30 shadow-md" : ""
+            )}>
+              <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
+                <div className={cn(
+                  "border-b border-gray-200 bg-white",
+                  isTabsSticky ? "sticky top-0 z-30" : ""
+                )}>
+                  <TabsList className="h-auto bg-transparent w-full flex justify-start p-0">
+                    <TabsTrigger 
+                      value="description" 
+                      className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                    >
+                      Description
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="specifications" 
+                      className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                    >
+                      Specifications
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="reviews" 
+                      className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                    >
+                      Reviews ({reviewCount})
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="faq" 
+                      className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
+                    >
+                      FAQ
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="specifications" className="p-6 animate-fade-in">
-                {specifications ? (
+                
+                <TabsContent value="description" className="p-6 animate-fade-in">
                   <div className="prose max-w-none">
-                    <RichTextContent content={specifications} />
+                    {product.description ? (
+                      <RichTextContent content={product.description} />
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-semibold mb-4">Telegram Premium Account (1-7 days)</h2>
+                        <p className="mb-4">This premium Telegram account gives you access to all premium features for up to 7 days. Perfect for testing and experiencing the enhanced functionalities.</p>
+                        <h3 className="text-lg font-semibold mb-3">Key Features:</h3>
+                        <ul className="list-disc pl-5 mb-4 space-y-2">
+                          <li>Increased upload limit (4GB per file)</li>
+                          <li>Double the channels limit (1,000)</li>
+                          <li>Access to premium stickers and reactions</li>
+                          <li>Ad-free experience</li>
+                          <li>Faster download speeds</li>
+                          <li>Voice-to-text conversion</li>
+                          <li>Premium badges and profile features</li>
+                        </ul>
+                        <p className="text-gray-700">
+                          All accounts are manually verified and guaranteed to work for the specified duration. After purchase, account details will be delivered instantly to your email.
+                        </p>
+                      </>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Account Specifications</h3>
-                    <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <tbody className="divide-y divide-gray-200">
-                          <tr className="bg-white">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Account Type</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Premium</td>
-                          </tr>
-                          <tr className="bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Duration</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1-7 days</td>
-                          </tr>
-                          <tr className="bg-white">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">International</td>
-                          </tr>
-                          <tr className="bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Warranty</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Full period of account validity</td>
-                          </tr>
-                          <tr className="bg-white">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Delivery Method</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Email (Instant)</td>
-                          </tr>
-                          <tr className="bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Support</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">24/7 via email and chat</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                </TabsContent>
+                
+                <TabsContent value="specifications" className="p-6 animate-fade-in">
+                  {specifications ? (
+                    <div className="prose max-w-none">
+                      <RichTextContent content={specifications} />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Account Specifications</h3>
+                      <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <tbody className="divide-y divide-gray-200">
+                            <tr className="bg-white">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Account Type</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">Premium</td>
+                            </tr>
+                            <tr className="bg-gray-50">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Duration</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">1-7 days</td>
+                            </tr>
+                            <tr className="bg-white">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Region</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">International</td>
+                            </tr>
+                            <tr className="bg-gray-50">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Warranty</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">Full period of account validity</td>
+                            </tr>
+                            <tr className="bg-white">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Delivery Method</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">Email (Instant)</td>
+                            </tr>
+                            <tr className="bg-gray-50">
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Support</td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">24/7 via email and chat</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="reviews" className="p-6 animate-fade-in">
+                  <Card className="border-0 shadow-none">
+                    {product.id && <ProductReviews productId={product.id} />}
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="faq" className="p-6 animate-fade-in">
+                  <div className="space-y-6">
+                    <div className="border-b pb-4">
+                      <h3 className="text-lg font-medium mb-2">How long can this account be used?</h3>
+                      <p className="text-gray-600">The account will remain active for 1-7 days after the first login. This can vary slightly depending on Telegram's policies and updates.</p>
+                    </div>
+                    <div className="border-b pb-4">
+                      <h3 className="text-lg font-medium mb-2">How do I receive account information after purchase?</h3>
+                      <p className="text-gray-600">After successful payment, account information will be automatically sent to your registered email. You can also view this information in your purchase history on your personal page.</p>
+                    </div>
+                    <div className="border-b pb-4">
+                      <h3 className="text-lg font-medium mb-2">Can I change the password after receiving the account?</h3>
+                      <p className="text-gray-600">Yes, you can change the password after receiving the account. We recommend changing the password immediately after receiving the login information to ensure security.</p>
+                    </div>
+                    <div className="border-b pb-4">
+                      <h3 className="text-lg font-medium mb-2">What should I do if the account is locked or encounters issues?</h3>
+                      <p className="text-gray-600">If the account encounters issues, please contact our support team via email at support@acczen.net or through live chat on the website. We will resolve it as soon as possible.</p>
+                    </div>
+                    <div className="border-b pb-4">
+                      <h3 className="text-lg font-medium mb-2">Is there a refund policy?</h3>
+                      <p className="text-gray-600">Yes, we offer a 100% refund if the account is locked or becomes unusable within the first 30 days of purchase, provided it wasn't due to user violation of terms.</p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Can I use this account for business purposes?</h3>
+                      <p className="text-gray-600">Yes, these accounts can be used for both personal and business purposes, though we recommend checking Telegram's terms of service regarding business usage.</p>
                     </div>
                   </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="reviews" className="p-6 animate-fade-in">
-                {product.id && <ProductReviews productId={product.id} />}
-              </TabsContent>
-              
-              <TabsContent value="faq" className="p-6 animate-fade-in">
-                <div className="space-y-6">
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-2">How long can this account be used?</h3>
-                    <p className="text-gray-600">The account will remain active for 1-7 days after the first login. This can vary slightly depending on Telegram's policies and updates.</p>
-                  </div>
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-2">How do I receive account information after purchase?</h3>
-                    <p className="text-gray-600">After successful payment, account information will be automatically sent to your registered email. You can also view this information in your purchase history on your personal page.</p>
-                  </div>
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-2">Can I change the password after receiving the account?</h3>
-                    <p className="text-gray-600">Yes, you can change the password after receiving the account. We recommend changing the password immediately after receiving the login information to ensure security.</p>
-                  </div>
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-2">What should I do if the account is locked or encounters issues?</h3>
-                    <p className="text-gray-600">If the account encounters issues, please contact our support team via email at support@acczen.net or through live chat on the website. We will resolve it as soon as possible.</p>
-                  </div>
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-2">Is there a refund policy?</h3>
-                    <p className="text-gray-600">Yes, we offer a 100% refund if the account is locked or becomes unusable within the first 30 days of purchase, provided it wasn't due to user violation of terms.</p>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Can I use this account for business purposes?</h3>
-                    <p className="text-gray-600">Yes, these accounts can be used for both personal and business purposes, though we recommend checking Telegram's terms of service regarding business usage.</p>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
-        </div>
+        </Card>
 
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-xl font-bold mb-6">Related Products</h2>
+            <h2 className="text-xl font-bold mb-6 font-poppins">Related Products</h2>
             <RelatedProducts products={relatedProducts} />
           </div>
         )}

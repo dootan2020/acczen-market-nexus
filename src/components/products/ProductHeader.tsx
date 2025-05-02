@@ -2,6 +2,7 @@
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface ProductHeaderProps {
   name: string;
@@ -56,9 +57,9 @@ const ProductHeader = ({
   };
 
   return (
-    <div className="mb-6">
+    <div>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
         {categoryName && categorySlug && (
           <Link to={`/category/${categorySlug}`} className="hover:text-[#2ECC71] transition-colors">
             {categoryName}
@@ -73,44 +74,49 @@ const ProductHeader = ({
       </div>
       
       {/* Product Title */}
-      <h1 className="text-2xl sm:text-3xl font-bold mb-3 font-sans text-gray-800">{name}</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold font-poppins text-gray-800 mb-3">{name}</h1>
       
-      {/* Status Badges */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {isNew && (
-          <Badge className="bg-blue-500 hover:bg-blue-600 text-white">New</Badge>
-        )}
-        {isFeatured && (
-          <Badge className="bg-[#19C37D] hover:bg-[#15a76b] text-white">Featured</Badge>
-        )}
-        {isBestSeller && (
-          <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Best Seller</Badge>
-        )}
-      </div>
-      
-      <div className="flex flex-col sm:flex-row sm:items-center gap-y-3 sm:gap-x-6 text-sm">
+      <div className="flex flex-wrap items-center gap-3 mb-2">
         {/* Rating */}
         {rating > 0 && (
           <div className="flex items-center">
             <div className="flex mr-2">{renderRating()}</div>
-            <span className="text-gray-600">
-              {rating.toFixed(1)} ({reviewCount} reviews)
+            <span className="text-gray-600 text-sm">
+              {rating.toFixed(1)} ({reviewCount})
             </span>
           </div>
         )}
         
         {/* Stock Status */}
         {stockQuantity !== undefined && (
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-sm">
             <span className={`${stockQuantity > 0 ? 'text-green-600' : 'text-red-500'} font-medium`}>
-              {stockQuantity > 0 ? `In stock: ${stockQuantity} items` : "Out of Stock"}
+              {stockQuantity > 0 ? `In stock (${stockQuantity})` : "Out of Stock"}
             </span>
+            {soldCount > 0 && stockQuantity > 0 && (
+              <span className="mx-2 text-gray-400">|</span>
+            )}
             {soldCount > 0 && (
-              <span className="ml-2">• Sold: {soldCount}</span>
+              <span className="text-gray-500">{soldCount} sold</span>
             )}
           </div>
         )}
       </div>
+      
+      {/* Status Badges */}
+      {(isNew || isFeatured || isBestSeller) && (
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          {isNew && (
+            <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-2.5 py-0.5">New</Badge>
+          )}
+          {isFeatured && (
+            <Badge className="bg-[#19C37D] hover:bg-[#15a76b] text-white text-xs font-medium px-2.5 py-0.5">Featured</Badge>
+          )}
+          {isBestSeller && (
+            <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-2.5 py-0.5">Best Seller</Badge>
+          )}
+        </div>
+      )}
     </div>
   );
 };
