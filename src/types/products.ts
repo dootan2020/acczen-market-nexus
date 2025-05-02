@@ -41,6 +41,7 @@ export interface Product {
   usage_instructions?: string | null;
   technical_details?: string | null;
   warranty_info?: string | null;
+  sold_count?: number; // Added this property
 }
 
 export interface ProductFormData {

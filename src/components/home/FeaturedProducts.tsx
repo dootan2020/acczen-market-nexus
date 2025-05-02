@@ -84,7 +84,7 @@ const FeaturedProducts = () => {
                 isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
                 isBestSeller={false}
                 description={product.description || ''}
-                soldCount={product.sold_count || 0} // Pass sold_count to the component
+                soldCount={product.sold_count || 0} // Safely handle undefined sold_count
               />
             </div>
           ))}
