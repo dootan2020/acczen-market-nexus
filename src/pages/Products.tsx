@@ -6,6 +6,7 @@ import { useCategories } from '@/hooks/useProducts';
 import { AlertCircle, ShoppingBag, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button'; // Add this import for the Button component
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Breadcrumb,
