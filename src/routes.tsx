@@ -1,5 +1,6 @@
 
 import React from 'react';
+import Layout from './components/Layout';
 import Index from './pages/Index';
 import Products from './pages/Products';
 import LoginPage from './pages/LoginPage';
@@ -32,15 +33,27 @@ const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
 
-// Define all routes in a flat structure
-const routes = [
+// Define routes that should use the main Layout (with Header and Footer)
+const mainRoutes = [
   { path: '/', element: <Index /> },
   { path: '/products', element: <Products /> },
   { path: '/categories', element: <CategoriesPage /> },
-  { path: '/dashboard', element: <DashboardPage /> },
   { path: '/profile', element: <ProfilePage /> },
+];
+
+// Define routes that don't need the main Layout (like auth pages)
+const authRoutes = [
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+];
+
+// Define routes for dashboard that might have their own layout
+const dashboardRoutes = [
+  { path: '/dashboard', element: <DashboardPage /> },
+];
+
+// Define routes for admin section that might have their own layout
+const adminRoutes = [
   { path: '/admin', element: <AdminHome /> },
   { path: '/admin/products', element: <ProductsPage /> },
   { path: '/admin/products/edit/:id', element: <AdminProductEditPage /> },
@@ -63,6 +76,12 @@ const routes = [
   { path: '/admin/settings', element: <AdminSettings /> },
 ];
 
-export default {
-  routes
+// Combine all routes for export
+const routes = {
+  mainRoutes,
+  authRoutes,
+  dashboardRoutes,
+  adminRoutes
 };
+
+export default routes;

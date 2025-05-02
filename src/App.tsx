@@ -10,6 +10,7 @@ import routes from './routes';
 import { checkEnvironment } from './utils/checkEnvironment';
 import { ProductProvider } from "./contexts/ProductContext";
 import { ProductInfoModal } from "./components/products/ProductInfoModal";
+import Layout from './components/Layout';
 
 function App() {
   useEffect(() => {
@@ -27,9 +28,39 @@ function App() {
                   <div className="min-h-screen flex flex-col">
                     <ProductInfoModal />
                     <Routes>
-                      {routes.routes.map((route, index) => (
+                      {/* Main routes with standard layout */}
+                      <Route element={<Layout />}>
+                        {routes.mainRoutes.map((route, index) => (
+                          <Route
+                            key={index}
+                            path={route.path}
+                            element={route.element}
+                          />
+                        ))}
+                      </Route>
+                      
+                      {/* Auth routes without layout */}
+                      {routes.authRoutes.map((route, index) => (
                         <Route
-                          key={index}
+                          key={`auth-${index}`}
+                          path={route.path}
+                          element={route.element}
+                        />
+                      ))}
+                      
+                      {/* Dashboard routes */}
+                      {routes.dashboardRoutes.map((route, index) => (
+                        <Route
+                          key={`dashboard-${index}`}
+                          path={route.path}
+                          element={route.element}
+                        />
+                      ))}
+                      
+                      {/* Admin routes */}
+                      {routes.adminRoutes.map((route, index) => (
+                        <Route
+                          key={`admin-${index}`}
                           path={route.path}
                           element={route.element}
                         />
