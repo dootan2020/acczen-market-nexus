@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { ReactQueryProvider } from '@/contexts/ReactQueryContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/providers/CartProvider';
+import { CurrencyContextProvider } from '@/contexts/CurrencyContextProvider';
 import App from './App';
 import './index.css';
 
@@ -12,13 +13,15 @@ const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
 // Create the React root and render the app with all required providers
-// Order matters: ReactQueryProvider (outermost) -> AuthProvider -> CartProvider -> App
+// Order: ReactQueryProvider (outermost) -> AuthProvider -> CartProvider -> CurrencyContextProvider -> App
 createRoot(rootElement).render(
   <React.StrictMode>
     <ReactQueryProvider>
       <AuthProvider>
         <CartProvider>
-          <App />
+          <CurrencyContextProvider>
+            <App />
+          </CurrencyContextProvider>
         </CartProvider>
       </AuthProvider>
     </ReactQueryProvider>
