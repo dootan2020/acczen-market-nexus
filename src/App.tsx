@@ -12,6 +12,8 @@ import { ProductProvider } from "./contexts/ProductContext";
 import { ProductInfoModal } from "./components/products/ProductInfoModal";
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import { ThemeVariablesProvider } from './components/ui/css-variables';
+import { Toaster } from "sonner";
 
 function App() {
   useEffect(() => {
@@ -21,51 +23,54 @@ function App() {
   return (
     <BrowserRouter>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <ReactQueryProvider>
-          <CurrencyProvider>
-            <CartProvider>
-              <AuthProvider>
-                <ProductProvider>
-                  <div className="min-h-screen flex flex-col">
-                    <ProductInfoModal />
-                    <Routes>
-                      {/* Main routes with standard layout */}
-                      <Route element={<Layout />}>
-                        {routes.mainRoutes.map((route, index) => (
+        <ThemeVariablesProvider>
+          <ReactQueryProvider>
+            <CurrencyProvider>
+              <CartProvider>
+                <AuthProvider>
+                  <ProductProvider>
+                    <div className="min-h-screen flex flex-col">
+                      <ProductInfoModal />
+                      <Routes>
+                        {/* Main routes with standard layout */}
+                        <Route element={<Layout />}>
+                          {routes.mainRoutes.map((route, index) => (
+                            <Route
+                              key={index}
+                              path={route.path}
+                              element={route.element}
+                            />
+                          ))}
+                        </Route>
+                        
+                        {/* Dashboard routes */}
+                        {routes.dashboardRoutes.map((route, index) => (
                           <Route
-                            key={index}
+                            key={`dashboard-${index}`}
                             path={route.path}
                             element={route.element}
                           />
                         ))}
-                      </Route>
-                      
-                      {/* Dashboard routes */}
-                      {routes.dashboardRoutes.map((route, index) => (
-                        <Route
-                          key={`dashboard-${index}`}
-                          path={route.path}
-                          element={route.element}
-                        />
-                      ))}
-                      
-                      {/* Admin routes with AdminLayout */}
-                      <Route element={<AdminLayout />}>
-                        {routes.adminRoutes.map((route, index) => (
-                          <Route
-                            key={`admin-${index}`}
-                            path={route.path}
-                            element={route.element}
-                          />
-                        ))}
-                      </Route>
-                    </Routes>
-                  </div>
-                </ProductProvider>
-              </AuthProvider>
-            </CartProvider>
-          </CurrencyProvider>
-        </ReactQueryProvider>
+                        
+                        {/* Admin routes with AdminLayout */}
+                        <Route element={<AdminLayout />}>
+                          {routes.adminRoutes.map((route, index) => (
+                            <Route
+                              key={`admin-${index}`}
+                              path={route.path}
+                              element={route.element}
+                            />
+                          ))}
+                        </Route>
+                      </Routes>
+                      <Toaster />
+                    </div>
+                  </ProductProvider>
+                </AuthProvider>
+              </CartProvider>
+            </CurrencyProvider>
+          </ReactQueryProvider>
+        </ThemeVariablesProvider>
       </ThemeProvider>
     </BrowserRouter>
   );
