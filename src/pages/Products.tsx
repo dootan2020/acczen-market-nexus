@@ -1,14 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCategories } from '@/hooks/useProducts';
-import { AlertCircle, ShoppingBag, Search, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, ShoppingBag, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -277,7 +275,7 @@ const Products = () => {
     );
   }
 
-  // Render product grid
+  // Render product grid with updated ChatGPT-inspired styling
   return (
     <div className="container mx-auto p-6 lg:p-8" id="products-section">
       <Breadcrumb className="mb-6">
@@ -294,27 +292,27 @@ const Products = () => {
         </BreadcrumbList>
       </Breadcrumb>
       
-      <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
+      <h1 className="text-2xl font-semibold mb-6 font-poppins text-[#343541]">Danh sách sản phẩm</h1>
       
-      <Card className="mb-8">
-        <CardContent className="p-4">
+      <Card className="mb-8 border border-[#e5e5e5] shadow-sm">
+        <CardContent className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm sản phẩm..."
-                className="pl-8"
+                className="pl-9 border-[#e5e5e5]"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
             </div>
             
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger>
+              <SelectTrigger className="border-[#e5e5e5]">
                 <SelectValue placeholder="Chọn danh mục" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả danh mục</SelectItem>
+                <SelectItem value="">Tất cả danh mục</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -324,7 +322,7 @@ const Products = () => {
             </Select>
             
             <Select value={sortOrder} onValueChange={handleSortChange}>
-              <SelectTrigger>
+              <SelectTrigger className="border-[#e5e5e5]">
                 <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
               <SelectContent>
@@ -334,14 +332,9 @@ const Products = () => {
                 <SelectItem value="price-desc">Giá cao đến thấp</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Button variant="outline" className="lg:hidden flex items-center justify-center">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Lọc thêm
-            </Button>
           </div>
           
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-sm text-gray-500">
             Hiển thị {currentProducts.length} trong {filteredProducts.length} sản phẩm
           </div>
         </CardContent>
@@ -349,7 +342,7 @@ const Products = () => {
       
       {filteredProducts.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {currentProducts.map((product) => {
               // Safely extract metadata properties with improved type checking
               const metadata = typeof product.metadata === 'object' && product.metadata !== null ? 
@@ -386,85 +379,83 @@ const Products = () => {
             })}
           </div>
           
-          {totalPages > 1 && (
-            <Pagination className="mt-8">
-              <PaginationContent>
-                {/* Previous page button */}
-                <PaginationItem>
-                  {currentPage === 1 ? (
-                    <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
-                      <span className="sr-only">Go to previous page</span>
-                      <span className="text-sm">Previous</span>
-                    </Button>
-                  ) : (
-                    <PaginationPrevious onClick={() => handlePageChange(Math.max(1, currentPage - 1))} />
-                  )}
-                </PaginationItem>
-                
-                {/* First page */}
-                {getPaginationRange()[0] > 1 && (
-                  <>
-                    <PaginationItem>
-                      <PaginationLink onClick={() => handlePageChange(1)}>
-                        1
-                      </PaginationLink>
-                    </PaginationItem>
-                    {getPaginationRange()[0] > 2 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
-                  </>
+          <Pagination className="mt-8">
+            <PaginationContent>
+              {/* Previous page button */}
+              <PaginationItem>
+                {currentPage === 1 ? (
+                  <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                    <span className="sr-only">Go to previous page</span>
+                    <span className="text-sm">Previous</span>
+                  </Button>
+                ) : (
+                  <PaginationPrevious onClick={() => handlePageChange(Math.max(1, currentPage - 1))} />
                 )}
-                
-                {/* Page numbers */}
-                {getPaginationRange().map(page => (
-                  <PaginationItem key={page}>
-                    <PaginationLink 
-                      isActive={page === currentPage}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
+              </PaginationItem>
+              
+              {/* First page */}
+              {getPaginationRange()[0] > 1 && (
+                <>
+                  <PaginationItem>
+                    <PaginationLink onClick={() => handlePageChange(1)}>
+                      1
                     </PaginationLink>
                   </PaginationItem>
-                ))}
-                
-                {/* Last page */}
-                {getPaginationRange()[getPaginationRange().length - 1] < totalPages && (
-                  <>
-                    {getPaginationRange()[getPaginationRange().length - 1] < totalPages - 1 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
+                  {getPaginationRange()[0] > 2 && (
                     <PaginationItem>
-                      <PaginationLink onClick={() => handlePageChange(totalPages)}>
-                        {totalPages}
-                      </PaginationLink>
+                      <PaginationEllipsis />
                     </PaginationItem>
-                  </>
-                )}
-                
-                {/* Next page button */}
-                <PaginationItem>
-                  {currentPage === totalPages ? (
-                    <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
-                      <span className="sr-only">Go to next page</span>
-                      <span className="text-sm">Next</span>
-                    </Button>
-                  ) : (
-                    <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} />
                   )}
+                </>
+              )}
+              
+              {/* Page numbers */}
+              {getPaginationRange().map(page => (
+                <PaginationItem key={page}>
+                  <PaginationLink 
+                    isActive={page === currentPage}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </PaginationLink>
                 </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+              ))}
+              
+              {/* Last page */}
+              {getPaginationRange()[getPaginationRange().length - 1] < totalPages && (
+                <>
+                  {getPaginationRange()[getPaginationRange().length - 1] < totalPages - 1 && (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )}
+                  <PaginationItem>
+                    <PaginationLink onClick={() => handlePageChange(totalPages)}>
+                      {totalPages}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
+              
+              {/* Next page button */}
+              <PaginationItem>
+                {currentPage === totalPages ? (
+                  <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                    <span className="sr-only">Go to next page</span>
+                    <span className="text-sm">Next</span>
+                  </Button>
+                ) : (
+                  <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} />
+                )}
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-medium">Không tìm thấy sản phẩm phù hợp</h2>
-          <p className="text-muted-foreground mt-2">
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-[#e5e5e5] rounded-lg">
+          <ShoppingBag className="h-12 w-12 text-gray-300 mb-4" />
+          <h2 className="text-xl font-medium text-[#343541] mb-2">Không tìm thấy sản phẩm phù hợp</h2>
+          <p className="text-gray-500 max-w-md">
             Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.
           </p>
         </div>

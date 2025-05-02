@@ -90,108 +90,74 @@ const ProductCard = ({
     navigate(`/products/${id}`);
   };
 
-  // Calculate discount percentage if on sale
-  const discountPercentage = useMemo(() => {
-    if (!salePrice || salePrice >= price) return 0;
-    return Math.round(((price - salePrice) / price) * 100);
-  }, [price, salePrice]);
-
   return (
-    <Card className="h-full flex flex-col overflow-hidden border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-md hover:-translate-y-1 bg-white">
-      <div className="p-4 flex flex-col flex-grow relative">
-        {/* Top Badges */}
-        <div className="flex justify-between mb-3">
-          {/* Category Badge */}
-          <Badge 
-            className="bg-[#3498DB] hover:bg-[#2980B9] text-white" 
-            variant="secondary"
-          >
-            {category}
-          </Badge>
-          
-          {/* Discount or Featured Badge */}
-          {discountPercentage > 0 ? (
-            <Badge 
-              className="bg-red-500 hover:bg-red-600 text-white" 
-              variant="destructive"
-            >
-              -{discountPercentage}%
-            </Badge>
-          ) : featured && (
-            <Badge 
-              className="bg-amber-500 hover:bg-amber-600 text-white" 
-              variant="destructive"
-            >
-              HOT
-            </Badge>
-          )}
-        </div>
-
-        {/* Product Title */}
-        <h3 className="font-semibold text-lg mb-3 line-clamp-2 h-14 font-poppins text-gray-800">
-          {name}
-        </h3>
+    <Card className="h-full flex flex-col border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
+      {/* Category Badge - ChatGPT style minimal badge */}
+      <div className="mb-3">
+        <Badge 
+          className="bg-[#f0f0f0] text-[#444444] hover:bg-[#e8e8e8] font-normal text-xs px-2 py-0.5" 
+          variant="outline"
+        >
+          {category}
+        </Badge>
+      </div>
+      
+      {/* Product Title - Typography focused */}
+      <h3 className="font-semibold text-base mb-3 line-clamp-2 h-12 font-poppins text-[#343541]">
+        {name}
+      </h3>
+      
+      {/* Price Section - Clean with accent color */}
+      <div className="flex items-baseline mb-3">
+        <span className="text-lg font-semibold text-[#2ECC71]">
+          {formattedSalePrice || formattedPrice}
+        </span>
         
-        {/* Price Section */}
-        <div className="flex items-baseline mb-3">
-          <span className="text-xl font-bold text-[#2ECC71]">
-            {formattedSalePrice || formattedPrice}
+        {displaySalePrice && (
+          <span className="text-sm text-gray-500 line-through ml-2 font-inter">
+            {formattedPrice}
           </span>
-          
-          {displaySalePrice && (
-            <span className="text-sm text-gray-500 line-through ml-2 font-inter">
-              {formattedPrice}
-            </span>
-          )}
-        </div>
+        )}
+      </div>
 
-        {/* Stock and Sold Count Badges */}
-        <div className="flex space-x-2 mb-3">
-          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-            Còn: {stock}
+      {/* Stock information - Simple text */}
+      <div className="text-sm text-gray-600 mb-3 font-inter">
+        In stock: {stock}
+      </div>
+      
+      {/* Product Description - Minimal with truncation */}
+      {description && (
+        <p className="text-sm text-gray-600 line-clamp-2 mb-4 font-inter min-h-[40px]">
+          {cleanDescription}
+        </p>
+      )}
+
+      {/* Out of stock indicator */}
+      {stock <= 0 && (
+        <div className="mb-3">
+          <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">
+            Out of Stock
           </Badge>
-          
-          {soldCount > 0 && (
-            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-              Đã bán: {soldCount}
-            </Badge>
-          )}
         </div>
+      )}
+      
+      {/* Action Buttons - ChatGPT-style buttons */}
+      <div className="flex items-center justify-between gap-2 mt-auto">
+        <Button
+          variant="outline"
+          className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541]"
+          onClick={handleViewDetails}
+        >
+          <Eye className="mr-1 h-4 w-4" /> Chi tiết
+        </Button>
         
-        {/* Product Description */}
-        {description && (
-          <p className="text-gray-600 text-sm line-clamp-2 mb-4 font-inter min-h-[40px]">
-            {cleanDescription}
-          </p>
-        )}
-
-        {/* Out of stock overlay */}
-        {stock <= 0 && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-            <Badge variant="destructive" className="text-base font-medium px-3 py-1">
-              Out of Stock
-            </Badge>
-          </div>
-        )}
-        
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between gap-2 mt-auto">
-          <Button
-            variant="secondary"
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800"
-            onClick={handleViewDetails}
-          >
-            <Eye className="mr-1 h-4 w-4" /> Chi tiết
-          </Button>
-          
-          <Button
-            className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white transition-all"
-            disabled={stock === 0}
-            onClick={handleBuyNow}
-          >
-            <ShoppingBag className="mr-1 h-4 w-4" /> Mua ngay
-          </Button>
-        </div>
+        <Button
+          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white"
+          disabled={stock === 0}
+          onClick={handleBuyNow}
+        >
+          <ShoppingBag className="mr-1 h-4 w-4" /> Mua ngay
+        </Button>
       </div>
     </Card>
   );
