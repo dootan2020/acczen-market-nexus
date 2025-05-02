@@ -8,8 +8,10 @@ import router from './routes';
 function App() {
   return (
     <TooltipProvider>
-      <RouterProvider router={router} />
-      <Toaster />
+      <div>
+        <RouterProvider router={router} />
+        <Toaster />
+      </div>
     </TooltipProvider>
   );
 }
