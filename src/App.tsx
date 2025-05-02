@@ -7,12 +7,12 @@ import router from './routes';
 
 function App() {
   return (
-    <>
-      <TooltipProvider>
+    <TooltipProvider>
+      <>
         <RouterProvider router={router} />
         <Toaster />
-      </TooltipProvider>
-    </>
+      </>
+    </TooltipProvider>
   );
 }
 
