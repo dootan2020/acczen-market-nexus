@@ -82,8 +82,9 @@ const FeaturedProducts = () => {
                 stock={product.stock_quantity}
                 featured={product.status === 'active' && product.stock_quantity > 0}
                 isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-                isBestSeller={false} // Changed as sold_count doesn't exist
+                isBestSeller={false}
                 description={product.description || ''}
+                soldCount={product.sold_count || 0} // Pass sold_count to the component
               />
             </div>
           ))}

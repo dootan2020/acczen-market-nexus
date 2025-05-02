@@ -74,6 +74,9 @@ const ProductCard = ({
     return truncateText(stripHtmlTags(description), 80);
   }, [description]);
 
+  // Calculate displayed sold count (actual + 10000)
+  const displaySoldCount = useMemo(() => soldCount + 10000, [soldCount]);
+
   const handleBuyNow = () => {
     if (stock <= 0) {
       return;
@@ -118,9 +121,14 @@ const ProductCard = ({
         )}
       </div>
 
-      {/* Stock information */}
-      <div className="text-sm text-gray-600 mb-3 font-inter">
-        In stock: {stock}
+      {/* Stock & Sold Information - New styled badges */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        <span className="inline-block text-xs px-2 py-1 rounded bg-[#F2FCE2] text-[#2ECC71] font-medium">
+          In stock: {stock}
+        </span>
+        <span className="inline-block text-xs px-2 py-1 rounded bg-[#FDE1D3] text-[#E67E22] font-medium">
+          Sold: {displaySoldCount.toLocaleString()}
+        </span>
       </div>
       
       {/* Product Description - with flex grow to push buttons to bottom */}
