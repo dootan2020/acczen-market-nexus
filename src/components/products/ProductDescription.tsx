@@ -69,7 +69,7 @@ const ProductDescription = ({
                 icon={<FileText className={cn("w-4 h-4", activeTab === "description" ? "text-primary" : "text-gray-500")} />}
                 isActive={activeTab === "description"}
               />
-              <span className="font-poppins">Mô tả sản phẩm</span>
+              <span className="font-poppins">Description</span>
             </TabsTrigger>
             
             <TabsTrigger 
@@ -83,7 +83,7 @@ const ProductDescription = ({
                 icon={<Star className={cn("w-4 h-4", activeTab === "reviews" ? "text-primary" : "text-gray-500")} />}
                 isActive={activeTab === "reviews"}
               />
-              <span className="font-poppins">Đánh giá sản phẩm</span>
+              <span className="font-poppins">Reviews</span>
             </TabsTrigger>
             
             {!hasNoContent(specifications) && (
@@ -98,7 +98,7 @@ const ProductDescription = ({
                   icon={<Code className={cn("w-4 h-4", activeTab === "specifications" ? "text-primary" : "text-gray-500")} />}
                   isActive={activeTab === "specifications"}
                 />
-                <span className="font-poppins">Thông số kỹ thuật</span>
+                <span className="font-poppins">Specifications</span>
               </TabsTrigger>
             )}
             
@@ -114,7 +114,7 @@ const ProductDescription = ({
                   icon={<BookOpen className={cn("w-4 h-4", activeTab === "usage" ? "text-primary" : "text-gray-500")} />}
                   isActive={activeTab === "usage"}
                 />
-                <span className="font-poppins">Hướng dẫn sử dụng</span>
+                <span className="font-poppins">Usage Instructions</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -131,7 +131,7 @@ const ProductDescription = ({
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/3">
                 <div className="flex flex-col items-center p-6 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-1 font-poppins">Đánh giá trung bình</h3>
+                  <h3 className="text-lg font-semibold mb-1 font-poppins">Average Rating</h3>
                   <div className="text-4xl font-bold text-primary mb-2 font-poppins">{reviews.average}</div>
                   <div className="flex items-center mb-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -148,18 +148,18 @@ const ProductDescription = ({
                     ))}
                   </div>
                   <div className="text-sm text-muted-foreground font-inter">
-                    {reviews.count} đánh giá
+                    {reviews.count} reviews
                   </div>
                 </div>
               </div>
               
               <div className="md:w-2/3">
-                <h3 className="text-lg font-semibold mb-4 font-poppins">Phân phối đánh giá</h3>
+                <h3 className="text-lg font-semibold mb-4 font-poppins">Rating Distribution</h3>
                 
                 <div className="space-y-3">
                   {reviews.distribution.map((item) => (
                     <div key={item.stars} className="flex items-center gap-2">
-                      <div className="w-12 text-sm font-medium font-inter">{item.stars} sao</div>
+                      <div className="w-12 text-sm font-medium font-inter">{item.stars} stars</div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-primary rounded-full" 
@@ -174,7 +174,7 @@ const ProductDescription = ({
                 <div className="mt-6 flex justify-center">
                   <Button className="bg-accent hover:bg-accent/80 transition-colors">
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    Viết đánh giá
+                    Write a Review
                   </Button>
                 </div>
               </div>
