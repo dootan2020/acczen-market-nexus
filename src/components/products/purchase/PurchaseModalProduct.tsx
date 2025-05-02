@@ -14,29 +14,23 @@ export function PurchaseModalProduct({
   quantity,
   totalPrice
 }: PurchaseModalProductProps) {
-  const { formatVND } = useCurrencyContext();
-
+  const { formatUSD, convertVNDtoUSD } = useCurrencyContext();
+  
   return (
-    <div className="space-y-4">
-      {/* Product Image with Gradient Background */}
-      <div className="bg-gradient-to-r from-[#3498DB] to-[#2ECC71] p-4 rounded-md flex items-center justify-center">
-        <img
-          src={productImage}
-          alt={productName}
-          className="h-32 w-auto max-w-full object-contain"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <h3 className="text-lg font-medium leading-tight">{productName}</h3>
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">
-            Số lượng: {quantity}
-          </p>
-          <p className="font-semibold text-[#2ECC71] text-lg">
-            {formatVND(totalPrice)}
-          </p>
-        </div>
+    <div className="flex items-center gap-4">
+      <img 
+        src={productImage} 
+        alt={productName} 
+        className="w-20 h-20 object-cover rounded-md border border-gray-200"
+      />
+      <div className="flex-1">
+        <h3 className="font-medium text-gray-900">{productName}</h3>
+        <p className="text-sm text-muted-foreground">
+          Quantity: {quantity}
+        </p>
+        <p className="text-base font-bold text-primary mt-1">
+          {formatUSD(convertVNDtoUSD(totalPrice))}
+        </p>
       </div>
     </div>
   );

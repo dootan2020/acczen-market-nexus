@@ -18,7 +18,7 @@ export const useSecureTransaction = (options: TransactionOptions = {}) => {
   const { user } = useAuth();
   
   /**
-   * Process a purchase transaction safely using the edge function
+   * Process a purchase transaction safely using the purchase-product edge function
    */
   const processPurchase = async (productId: string, quantity = 1) => {
     if (!user) {
@@ -33,12 +33,15 @@ export const useSecureTransaction = (options: TransactionOptions = {}) => {
     setError(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('process-transaction', {
+      // Call the purchase-product edge function
+      const { data, error } = await supabase.functions.invoke('purchase-product', {
         body: JSON.stringify({
-          user_id: user.id,
-          product_id: productId,
-          quantity,
-          transaction_type: 'purchase'
+          items: [
+            {
+              id: productId,
+              quantity
+            }
+          ]
         })
       });
       
@@ -49,17 +52,17 @@ export const useSecureTransaction = (options: TransactionOptions = {}) => {
       }
       
       // Store transaction ID for reference
-      setTransactionId(data.transaction_id);
+      setTransactionId(data.order.id);
       
       if (showToasts) {
         toast.success('Purchase successful', {
-          description: `Order ID: ${data.order_id}`
+          description: `Order ID: ${data.order.id}`
         });
       }
       
       if (options.onSuccess) options.onSuccess(data);
       
-      return data;
+      return data.order;
     } catch (err: any) {
       const error = err instanceof Error ? err : new Error(err.message || 'Transaction failed');
       setError(error);

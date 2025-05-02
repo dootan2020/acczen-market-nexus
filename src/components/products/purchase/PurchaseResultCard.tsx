@@ -1,110 +1,139 @@
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Check, Clock, CopyIcon, Loader } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Clipboard, RefreshCw, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface PurchaseResultCardProps {
-  orderId?: string;
+  orderId: string;
   productKeys?: string[];
   isCheckingOrder: boolean;
-  onCheckOrder: (orderId: string) => Promise<void>;
+  onCheckOrder: () => void;
   onReset: () => void;
   onClose: () => void;
 }
 
-export const PurchaseResultCard = ({
+export function PurchaseResultCard({
   orderId,
   productKeys,
   isCheckingOrder,
   onCheckOrder,
   onReset,
-  onClose,
-}: PurchaseResultCardProps) => {
-  const navigate = useNavigate();
-  
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Đã sao chép vào clipboard!");
-    } catch (err) {
-      toast.error("Không thể sao chép. Vui lòng thử lại.");
-    }
+  onClose
+}: PurchaseResultCardProps) {
+  const [copySuccess, setCopySuccess] = useState<Record<string, boolean>>({});
+
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    toast.success('Key copied to clipboard');
+    setCopySuccess({ ...copySuccess, [key]: true });
+    setTimeout(() => {
+      setCopySuccess({ ...copySuccess, [key]: false });
+    }, 3000);
   };
 
   return (
-    <Card className="p-4">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium">Kết Quả Mua Hàng</h3>
-        <p className="text-sm text-muted-foreground">
-          Mã đơn hàng: {orderId}
+    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-center mb-4">
+        <div className="bg-green-100 p-3 rounded-full">
+          <Check className="h-6 w-6 text-green-600" />
+        </div>
+      </div>
+      
+      <div className="text-center mb-4">
+        <h3 className="font-semibold text-lg mb-1">Order Successful!</h3>
+        <p className="text-muted-foreground text-sm">
+          Order ID: <span className="font-medium">{orderId}</span>
         </p>
       </div>
 
-      {productKeys?.length ? (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h4 className="font-medium">Thông tin sản phẩm</h4>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => copyToClipboard(productKeys?.join('\n\n') || '')}
-            >
-              <Clipboard className="w-4 h-4 mr-2" />
-              Sao chép tất cả
-            </Button>
-          </div>
-          
-          <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-wrap break-all">
+      {productKeys && productKeys.length > 0 ? (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Your Product Keys:</h4>
+          <div className="bg-white border rounded-md">
             {productKeys.map((key, index) => (
-              <div key={index} className="mb-2 pb-2 border-b border-gray-200 last:border-0">
-                {key}
+              <div 
+                key={index} 
+                className={`
+                  flex items-center justify-between p-3 text-sm 
+                  ${index !== productKeys.length - 1 ? 'border-b' : ''}
+                `}
+              >
+                <span className="font-mono truncate">{key}</span>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => handleCopyKey(key)}
+                  className="h-8 px-2"
+                >
+                  {copySuccess[key] ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <CopyIcon className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-4 py-4">
-          {isCheckingOrder ? (
-            <div className="flex flex-col items-center">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mb-2"></div>
-              <p className="text-sm text-muted-foreground">Đang kiểm tra đơn hàng...</p>
+        <div className="space-y-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+            <div className="flex items-start">
+              <Clock className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">
+                  Order is being processed
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Your order is being processed. Product keys will appear here when ready.
+                </p>
+              </div>
             </div>
-          ) : (
+          </div>
+          
+          <div className="flex justify-center">
             <Button 
-              variant="outline"
-              onClick={() => orderId && onCheckOrder(orderId)}
+              variant="outline" 
+              size="sm"
+              onClick={onCheckOrder}
+              disabled={isCheckingOrder}
+              className="text-xs"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Kiểm tra đơn hàng
+              {isCheckingOrder ? (
+                <>
+                  <Loader className="mr-1 h-3 w-3 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                'Check status'
+              )}
             </Button>
-          )}
+          </div>
         </div>
       )}
-
-      <div className="flex justify-between mt-4 pt-4 border-t">
-        <Button 
-          variant="outline"
-          onClick={onReset}
-        >
-          Đặt lại
-        </Button>
-        <div className="space-x-2">
-          <Button 
-            variant="outline"
-            onClick={onClose}
-          >
-            Đóng
-          </Button>
-          <Button 
-            onClick={() => navigate('/dashboard/purchases')}
-          >
-            <ArrowRight className="w-4 h-4 mr-2" />
-            Xem đơn hàng
-          </Button>
-        </div>
+      
+      <div className="flex pt-4 justify-between">
+        {productKeys && productKeys.length > 0 ? (
+          <>
+            <Button variant="outline" size="sm" onClick={onReset}>
+              New Purchase
+            </Button>
+            <Button onClick={onClose} className="bg-primary hover:bg-primary-dark">
+              Close
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" size="sm" onClick={onReset}>
+              Cancel
+            </Button>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              View Order
+            </Button>
+          </>
+        )}
       </div>
-    </Card>
+    </div>
   );
-};
+}

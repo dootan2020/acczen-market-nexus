@@ -11,7 +11,7 @@ import { PurchaseModalActions } from "./PurchaseModalActions";
 import { PurchaseResultCard } from "./PurchaseResultCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchaseConfirmation } from "@/hooks/usePurchaseConfirmation";
-import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
+import { useSecureTransaction } from "@/hooks/useSecureTransaction";
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -42,9 +42,10 @@ export const PurchaseConfirmModal = ({
 }: PurchaseConfirmModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isProcessing, executePurchase } = usePurchaseProduct();
+  const { loading: isProcessing, processPurchase } = useSecureTransaction();
   const [insufficientBalance, setInsufficientBalance] = useState(false);
   const [totalPrice] = useState(productPrice * quantity);
+  const [userBalance, setUserBalance] = useState(0);
   
   const { 
     purchaseResult,
@@ -59,12 +60,12 @@ export const PurchaseConfirmModal = ({
     resetPurchase,
   } = usePurchaseConfirmation();
 
-  // Check kiosk status when dialog opens
+  // Check kiosk status and user balance when dialog opens
   useEffect(() => {
-    if (open && kioskToken) {
-      checkKioskStatus(kioskToken);
-      
-      // Check balance when dialog opens
+    if (open) {
+      if (kioskToken) {
+        checkKioskStatus(kioskToken);
+      }
       validateBalance();
     }
   }, [open, kioskToken]);
@@ -84,22 +85,34 @@ export const PurchaseConfirmModal = ({
       return;
     }
     
+    setUserBalance(userData.balance || 0);
     setInsufficientBalance(userData.balance < totalPrice);
   };
 
   const handleConfirmPurchase = async () => {
+    if (!user) {
+      toast.error("You need to be logged in to make a purchase");
+      navigate('/login');
+      return;
+    }
+    
     try {
-      const orderId = await executePurchase({
-        id: productId,
-        name: productName,
-        price: productPrice,
-        kioskToken,
-        quantity
-      });
+      const result = await processPurchase(productId, quantity);
       
-      if (orderId) {
-        setPurchaseResult({ orderId });
-        await checkOrderStatus(orderId);
+      if (result && result.order_id) {
+        setPurchaseResult({ 
+          orderId: result.order_id,
+          productKeys: result.product_keys
+        });
+        
+        if (result.product_keys && result.product_keys.length > 0) {
+          // If we already have product keys, no need to check order status
+          toast.success('Purchase successful!', {
+            description: `Your order #${result.order_id} is complete`
+          });
+        } else {
+          await checkOrderStatus(result.order_id);
+        }
       }
     } catch (error) {
       console.error("Purchase error:", error);
@@ -137,6 +150,16 @@ export const PurchaseConfirmModal = ({
     }
   };
 
+  const handleGoToDeposit = () => {
+    onOpenChange(false);
+    navigate('/deposit', { 
+      state: { 
+        requiredAmount: totalPrice - userBalance,
+        returnUrl: `/products/${productId}`
+      } 
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -158,12 +181,14 @@ export const PurchaseConfirmModal = ({
                 totalPrice={totalPrice}
                 description={productDescription}
                 insufficientBalance={insufficientBalance}
+                userBalance={userBalance}
               />
               
               <PurchaseModalActions
                 isProcessing={isProcessing || isCheckingKiosk}
                 onCancel={() => onOpenChange(false)}
                 onConfirm={handleConfirmPurchase}
+                onDeposit={handleGoToDeposit}
                 disabled={kioskActive === false || stock <= 0}
                 insufficientBalance={insufficientBalance}
               />

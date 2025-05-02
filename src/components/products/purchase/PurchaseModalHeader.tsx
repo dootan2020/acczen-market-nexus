@@ -1,16 +1,12 @@
 
-import {
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function PurchaseModalHeader() {
   return (
     <DialogHeader>
-      <DialogTitle>Xác nhận mua hàng</DialogTitle>
+      <DialogTitle>Confirm Purchase</DialogTitle>
       <DialogDescription>
-        Vui lòng xác nhận thông tin mua hàng dưới đây
+        Complete your purchase securely using your account balance.
       </DialogDescription>
     </DialogHeader>
   );

@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import ProductQuantity from './ProductQuantity';
+import { PurchaseConfirmModal } from './purchase/PurchaseConfirmModal';
 
 interface ProductActionsProps {
   product: {
@@ -14,41 +14,27 @@ interface ProductActionsProps {
     sale_price?: number | string | null;
     image_url?: string;
     stock_quantity: number;
+    kiosk_token?: string;
+    description?: string;
   };
 }
 
 const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   const [quantity, setQuantity] = useState('1');
-  const { addItem } = useCart();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   
   const maxQuantity = Math.min(10, product.stock_quantity);
+  const effectivePrice = product.sale_price && Number(product.sale_price) > 0 && Number(product.sale_price) < product.price
+    ? Number(product.sale_price)
+    : product.price;
   
-  const handleAddToCart = () => {
+  const handleBuyNow = () => {
     if (product.stock_quantity <= 0) {
       toast.error("This product is out of stock");
       return;
     }
     
-    const price = product.sale_price && Number(product.sale_price) > 0 && Number(product.sale_price) < product.price
-      ? Number(product.sale_price)
-      : product.price;
-    
-    addItem({
-      id: product.id,
-      name: product.name,
-      price,
-      image: product.image_url || '/placeholder.svg',
-    });
-  };
-  
-  const handleToggleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast(isWishlisted ? "Removed from wishlist" : "Added to wishlist", {
-      description: isWishlisted 
-        ? `${product.name} has been removed from your wishlist` 
-        : `${product.name} has been added to your wishlist`,
-    });
+    setIsPurchaseModalOpen(true);
   };
   
   return (
@@ -68,23 +54,27 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
       <div className="flex gap-3">
         <Button 
           size="lg" 
-          className="flex-1"
-          onClick={handleAddToCart}
+          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60]"
+          onClick={handleBuyNow}
           disabled={product.stock_quantity <= 0}
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
-        </Button>
-        
-        <Button 
-          size="lg"
-          variant="outline"
-          onClick={handleToggleWishlist}
-          className={isWishlisted ? "bg-red-50 text-red-600 border-red-200" : ""}
-        >
-          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+          Buy Now
         </Button>
       </div>
+      
+      <PurchaseConfirmModal
+        open={isPurchaseModalOpen}
+        onOpenChange={setIsPurchaseModalOpen}
+        productId={product.id}
+        productName={product.name}
+        productPrice={effectivePrice}
+        productImage={product.image_url || '/placeholder.svg'}
+        productDescription={product.description}
+        quantity={parseInt(quantity) || 1}
+        kioskToken={product.kiosk_token || null}
+        stock={product.stock_quantity}
+      />
     </div>
   );
 };
