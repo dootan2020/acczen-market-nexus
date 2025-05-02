@@ -43,18 +43,6 @@ const ProductPricing: React.FC<ProductPricingProps> = ({
           </span>
         )}
       </div>
-      
-      <div className="mt-1">
-        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-          stockQuantity > 10 ? 'bg-green-100 text-green-800' :
-          stockQuantity > 0 ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {stockQuantity > 0 
-            ? `In Stock (${soldQuantity.toLocaleString()}+ sold)` 
-            : 'Out of Stock'}
-        </span>
-      </div>
     </div>
   );
 };

@@ -57,6 +57,7 @@ const ProductDetail = () => {
               title={product.name} 
               subtitle=""  
               categoryName={product.category?.name || ''}
+              stockQuantity={product.stock_quantity}
             />
             
             <ProductPricing 
