@@ -45,10 +45,6 @@ const mainRoutes = [
   { path: '/help', element: <Help /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/update-password', element: <UpdatePasswordPage /> },
-];
-
-// Define routes that don't need the main Layout (like auth pages)
-const authRoutes = [
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
 ];
@@ -85,7 +81,6 @@ const adminRoutes = [
 // Combine all routes for export
 const routes = {
   mainRoutes,
-  authRoutes,
   dashboardRoutes,
   adminRoutes
 };

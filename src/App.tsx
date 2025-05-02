@@ -39,15 +39,6 @@ function App() {
                         ))}
                       </Route>
                       
-                      {/* Auth routes without layout */}
-                      {routes.authRoutes.map((route, index) => (
-                        <Route
-                          key={`auth-${index}`}
-                          path={route.path}
-                          element={route.element}
-                        />
-                      ))}
-                      
                       {/* Dashboard routes */}
                       {routes.dashboardRoutes.map((route, index) => (
                         <Route
