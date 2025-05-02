@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
 import { useNavigate } from "react-router-dom";
@@ -98,15 +98,7 @@ export const PurchaseConfirmModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-auto">
         <DialogHeader className="relative border-b pb-4">
-          <Button
-            onClick={() => onOpenChange(false)}
-            variant="ghost"
-            size="icon"
-            className="absolute right-0 top-0"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-          <DialogTitle className="text-2xl font-semibold pr-8">Purchase Confirmation</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold">Purchase Confirmation</DialogTitle>
         </DialogHeader>
 
         <div className="py-6 space-y-6">
