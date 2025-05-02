@@ -9,7 +9,7 @@ import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import Header from "@/components/Header";
 
-export function DashboardLayout({ children }: { children?: React.ReactNode }) {
+export function DashboardLayout() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -23,7 +23,7 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
             <main className="flex-1 min-w-0 bg-background">
               <DashboardHeader />
               <div className="container p-6">
-                {children || <Outlet />}
+                <Outlet />
               </div>
             </main>
           </div>
@@ -32,3 +32,5 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
     </div>
   );
 }
+
+export default DashboardLayout;

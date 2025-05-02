@@ -1,7 +1,6 @@
+
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
-import App from './App';
+import { createBrowserRouter } from 'react-router-dom';
 import Layout from '@/components/Layout'; 
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
@@ -30,15 +29,6 @@ import ReportsPage from '@/pages/admin/ReportsPage';
 import AdminExchangeRates from '@/pages/admin/AdminExchangeRates';
 import AdminTransactions from '@/pages/admin/AdminTransactions';
 import AdminSettings from '@/pages/admin/AdminSettings';
-
-// Create a Layout component for routes that are missing
-const MainLayout = () => {
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
-  );
-};
 
 // Create placeholder components for routes that are missing
 const CategoriesPage = () => <div>Categories Page</div>;
