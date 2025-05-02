@@ -59,7 +59,7 @@ const ProductPricing = ({
 
   return (
     <>
-      <div className="mb-6 bg-secondary/30 p-4 rounded-lg">
+      <div className="mb-6 p-4 rounded-lg bg-white border border-gray-200">
         <div className="flex items-baseline gap-2 flex-wrap">
           <TooltipProvider>
             <Tooltip>
@@ -79,7 +79,7 @@ const ProductPricing = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="text-lg text-muted-foreground line-through cursor-help">
+                    <span className="text-lg text-gray-600 line-through cursor-help">
                       {formattedUsdPrice}
                     </span>
                   </TooltipTrigger>
@@ -89,39 +89,14 @@ const ProductPricing = ({
                 </Tooltip>
               </TooltipProvider>
               
-              <Badge variant="destructive" className="ml-2">
-                -{discount}%
-              </Badge>
+              {discount > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  -{discount}%
+                </Badge>
+              )}
             </>
           )}
         </div>
-      </div>
-      
-      <div className="flex flex-wrap gap-3 mb-6">
-        <Badge 
-          variant="outline" 
-          className={cn(
-            "py-1.5 px-3",
-            isOutOfStock 
-              ? "border-destructive text-destructive" 
-              : isLowStock
-              ? "bg-[#e6f7ef] border-[#19C37D] text-[#19C37D]"
-              : "bg-[#e6f7ef] border-[#19C37D] text-[#19C37D]"
-          )}
-        >
-          {isOutOfStock 
-            ? "Out of Stock" 
-            : isLowStock
-            ? `Only ${stockQuantity} items left`
-            : `In Stock (${stockQuantity} items)`}
-        </Badge>
-        
-        <Badge 
-          variant="outline" 
-          className="py-1.5 px-3 bg-[#e6f3f9] border-[#3498db] text-[#3498db]"
-        >
-          Sold: {soldCount}
-        </Badge>
       </div>
     </>
   );

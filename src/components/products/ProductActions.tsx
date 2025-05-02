@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { PurchaseConfirmModal } from "./PurchaseConfirmModal";
+import { PurchaseConfirmModal } from "./purchase/PurchaseConfirmModal";
 
 interface ProductActionsProps {
   isOutOfStock: boolean;
