@@ -7,7 +7,7 @@ import router from './routes';
 
 function App() {
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <div className="app-container">
         <RouterProvider router={router} />
         <Toaster />
