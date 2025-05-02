@@ -18,18 +18,12 @@ export const ProductInfoModal = () => {
   // Memoize translated content to prevent unnecessary re-renders
   const translations = useMemo(() => ({
     productInfo: translate('productInfo'),
-    usageGuide: translate('usageGuide'),
-    warranty: translate('warranty'),
     productDetails: translate('productDetails'),
     category: translate('category'),
     stock: translate('stock'),
     price: translate('price'),
     close: translate('close'),
     uncategorized: translate('uncategorized'),
-    usageGuideText: translate('usageGuideText'),
-    usageGuideNote: translate('usageGuideNote'),
-    warrantyText: translate('warrantyText'),
-    warrantyGuarantee: translate('warrantyGuarantee'),
     productNotFound: translate('productNotFound')
   }), []);
 
@@ -56,35 +50,14 @@ export const ProductInfoModal = () => {
             
             <div className="py-6 space-y-8">
               {/* Product Description */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-medium">{translations.productInfo}</h3>
-                <div className="text-gray-700 whitespace-pre-line leading-relaxed">
-                  {cleanDescription}
+              {cleanDescription && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-medium">{translations.productInfo}</h3>
+                  <div className="text-gray-700 whitespace-pre-line leading-relaxed">
+                    {cleanDescription}
+                  </div>
                 </div>
-              </div>
-              
-              {/* Usage Guide */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-xl font-medium">{translations.usageGuide}</h3>
-                <div className="text-gray-700 leading-relaxed">
-                  {translations.usageGuideText}
-                </div>
-                <div className="bg-blue-50 p-4 rounded-md text-blue-800 text-sm">
-                  <p>{translations.usageGuideNote}</p>
-                </div>
-              </div>
-              
-              {/* Warranty & Support */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-xl font-medium">{translations.warranty}</h3>
-                <div className="text-gray-700 leading-relaxed">
-                  {translations.warrantyText}
-                </div>
-                <div className="bg-green-50 p-4 rounded-md text-green-800 text-sm flex flex-row items-start gap-3">
-                  <span className="text-green-600 font-medium">✓</span>
-                  <p>{translations.warrantyGuarantee}</p>
-                </div>
-              </div>
+              )}
               
               {/* Product Details Card */}
               <div className="bg-gray-50 rounded-lg p-5 mt-6 border">
