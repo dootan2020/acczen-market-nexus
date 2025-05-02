@@ -130,12 +130,10 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
       </div>
       
       {showForm && (
-        <div className="bg-white border border-gray-100 rounded-lg shadow-sm p-6">
-          <ReviewForm 
-            productId={productId}
-            onReviewSubmitted={handleReviewSubmitted}
-          />
-        </div>
+        <ReviewForm 
+          productId={productId}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
       )}
 
       {isLoading ? (
@@ -147,12 +145,10 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => {
           </div>
         </div>
       ) : (
-        <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden">
-          <ReviewsList 
-            reviews={reviews} 
-            onReviewUpdated={fetchReviews} 
-          />
-        </div>
+        <ReviewsList 
+          reviews={reviews} 
+          onReviewUpdated={fetchReviews} 
+        />
       )}
     </div>
   );
