@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import AdminLayout from '@/components/AdminLayout';
 import AdminProtectedRoute from '@/components/AdminProtectedRoute';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import DiscountAnalyticsPage from '@/pages/admin/DiscountAnalyticsPage';
 import Index from '@/pages/Index'; 
 import Products from '@/pages/Products';
@@ -16,6 +17,8 @@ import CartPage from '@/pages/Cart';
 import Checkout from '@/pages/Checkout';
 import OrderComplete from '@/pages/OrderComplete';
 import Deposit from '@/pages/Deposit';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
 
 // Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
@@ -41,6 +44,9 @@ const DepositDetailsPage = () => <div>Deposit Details Page</div>;
 const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
+const DepositHistoryPage = () => <div>Deposit History Page</div>;
+const PurchasesPage = () => <div>Purchases Page</div>;
+const DashboardSettingsPage = () => <div>Dashboard Settings Page</div>;
 
 const router = createBrowserRouter([
   {
@@ -76,18 +82,6 @@ const router = createBrowserRouter([
         element: <ProtectedRoute><OrderComplete /></ProtectedRoute>,
       },
       {
-        path: 'dashboard',
-        element: <ProtectedRoute><DashboardPage /></ProtectedRoute>,
-      },
-      {
-        path: 'profile',
-        element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
-      },
-      {
-        path: 'deposit',
-        element: <ProtectedRoute><Deposit /></ProtectedRoute>,
-      },
-      {
         path: 'login',
         element: <LoginPage />,
       },
@@ -95,7 +89,45 @@ const router = createBrowserRouter([
         path: 'register',
         element: <RegisterPage />,
       },
+      {
+        path: 'reset-password',
+        element: <ResetPasswordPage />,
+      },
+      {
+        path: 'update-password',
+        element: <ProtectedRoute><UpdatePasswordPage /></ProtectedRoute>,
+      },
     ],
+  },
+  {
+    path: '/dashboard',
+    element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+    children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />,
+      },
+      {
+        path: 'deposits',
+        element: <DepositHistoryPage />,
+      },
+      {
+        path: 'purchases',
+        element: <PurchasesPage />,
+      },
+      {
+        path: 'settings',
+        element: <DashboardSettingsPage />,
+      },
+    ],
+  },
+  {
+    path: '/deposit',
+    element: <ProtectedRoute><Deposit /></ProtectedRoute>,
   },
   {
     path: 'admin',
