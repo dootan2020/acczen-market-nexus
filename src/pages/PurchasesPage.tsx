@@ -1,13 +1,9 @@
 
 import React from 'react';
+import PurchasesPageComponent from '@/components/dashboard/PurchasesPage';
 
-const PurchasesPage = () => {
-  return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Purchase History</h1>
-      <p>View your purchase history here.</p>
-    </div>
-  );
+const PurchasesPage: React.FC = () => {
+  return <PurchasesPageComponent />;
 };
 
 export default PurchasesPage;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from '@/components/Layout'; 
@@ -19,6 +18,10 @@ import OrderComplete from '@/pages/OrderComplete';
 import Deposit from '@/pages/Deposit';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import UpdatePasswordPage from '@/pages/UpdatePasswordPage';
+import ProfilePage from '@/pages/ProfilePage';
+import PurchasesPage from '@/pages/PurchasesPage';
+import DepositHistoryPage from '@/pages/DepositHistoryPage';
+import DashboardSettingsPage from '@/pages/DashboardSettingsPage';
 
 // Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
@@ -36,7 +39,6 @@ import AdminSettings from '@/pages/admin/AdminSettings';
 
 // Create placeholder components for routes that are missing
 const CategoriesPage = () => <div>Categories Page</div>;
-const ProfilePage = () => <div>Profile Page</div>;
 const AdminIntegrationsPage = () => <div>Admin Integrations Page</div>;
 const CategoryEditPage = () => <div>Category Edit Page</div>;
 const AdminOrderDetailsPage = () => <div>Admin Order Details Page</div>;
@@ -44,9 +46,6 @@ const DepositDetailsPage = () => <div>Deposit Details Page</div>;
 const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
 const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
 const CategoryCreatePage = () => <div>Category Create Page</div>;
-const DepositHistoryPage = () => <div>Deposit History Page</div>;
-const PurchasesPage = () => <div>Purchases Page</div>;
-const DashboardSettingsPage = () => <div>Dashboard Settings Page</div>;
 
 const router = createBrowserRouter([
   {
@@ -112,7 +111,7 @@ const router = createBrowserRouter([
         element: <ProfilePage />,
       },
       {
-        path: 'deposits',
+        path: 'history',
         element: <DepositHistoryPage />,
       },
       {
@@ -131,7 +130,7 @@ const router = createBrowserRouter([
   },
   {
     path: 'admin',
-    element: <AdminLayout />,
+    element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
     children: [
       {
         index: true,

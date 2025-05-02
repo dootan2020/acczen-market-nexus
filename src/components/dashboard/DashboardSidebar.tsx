@@ -58,7 +58,7 @@ export function DashboardSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Account Settings" isActive={currentPath === "/dashboard/settings"}>
               <a href="/dashboard/settings">
-                <User className="w-4 h-4" />
+                <Settings className="w-4 h-4" />
                 <span>Account Settings</span>
               </a>
             </SidebarMenuButton>
