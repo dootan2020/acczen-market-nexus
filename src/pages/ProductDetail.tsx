@@ -10,6 +10,7 @@ import ProductActions from '@/components/products/ProductActions';
 import ProductDescription from '@/components/products/ProductDescription';
 import { Skeleton } from '@/components/ui/skeleton';
 import RelatedProducts from '@/components/products/RelatedProducts';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -18,6 +19,7 @@ const ProductDetail = () => {
     product?.category_id || '',
     product?.id || ''
   );
+  const currency = useCurrencyContext();
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
@@ -53,7 +55,7 @@ const ProductDetail = () => {
           <div className="flex flex-col gap-8">
             <ProductHeader 
               title={product.name} 
-              subtitle={`SKU: ${product.sku || 'N/A'}`} 
+              subtitle=""  
               categoryName={product.category?.name || ''}
             />
             
@@ -61,6 +63,7 @@ const ProductDetail = () => {
               price={product.price} 
               salePrice={product.sale_price}
               stockQuantity={product.stock_quantity} 
+              currency={currency}
             />
 
             <Separator className="my-2" />
@@ -78,14 +81,12 @@ const ProductDetail = () => {
               <h3 className="text-xl font-semibold mb-4 font-poppins text-gray-800">Product Description</h3>
               <ProductDescription 
                 description={product.description}
-                specifications={product.specifications || null}
-                usage={product.usage_instructions || null}
               />
             </div>
           </div>
         </div>
         
-        {/* Related Products */}
+        {/* Related Products - Single Instance */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-16">
             <h3 className="text-2xl font-semibold mb-6 font-poppins">Related Products</h3>

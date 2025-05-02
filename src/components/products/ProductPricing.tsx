@@ -1,21 +1,29 @@
 
 import React from 'react';
-import { formatCurrency } from '@/utils/formatters';
+import { CurrencyContextType } from '@/types/currency';
 
 interface ProductPricingProps {
   price: number;
   salePrice?: number | string | null;
   stockQuantity: number;
+  currency: CurrencyContextType;
 }
 
 const ProductPricing: React.FC<ProductPricingProps> = ({
   price,
   salePrice,
-  stockQuantity
+  stockQuantity,
+  currency
 }) => {
   const hasDiscount = salePrice && Number(salePrice) > 0 && Number(salePrice) < price;
-  const formattedPrice = formatCurrency(price);
-  const formattedSalePrice = hasDiscount ? formatCurrency(Number(salePrice)) : null;
+  
+  // Convert prices using the currency context
+  const formattedPrice = currency.formatVND(price);
+  const formattedSalePrice = hasDiscount ? currency.formatVND(Number(salePrice)) : null;
+  
+  // Calculate a fake "sold" number for display purposes (for demonstration)
+  // In a real app, this would come from actual sales data
+  const soldQuantity = stockQuantity > 10 ? Math.round(stockQuantity * 1.5) : 50;
   
   return (
     <div className="flex flex-col gap-2">
@@ -42,9 +50,9 @@ const ProductPricing: React.FC<ProductPricingProps> = ({
           stockQuantity > 0 ? 'bg-yellow-100 text-yellow-800' :
           'bg-red-100 text-red-800'
         }`}>
-          {stockQuantity > 10 ? 'In Stock' :
-           stockQuantity > 0 ? `Low Stock (${stockQuantity} left)` :
-           'Out of Stock'}
+          {stockQuantity > 0 
+            ? `In Stock (${soldQuantity.toLocaleString()}+ sold)` 
+            : 'Out of Stock'}
         </span>
       </div>
     </div>
