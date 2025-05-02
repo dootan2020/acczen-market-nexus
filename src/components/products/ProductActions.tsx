@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
+import ProductQuantity from './ProductQuantity';
 
 interface ProductActionsProps {
   product: {
@@ -23,7 +23,6 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   
   const maxQuantity = Math.min(10, product.stock_quantity);
-  const quantityOptions = Array.from({ length: maxQuantity }, (_, i) => (i + 1).toString());
   
   const handleAddToCart = () => {
     if (product.stock_quantity <= 0) {
@@ -58,22 +57,12 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
         <label htmlFor="quantity" className="block text-sm font-medium font-poppins text-gray-700">
           Quantity
         </label>
-        <Select
+        <ProductQuantity
           value={quantity}
-          onValueChange={setQuantity}
+          onChange={setQuantity}
+          maxQuantity={maxQuantity}
           disabled={product.stock_quantity <= 0}
-        >
-          <SelectTrigger className="w-24">
-            <SelectValue placeholder="1" />
-          </SelectTrigger>
-          <SelectContent>
-            {quantityOptions.map((value) => (
-              <SelectItem key={value} value={value}>
-                {value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
       
       <div className="flex gap-3">
