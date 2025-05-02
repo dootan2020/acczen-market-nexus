@@ -1,3 +1,4 @@
+
 // Add this if it doesn't exist yet or update the existing interface
 export interface TaphoammoProduct {
   kiosk_token: string; 
@@ -35,8 +36,11 @@ export interface Product {
     name: string;
     slug: string;
   };
+  metadata?: Record<string, any>;
   specifications?: string | null;
   usage_instructions?: string | null;
+  technical_details?: string | null;
+  warranty_info?: string | null;
 }
 
 export interface ProductFormData {

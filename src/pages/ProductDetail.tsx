@@ -49,11 +49,11 @@ const ProductDetail = () => {
     'No subscription required'
   ];
 
-  // Extract or define sections from product description
-  // In a real application, these might be separate fields in the product database
-  const technicalDetails = product.technical_details || null;
-  const usageInstructions = product.usage_instructions || null;
-  const warrantyInfo = product.warranty_info || null;
+  // Extract supplementary information from metadata if available
+  const metadata = product.metadata as Record<string, any> || {};
+  const technicalDetails = metadata.technical_details || null;
+  const usageInstructions = metadata.usage_instructions || null;
+  const warrantyInfo = metadata.warranty_info || null;
 
   return (
     <div className="bg-background min-h-screen">
