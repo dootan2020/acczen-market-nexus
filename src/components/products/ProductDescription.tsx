@@ -1,24 +1,20 @@
 
 import React from 'react';
+import DOMPurify from 'dompurify';
 
 interface ProductDescriptionProps {
   description: string;
 }
 
 const ProductDescription: React.FC<ProductDescriptionProps> = ({ description }) => {
-  // A simple function to render description with line breaks
-  const renderDescription = (text: string) => {
-    return text.split('\n').map((line, index) => (
-      <p key={index} className="mb-3">
-        {line}
-      </p>
-    ));
-  };
+  // Sanitize the HTML content to prevent XSS attacks
+  const sanitizedHtml = DOMPurify.sanitize(description);
 
   return (
-    <div className="text-gray-600 font-inter">
-      {renderDescription(description)}
-    </div>
+    <div 
+      className="text-gray-600 font-inter product-description"
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+    />
   );
 };
 
