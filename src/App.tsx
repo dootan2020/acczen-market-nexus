@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,9 +8,11 @@ import { CartProvider } from './providers/CartProvider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import router from './routes';
+import Layout from './components/Layout';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { Toaster } from './components/ui/toaster';
 
+// Create a QueryClient for React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -21,7 +23,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <ErrorBoundary>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
@@ -30,7 +32,17 @@ function App() {
                 <CurrencyProvider>
                   <PaymentProvider>
                     <Routes>
-                      <Route path="/*" element={<RouterOutlet />} />
+                      {router.routes.map((route) => (
+                        <Route 
+                          key={route.path}
+                          path={route.path} 
+                          element={
+                            <Layout>
+                              {route.element}
+                            </Layout>
+                          } 
+                        />
+                      ))}
                     </Routes>
                     <Toaster />
                   </PaymentProvider>
@@ -40,24 +52,8 @@ function App() {
           </QueryClientProvider>
         </ThemeProvider>
       </ErrorBoundary>
-    </BrowserRouter>
+    </Router>
   );
 }
-
-// This is a temporary component to make the router work
-// while we're fixing the routing structure
-const RouterOutlet = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="p-6 bg-white rounded shadow-md max-w-md w-full">
-        <h1 className="text-2xl font-bold text-primary mb-4">Digital Deals Hub</h1>
-        <p className="mb-4">The application is being set up. Please check back soon.</p>
-        <p className="text-sm text-muted-foreground">
-          Router configuration is being updated.
-        </p>
-      </div>
-    </div>
-  );
-};
 
 export default App;

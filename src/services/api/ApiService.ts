@@ -1,3 +1,4 @@
+
 export class ApiService {
   private baseUrl: string;
   private defaultHeaders: Record<string, string>;
@@ -71,6 +72,8 @@ export class ApiService {
       method,
       headers,
       credentials: 'include',
+      // Add CORS mode to help with CORS issues
+      mode: 'cors',
     };
 
     if (data) {
@@ -82,7 +85,16 @@ export class ApiService {
 
   private async fetchWithRetry<T>(url: string, config: RequestInit, retryCount = 0): Promise<T> {
     try {
-      const response = await fetch(url, config);
+      // Add a timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+      
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await this.parseResponseData(response);
@@ -103,10 +115,22 @@ export class ApiService {
       
       return this.parseResponseData(response);
     } catch (error) {
+      // Handle CORS errors specifically
+      if (error.message && error.message.includes('CORS')) {
+        console.error('CORS error detected:', error);
+        
+        // Try using a CORS proxy if this is the first attempt
+        if (retryCount === 0) {
+          const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+          return this.fetchWithRetry<T>(corsProxyUrl, config, retryCount + 1);
+        }
+      }
+      
       if (retryCount < this.maxRetries && this.isNetworkError(error)) {
         await this.delay(this.retryDelay * Math.pow(2, retryCount));
         return this.fetchWithRetry<T>(url, config, retryCount + 1);
       }
+      
       throw error;
     }
   }
@@ -120,11 +144,18 @@ export class ApiService {
   }
 
   private isNetworkError(error: any): boolean {
-    return !window.navigator.onLine || error instanceof TypeError;
+    // Check for offline status or network-related errors
+    return !window.navigator.onLine || 
+           error instanceof TypeError || 
+           (error.message && (
+             error.message.includes('NetworkError') || 
+             error.message.includes('Failed to fetch') ||
+             error.message.includes('Network request failed')
+           ));
   }
 
   private shouldRetry(status: number): boolean {
-    // Convert string 'true' to boolean true for comparison
+    // Retry on specific HTTP status codes
     const retryStatuses = [408, 429, 500, 502, 503, 504];
     return retryStatuses.includes(status);
   }
