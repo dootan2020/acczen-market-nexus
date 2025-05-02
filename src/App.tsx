@@ -7,13 +7,14 @@ import router from './routes';
 
 function App() {
   return (
-    <TooltipProvider delayDuration={0}>
-      {/* Pass a single div element as the TooltipProvider child */}
-      <div className="app-container">
-        <RouterProvider router={router} />
-        <Toaster />
-      </div>
-    </TooltipProvider>
+    <React.StrictMode>
+      <TooltipProvider delayDuration={0}>
+        <div className="app-container">
+          <RouterProvider router={router} />
+        </div>
+      </TooltipProvider>
+      <Toaster />
+    </React.StrictMode>
   );
 }
 

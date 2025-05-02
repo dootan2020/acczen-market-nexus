@@ -13,17 +13,14 @@ const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
 // Create the React root and render the app with all required providers
-// Order: ReactQueryProvider (outermost) -> AuthProvider -> CartProvider -> CurrencyContextProvider -> App
 createRoot(rootElement).render(
-  <React.StrictMode>
-    <ReactQueryProvider>
-      <AuthProvider>
-        <CartProvider>
-          <CurrencyContextProvider>
-            <App />
-          </CurrencyContextProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ReactQueryProvider>
-  </React.StrictMode>
+  <ReactQueryProvider>
+    <AuthProvider>
+      <CartProvider>
+        <CurrencyContextProvider>
+          <App />
+        </CurrencyContextProvider>
+      </CartProvider>
+    </AuthProvider>
+  </ReactQueryProvider>
 );
