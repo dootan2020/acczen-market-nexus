@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -113,6 +112,17 @@ export function MobileNav() {
                 onClick={() => setOpen(false)}
               >
                 Contact
+              </Link>
+
+              <Link
+                to="/dashboard"
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-base hover:bg-accent hover:text-accent-foreground",
+                  location.pathname === "/dashboard" && "bg-accent text-accent-foreground"
+                )}
+                onClick={() => setOpen(false)}
+              >
+                Dashboard
               </Link>
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -12,6 +13,7 @@ import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import DashboardPage from '@/pages/Dashboard'; // Add import for Dashboard page
 
 // Import admin pages
 import AdminHome from '@/pages/admin/AdminHome';
@@ -71,6 +73,14 @@ const router = createBrowserRouter([
           {
             path: 'categories',
             element: <CategoriesPage />,
+          },
+          {
+            path: 'dashboard', // Add Dashboard route
+            element: (
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: 'profile',
