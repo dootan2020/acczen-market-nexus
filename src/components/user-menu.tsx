@@ -70,7 +70,7 @@ export function UserMenu() {
       await signOut(true)
       setShowLogoutConfirm(false)
     } catch (error) {
-      console.error("Error logging out:", error)
+      console.error("Lỗi đăng xuất:", error)
     }
   }
 
@@ -91,11 +91,11 @@ export function UserMenu() {
       <div className="flex items-center gap-2">
         <Link to="/register">
           <Button variant="outline" size="sm" className="hidden md:inline-flex">
-            Register
+            Đăng ký
           </Button>
         </Link>
         <Link to="/login">
-          <Button size="sm">Login</Button>
+          <Button size="sm">Đăng nhập</Button>
         </Link>
       </div>
     )
@@ -110,7 +110,7 @@ export function UserMenu() {
               <AvatarImage src={user.user_metadata?.avatar_url || ''} alt={userDisplayName} />
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
-            <span className="sr-only">My Account</span>
+            <span className="sr-only">Tài khoản của tôi</span>
           </Button>
         </DropdownMenuTrigger>
         
@@ -130,13 +130,13 @@ export function UserMenu() {
                   onClick={() => setShowVndBalance(!showVndBalance)}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Balance:</span>
+                    <span className="text-sm">Số dư:</span>
                     <span className="font-semibold text-primary">{displayBalance}</span>
                   </div>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Click to switch currency units</p>
+                <p>Click để chuyển đổi đơn vị tiền tệ</p>
                 <p>VND: {formatVND(balance || 0)}</p>
                 <p>USD: {formatUSD(convertVNDtoUSD(balance || 0))}</p>
               </TooltipContent>
@@ -153,14 +153,14 @@ export function UserMenu() {
           <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
             <Link to="/dashboard/purchases">
               <ShoppingBag className="h-4 w-4" />
-              <span>My Orders</span>
+              <span>Đơn hàng của tôi</span>
             </Link>
           </DropdownMenuItem>
           
           <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
             <Link to="/dashboard/settings">
               <Settings className="h-4 w-4" />
-              <span>Account Settings</span>
+              <span>Cài đặt tài khoản</span>
             </Link>
           </DropdownMenuItem>
           
@@ -171,7 +171,7 @@ export function UserMenu() {
             className="text-red-500 hover:bg-red-50 hover:text-red-500 cursor-pointer flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            <span>Logout</span>
+            <span>Đăng xuất</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -180,14 +180,14 @@ export function UserMenu() {
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to logout from the system?
+              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogoutConfirm}>Logout</AlertDialogAction>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogoutConfirm}>Đăng xuất</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -28,7 +28,7 @@ export function CartButton() {
           </Badge>
         )}
         
-        <span className="sr-only">Cart</span>
+        <span className="sr-only">Giỏ hàng</span>
       </Button>
     </Link>
   )

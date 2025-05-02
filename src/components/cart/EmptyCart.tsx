@@ -6,10 +6,10 @@ import { Link } from 'react-router-dom';
 const EmptyCart: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 text-center">
-      <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-      <p className="mb-6">It looks like you haven't added any products to your cart yet.</p>
+      <h1 className="text-2xl font-bold mb-4">Giỏ hàng của bạn trống</h1>
+      <p className="mb-6">Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng.</p>
       <Button asChild>
-        <Link to="/products">View Products</Link>
+        <Link to="/products">Xem sản phẩm</Link>
       </Button>
     </div>
   );

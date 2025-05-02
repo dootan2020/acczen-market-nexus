@@ -148,7 +148,7 @@ const ProductCard = ({
           className="flex-1 border border-[#e5e5e5] bg-white hover:bg-gray-50 text-[#343541]"
           onClick={handleViewDetails}
         >
-          <Eye className="mr-1 h-4 w-4" /> Details
+          <Eye className="mr-1 h-4 w-4" /> Chi tiết
         </Button>
         
         <Button
@@ -156,7 +156,7 @@ const ProductCard = ({
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
-          <ShoppingBag className="mr-1 h-4 w-4" /> Buy Now
+          <ShoppingBag className="mr-1 h-4 w-4" /> Mua ngay
         </Button>
       </div>
     </Card>
