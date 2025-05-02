@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,7 +8,6 @@ import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductBadge from "./products/ProductBadge";
-import StockSoldBadges from "./products/inventory/StockSoldBadges";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 
 interface ProductCardProps {
@@ -93,91 +92,114 @@ const ProductCard = ({
     navigate(`/products/${id}`);
   };
 
+  // Calculate discount percentage if on sale
+  const discountPercentage = useMemo(() => {
+    if (!salePrice || salePrice >= price) return 0;
+    return Math.round(((price - salePrice) / price) * 100);
+  }, [price, salePrice]);
+
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 rounded-xl border border-gray-200 h-full flex flex-col group">
-      <div className="relative">
+    <Card className="h-full flex flex-col overflow-hidden border border-slate-200 rounded-lg transition-all duration-300 hover:shadow-md group">
+      {/* Product Image Area */}
+      <div className="relative overflow-hidden bg-slate-50">
         <Link to={`/products/${id}`} className="block">
-          <div className="h-[180px] bg-gradient-to-r from-[#3498DB]/10 to-[#19C37D]/10 overflow-hidden">
-            <div className="absolute inset-0 w-full h-full p-4 flex items-center justify-center">
-              <img
-                src={image || "/placeholder.svg"}
-                alt={name}
-                className="max-h-full w-auto max-w-full object-contain object-center shadow-sm group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = "/placeholder.svg";
-                }}
-                loading="lazy"
-              />
-            </div>
+          <div className="h-[220px] flex items-center justify-center p-6">
+            <img
+              src={image || "/placeholder.svg"}
+              alt={name}
+              className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = "/placeholder.svg";
+              }}
+            />
           </div>
         </Link>
-        
-        <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap max-w-[calc(100%-1rem)]">
+
+        {/* Badges */}
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 max-w-[calc(100%-1rem)]">
           {featured && <ProductBadge type="featured" />}
           {isNew && <ProductBadge type="new" />}
           {isBestSeller && <ProductBadge type="bestSeller" />}
-          {salePrice && <ProductBadge type="sale" />}
+          {discountPercentage > 0 && (
+            <ProductBadge type="sale" percentage={discountPercentage} />
+          )}
         </div>
-        
+
         {stock <= 0 && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex items-center justify-center">
-            <Badge variant="destructive" className="text-base py-1 px-3 font-semibold">Out of Stock</Badge>
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+            <Badge variant="destructive" className="text-base font-medium px-3 py-1">
+              Out of Stock
+            </Badge>
           </div>
         )}
       </div>
-      
-      <CardContent className="p-4 flex-grow">
-        <Link to={`/products/${id}`}>
-          <h3 className="font-medium text-lg line-clamp-2 hover:text-[#19C37D] transition-colors font-sans mb-2 text-[#333333]">{name}</h3>
-        </Link>
-        
-        <div className="mb-2">
-          <span className="text-sm text-muted-foreground">
-            In stock: {stock}
-          </span>
-          {soldCount > 0 && (
-            <span className="text-sm text-muted-foreground ml-2">
-              • Sold: {soldCount}
-            </span>
+
+      {/* Product Info */}
+      <CardContent className="flex-grow p-4">
+        <div className="mb-1.5 flex items-center space-x-1">
+          <Badge variant="outline" className="text-xs font-normal text-gray-600 bg-slate-50 hover:bg-slate-100">
+            {category}
+          </Badge>
+          
+          {rating > 0 && (
+            <div className="flex items-center text-xs text-amber-500 ml-auto">
+              <Star className="h-3.5 w-3.5 fill-amber-500 mr-0.5" />
+              <span>{rating.toFixed(1)}</span>
+              {reviewCount > 0 && <span className="text-gray-400 ml-0.5">({reviewCount})</span>}
+            </div>
           )}
         </div>
         
-        {description && (
-          <p className="text-[#333333]/70 text-sm line-clamp-2 mb-3">
-            {cleanDescription}
-          </p>
-        )}
-        
-        <div className="flex items-end justify-between mt-2">
-          <span className="text-xl font-bold text-[#19C37D] font-sans">
+        <Link to={`/products/${id}`}>
+          <h3 className="font-medium text-base line-clamp-2 hover:text-[#19C37D] transition-colors mb-1.5">
+            {name}
+          </h3>
+        </Link>
+
+        <div className="flex items-baseline mt-1.5 mb-2">
+          <span className="text-lg font-bold text-[#19C37D]">
             {formattedSalePrice || formattedPrice}
           </span>
           
           {displaySalePrice && (
-            <span className="text-sm text-muted-foreground line-through ml-2">
+            <span className="text-sm text-gray-500 line-through ml-2">
               {formattedPrice}
             </span>
           )}
         </div>
-      </CardContent>
-      
-      <CardFooter className="p-4 pt-0 grid grid-cols-3 gap-2 mt-auto">
-        <Button
-          variant="outline"
-          className="w-full border-[#19C37D] text-[#19C37D] hover:bg-[#19C37D]/10"
-          disabled={stock === 0}
-          onClick={handleViewDetails}
-        >
-          Details
-        </Button>
+
+        {description && (
+          <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+            {cleanDescription}
+          </p>
+        )}
         
-        <Button 
-          className="w-full col-span-2 bg-[#19C37D] hover:bg-[#15a76b] text-white uppercase font-medium" 
+        <div className="flex items-center text-sm text-gray-500 mt-auto space-x-2">
+          <span className="inline-flex items-center">
+            <span className={stock > 0 ? "text-green-600" : "text-red-500"}>
+              {stock > 0 ? `In stock (${stock})` : "Out of stock"}
+            </span>
+          </span>
+          {soldCount > 0 && (
+            <>
+              <span>•</span>
+              <span>Sold: {soldCount}</span>
+            </>
+          )}
+        </div>
+      </CardContent>
+
+      {/* Footer with Buy Button */}
+      <CardFooter className="p-4 pt-0">
+        <Button
+          className="w-full bg-[#2ECC71] hover:bg-[#27AE60] text-white shadow-sm transition-all duration-300"
           disabled={stock === 0}
           onClick={handleBuyNow}
         >
+          <ShoppingBag className="w-4 h-4 mr-2" />
           Buy Now
         </Button>
       </CardFooter>

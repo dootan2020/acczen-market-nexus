@@ -5,13 +5,14 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { toast } from "sonner";
 
 interface ProductImageGalleryProps {
   imageUrl?: string;
   name?: string;
   salePrice?: number | null;
   categoryName?: string;
-  images?: string[]; // Add the missing images property
+  images?: string[]; // Array of image URLs
 }
 
 const ProductImageGallery = ({
@@ -19,14 +20,16 @@ const ProductImageGallery = ({
   name = "Product",
   salePrice,
   categoryName,
-  images = [], // Add default empty array
+  images = [], // Default to empty array
 }: ProductImageGalleryProps) => {
   const [favorited, setFavorited] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
-  // Use provided image or fallback to placeholder
-  const image = imageUrl || '/placeholder.svg';
+  // Use provided images or fallback to main imageUrl
+  const allImages = images.length > 0 ? images : imageUrl ? [imageUrl] : [];
+  const activeImage = allImages.length > 0 ? allImages[activeImageIndex] : '/placeholder.svg';
 
   // Handle mouse move for zoom effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -45,23 +48,28 @@ const ProductImageGallery = ({
       y: Math.max(0, Math.min(100, relativeY * 100)),
     });
   };
+
+  const handleFavoriteToggle = () => {
+    setFavorited(!favorited);
+    toast.success(favorited ? "Removed from favorites" : "Added to favorites");
+  };
   
   return (
     <div className="flex flex-col space-y-4">
       {/* Main Image with Zoom Effect */}
-      <div className="relative overflow-hidden rounded-lg bg-white shadow-md">
+      <div className="relative overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100">
         <div 
           className={cn(
-            "cursor-zoom-in relative min-h-[500px]",
+            "cursor-zoom-in relative min-h-[400px]",
             isZoomed ? "overflow-hidden" : ""
           )}
           onClick={() => setIsZoomed(!isZoomed)}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => isZoomed && setIsZoomed(false)}
         >
-          <AspectRatio ratio={1} className="bg-gradient-to-b from-gray-50 to-gray-100">
+          <AspectRatio ratio={1} className="bg-gradient-to-b from-slate-50 to-slate-100">
             <img 
-              src={image} 
+              src={activeImage} 
               alt={name}
               className={cn(
                 "w-full h-full object-contain transition-all duration-300 p-4",
@@ -75,7 +83,7 @@ const ProductImageGallery = ({
               <div
                 className="absolute inset-0"
                 style={{
-                  backgroundImage: `url(${image})`,
+                  backgroundImage: `url(${activeImage})`,
                   backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                   backgroundSize: "200%",
                   backgroundRepeat: "no-repeat",
@@ -89,14 +97,14 @@ const ProductImageGallery = ({
         <Button
           size="icon"
           className={cn(
-            "absolute top-4 right-4 h-10 w-10 rounded-full shadow-md transition-all duration-300 z-20",
+            "absolute top-4 right-4 h-10 w-10 rounded-full shadow-sm transition-all duration-300 z-20",
             favorited 
               ? "bg-[#E74C3C]/90 text-white hover:bg-[#E74C3C]" 
               : "bg-white/90 text-gray-700 hover:bg-white"
           )}
           onClick={(e) => {
             e.stopPropagation(); // Prevent triggering zoom
-            setFavorited(!favorited);
+            handleFavoriteToggle();
           }}
         >
           <Heart 
@@ -108,6 +116,30 @@ const ProductImageGallery = ({
           <span className="sr-only">Add to favorites</span>
         </Button>
       </div>
+
+      {/* Thumbnail Gallery */}
+      {allImages.length > 1 && (
+        <div className="flex items-center justify-center gap-2 overflow-x-auto py-2">
+          {allImages.map((image, index) => (
+            <div 
+              key={index}
+              className={cn(
+                "w-16 h-16 rounded border-2 cursor-pointer overflow-hidden transition-all",
+                activeImageIndex === index 
+                  ? "border-[#2ECC71]" 
+                  : "border-gray-200 hover:border-gray-300"
+              )}
+              onClick={() => setActiveImageIndex(index)}
+            >
+              <img 
+                src={image} 
+                alt={`${name} - View ${index + 1}`}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

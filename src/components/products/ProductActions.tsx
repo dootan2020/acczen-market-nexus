@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ShoppingBag } from "lucide-react";
 import { PurchaseConfirmModal } from "./purchase/PurchaseConfirmModal";
+import { toast } from "sonner";
 
 interface ProductActionsProps {
   isOutOfStock: boolean;
@@ -29,6 +30,11 @@ const ProductActions = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBuyNow = () => {
+    if (isOutOfStock) {
+      toast.error("This product is out of stock");
+      return;
+    }
+    
     setIsLoading(true);
     // Simulate a small delay to show loading state
     setTimeout(() => {
@@ -38,16 +44,16 @@ const ProductActions = ({
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 space-y-4">
       <Button 
-        className="w-full bg-[#2ECC71] hover:bg-[#27AE60] shadow-md font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+        className="w-full bg-[#2ECC71] hover:bg-[#27AE60] shadow-sm font-semibold text-white h-12 rounded-md transition-all duration-300"
         size="lg"
         disabled={isOutOfStock}
         isLoading={isLoading}
         onClick={handleBuyNow}
       >
+        <ShoppingBag className="mr-2 h-5 w-5" />
         Buy Now
-        <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:rotate-12" />
       </Button>
 
       <PurchaseConfirmModal

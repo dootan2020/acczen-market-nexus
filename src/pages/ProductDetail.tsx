@@ -6,13 +6,13 @@ import { useProduct, useRelatedProducts } from "@/hooks/useProduct";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductInfo from "@/components/products/ProductInfo";
 import ProductDescription from "@/components/products/ProductDescription";
-import ProductBadge from "@/components/products/ProductBadge";
 import { Card } from "@/components/ui/card";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import TrustBadges from "@/components/trust/TrustBadges";
 import { stripHtmlTags } from '@/utils/htmlUtils';
 import ProductPricing from '@/components/products/ProductPricing';
 import ProductReviews from '@/components/products/ProductReviews';
+import ProductHeader from '@/components/products/ProductHeader';
 import { 
   Breadcrumb,
   BreadcrumbList,
@@ -25,9 +25,9 @@ import { Home, ShieldCheck, Lock, Heart, ShoppingBag, Star } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RichTextContent from "@/components/RichTextContent";
 import { cn } from "@/lib/utils";
+import { Separator } from '@/components/ui/separator';
 
 const ProductDetail = () => {
-  console.log("ProductDetail component rendering");
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   
@@ -42,24 +42,13 @@ const ProductDetail = () => {
   }, [slug, navigate]);
   
   const { data: product, isLoading, error } = useProduct(slug || '');
-  const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-  const [isFavorited, setIsFavorited] = useState(false);
   const [isTabsSticky, setIsTabsSticky] = useState(false);
   
   const { data: relatedProducts } = useRelatedProducts(
     product?.category_id || '',
     product?.id || ''
   );
-  
-  console.log("Product detail state:", { 
-    slug,
-    isLoading, 
-    hasError: !!error,
-    productFound: !!product,
-    productName: product?.name,
-    relatedCount: relatedProducts?.length || 0
-  });
   
   // Monitor scroll position for sticky tabs
   useEffect(() => {
@@ -186,111 +175,67 @@ const ProductDetail = () => {
         </Breadcrumb>
 
         {/* Product Main Section */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-          <div className="md:grid md:grid-cols-5 lg:grid-cols-5 gap-0">
-            {/* Left column - Product Images (40%) */}
-            <div className="md:col-span-2 p-6 md:border-r border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+          <div className="md:grid md:grid-cols-2 gap-0">
+            {/* Left column - Product Images */}
+            <div className="p-6 md:border-r border-gray-100">
               <div className="sticky top-24">
-                <div className="relative">
-                  {isFeatured && (
-                    <div className="absolute top-4 left-4 z-10">
-                      <ProductBadge type="featured" />
-                    </div>
-                  )}
-                  {isNew && (
-                    <div className="absolute top-4 left-32 z-10">
-                      <ProductBadge type="new" />
-                    </div>
-                  )}
-                  {isBestSeller && (
-                    <div className="absolute top-14 left-4 z-10">
-                      <ProductBadge type="bestSeller" />
-                    </div>
-                  )}
-                  {isOnSale && discountPercentage > 0 && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <ProductBadge type="sale" percentage={discountPercentage} />
-                    </div>
-                  )}
-                  <ProductImageGallery
-                    imageUrl={product.image_url}
-                    name={productName}
-                    salePrice={product.sale_price}
-                    images={productImages}
-                  />
-                </div>
+                <ProductImageGallery
+                  imageUrl={product.image_url}
+                  name={productName}
+                  salePrice={product.sale_price}
+                  images={productImages}
+                />
               </div>
             </div>
 
-            {/* Right column - Product Info (60%) */}
-            <div className="md:col-span-3 p-8">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 font-sans mb-2 leading-tight">
-                  {productName}
-                </h1>
-                
-                {/* Inventory summary - consolidated */}
-                <div className="flex items-center space-x-2 text-sm mt-2 mb-4">
-                  <span className={cn(
-                    "inline-flex items-center px-2.5 py-0.5 rounded-full font-medium",
-                    product.stock_quantity > 10 
-                      ? "bg-green-100 text-green-800" 
-                      : product.stock_quantity > 0
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-red-100 text-red-800"
-                  )}>
-                    {product.stock_quantity > 0 
-                      ? `In Stock: ${product.stock_quantity} items` 
-                      : "Out of Stock"}
-                  </span>
-                  <span className="text-gray-500">|</span>
-                  <span className="text-gray-600">Sold: {soldCount}</span>
-                </div>
-                
-                {/* Rating stars */}
-                <div className="flex items-center mb-6">
-                  <div className="flex mr-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`h-5 w-5 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : i < rating ? 'fill-amber-400/50 text-amber-400/50' : 'text-gray-300'}`} 
-                      />
-                    ))}
-                  </div>
-                  <span className="text-gray-600 text-sm">{rating} ({reviewCount} reviews)</span>
-                </div>
-                
-                {/* Pricing */}
-                <ProductPricing 
-                  price={product.price}
-                  salePrice={product.sale_price}
-                  stockQuantity={product.stock_quantity}
-                  soldCount={soldCount}
-                />
-                
-                {/* Product Info component with Buy/Favorite buttons */}
-                <ProductInfo 
-                  id={product.id}
-                  name={productName}
-                  description={product.description || ''}
-                  price={product.price}
-                  salePrice={product.sale_price}
-                  stockQuantity={product.stock_quantity}
-                  image={product.image_url || ''}
-                  rating={rating}
-                  reviewCount={reviewCount}
-                  soldCount={soldCount}
-                  kiosk_token={product.kiosk_token}
-                />
-              </div>
+            {/* Right column - Product Info */}
+            <div className="p-8">
+              <ProductHeader
+                name={productName}
+                categoryName={product.category?.name}
+                categorySlug={product.category?.slug}
+                rating={rating}
+                reviewCount={reviewCount}
+                stockQuantity={product.stock_quantity}
+                soldCount={soldCount}
+                isNew={isNew}
+                isFeatured={isFeatured}
+                isBestSeller={isBestSeller}
+              />
+              
+              <Separator className="my-6" />
+              
+              {/* Pricing */}
+              <ProductPricing 
+                price={product.price}
+                salePrice={product.sale_price}
+                stockQuantity={product.stock_quantity}
+                soldCount={soldCount}
+              />
+              
+              {/* Product Info component with Buy/Favorite buttons */}
+              <ProductInfo 
+                id={product.id}
+                name={productName}
+                description={product.description || ''}
+                price={product.price}
+                salePrice={product.sale_price}
+                stockQuantity={product.stock_quantity}
+                image={product.image_url || ''}
+                rating={rating}
+                reviewCount={reviewCount}
+                soldCount={soldCount}
+                kiosk_token={product.kiosk_token}
+              />
             </div>
           </div>
         </div>
         
-        {/* Description and Reviews Tabs */}
+        {/* Tabs Section */}
         <div id="product-tabs" className="relative">
           <div className={cn(
-            "bg-white rounded-lg shadow-sm overflow-hidden transition-all", 
+            "bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 transition-all", 
             isTabsSticky ? "sticky top-0 z-30 shadow-md" : ""
           )}>
             <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
@@ -303,7 +248,7 @@ const ProductDetail = () => {
                     value="description" 
                     className="py-4 px-6 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-[#2ECC71] data-[state=active]:bg-transparent"
                   >
-                    Product Description
+                    Description
                   </TabsTrigger>
                   <TabsTrigger 
                     value="specifications" 
@@ -360,7 +305,7 @@ const ProductDetail = () => {
                 ) : (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Account Specifications</h3>
-                    <div className="bg-gray-50 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
                       <table className="min-w-full divide-y divide-gray-200">
                         <tbody className="divide-y divide-gray-200">
                           <tr className="bg-white">
@@ -430,26 +375,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Sticky Actions Bar for Mobile */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 shadow-md z-40">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold text-[#2ECC71]">
-                {product.sale_price ? `$${product.sale_price.toFixed(2)}` : `$${product.price.toFixed(2)}`}
-              </div>
-              {product.sale_price && (
-                <div className="text-sm text-gray-500 line-through">${product.price.toFixed(2)}</div>
-              )}
-            </div>
-            <button 
-              onClick={() => setActiveTab('description')}
-              className="bg-[#2ECC71] text-white px-5 py-2 rounded-md font-medium hover:bg-[#27AE60] transition-colors"
-            >
-              Buy Now
-            </button>
-          </div>
-        </div>
-
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-12">
@@ -457,6 +382,11 @@ const ProductDetail = () => {
             <RelatedProducts products={relatedProducts} />
           </div>
         )}
+        
+        {/* Trust Badges */}
+        <div className="mt-16">
+          <TrustBadges />
+        </div>
       </Container>
     </div>
   );

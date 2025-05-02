@@ -29,7 +29,7 @@ const ProductPricing = ({
   
   // Calculate discount percentage
   const discount = useMemo(() => 
-    salePrice ? Math.round(((price - salePrice) / price) * 100) : 0,
+    salePrice && salePrice < price ? Math.round(((price - salePrice) / price) * 100) : 0,
     [price, salePrice]
   );
 
@@ -58,47 +58,45 @@ const ProductPricing = ({
     [salePrice, formatVND]);
 
   return (
-    <>
-      <div className="mb-6 p-4 rounded-lg bg-white border border-gray-200">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-2xl sm:text-3xl font-bold text-[#19C37D] cursor-help">
-                  {formattedUsdSalePrice || formattedUsdPrice}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{formattedVndSalePrice || formattedVndPrice}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          {salePrice && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-lg text-gray-600 line-through cursor-help">
-                      {formattedUsdPrice}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{formattedVndPrice}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              {discount > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  -{discount}%
-                </Badge>
-              )}
-            </>
-          )}
-        </div>
+    <div className="mb-6 p-5 rounded-lg bg-white border border-gray-100 shadow-sm">
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-3xl font-bold text-[#19C37D] cursor-help">
+                {formattedUsdSalePrice || formattedUsdPrice}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formattedVndSalePrice || formattedVndPrice}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        {salePrice && salePrice < price && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-lg text-gray-600 line-through cursor-help">
+                    {formattedUsdPrice}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{formattedVndPrice}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {discount > 0 && (
+              <Badge variant="destructive" className="ml-2 px-2.5 py-1">
+                -{discount}%
+              </Badge>
+            )}
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
