@@ -32,7 +32,7 @@ export const PurchaseModalActions = ({
         className="sm:mr-auto"
         disabled={isProcessing}
       >
-        {hasError ? 'Close' : 'Cancel'}
+        {hasError ? 'Đóng' : 'Hủy'}
       </Button>
       
       {insufficientBalance && onDeposit && (
@@ -41,7 +41,7 @@ export const PurchaseModalActions = ({
           onClick={onDeposit}
           disabled={isProcessing}
         >
-          Add Funds
+          Nạp tiền
         </Button>
       )}
       
@@ -51,7 +51,7 @@ export const PurchaseModalActions = ({
           onClick={onRetry}
           disabled={isProcessing}
         >
-          Try Again
+          Thử lại
         </Button>
       )}
       
@@ -64,13 +64,13 @@ export const PurchaseModalActions = ({
           {isProcessing ? (
             <>
               <Loader className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              Đang xử lý...
             </>
           ) : (
-            'Buy Now'
+            'Mua ngay'
           )}
         </Button>
       )}
     </DialogFooter>
   );
-}
+};

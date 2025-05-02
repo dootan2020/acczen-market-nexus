@@ -163,7 +163,7 @@ export const PurchaseConfirmModal = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <PurchaseModalHeader hasError={!!purchaseError} />
+        <PurchaseModalHeader />
         
         <div className="grid gap-4 py-4">
           {!purchaseResult.orderId ? (
@@ -173,7 +173,6 @@ export const PurchaseConfirmModal = ({
                 productImage={productImage}
                 quantity={quantity}
                 totalPrice={totalPrice}
-                hasError={!!purchaseError}
               />
               
               <PurchaseModalInfo
@@ -192,7 +191,6 @@ export const PurchaseConfirmModal = ({
                 onDeposit={handleGoToDeposit}
                 disabled={kioskActive === false || stock <= 0}
                 insufficientBalance={insufficientBalance}
-                hasError={!!purchaseError}
               />
               
               {purchaseError && (

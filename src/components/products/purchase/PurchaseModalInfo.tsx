@@ -11,14 +11,14 @@ interface PurchaseModalInfoProps {
   userBalance: number;
 }
 
-export function PurchaseModalInfo({
+export const PurchaseModalInfo = ({
   stock,
   soldCount = 0,
   totalPrice,
   description,
   insufficientBalance,
   userBalance
-}: PurchaseModalInfoProps) {
+}: PurchaseModalInfoProps) => {
   const { formatUSD, convertVNDtoUSD } = useCurrencyContext();
 
   return (
@@ -70,4 +70,4 @@ export function PurchaseModalInfo({
       )}
     </div>
   );
-}
+};
