@@ -7,14 +7,12 @@ import router from './routes';
 
 function App() {
   return (
-    <React.StrictMode>
+    <>
       <TooltipProvider delayDuration={0}>
-        <div className="app-container">
-          <RouterProvider router={router} />
-        </div>
+        <RouterProvider router={router} />
       </TooltipProvider>
       <Toaster />
-    </React.StrictMode>
+    </>
   );
 }
 
