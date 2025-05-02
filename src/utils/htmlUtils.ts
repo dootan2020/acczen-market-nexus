@@ -17,6 +17,11 @@ export const stripHtmlTags = (html: string | null | undefined): string => {
   // Replace common HTML entities and extra whitespace
   return textContent
     .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
     .replace(/\s+/g, ' ')
     .trim();
 };
