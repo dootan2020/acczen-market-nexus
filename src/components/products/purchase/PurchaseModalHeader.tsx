@@ -8,11 +8,11 @@ interface PurchaseModalHeaderProps {
 export function PurchaseModalHeader({ hasError = false }: PurchaseModalHeaderProps) {
   return (
     <DialogHeader>
-      <DialogTitle>{hasError ? 'Lỗi thanh toán' : 'Xác nhận mua hàng'}</DialogTitle>
+      <DialogTitle>{hasError ? 'Payment Error' : 'Confirm Purchase'}</DialogTitle>
       <DialogDescription>
         {hasError ? 
-          'Đã xảy ra lỗi khi xử lý thanh toán của bạn.' : 
-          'Hoàn tất giao dịch mua hàng bằng số dư tài khoản.'
+          'An error occurred while processing your payment.' : 
+          'Complete your purchase using your account balance.'
         }
       </DialogDescription>
     </DialogHeader>

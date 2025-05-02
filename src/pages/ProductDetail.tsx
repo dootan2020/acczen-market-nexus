@@ -7,7 +7,8 @@ import ProductHeader from '@/components/products/ProductHeader';
 import ProductPricing from '@/components/products/ProductPricing';
 import ProductFeatures from '@/components/products/ProductFeatures';
 import ProductActions from '@/components/products/ProductActions';
-import ProductDescription from '@/components/products/ProductDescription';
+import ProductTabs from '@/components/products/ProductTabs';
+import TrustBadges from '@/components/products/TrustBadges';
 import { Skeleton } from '@/components/ui/skeleton';
 import RelatedProducts from '@/components/products/RelatedProducts';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
@@ -39,6 +40,7 @@ const ProductDetail = () => {
     );
   }
 
+  // Product features list in English
   const features = [
     'Premium quality guaranteed',
     'Immediate delivery after purchase',
@@ -46,6 +48,12 @@ const ProductDetail = () => {
     'Secure transaction',
     'No subscription required'
   ];
+
+  // Extract or define sections from product description
+  // In a real application, these might be separate fields in the product database
+  const technicalDetails = product.technical_details || null;
+  const usageInstructions = product.usage_instructions || null;
+  const warrantyInfo = product.warranty_info || null;
 
   return (
     <div className="bg-background min-h-screen">
@@ -67,6 +75,8 @@ const ProductDetail = () => {
               currency={currency}
             />
 
+            <TrustBadges />
+            
             <Separator className="my-2" />
             
             <ProductFeatures features={features} />
@@ -76,12 +86,14 @@ const ProductDetail = () => {
             />
           </div>
           
-          {/* Right Column - Description */}
+          {/* Right Column - Detailed Information */}
           <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold mb-4 font-poppins text-gray-800">Product Description</h3>
-              <ProductDescription 
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+              <ProductTabs 
                 description={product.description}
+                technicalDetails={technicalDetails}
+                usageInstructions={usageInstructions}
+                warrantyInfo={warrantyInfo}
               />
             </div>
           </div>
@@ -133,7 +145,7 @@ const ProductDetailSkeleton = () => {
         </div>
         
         <div>
-          <Skeleton className="h-screen/2 w-full rounded-lg" />
+          <Skeleton className="h-[500px] w-full rounded-lg" />
         </div>
       </div>
     </Container>

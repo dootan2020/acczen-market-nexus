@@ -16,12 +16,12 @@ export interface Review {
 
 export interface ReviewItemProps {
   review: Review;
-  onReviewUpdated: () => void;
+  onReviewUpdated?: () => void;
 }
 
 export interface ReviewsListProps {
   reviews: Review[];
-  onReviewUpdated: () => void;
+  onReviewUpdated?: () => void;
 }
 
 export interface ReviewFormProps {
