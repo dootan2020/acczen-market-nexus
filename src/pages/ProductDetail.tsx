@@ -10,7 +10,7 @@ import ProductPurchase from "@/components/products/ProductPurchase";
 import ProductReviews from "@/components/products/ProductReviews";
 import ProductInstructions from "@/components/products/ProductInstructions";
 import ProductBenefits from "@/components/products/ProductBenefits";
-import { ProductImageGallery } from "@/components/products/ProductImageGallery";
+import ProductImageGallery from "@/components/products/ProductImageGallery";
 import RelatedProducts from "@/components/products/RelatedProducts";
 
 const extractFeatures = (features: any) => {

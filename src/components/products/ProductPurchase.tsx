@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { ShoppingCart, Check, AlertCircle } from 'lucide-react';
-import { StockBadge } from '@/components/products/inventory/StockBadge';
+import StockBadge from '@/components/products/inventory/StockBadge';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { usePurchaseConfirmation } from '@/hooks/usePurchaseConfirmation';
+import { useCart as usePurchaseConfirmation } from '@/hooks/useCart';
 
 interface ProductPurchaseProps {
   id: string;
@@ -31,7 +31,7 @@ const ProductPurchase: React.FC<ProductPurchaseProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
   const { toast } = useToast();
-  const { openPurchaseConfirmation } = usePurchaseConfirmation();
+  const { addItem: openPurchaseConfirmation } = usePurchaseConfirmation();
 
   const actualPrice = salePrice || price;
   const discount = salePrice ? Math.round(((price - salePrice) / price) * 100) : 0;
@@ -66,10 +66,10 @@ const ProductPurchase: React.FC<ProductPurchaseProps> = ({
     if (!isInStock) return;
     
     openPurchaseConfirmation({
-      productId: id,
-      productName: name,
-      price: actualPrice, 
-      quantity
+      id,
+      name,
+      price: actualPrice,
+      image: imageUrl,
     });
   };
 
@@ -99,7 +99,7 @@ const ProductPurchase: React.FC<ProductPurchaseProps> = ({
         </div>
         
         <div className="mb-6">
-          <StockBadge quantity={stockQuantity} />
+          <StockBadge stock={stockQuantity} />
         </div>
         
         {isInStock ? (
