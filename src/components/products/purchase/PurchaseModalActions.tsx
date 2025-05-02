@@ -8,8 +8,10 @@ interface PurchaseModalActionsProps {
   onCancel: () => void;
   onConfirm: () => void;
   onDeposit?: () => void;
+  onRetry?: () => void;
   disabled?: boolean;
   insufficientBalance?: boolean;
+  hasError?: boolean;
 }
 
 export const PurchaseModalActions = ({
@@ -17,8 +19,10 @@ export const PurchaseModalActions = ({
   onCancel,
   onConfirm,
   onDeposit,
+  onRetry,
   disabled = false,
-  insufficientBalance = false
+  insufficientBalance = false,
+  hasError = false
 }: PurchaseModalActionsProps) => {
   return (
     <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
@@ -26,33 +30,47 @@ export const PurchaseModalActions = ({
         variant="outline"
         onClick={onCancel}
         className="sm:mr-auto"
+        disabled={isProcessing}
       >
-        Cancel
+        {hasError ? 'Đóng' : 'Hủy'}
       </Button>
       
       {insufficientBalance && onDeposit && (
         <Button
           variant="secondary"
           onClick={onDeposit}
+          disabled={isProcessing}
         >
-          Deposit Funds
+          Nạp tiền
         </Button>
       )}
       
-      <Button 
-        onClick={onConfirm} 
-        disabled={isProcessing || disabled || insufficientBalance}
-        className="bg-[#2ECC71] hover:bg-[#27AE60]"
-      >
-        {isProcessing ? (
-          <>
-            <Loader className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          'Buy Now'
-        )}
-      </Button>
+      {hasError && onRetry && (
+        <Button
+          variant="secondary"
+          onClick={onRetry}
+          disabled={isProcessing}
+        >
+          Thử lại
+        </Button>
+      )}
+      
+      {!hasError && (
+        <Button 
+          onClick={onConfirm} 
+          disabled={isProcessing || disabled || insufficientBalance}
+          className="bg-[#2ECC71] hover:bg-[#27AE60]"
+        >
+          {isProcessing ? (
+            <>
+              <Loader className="mr-2 h-4 w-4 animate-spin" />
+              Đang xử lý...
+            </>
+          ) : (
+            'Mua ngay'
+          )}
+        </Button>
+      )}
     </DialogFooter>
   );
 };

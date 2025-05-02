@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { parseError } from '@/utils/errorUtils';
 
 interface ProductPurchaseData {
   id: string;
@@ -14,10 +16,18 @@ interface ProductPurchaseData {
   userDiscount?: number;
 }
 
+interface PurchaseError {
+  message: string;
+  code?: string;
+  action?: string;
+}
+
 export const usePurchaseProduct = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<PurchaseError | null>(null);
+  const { handleError } = useErrorHandler();
 
   const executePurchase = async (product: ProductPurchaseData) => {
     if (!user) {
@@ -27,6 +37,7 @@ export const usePurchaseProduct = () => {
     }
 
     setIsProcessing(true);
+    setPurchaseError(null);
 
     try {
       // Calculate discount amount if applicable
@@ -56,8 +67,18 @@ export const usePurchaseProduct = () => {
         })
       });
 
-      if (error || !data.success) {
-        throw new Error(error?.message || data?.message || 'Lỗi xử lý giao dịch');
+      // Handle API-level errors (returned in the data object)
+      if (data && typeof data === 'object' && data.success === false) {
+        throw new Error(data.message || 'Lỗi xử lý giao dịch');
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      // Handle unexpected response format
+      if (!data || !data.success) {
+        throw new Error('Định dạng phản hồi không hợp lệ');
       }
 
       toast.success('Mua hàng thành công', {
@@ -68,9 +89,22 @@ export const usePurchaseProduct = () => {
     } catch (error: any) {
       console.error('Purchase error:', error);
       
-      toast.error('Lỗi mua hàng', {
-        description: error?.message || 'Có lỗi xảy ra khi xử lý giao dịch'
+      // Parse the error to get user-friendly message
+      const errorDetails = parseError(error);
+      
+      setPurchaseError({
+        message: errorDetails.message,
+        code: errorDetails.code,
+        action: errorDetails.action
       });
+      
+      // Show toast notification
+      toast.error('Lỗi mua hàng', {
+        description: errorDetails.message || 'Có lỗi xảy ra khi xử lý giao dịch'
+      });
+      
+      // Log error with error handler
+      handleError(error, { showToast: false }); // Don't show another toast
       
       return null;
     } finally {
@@ -80,6 +114,8 @@ export const usePurchaseProduct = () => {
 
   return {
     isProcessing,
-    executePurchase
+    purchaseError,
+    executePurchase,
+    clearError: () => setPurchaseError(null)
   };
 };

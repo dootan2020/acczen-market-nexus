@@ -50,7 +50,7 @@ export class RetryService {
       return new Promise<T>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new TaphoammoError(
-            'Request timed out',
+            'Yêu cầu hết thời gian chờ',
             TaphoammoErrorCodes.TIMEOUT,
             retries,
             timeout
@@ -104,7 +104,9 @@ export class RetryService {
           // Specific TaphoammoError codes
           (error instanceof TaphoammoError && 
             error.code !== TaphoammoErrorCodes.KIOSK_PENDING &&
-            error.code !== TaphoammoErrorCodes.ORDER_PROCESSING);
+            error.code !== TaphoammoErrorCodes.ORDER_PROCESSING &&
+            error.code !== TaphoammoErrorCodes.INSUFFICIENT_FUNDS &&
+            error.code !== TaphoammoErrorCodes.INVALID_CREDENTIALS);
             
         // If error is not retryable, don't retry
         if (!isRetryable) {
@@ -128,7 +130,9 @@ export class RetryService {
         
         // Only show toast for user-visible retries (not the first one)
         if (showToasts && retries > 1) {
-          toast.info(`Yêu cầu bị lỗi. Đang thử lại lần ${retries}/${maxRetries}...`);
+          toast.info(`Yêu cầu bị lỗi. Đang thử lại lần ${retries}/${maxRetries}...`, {
+            duration: delay < 10000 ? delay : 5000  // Don't show toast longer than delay or 5s max
+          });
         }
         
         // Wait before retrying
@@ -153,7 +157,7 @@ export class RetryService {
     } else {
       // Wrap other errors in TaphoammoError
       finalError = new TaphoammoError(
-        lastError?.message || 'Unknown error after maximum retries',
+        lastError?.message || 'Lỗi không xác định sau số lần thử lại tối đa',
         TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
         retries,
         totalTime

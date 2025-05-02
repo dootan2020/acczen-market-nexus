@@ -81,7 +81,7 @@ export class ApiService {
       return {
         data: null,
         error: new TaphoammoError(
-          "API temporarily unavailable due to connection issues. Please try again later.",
+          "API tạm thời không khả dụng do trục trặc kết nối. Vui lòng thử lại sau.",
           TaphoammoErrorCodes.API_TEMP_DOWN,
           0,
           0
@@ -114,8 +114,31 @@ export class ApiService {
           
           const callDuration = Date.now() - startTime;
           
+          // Check for API-level errors (edge functions return { success: false, message: "..." })
+          if (data && typeof data === 'object' && 'success' === false) {
+            throw new TaphoammoError(
+              data.message || 'API Error',
+              data.code || TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+              retries,
+              callDuration
+            );
+          }
+          
           if (error) {
-            throw new Error(error.message);
+            // Map Supabase errors to our error types
+            let errorCode = TaphoammoErrorCodes.UNEXPECTED_RESPONSE;
+            if (error.message?.includes('timeout')) {
+              errorCode = TaphoammoErrorCodes.TIMEOUT;
+            } else if (error.message?.includes('network')) {
+              errorCode = TaphoammoErrorCodes.NETWORK_ERROR;
+            }
+            
+            throw new TaphoammoError(
+              error.message,
+              errorCode,
+              retries,
+              callDuration
+            );
           }
           
           return data;
@@ -159,7 +182,12 @@ export class ApiService {
       // If no cache available, return the error
       return { 
         data: null, 
-        error: error instanceof Error ? error : new Error(String(error)),
+        error: error instanceof Error ? error : new TaphoammoError(
+          String(error),
+          TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
+          0,
+          0
+        ),
         cached: false
       };
     }
