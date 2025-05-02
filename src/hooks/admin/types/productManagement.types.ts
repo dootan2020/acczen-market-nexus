@@ -17,4 +17,6 @@ export interface Product {
   category?: any;
   subcategory?: any;
   kiosk_token?: string;
+  sold_count?: number; // Added field to match the products table
 }
+

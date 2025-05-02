@@ -84,7 +84,7 @@ const FeaturedProducts = () => {
                 isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
                 isBestSeller={false}
                 description={product.description || ''}
-                soldCount={product.sold_count || 0} // Safely handle undefined sold_count
+                soldCount={0} // Default to 0 since sold_count isn't in the query response
               />
             </div>
           ))}
