@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/utils/formatters';
 import { RefreshCw, Save } from 'lucide-react';
@@ -26,7 +25,6 @@ const AdminExchangeRates = () => {
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -46,16 +44,9 @@ const AdminExchangeRates = () => {
       ];
       
       setRates(mockRates);
-      toast({
-        title: "Success",
-        description: "Exchange rates loaded successfully",
-      });
+      toast.success("Exchange rates loaded successfully");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load exchange rates",
-        variant: "destructive",
-      });
+      toast.error("Failed to load exchange rates");
     } finally {
       setLoading(false);
     }
@@ -85,10 +76,7 @@ const AdminExchangeRates = () => {
       }));
       
       setRates(updatedRates);
-      toast({
-        title: "Success",
-        description: "Exchange rates updated successfully",
-      });
+      toast.success("Exchange rates updated successfully");
       
       // Add to history
       const historyEntries = updatedRates.map(rate => ({
@@ -102,11 +90,7 @@ const AdminExchangeRates = () => {
       
       setHistory([...historyEntries, ...history]);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update exchange rates",
-        variant: "destructive",
-      });
+      toast.error("Failed to update exchange rates");
     } finally {
       setSaving(false);
     }

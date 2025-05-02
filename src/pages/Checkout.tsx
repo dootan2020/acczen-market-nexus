@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
@@ -14,7 +13,6 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Layout from '@/components/Layout';
 import BalancePaymentTab from '@/components/checkout/BalancePaymentTab';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/button';
@@ -147,124 +145,120 @@ const Checkout: React.FC = () => {
 
   if (!user) {
     return (
-      <Layout>
-        <div className="container mx-auto px-4 py-8">
-          <Card>
-            <CardContent className="flex items-center justify-center py-10">
-              <div className="text-center">
-                <LoadingSpinner className="mx-auto" />
-                <p className="mt-2">Redirecting to login...</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </Layout>
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex items-center justify-center py-10">
+            <div className="text-center">
+              <LoadingSpinner className="mx-auto" />
+              <p className="mt-2">Redirecting to login...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Checkout</h1>
-        
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Checkout items summary */}
-          <div className="md:col-span-2 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
-                <CardDescription>
-                  {itemsToProcess.length} {itemsToProcess.length === 1 ? 'item' : 'items'} in your order
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {itemsToProcess.map((item) => (
-                    <div key={item.id} className="flex gap-4">
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-20 h-20 object-cover rounded" 
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity}
-                        </p>
-                        <p className="mt-1">
-                          {formatUSD(convertVNDtoUSD(item.price * item.quantity))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <div className="pt-4 mt-4 border-t">
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total:</span>
-                      <span>{formatUSD(checkoutTotalUSD)}</span>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+      
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Checkout items summary */}
+        <div className="md:col-span-2 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+              <CardDescription>
+                {itemsToProcess.length} {itemsToProcess.length === 1 ? 'item' : 'items'} in your order
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {itemsToProcess.map((item) => (
+                  <div key={item.id} className="flex gap-4">
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-20 h-20 object-cover rounded" 
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium">{item.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {item.quantity}
+                      </p>
+                      <p className="mt-1">
+                        {formatUSD(convertVNDtoUSD(item.price * item.quantity))}
+                      </p>
                     </div>
                   </div>
+                ))}
+                
+                <div className="pt-4 mt-4 border-t">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span>{formatUSD(checkoutTotalUSD)}</span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Payment options */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Method</CardTitle>
-                <CardDescription>Choose how you want to pay</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="balance">
-                  <TabsList className="grid grid-cols-1 mb-4">
-                    <TabsTrigger value="balance">Account Balance</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="balance">
-                    <BalancePaymentTab
-                      balanceUSD={balanceUSD}
-                      totalUSD={checkoutTotalUSD}
-                      hasEnoughBalance={hasEnoughBalance}
-                      isProcessing={isProcessing}
-                      onPurchase={handlePurchase}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="mt-8 flex justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(-1)}
-          >
-            Back
-          </Button>
-          
-          <Button
-            onClick={handlePurchase}
-            disabled={isProcessing || !hasEnoughBalance}
-            className="min-w-[150px]"
-          >
-            {isProcessing ? (
-              <>
-                <LoadingSpinner className="mr-2" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                Complete Purchase
-              </>
-            )}
-          </Button>
+        {/* Payment options */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Method</CardTitle>
+              <CardDescription>Choose how you want to pay</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="balance">
+                <TabsList className="grid grid-cols-1 mb-4">
+                  <TabsTrigger value="balance">Account Balance</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="balance">
+                  <BalancePaymentTab
+                    balanceUSD={balanceUSD}
+                    totalUSD={checkoutTotalUSD}
+                    hasEnoughBalance={hasEnoughBalance}
+                    isProcessing={isProcessing}
+                    onPurchase={handlePurchase}
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </Layout>
+      
+      <div className="mt-8 flex justify-between">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Button>
+        
+        <Button
+          onClick={handlePurchase}
+          disabled={isProcessing || !hasEnoughBalance}
+          className="min-w-[150px]"
+        >
+          {isProcessing ? (
+            <>
+              <LoadingSpinner className="mr-2" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Complete Purchase
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 
