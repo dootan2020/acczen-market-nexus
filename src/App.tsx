@@ -7,11 +7,13 @@ import router from './routes';
 
 function App() {
   return (
+    // TooltipProvider requires exactly one child element
     <TooltipProvider delayDuration={0}>
-      <div className="app-container">
+      {/* Wrap the application in a single React Fragment */}
+      <>
         <RouterProvider router={router} />
         <Toaster />
-      </div>
+      </>
     </TooltipProvider>
   );
 }
