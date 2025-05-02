@@ -7,7 +7,6 @@ import USDTDeposit from '@/components/USDTDeposit';
 import PayPalDeposit from '@/components/PayPalDeposit';
 import { Info, AlertTriangle, CreditCard, Wallet } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Progress } from "@/components/ui/progress";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 
