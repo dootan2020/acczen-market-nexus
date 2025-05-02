@@ -18,8 +18,8 @@ export function DepositButton({ variant = "default", className }: DepositButtonP
   return (
     <Link to="/deposit">
       <Button variant={variant} size="sm" className={cn("animate-pulse-subtle", className)}>
-        Nạp tiền
+        Deposit Funds
       </Button>
     </Link>
-  )
+  );
 }

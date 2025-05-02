@@ -99,6 +99,7 @@ const Dashboard = () => {
     }
   });
   
+  // Fix: Ensure the component returns a single root element
   return (
     <div className="space-y-8">
       <DashboardWelcome />

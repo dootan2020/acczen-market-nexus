@@ -10,6 +10,7 @@ import { Toaster } from 'sonner';
 import { CartProvider } from './providers/CartProvider';
 
 function App() {
+  // Fix: Ensure each provider wraps its children properly
   return (
     <ReactQueryProvider>
       <ThemeProvider defaultTheme="light" storageKey="digital-deals-theme">

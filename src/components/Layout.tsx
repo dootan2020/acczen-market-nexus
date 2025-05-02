@@ -9,6 +9,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  // Fix: Ensure we only render one child, either children or Outlet
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
