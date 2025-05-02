@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useProductContext } from "@/contexts/ProductContext";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
@@ -47,6 +48,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
+  const { openModal } = useProductContext();
 
   // Using useMemo to optimize price conversions
   const displayPrice = useMemo(() => 
@@ -87,7 +89,7 @@ const ProductCard = ({
   };
 
   const handleViewDetails = () => {
-    navigate(`/products/${id}`);
+    openModal(id);
   };
 
   return (

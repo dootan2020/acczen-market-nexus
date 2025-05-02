@@ -2,7 +2,6 @@
 import React from 'react';
 import Index from './pages/Index';
 import Products from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/Dashboard';
@@ -37,7 +36,6 @@ const CategoryCreatePage = () => <div>Category Create Page</div>;
 const routes = [
   { path: '/', element: <Index /> },
   { path: '/products', element: <Products /> },
-  { path: '/products/:slug', element: <ProductDetail /> },
   { path: '/categories', element: <CategoriesPage /> },
   { path: '/dashboard', element: <DashboardPage /> },
   { path: '/profile', element: <ProfilePage /> },
