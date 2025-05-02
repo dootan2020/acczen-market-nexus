@@ -87,7 +87,13 @@ const ProductDetail = () => {
           </div>
         </div>
         
-        {/* Related Products Section has been removed as requested */}
+        {/* Related Products Section */}
+        {relatedProducts && relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-semibold mb-6 font-poppins">Related Products</h2>
+            <RelatedProducts products={relatedProducts} />
+          </div>
+        )}
       </Container>
     </div>
   );
