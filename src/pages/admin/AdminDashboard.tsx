@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -138,9 +137,7 @@ const AdminDashboard = () => {
   };
   
   const handleQuickAction = (action: string) => {
-    toast({
-      description: `${action} functionality will be implemented soon.`,
-    });
+    toast(`${action} functionality will be implemented soon.`);
   };
 
   const typedStats = stats as unknown as DashboardStats;
