@@ -38,7 +38,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<any | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -47,7 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [username, setUsername] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const navigate = useNavigate();
+  
+  // We remove the useNavigate hook since it requires router context
+  // And replace it with direct navigation method
+  const navigateToPath = (path: string) => {
+    window.location.href = path;
+  };
 
   // User display name getter
   const userDisplayName = user ? fullName || username || user.email?.split('@')[0] || 'User' : '';
@@ -108,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   // Legacy method - keep for backward compatibility
   const login = async (args: any) => {
@@ -173,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       if (redirect) {
-        navigate('/');
+        navigateToPath('/');
       }
     } catch (error: any) {
       console.error('Logout failed:', error);
@@ -280,7 +285,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
