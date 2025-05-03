@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,7 @@ export const PurchaseConfirmModal = ({
       setOrderId(result.order_id);
       
       // If we have product keys immediately, show them
-      if (result.product_keys && result.product_keys.length > 0) {
+      if (result.product_keys && Array.isArray(result.product_keys)) {
         setProductKeys(result.product_keys);
       }
       
@@ -131,8 +132,11 @@ export const PurchaseConfirmModal = ({
       
       if (error) throw error;
       
-      if (data && data.data && data.data.product_keys) {
-        setProductKeys(data.data.product_keys);
+      if (data && data.data) {
+        const orderData = data.data;
+        if (typeof orderData === 'object' && orderData !== null && 'product_keys' in orderData && Array.isArray(orderData.product_keys)) {
+          setProductKeys(orderData.product_keys);
+        }
       }
     } catch (err) {
       console.error("Error checking order:", err);
