@@ -11,14 +11,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { DateRange } from "react-day-picker"
 
 interface DateRangePickerProps {
   className?: string
-  value: {
-    from: Date | null
-    to: Date | null
-  }
-  onChange: (value: { from: Date | null; to: Date | null }) => void
+  value: DateRange | undefined
+  onChange: (value: DateRange | undefined) => void
   align?: "start" | "center" | "end"
 }
 
@@ -30,15 +28,15 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
 
-  const handleSelect = (ranges: { from: Date | null; to: Date | null }) => {
+  const handleSelect = (ranges: DateRange | undefined) => {
     onChange(ranges)
-    if (ranges.from && ranges.to) {
+    if (ranges?.from && ranges?.to) {
       setIsOpen(false)
     }
   }
   
   const handleClear = () => {
-    onChange({ from: null, to: null })
+    onChange(undefined)
     setIsOpen(false)
   }
 
@@ -51,11 +49,11 @@ export function DateRangePicker({
             variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !value.from && !value.to && "text-muted-foreground"
+              !value?.from && !value?.to && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value.from && value.to ? (
+            {value?.from && value?.to ? (
               <>
                 {format(value.from, "LLL dd, y")} -{" "}
                 {format(value.to, "LLL dd, y")}
@@ -69,16 +67,8 @@ export function DateRangePicker({
           <div className="space-y-2 p-2">
             <Calendar
               mode="range"
-              selected={{
-                from: value.from || undefined,
-                to: value.to || undefined,
-              }}
-              onSelect={(range) => 
-                handleSelect({ 
-                  from: range?.from || null, 
-                  to: range?.to || null 
-                })
-              }
+              selected={value}
+              onSelect={handleSelect}
               numberOfMonths={2}
               initialFocus
             />

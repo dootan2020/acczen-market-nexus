@@ -91,7 +91,7 @@ export const OrderFiltersEnhanced = ({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
           <DateRangePicker 
-            value={dateRange || { from: null, to: null }}
+            value={dateRange}
             onChange={onDateRangeChange}
             align="start"
             className="w-full"

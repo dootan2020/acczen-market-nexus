@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -249,7 +250,7 @@ const OrdersPage: React.FC = () => {
             </Select>
             
             <DateRangePicker 
-              value={dateRange || { from: null, to: null }} 
+              value={dateRange} 
               onChange={setDateRange}
               align="start"
               className="w-full"
