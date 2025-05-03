@@ -1,6 +1,7 @@
 
-import { Search } from 'lucide-react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -90,8 +91,8 @@ export const OrderFiltersEnhanced = ({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
           <DateRangePicker 
-            date={dateRange} 
-            onDateChange={onDateRangeChange}
+            value={dateRange || { from: null, to: null }}
+            onChange={onDateRangeChange}
             align="start"
             className="w-full"
           />

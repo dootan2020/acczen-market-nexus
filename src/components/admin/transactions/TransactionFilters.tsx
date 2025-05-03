@@ -89,8 +89,8 @@ export const TransactionFilters = ({
         </div>
         
         <DateRangePicker 
-          date={dateRange} 
-          onDateChange={onDateRangeChange}
+          value={dateRange || { from: null, to: null }}
+          onChange={onDateRangeChange}
           className="w-full"
         />
       </div>

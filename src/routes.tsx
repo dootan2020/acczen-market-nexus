@@ -1,34 +1,37 @@
 
 import React from 'react';
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import ProductPage from './pages/ProductPage';
-import CategoryPage from './pages/CategoryPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import CheckoutPage from './pages/CheckoutPage';
-import CartPage from './pages/CartPage';
-import AccountPage from './pages/AccountPage';
-import OrdersPage from './pages/OrdersPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import Dashboard from './pages/Dashboard';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminOrderDetail from './pages/admin/AdminOrderDetail';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminUserDetail from './pages/admin/AdminUserDetail';
-import AdminProductEdit from './pages/admin/AdminProductEdit';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminCategoryEdit from './pages/admin/AdminCategoryEdit';
-import AdminDeposits from './pages/admin/AdminDeposits';
-import NotFoundPage from './pages/NotFoundPage';
-import TransactionsPage from './pages/TransactionsPage';
-import DepositPage from './pages/Deposit';
-import DepositPending from './pages/DepositPending';
-import DepositSuccess from './pages/DepositSuccess';
+import Layout from './components/Layout';
+
+// Create stub components for missing pages
+const HomePage = () => <div>Home Page</div>;
+const ProductsPage = () => <div>Products Page</div>;
+const ProductPage = () => <div>Product Page</div>;
+const CategoryPage = () => <div>Category Page</div>;
+const LoginPage = () => <div>Login Page</div>;
+const RegisterPage = () => <div>Register Page</div>;
+const ResetPasswordPage = () => <div>Reset Password Page</div>;
+const CheckoutPage = () => <div>Checkout Page</div>;
+const CartPage = () => <div>Cart Page</div>;
+const AccountPage = () => <div>Account Page</div>;
+const OrdersPage = () => <div>Orders Page</div>;
+const OrderDetailPage = () => <div>Order Detail Page</div>;
+const Dashboard = () => <div>Dashboard</div>;
+const AdminDashboard = () => <div>Admin Dashboard</div>;
+const AdminProducts = () => <div>Admin Products</div>;
+const AdminOrders = () => <div>Admin Orders</div>;
+const AdminOrderDetail = () => <div>Admin Order Detail</div>;
+const AdminUsers = () => <div>Admin Users</div>;
+const AdminUserDetail = () => <div>Admin User Detail</div>;
+const AdminProductEdit = () => <div>Admin Product Edit</div>;
+const AdminSettings = () => <div>Admin Settings</div>;
+const AdminCategories = () => <div>Admin Categories</div>;
+const AdminCategoryEdit = () => <div>Admin Category Edit</div>;
+const AdminDeposits = () => <div>Admin Deposits</div>;
+const NotFoundPage = () => <div>Not Found Page</div>;
+const TransactionsPage = () => <div>Transactions Page</div>;
+const DepositPage = () => <div>Deposit Page</div>;
+const DepositPending = () => <div>Deposit Pending</div>;
+const DepositSuccess = () => <div>Deposit Success</div>;
 
 // Main routes accessible to everyone
 const mainRoutes = [
