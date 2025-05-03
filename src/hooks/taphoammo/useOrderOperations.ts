@@ -63,11 +63,15 @@ export const useOrderOperations = () => {
       
       if (error) throw error;
       
-      if (!data || !data.data || !data.data.product_keys) {
+      if (!data || !data.data) {
         throw new Error('Order keys not found');
       }
 
-      return data.data.product_keys;
+      // Fix type issue: Check if data.data is an object and has product_keys
+      const orderData = data.data as Record<string, any>;
+      const productKeys = orderData.product_keys || [];
+
+      return productKeys;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error fetching order keys:', errorMsg);

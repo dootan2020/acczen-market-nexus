@@ -15,7 +15,7 @@ interface SyncInventoryButtonProps {
   productName: string;
   onSuccess?: (data: any) => void;
   variant?: "default" | "outline" | "ghost";
-  size?: "default" | "sm" | "xs" | "lg" | "icon";
+  size?: "default" | "sm" | "lg" | "icon"; // Removed "xs" as it's not a valid size
 }
 
 const SyncInventoryButton: React.FC<SyncInventoryButtonProps> = ({
