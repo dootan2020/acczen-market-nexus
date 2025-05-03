@@ -13,18 +13,20 @@ import { ProductProvider } from "./contexts/ProductContext";
 import { ProductInfoModal } from "./components/products/ProductInfoModal";
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
-import { ThemeVariablesProvider } from './components/ui/css-variables';
 import { Toaster } from "sonner";
 
 // Initialize next-themes globally
 if (typeof window !== 'undefined') {
   // @ts-ignore - Setting up global theme context for next-themes
-  window.__NEXT_THEMES__ = window.__NEXT_THEMES__ || { theme: 'light', setTheme: (t: string) => {
-    // @ts-ignore
-    window.__NEXT_THEMES__.theme = t;
-    document.documentElement.classList.remove('light', 'dark', 'system');
-    document.documentElement.classList.add(t);
-  }};
+  window.__NEXT_THEMES__ = window.__NEXT_THEMES__ || { 
+    theme: 'light', 
+    setTheme: (t: string) => {
+      // @ts-ignore
+      window.__NEXT_THEMES__.theme = t;
+      document.documentElement.classList.remove('light', 'dark', 'system');
+      document.documentElement.classList.add(t);
+    }
+  };
 }
 
 function App() {
@@ -36,54 +38,52 @@ function App() {
     <BrowserRouter>
       <ReactQueryProvider>
         <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <ThemeVariablesProvider>
-            <TooltipProvider>
+          <TooltipProvider>
+            <AuthProvider>
               <CurrencyProvider>
                 <CartProvider>
-                  <AuthProvider>
-                    <ProductProvider>
-                      <div className="min-h-screen flex flex-col">
-                        <ProductInfoModal />
-                        <Routes>
-                          {/* Main routes with standard layout */}
-                          <Route element={<Layout />}>
-                            {routes.mainRoutes.map((route, index) => (
-                              <Route
-                                key={index}
-                                path={route.path}
-                                element={route.element}
-                              />
-                            ))}
-                          </Route>
-                          
-                          {/* Dashboard routes */}
-                          {routes.dashboardRoutes.map((route, index) => (
+                  <ProductProvider>
+                    <div className="min-h-screen flex flex-col">
+                      <ProductInfoModal />
+                      <Routes>
+                        {/* Main routes with standard layout */}
+                        <Route element={<Layout />}>
+                          {routes.mainRoutes.map((route, index) => (
                             <Route
-                              key={`dashboard-${index}`}
+                              key={index}
                               path={route.path}
                               element={route.element}
                             />
                           ))}
-                          
-                          {/* Admin routes with AdminLayout */}
-                          <Route element={<AdminLayout />}>
-                            {routes.adminRoutes.map((route, index) => (
-                              <Route
-                                key={`admin-${index}`}
-                                path={route.path}
-                                element={route.element}
-                              />
-                            ))}
-                          </Route>
-                        </Routes>
-                        <Toaster />
-                      </div>
-                    </ProductProvider>
-                  </AuthProvider>
+                        </Route>
+                        
+                        {/* Dashboard routes */}
+                        {routes.dashboardRoutes.map((route, index) => (
+                          <Route
+                            key={`dashboard-${index}`}
+                            path={route.path}
+                            element={route.element}
+                          />
+                        ))}
+                        
+                        {/* Admin routes with AdminLayout */}
+                        <Route element={<AdminLayout />}>
+                          {routes.adminRoutes.map((route, index) => (
+                            <Route
+                              key={`admin-${index}`}
+                              path={route.path}
+                              element={route.element}
+                            />
+                          ))}
+                        </Route>
+                      </Routes>
+                      <Toaster />
+                    </div>
+                  </ProductProvider>
                 </CartProvider>
               </CurrencyProvider>
-            </TooltipProvider>
-          </ThemeVariablesProvider>
+            </AuthProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </ReactQueryProvider>
     </BrowserRouter>

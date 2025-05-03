@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the Auth context type
 interface AuthContextType {
   user: any | null;
   isAuthenticated: boolean;
@@ -24,8 +26,10 @@ interface AuthContextType {
   updateUserEmail: (email: string) => Promise<{error: any | null}>;
 }
 
+// Create the context with a default undefined value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -34,11 +38,13 @@ export function useAuth() {
   return context;
 }
 
+// Props interface for the AuthProvider component
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// AuthProvider component
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -93,7 +99,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-        loadSession();
+        // Use setTimeout to prevent potential deadlocks with onAuthStateChange
+        setTimeout(() => {
+          loadSession();
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsAuthenticated(false);
@@ -122,9 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          // Use only supported options
-        }
       });
       if (error) throw error;
       return data;
@@ -256,6 +262,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create context value object
   const value = {
     user,
     isAuthenticated,
@@ -280,7 +287,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
