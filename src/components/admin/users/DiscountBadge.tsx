@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@radix-ui/react-tooltip';
 import { Percent } from 'lucide-react';
 
 interface DiscountBadgeProps {
@@ -44,16 +44,14 @@ export const DiscountBadge: React.FC<DiscountBadgeProps> = ({
 
   if (showTooltip) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {badgeContent}
-          </TooltipTrigger>
-          <TooltipContent>
-            {tooltipContent || `This user receives a ${percentage.toFixed(1)}% discount on all purchases.`}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {badgeContent}
+        </TooltipTrigger>
+        <TooltipContent>
+          {tooltipContent || `This user receives a ${percentage.toFixed(1)}% discount on all purchases.`}
+        </TooltipContent>
+      </Tooltip>
     );
   }
 

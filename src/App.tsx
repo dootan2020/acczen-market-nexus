@@ -15,6 +15,7 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import { ThemeVariablesProvider } from './components/ui/css-variables';
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 // Initialize next-themes globally
 if (typeof window !== 'undefined') {
@@ -42,42 +43,44 @@ function App() {
                 <AuthProvider>
                   <PaymentProvider>
                     <ProductProvider>
-                      <div className="min-h-screen flex flex-col">
-                        <ProductInfoModal />
-                        <Routes>
-                          {/* Main routes with standard layout */}
-                          <Route element={<Layout />}>
-                            {routes.mainRoutes.map((route, index) => (
+                      <TooltipProvider>
+                        <div className="min-h-screen flex flex-col">
+                          <ProductInfoModal />
+                          <Routes>
+                            {/* Main routes with standard layout */}
+                            <Route element={<Layout />}>
+                              {routes.mainRoutes.map((route, index) => (
+                                <Route
+                                  key={index}
+                                  path={route.path}
+                                  element={route.element}
+                                />
+                              ))}
+                            </Route>
+                            
+                            {/* Dashboard routes */}
+                            {routes.dashboardRoutes.map((route, index) => (
                               <Route
-                                key={index}
+                                key={`dashboard-${index}`}
                                 path={route.path}
                                 element={route.element}
                               />
                             ))}
-                          </Route>
-                          
-                          {/* Dashboard routes */}
-                          {routes.dashboardRoutes.map((route, index) => (
-                            <Route
-                              key={`dashboard-${index}`}
-                              path={route.path}
-                              element={route.element}
-                            />
-                          ))}
-                          
-                          {/* Admin routes with AdminLayout */}
-                          <Route element={<AdminLayout />}>
-                            {routes.adminRoutes.map((route, index) => (
-                              <Route
-                                key={`admin-${index}`}
-                                path={route.path}
-                                element={route.element}
-                              />
-                            ))}
-                          </Route>
-                        </Routes>
-                        <Toaster />
-                      </div>
+                            
+                            {/* Admin routes with AdminLayout */}
+                            <Route element={<AdminLayout />}>
+                              {routes.adminRoutes.map((route, index) => (
+                                <Route
+                                  key={`admin-${index}`}
+                                  path={route.path}
+                                  element={route.element}
+                                />
+                              ))}
+                            </Route>
+                          </Routes>
+                          <Toaster />
+                        </div>
+                      </TooltipProvider>
                     </ProductProvider>
                   </PaymentProvider>
                 </AuthProvider>
