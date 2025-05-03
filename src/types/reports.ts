@@ -29,3 +29,23 @@ export interface OrdersChartData {
   amount: number;
   count: number;
 }
+
+export interface OrderCount {
+  date: string;
+  count: number;
+}
+
+export interface RevenueData {
+  date: string;
+  amount: number;
+}
+
+export interface PaymentMethodData {
+  method: string;
+  amount: number;
+}
+
+export interface CategoryStockData {
+  category_name: string;
+  stock_count: number;
+}

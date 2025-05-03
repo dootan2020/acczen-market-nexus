@@ -4,7 +4,7 @@ import React from "react";
 interface HeadingProps {
   title: string;
   description?: string;
-  className?: string; // Added className prop
+  className?: string;
 }
 
 export const Heading: React.FC<HeadingProps> = ({ title, description, className }) => {

@@ -45,6 +45,11 @@ interface CategoryStockData {
   stock_count: number;
 }
 
+interface ChartData {
+  name: string;
+  value: number;
+}
+
 interface DashboardStats {
   totalUsers: number;
   activeUsers: number;
@@ -57,6 +62,10 @@ interface DashboardStats {
   revenueByDay: RevenueData[];
   paymentMethods: PaymentMethodData[];
   categoryStock: CategoryStockData[];
+  revenueChartData: ChartData[];
+  orderChartData: ChartData[];
+  paymentMethodData: ChartData[];
+  productCategoryData: ChartData[];
 }
 
 const Dashboard: React.FC = () => {
@@ -130,50 +139,53 @@ const Dashboard: React.FC = () => {
         .order('stock_quantity', { ascending: false });
 
       // Calculate order counts by day
-      const ordersByDay = new Map<string, number>();
-      const revenueByDay = new Map<string, number>();
+      const ordersByDayMap = new Map<string, number>();
+      const revenueByDayMap = new Map<string, number>();
       
       ordersData?.forEach(order => {
         const day = format(new Date(order.created_at), 'yyyy-MM-dd');
-        ordersByDay.set(day, (ordersByDay.get(day) || 0) + 1);
-        revenueByDay.set(day, (revenueByDay.get(day) || 0) + (order.total_amount || 0));
+        ordersByDayMap.set(day, (ordersByDayMap.get(day) || 0) + 1);
+        revenueByDayMap.set(day, (revenueByDayMap.get(day) || 0) + (order.total_amount || 0));
       });
 
       // Calculate payment methods
-      const paymentMethods = new Map<string, number>();
+      const paymentMethodsMap = new Map<string, number>();
       depositsData?.forEach(deposit => {
         const method = deposit.payment_method || 'Unknown';
-        paymentMethods.set(method, (paymentMethods.get(method) || 0) + (deposit.amount || 0));
+        paymentMethodsMap.set(method, (paymentMethodsMap.get(method) || 0) + (deposit.amount || 0));
       });
 
       // Calculate category stock
-      const categoryStock = new Map<string, number>();
+      const categoryStockMap = new Map<string, number>();
       stockData?.forEach(product => {
         if (product.categories) {
           const categoryName = product.categories.name || 'Uncategorized';
-          categoryStock.set(categoryName, (categoryStock.get(categoryName) || 0) + (product.stock_quantity || 0));
+          categoryStockMap.set(categoryName, (categoryStockMap.get(categoryName) || 0) + (product.stock_quantity || 0));
         } else {
-          categoryStock.set('Uncategorized', (categoryStock.get('Uncategorized') || 0) + (product.stock_quantity || 0));
+          categoryStockMap.set('Uncategorized', (categoryStockMap.get('Uncategorized') || 0) + (product.stock_quantity || 0));
         }
       });
 
       // Calculate active users (created order in last 30 days)
       const activeUserIds = new Set(ordersData?.map(order => order.user_id) || []);
       
-      // Generate chart data
-      const orderCountByDay = [...ordersByDay.entries()]
+      // Convert Map to Array for orderCountByDay
+      const orderCountByDay: OrderCount[] = Array.from(ordersByDayMap.entries())
         .map(([date, count]) => ({ date, count }))
         .sort((a, b) => a.date.localeCompare(b.date));
       
-      const revenueByDay = [...revenueByDay.entries()]
+      // Convert Map to Array for revenueByDay
+      const revenueByDay: RevenueData[] = Array.from(revenueByDayMap.entries())
         .map(([date, amount]) => ({ date, amount }))
         .sort((a, b) => a.date.localeCompare(b.date));
       
-      const paymentMethodsArray = [...paymentMethods.entries()]
+      // Convert Map to Array for paymentMethods
+      const paymentMethods: PaymentMethodData[] = Array.from(paymentMethodsMap.entries())
         .map(([method, amount]) => ({ method, amount }))
         .sort((a, b) => b.amount - a.amount);
       
-      const categoryStockArray = [...categoryStock.entries()]
+      // Convert Map to Array for categoryStock
+      const categoryStock: CategoryStockData[] = Array.from(categoryStockMap.entries())
         .map(([category_name, stock_count]) => ({ category_name, stock_count }))
         .sort((a, b) => b.stock_count - a.stock_count);
 
@@ -188,12 +200,12 @@ const Dashboard: React.FC = () => {
         value: item.count
       }));
       
-      const paymentMethodData = paymentMethodsArray.map(item => ({
+      const paymentMethodData = paymentMethods.map(item => ({
         name: item.method.charAt(0).toUpperCase() + item.method.slice(1),
         value: item.amount
       }));
       
-      const productCategoryData = categoryStockArray.map(item => ({
+      const productCategoryData = categoryStock.map(item => ({
         name: item.category_name,
         value: item.stock_count
       }));
@@ -209,11 +221,11 @@ const Dashboard: React.FC = () => {
           (ordersData.reduce((sum, order) => sum + (order.total_amount || 0), 0) / ordersData.length) : 0,
         orderCountByDay,
         revenueByDay,
+        paymentMethods,
+        categoryStock,
         revenueChartData,
         orderChartData,
-        paymentMethods: paymentMethodsArray,
         paymentMethodData,
-        categoryStock: categoryStockArray,
         productCategoryData
       };
     },
@@ -274,10 +286,22 @@ const Dashboard: React.FC = () => {
         </div>
       ) : dashboardStats ? (
         <DashboardOverview 
-          statsData={dashboardStats}
-          revenueChartData={dashboardStats.revenueChartData || []}
-          ordersChartData={dashboardStats.orderChartData || []}
-          paymentMethodData={dashboardStats.paymentMethodData || []}
+          statsData={{
+            totalUsers: dashboardStats.totalUsers,
+            totalOrders: dashboardStats.totalOrders,
+            totalDeposits: dashboardStats.totalDeposits,
+            totalDepositAmount: dashboardStats.totalDepositAmount,
+            averageOrderValue: dashboardStats.averageOrderValue,
+            activeUsers: dashboardStats.activeUsers,
+            conversionRate: dashboardStats.conversionRate,
+            paypalAmount: dashboardStats.paymentMethods.find(p => p.method.toLowerCase() === 'paypal')?.amount || 0,
+            paypalDeposits: dashboardStats.paymentMethods.filter(p => p.method.toLowerCase() === 'paypal').length,
+            usdtAmount: dashboardStats.paymentMethods.find(p => p.method.toLowerCase() === 'usdt')?.amount || 0,
+            usdtDeposits: dashboardStats.paymentMethods.filter(p => p.method.toLowerCase() === 'usdt').length
+          }}
+          revenueChartData={dashboardStats.revenueChartData}
+          ordersChartData={dashboardStats.orderChartData}
+          paymentMethodData={dashboardStats.paymentMethodData}
           isLoading={isLoading}
         />
       ) : (

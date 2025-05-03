@@ -24,7 +24,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { StatsData, ChartData } from '@/hooks/useReportsData';
+import { StatsData, ChartData } from '@/types/reports';
 
 // Format currency function
 function formatCurrency(value: number): string {
@@ -37,8 +37,8 @@ function formatCurrency(value: number): string {
 
 interface DashboardOverviewProps {
   statsData: StatsData;
-  revenueChartData: any[];
-  ordersChartData: any[];
+  revenueChartData: ChartData[];
+  ordersChartData: ChartData[];
   paymentMethodData: ChartData[];
   isLoading: boolean;
 }
