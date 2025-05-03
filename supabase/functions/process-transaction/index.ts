@@ -108,6 +108,7 @@ serve(async (req) => {
     try {
       // 3. Process the transaction based on type
       let apiResponseData = null;
+      let productKeys = [];
       
       if (transaction_type === 'purchase') {
         // Call the API to make the purchase (example for TaphoaMMO)
@@ -128,6 +129,11 @@ serve(async (req) => {
           }
           
           apiResponseData = apiResponse;
+          
+          // Extract product keys if available
+          if (apiResponse && apiResponse.product_keys && Array.isArray(apiResponse.product_keys)) {
+            productKeys = apiResponse.product_keys;
+          }
         } else {
           // Handle non-API product purchase
           console.log('Processing non-API product purchase');
@@ -160,7 +166,8 @@ serve(async (req) => {
           total: totalCost,
           data: {
             kiosk_token: product.kiosk_token,
-            api_response: apiResponseData
+            api_response: apiResponseData,
+            product_keys: productKeys
           }
         });
       
@@ -211,6 +218,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           order_id: order.id,
+          product_keys: productKeys,
           transaction_id: transactionId,
           api_response: apiResponseData,
           message: 'Transaction processed successfully',
