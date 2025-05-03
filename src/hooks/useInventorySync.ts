@@ -1,70 +1,90 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { TaphoammoProduct } from '@/types/products';
 import { toast } from 'sonner';
 
-export const useInventorySync = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface SyncResult {
+  success: boolean;
+  message?: string;
+}
 
-  const syncProductStock = async (kioskToken: string): Promise<{
-    success: boolean;
-    message?: string;
-    stockData?: TaphoammoProduct;
-    oldQuantity?: number;
-    newQuantity?: number;
-  }> => {
-    setLoading(true);
-    setError(null);
-    
+export const useInventorySync = () => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const syncProductStock = async (kioskToken: string): Promise<SyncResult> => {
+    setIsSyncing(true);
     try {
+      // Call the server function to sync inventory for this product
       const { data, error } = await supabase.functions.invoke('sync-inventory', {
         body: JSON.stringify({
+          type: 'single',
           kioskToken,
           syncType: 'manual'
         })
       });
       
-      if (error) {
-        throw new Error(error.message);
+      if (error) throw error;
+      
+      if (data.success) {
+        return {
+          success: true,
+          message: data.message || 'Inventory synced successfully'
+        };
+      } else {
+        return {
+          success: false,
+          message: data.message || 'Failed to sync inventory'
+        };
       }
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Đồng bộ thất bại');
-      }
-      
-      const stockData: TaphoammoProduct = {
-        kiosk_token: kioskToken,
-        name: data.name,
-        stock_quantity: data.new_quantity,
-        price: data.new_price
-      };
-      
-      return {
-        success: true,
-        message: `Đồng bộ thành công. Tồn kho: ${data.old_quantity} → ${data.new_quantity}`,
-        stockData,
-        oldQuantity: data.old_quantity,
-        newQuantity: data.new_quantity
-      };
-    } catch (err: any) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error in syncProductStock:', errorMsg);
-      setError(errorMsg);
-      
+    } catch (error: any) {
+      console.error('Error syncing inventory:', error);
       return {
         success: false,
-        message: `Lỗi đồng bộ: ${errorMsg}`
+        message: error.message || 'An unexpected error occurred'
       };
     } finally {
-      setLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
+  const syncAllInventory = async (): Promise<SyncResult> => {
+    setIsSyncing(true);
+    try {
+      // Call the server function to sync all inventory
+      const { data, error } = await supabase.functions.invoke('sync-inventory', {
+        body: JSON.stringify({
+          type: 'all',
+          syncType: 'manual'
+        })
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        return {
+          success: true,
+          message: data.message || `${data.updated || 0} products synced successfully`
+        };
+      } else {
+        return {
+          success: false,
+          message: data.message || 'Failed to sync inventory'
+        };
+      }
+    } catch (error: any) {
+      console.error('Error syncing all inventory:', error);
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred'
+      };
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   return {
     syncProductStock,
-    loading,
-    error
+    syncAllInventory,
+    isSyncing
   };
 };
