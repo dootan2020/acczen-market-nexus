@@ -1,473 +1,344 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from 'recharts';
-import { 
-  DollarSign, Users, ShoppingCart, Package, 
-  ArrowUpRight, ArrowDownRight,
-  Calendar, Activity
-} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Heading } from '@/components/ui/heading';
+import { DashboardOverview } from '@/components/admin/dashboard/DashboardOverview';
+import { DatePicker } from '@/components/ui/date-picker';
+import { DateRange } from "react-day-picker";
+import { subDays, format, startOfDay, endOfDay } from 'date-fns';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from '@/components/ui/button';
+import { SlidersHorizontal, Download, LineChart, RefreshCcw } from 'lucide-react';
 
-// Type definitions
-interface DashboardStats {
-  revenue: {
-    total: number;
-    previous: number;
-    percentChange: number;
-  };
-  orders: {
-    total: number;
-    previous: number;
-    percentChange: number;
-    completed: number;
-    pending: number;
-  };
-  users: {
-    total: number;
-    new: number;
-    percentChange: number;
-  };
-  products: {
-    total: number;
-    outOfStock: number;
-  };
-  recentOrders: Array<{
-    id: string;
-    user: string;
-    amount: number;
-    status: string;
-    date: string;
-  }>;
+interface OrderCount {
+  date: string;
+  count: number;
 }
 
-const COLORS = ['#19C37D', '#3498DB', '#F1C40F', '#E74C3C'];
+interface RevenueData {
+  date: string;
+  amount: number;
+}
 
-const Dashboard = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['admin-dashboard-stats'],
+interface PaymentMethodData {
+  method: string;
+  amount: number;
+}
+
+interface CategoryStockData {
+  category_name: string;
+  stock_count: number;
+}
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  conversionRate: number;
+  totalOrders: number;
+  totalDepositAmount: number;
+  totalDeposits: number;
+  averageOrderValue: number;
+  orderCountByDay: OrderCount[];
+  revenueByDay: RevenueData[];
+  paymentMethods: PaymentMethodData[];
+  categoryStock: CategoryStockData[];
+}
+
+const Dashboard: React.FC = () => {
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+
+  const { data: dashboardStats, isLoading, refetch } = useQuery<DashboardStats>({
+    queryKey: ['admin-dashboard', date?.from, date?.to],
     queryFn: async () => {
-      // Get revenue stats
-      const { data: revenue, error: revenueError } = await supabase
-        .from('orders')
-        .select('total_amount, created_at')
-        .gte('created_at', new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString());
+      const fromDate = date?.from ? startOfDay(date.from) : subDays(new Date(), 30);
+      const toDate = date?.to ? endOfDay(date.to) : new Date();
 
-      if (revenueError) throw revenueError;
-
-      // Get previous month revenue for comparison
-      const { data: previousRevenue, error: previousRevenueError } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .gte('created_at', new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString())
-        .lt('created_at', new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString());
-
-      if (previousRevenueError) throw previousRevenueError;
-
-      // Get orders stats
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('id, status, created_at');
-
-      if (ordersError) throw ordersError;
-
-      // Get users stats
-      const { data: users, error: usersError } = await supabase
+      // Get user stats
+      const { data: usersData, error: usersError } = await supabase
         .from('profiles')
-        .select('id, created_at');
+        .select('id, created_at')
+        .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
 
-      // Get products stats
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('id, stock_quantity');
-
-      if (productsError) throw productsError;
-
-      // Get recent orders with user info
-      const { data: recentOrders, error: recentOrdersError } = await supabase
+      // Get orders in date range
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('id, total_amount, status, created_at, profiles:user_id(username, email)')
+        .select('id, created_at, total_amount, user_id')
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString());
+
+      if (ordersError) throw ordersError;
+
+      // Get deposits in date range
+      const { data: depositsData, error: depositsError } = await supabase
+        .from('deposits')
+        .select('id, created_at, amount, payment_method, status')
+        .eq('status', 'completed')
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString());
+
+      if (depositsError) throw depositsError;
+
+      // Recent user data
+      const { data: recentUsers } = await supabase
+        .from('profiles')
+        .select('id, username, email, created_at')
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (recentOrdersError) throw recentOrdersError;
+      // Recent order data
+      const { data: recentOrders } = await supabase
+        .from('orders')
+        .select(`
+          id, 
+          created_at, 
+          total_amount, 
+          status, 
+          user_id, 
+          profiles:user_id (username, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      // Calculate stats
-      const currentMonthRevenue = revenue?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      const prevMonthRevenue = previousRevenue?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      const revenueChange = prevMonthRevenue > 0 
-        ? ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100 
-        : 0;
+      // Get stock by category
+      const { data: stockData } = await supabase
+        .from('products')
+        .select(`
+          id, 
+          stock_quantity,
+          categories:category_id (id, name)
+        `)
+        .order('stock_quantity', { ascending: false });
 
-      const currentMonthOrders = orders?.filter(order => 
-        new Date(order.created_at) >= new Date(new Date().setMonth(new Date().getMonth() - 1))
-      ).length || 0;
+      // Calculate order counts by day
+      const ordersByDay = new Map<string, number>();
+      const revenueByDay = new Map<string, number>();
       
-      const prevMonthOrders = orders?.filter(order => 
-        new Date(order.created_at) >= new Date(new Date().setMonth(new Date().getMonth() - 2)) &&
-        new Date(order.created_at) < new Date(new Date().setMonth(new Date().getMonth() - 1))
-      ).length || 0;
-      
-      const ordersChange = prevMonthOrders > 0 
-        ? ((currentMonthOrders - prevMonthOrders) / prevMonthOrders) * 100 
-        : 0;
-
-      const newUsers = users?.filter(user => 
-        new Date(user.created_at) >= new Date(new Date().setMonth(new Date().getMonth() - 1))
-      ).length || 0;
-      
-      const prevMonthUsers = users?.filter(user => 
-        new Date(user.created_at) >= new Date(new Date().setMonth(new Date().getMonth() - 2)) &&
-        new Date(user.created_at) < new Date(new Date().setMonth(new Date().getMonth() - 1))
-      ).length || 0;
-      
-      const usersChange = prevMonthUsers > 0 
-        ? ((newUsers - prevMonthUsers) / prevMonthUsers) * 100 
-        : 0;
-
-      // Format recent orders
-      const formattedRecentOrders = recentOrders?.map(order => ({
-        id: order.id,
-        user: order.profiles?.username || order.profiles?.email || 'Unknown',
-        amount: Number(order.total_amount),
-        status: order.status,
-        date: new Date(order.created_at).toLocaleDateString()
-      })) || [];
-
-      // Generate revenue chart data
-      const lastSevenDays = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
-      }).reverse();
-
-      const revenueChartData = lastSevenDays.map(day => {
-        const dayRevenue = revenue
-          ?.filter(order => order.created_at.startsWith(day))
-          .reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-        
-        return {
-          name: day.split('-').slice(1).join('/'), // Format as MM/DD
-          value: dayRevenue
-        };
+      ordersData?.forEach(order => {
+        const day = format(new Date(order.created_at), 'yyyy-MM-dd');
+        ordersByDay.set(day, (ordersByDay.get(day) || 0) + 1);
+        revenueByDay.set(day, (revenueByDay.get(day) || 0) + (order.total_amount || 0));
       });
 
+      // Calculate payment methods
+      const paymentMethods = new Map<string, number>();
+      depositsData?.forEach(deposit => {
+        const method = deposit.payment_method || 'Unknown';
+        paymentMethods.set(method, (paymentMethods.get(method) || 0) + (deposit.amount || 0));
+      });
+
+      // Calculate category stock
+      const categoryStock = new Map<string, number>();
+      stockData?.forEach(product => {
+        if (product.categories) {
+          const categoryName = product.categories.name || 'Uncategorized';
+          categoryStock.set(categoryName, (categoryStock.get(categoryName) || 0) + (product.stock_quantity || 0));
+        } else {
+          categoryStock.set('Uncategorized', (categoryStock.get('Uncategorized') || 0) + (product.stock_quantity || 0));
+        }
+      });
+
+      // Calculate active users (created order in last 30 days)
+      const activeUserIds = new Set(ordersData?.map(order => order.user_id) || []);
+      
+      // Generate chart data
+      const orderCountByDay = [...ordersByDay.entries()]
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      
+      const revenueByDay = [...revenueByDay.entries()]
+        .map(([date, amount]) => ({ date, amount }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      
+      const paymentMethodsArray = [...paymentMethods.entries()]
+        .map(([method, amount]) => ({ method, amount }))
+        .sort((a, b) => b.amount - a.amount);
+      
+      const categoryStockArray = [...categoryStock.entries()]
+        .map(([category_name, stock_count]) => ({ category_name, stock_count }))
+        .sort((a, b) => b.stock_count - a.stock_count);
+
+      // Transform for charts
+      const revenueChartData = revenueByDay.map(item => ({
+        name: format(new Date(item.date), 'MMM dd'),
+        value: item.amount
+      }));
+      
+      const orderChartData = orderCountByDay.map(item => ({
+        name: format(new Date(item.date), 'MMM dd'),
+        value: item.count
+      }));
+      
+      const paymentMethodData = paymentMethodsArray.map(item => ({
+        name: item.method.charAt(0).toUpperCase() + item.method.slice(1),
+        value: item.amount
+      }));
+      
+      const productCategoryData = categoryStockArray.map(item => ({
+        name: item.category_name,
+        value: item.stock_count
+      }));
+
       return {
-        revenue: {
-          total: currentMonthRevenue,
-          previous: prevMonthRevenue,
-          percentChange: revenueChange
-        },
-        orders: {
-          total: orders?.length || 0,
-          previous: prevMonthOrders,
-          percentChange: ordersChange,
-          completed: orders?.filter(order => order.status === 'completed').length || 0,
-          pending: orders?.filter(order => order.status === 'pending').length || 0
-        },
-        users: {
-          total: users?.length || 0,
-          new: newUsers,
-          percentChange: usersChange
-        },
-        products: {
-          total: products?.length || 0,
-          outOfStock: products?.filter(product => product.stock_quantity <= 0).length || 0
-        },
-        recentOrders: formattedRecentOrders,
+        totalUsers: usersData?.length || 0,
+        activeUsers: activeUserIds.size,
+        conversionRate: usersData?.length ? Math.round((activeUserIds.size / usersData.length) * 100) : 0,
+        totalOrders: ordersData?.length || 0,
+        totalDepositAmount: depositsData?.reduce((sum, deposit) => sum + (deposit.amount || 0), 0) || 0,
+        totalDeposits: depositsData?.length || 0,
+        averageOrderValue: ordersData?.length ? 
+          (ordersData.reduce((sum, order) => sum + (order.total_amount || 0), 0) / ordersData.length) : 0,
+        orderCountByDay,
+        revenueByDay,
         revenueChartData,
-        productCategoryData: [
-          { name: 'Email Accounts', value: products?.filter(p => p.category_id === 'email').length || 25 },
-          { name: 'Social Media', value: products?.filter(p => p.category_id === 'social').length || 15 },
-          { name: 'Software', value: products?.filter(p => p.category_id === 'software').length || 35 },
-          { name: 'Other', value: products?.filter(p => !['email', 'social', 'software'].includes(p.category_id || '')).length || 10 }
-        ]
-      } as DashboardStats;
+        orderChartData,
+        paymentMethods: paymentMethodsArray,
+        paymentMethodData,
+        categoryStock: categoryStockArray,
+        productCategoryData
+      };
     },
-    refetchInterval: 60000, // Refresh every minute
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+  const handleRefresh = () => {
+    refetch();
   };
 
-  // Skeleton loading states
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-7 w-1/3 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card>
-          <CardHeader>
-            <div className="h-5 w-1/4 bg-gray-200 rounded animate-pulse"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] bg-gray-100 rounded animate-pulse"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleExport = () => {
+    // Implementation for exporting dashboard data
+    alert("Export functionality will be implemented here");
+  };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <Heading 
+          title="Dashboard" 
+          description="Overview of your business performance"
+        />
+        <div className="flex flex-col md:flex-row gap-2">
+          <DatePicker date={date} onSelect={setDate} align="end" />
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={handleRefresh}>
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={handleExport} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Dashboard Settings</SheetTitle>
+                  <SheetDescription>
+                    Customize your dashboard view
+                  </SheetDescription>
+                </SheetHeader>
+                {/* Dashboard settings content */}
+                <div className="py-6">
+                  <p>Settings content will go here</p>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : dashboardStats ? (
+        <DashboardOverview 
+          statsData={dashboardStats}
+          revenueChartData={dashboardStats.revenueChartData || []}
+          ordersChartData={dashboardStats.orderChartData || []}
+          paymentMethodData={dashboardStats.paymentMethodData || []}
+          isLoading={isLoading}
+        />
+      ) : (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Error Loading Dashboard</CardTitle>
+            <CardDescription>
+              Unable to load dashboard data. Please try refreshing.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.revenue.total || 0)}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              {stats && stats.revenue.percentChange > 0 ? (
-                <span className="text-green-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  {stats.revenue.percentChange.toFixed(1)}%
-                </span>
-              ) : (
-                <span className="text-red-500 flex items-center mr-1">
-                  <ArrowDownRight className="h-3 w-3 mr-1" />
-                  {Math.abs((stats?.revenue.percentChange || 0)).toFixed(1)}%
-                </span>
-              )}
-              <span>from previous month</span>
-            </div>
+            <Button onClick={handleRefresh}>Refresh Dashboard</Button>
           </CardContent>
         </Card>
+      )}
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.orders.total || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              {stats && stats.orders.percentChange > 0 ? (
-                <span className="text-green-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  {stats.orders.percentChange.toFixed(1)}%
-                </span>
-              ) : (
-                <span className="text-red-500 flex items-center mr-1">
-                  <ArrowDownRight className="h-3 w-3 mr-1" />
-                  {Math.abs((stats?.orders.percentChange || 0)).toFixed(1)}%
-                </span>
-              )}
-              <span>from previous month</span>
-            </div>
+            {/* Recent orders content */}
+            {isLoading ? (
+              <div className="animate-pulse space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-100 rounded"></div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Recent orders will be displayed here
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Recent Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.users.total || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              <span className="text-green-500 flex items-center mr-1">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                {stats?.users.new || 0}
-              </span>
-              <span>new this month</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.products.total || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              <span className="text-amber-500 flex items-center mr-1">
-                <Activity className="h-3 w-3 mr-1" />
-                {stats?.products.outOfStock || 0}
-              </span>
-              <span>out of stock</span>
-            </div>
+            {/* Recent users content */}
+            {isLoading ? (
+              <div className="animate-pulse space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-100 rounded"></div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Recent users will be displayed here
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Tabs for different insights */}
-      <Tabs defaultValue="revenue">
-        <TabsList className="mb-6">
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="revenue">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Revenue Overview - Last 7 Days</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={stats?.revenueChartData || []}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#19C37D" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#19C37D" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#19C37D"
-                      fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="products">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Products by Category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats?.productCategoryData || []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {stats?.productCategoryData?.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value, 'Products']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Order Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { name: 'Completed', value: stats?.orders.completed || 0 },
-                      { name: 'Pending', value: stats?.orders.pending || 0 }
-                    ]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" name="Orders" fill="#19C37D" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Recent Orders */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-3 px-4 text-left font-medium">Order ID</th>
-                  <th className="py-3 px-4 text-left font-medium">Customer</th>
-                  <th className="py-3 px-4 text-left font-medium">Amount</th>
-                  <th className="py-3 px-4 text-left font-medium">Status</th>
-                  <th className="py-3 px-4 text-left font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats?.recentOrders.map(order => (
-                  <tr key={order.id} className="border-b">
-                    <td className="py-3 px-4">{order.id}</td>
-                    <td className="py-3 px-4">{order.user}</td>
-                    <td className="py-3 px-4">{formatCurrency(order.amount)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                        ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">{order.date}</td>
-                  </tr>
-                ))}
-                {(!stats?.recentOrders || stats.recentOrders.length === 0) && (
-                  <tr>
-                    <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                      No recent orders found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

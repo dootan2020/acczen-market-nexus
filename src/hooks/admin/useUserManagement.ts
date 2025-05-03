@@ -3,20 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  username: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: 'admin' | 'user';
-  balance: number;
-  created_at: string;
-  updated_at: string;
-  discount_percentage?: number;
-  discount_note?: string | null;
-}
+import { UserProfile } from './types/userManagement.types';
 
 export const useUserManagement = () => {
   const queryClient = useQueryClient();
@@ -29,6 +16,12 @@ export const useUserManagement = () => {
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
 
+  // For backwards compatibility with the AdminUsers component
+  const isEditRoleDialogOpen = isEditDialogOpen;
+  const setIsEditRoleDialogOpen = setIsEditDialogOpen;
+  const isAdjustBalanceDialogOpen = isBalanceDialogOpen;
+  const setIsAdjustBalanceDialogOpen = setIsBalanceDialogOpen;
+
   // Fetch users with pagination
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['admin-users', currentPage, pageSize, roleFilter],
@@ -39,7 +32,7 @@ export const useUserManagement = () => {
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       if (roleFilter) {
-        query = query.eq('role', roleFilter);
+        query = query.eq('role', roleFilter as 'admin' | 'user');
       }
 
       const { data, count, error } = await query;
@@ -64,7 +57,7 @@ export const useUserManagement = () => {
       user.username?.toLowerCase().includes(query) ||
       user.full_name?.toLowerCase().includes(query)
     );
-  });
+  }) || [];
 
   // Update user role mutation
   const updateRoleMutation = useMutation({
@@ -124,12 +117,14 @@ export const useUserManagement = () => {
       if (updateError) throw updateError;
       
       // Create transaction record
+      // Since "admin_deposit" and "admin_withdrawal" aren't valid types,
+      // we'll use "deposit" and "refund" instead
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: id,
           amount: operation === 'add' ? amount : -amount,
-          type: operation === 'add' ? 'admin_deposit' : 'admin_withdrawal',
+          type: operation === 'add' ? 'deposit' : 'refund',
           description: notes || `Balance ${operation === 'add' ? 'increased' : 'decreased'} by admin`
         });
       
@@ -201,6 +196,10 @@ export const useUserManagement = () => {
       setCurrentPage(page);
     }
   };
+  
+  // Helper to determine if there are next/previous pages
+  const hasNextPage = usersData ? currentPage < usersData.totalPages : false;
+  const hasPrevPage = currentPage > 1;
 
   // Dialog handlers
   const handleEditRole = (user: UserProfile) => {
@@ -217,9 +216,31 @@ export const useUserManagement = () => {
     setCurrentUser(user);
     setIsDiscountDialogOpen(true);
   };
+  
+  // For backwards compatibility with the AdminUsers component
+  const handleUpdateRole = (role: 'admin' | 'user') => {
+    if (currentUser) {
+      updateRoleMutation.mutate({
+        id: currentUser.id,
+        role
+      });
+    }
+  };
+  
+  const handleAdjustBalanceConfirm = (amount: number, operation: 'add' | 'subtract', notes: string) => {
+    if (currentUser) {
+      adjustBalanceMutation.mutate({
+        id: currentUser.id,
+        amount,
+        operation,
+        notes
+      });
+    }
+  };
 
   return {
-    users: filteredUsers || [],
+    users: usersData?.users || [],
+    filteredUsers,
     totalUsers: usersData?.totalCount || 0,
     totalPages: usersData?.totalPages || 1,
     currentPage,
@@ -236,12 +257,21 @@ export const useUserManagement = () => {
     setIsBalanceDialogOpen,
     isDiscountDialogOpen,
     setIsDiscountDialogOpen,
+    // For backwards compatibility with AdminUsers component
+    isEditRoleDialogOpen,
+    setIsEditRoleDialogOpen,
+    isAdjustBalanceDialogOpen,
+    setIsAdjustBalanceDialogOpen,
+    hasNextPage,
+    hasPrevPage,
     nextPage,
     prevPage,
     goToPage,
     handleEditRole,
     handleAdjustBalance,
     handleUpdateDiscount,
+    handleUpdateRole,
+    handleAdjustBalanceConfirm,
     updateRoleMutation,
     adjustBalanceMutation,
     updateDiscountMutation

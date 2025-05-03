@@ -1,450 +1,289 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  AlertCircle, 
-  Loader, 
-  User, 
-  Mail, 
-  Key,
-  Shield,
-  LogOut,
-  Check
-} from "lucide-react";
+import React from 'react';
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Heading } from "@/components/ui/heading";
 
-// Define profile form schema
-const profileSchema = z.object({
-  fullName: z
-    .string()
-    .min(3, { message: "Name must be at least 3 characters" })
-    .max(50, { message: "Name cannot exceed 50 characters" }),
-  email: z
-    .string()
-    .email({ message: "Invalid email address" })
-    .min(5, { message: "Email is too short" })
-    .max(100, { message: "Email cannot exceed 100 characters" })
+// Schema for profile update
+const profileFormSchema = z.object({
+  full_name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email.",
+  }),
+  avatar_url: z.string().optional(),
 });
 
-// Define password change schema
-const changePasswordSchema = z.object({
-  currentPassword: z
-    .string()
-    .min(6, { message: "Please enter your current password" }),
-  newPassword: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" })
-    .regex(/[A-Z]/, { message: "Password must contain at least 1 uppercase letter" })
-    .regex(/[a-z]/, { message: "Password must contain at least 1 lowercase letter" })
-    .regex(/[0-9]/, { message: "Password must contain at least 1 number" })
-    .regex(/[^a-zA-Z0-9]/, { message: "Password must contain at least 1 special character" }),
-  confirmPassword: z.string(),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
+// Schema for password update
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+  newPassword: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+  confirmPassword: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match.",
   path: ["confirmPassword"],
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
-type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+// Schema for notification settings
+const notificationFormSchema = z.object({
+  emailNotifications: z.boolean().default(true),
+  orderUpdates: z.boolean().default(true),
+  promotionalEmails: z.boolean().default(false),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+type NotificationFormValues = z.infer<typeof notificationFormSchema>;
 
 const AccountSettings = () => {
-  const [activeTab, setActiveTab] = useState("profile");
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [showLogoutAllDialog, setShowLogoutAllDialog] = useState(false);
-  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const { user, fullName, signOut, refreshUser, updateUserEmail } = useAuth();
-  const navigate = useNavigate();
+  const { user, updateUserEmail } = useAuth();
 
-  // Create forms
-  const profileForm = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      fullName: "",
-      email: ""
+  // Fetch user profile data
+  const { data: profile, isLoading, error, refetch } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
     },
-    mode: "onChange"
+    enabled: !!user,
   });
 
-  const passwordForm = useForm<ChangePasswordFormValues>({
-    resolver: zodResolver(changePasswordSchema),
+  // Profile form
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      full_name: "",
+      email: "",
+      avatar_url: "",
+    },
+  });
+
+  // Password form
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
     defaultValues: {
       currentPassword: "",
       newPassword: "",
-      confirmPassword: ""
+      confirmPassword: "",
     },
-    mode: "onChange"
   });
 
-  // Load user data when component mounts
-  useEffect(() => {
-    if (user) {
+  // Notification form
+  const notificationForm = useForm<NotificationFormValues>({
+    resolver: zodResolver(notificationFormSchema),
+    defaultValues: {
+      emailNotifications: true,
+      orderUpdates: true,
+      promotionalEmails: false,
+    },
+  });
+
+  // Update profile form values when data is loaded
+  React.useEffect(() => {
+    if (profile) {
       profileForm.reset({
-        fullName: fullName || '',
-        email: user.email || ''
+        full_name: profile.full_name || "",
+        email: profile.email || "",
+        avatar_url: profile.avatar_url || "",
       });
+    }
+  }, [profile, profileForm]);
 
-      // This would typically fetch sessions from Supabase
-      // For now, we'll just simulate having 1-2 sessions
-      const mockSessions = [
-        {
-          id: 'current-session',
-          created_at: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-          ip_address: '127.0.0.1',
-          current: true
-        }
-      ];
+  // Handle profile form submission
+  async function onProfileSubmit(data: ProfileFormValues) {
+    try {
+      // Update profile in Supabase
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+        })
+        .eq('id', user?.id);
 
-      // Add a simulated "other" session randomly
-      if (Math.random() > 0.5) {
-        mockSessions.push({
-          id: 'other-session',
-          created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-          user_agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)',
-          ip_address: '192.168.1.1',
-          current: false
-        });
+      if (profileError) throw profileError;
+
+      // Update email if it has changed
+      if (data.email !== profile?.email) {
+        const { error: emailError } = await updateUserEmail(data.email);
+        if (emailError) throw emailError;
       }
 
-      setSessions(mockSessions);
-      setIsLoading(false);
-    }
-  }, [user, fullName, profileForm]);
-
-  // Reset error message when inputs change
-  useEffect(() => {
-    const profileSubscription = profileForm.watch(() => {
-      if (profileError) setProfileError(null);
-    });
-    
-    const passwordSubscription = passwordForm.watch(() => {
-      if (passwordError) setPasswordError(null);
-    });
-    
-    return () => {
-      profileSubscription.unsubscribe();
-      passwordSubscription.unsubscribe();
-    };
-  }, [profileForm, passwordForm, profileError, passwordError]);
-
-  // Handle profile update
-  const handleProfileUpdate = async (formData: ProfileFormValues) => {
-    setIsUpdatingProfile(true);
-    setProfileError(null);
-    
-    try {
-      // Only update email if it has changed
-      if (formData.email !== user?.email) {
-        const { error } = await updateUserEmail(formData.email);
-        
-        if (error) {
-          throw new Error(error.message || "Failed to update email");
-        }
-        
-        toast.success("Email update requested", {
-          description: "Please check your new email for verification."
-        });
-      }
-      
-      // Here you would update the user's full name in Supabase
-      // This is a simplified implementation
-      await refreshUser();
-      
-      toast.success("Profile updated", {
-        description: "Your profile information has been updated successfully."
-      });
+      toast.success("Profile updated successfully");
+      refetch();
     } catch (error: any) {
-      console.error("Profile update error:", error);
-      setProfileError(error.message || "Failed to update profile.");
-      
-      toast.error("Profile update failed", {
-        description: error.message || "Please try again later."
-      });
-    } finally {
-      setIsUpdatingProfile(false);
+      toast.error(`Error updating profile: ${error.message}`);
     }
-  };
+  }
 
-  // Handle password change
-  const handlePasswordChange = async (formData: ChangePasswordFormValues) => {
-    setIsChangingPassword(true);
-    setPasswordError(null);
-    
+  // Handle password form submission
+  async function onPasswordSubmit(data: PasswordFormValues) {
     try {
-      // Here you would implement password change logic with Supabase
-      // This is a simplified implementation that just shows a success toast
-      setTimeout(() => {
-        toast.success("Password updated", {
-          description: "Your password has been changed successfully."
-        });
-        passwordForm.reset({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: ""
-        });
-        setIsChangingPassword(false);
-      }, 1500);
-    } catch (error: any) {
-      console.error("Password change error:", error);
-      setPasswordError(error.message || "Failed to update password.");
-      
-      toast.error("Password change failed", {
-        description: error.message || "Please try again later."
+      const { error } = await supabase.auth.updateUser({
+        password: data.newPassword,
       });
-      setIsChangingPassword(false);
-    }
-  };
 
-  // Handle logout from all devices
-  const handleLogoutAll = async () => {
-    setIsLoggingOutAll(true);
-    
+      if (error) throw error;
+
+      toast.success("Password updated successfully");
+      passwordForm.reset();
+    } catch (error: any) {
+      toast.error(`Error updating password: ${error.message}`);
+    }
+  }
+
+  // Handle notification form submission
+  async function onNotificationSubmit(data: NotificationFormValues) {
     try {
-      // Here you would implement logout from all devices with Supabase
-      // For now this is a simplified implementation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Logged out from all devices", {
-        description: "You have been successfully logged out from all devices."
-      });
-      
-      // Redirect to login page
-      await signOut(true);
-      navigate('/login');
+      // Here you would update user preferences in your database
+      // For demonstration, we'll just show a success message
+      toast.success("Notification preferences updated");
     } catch (error: any) {
-      console.error("Logout all error:", error);
-      
-      toast.error("Logout failed", {
-        description: "Failed to log out from all devices. Please try again."
-      });
-      
-      setIsLoggingOutAll(false);
-      setShowLogoutAllDialog(false);
+      toast.error(`Error updating preferences: ${error.message}`);
     }
-  };
+  }
 
-  // Get browser and OS info from user agent
-  const getBrowserInfo = (userAgent: string) => {
-    let browserInfo = "Unknown Browser";
-    
-    if (userAgent.includes("Firefox")) {
-      browserInfo = "Firefox";
-    } else if (userAgent.includes("Chrome")) {
-      browserInfo = "Chrome";
-    } else if (userAgent.includes("Safari")) {
-      browserInfo = "Safari";
-    } else if (userAgent.includes("Edge")) {
-      browserInfo = "Edge";
-    }
-    
-    // Detect OS
-    let osInfo = "Unknown OS";
-    
-    if (userAgent.includes("Windows")) {
-      osInfo = "Windows";
-    } else if (userAgent.includes("Mac OS")) {
-      osInfo = "macOS";
-    } else if (userAgent.includes("iPhone") || userAgent.includes("iPad")) {
-      osInfo = "iOS";
-    } else if (userAgent.includes("Android")) {
-      osInfo = "Android";
-    } else if (userAgent.includes("Linux")) {
-      osInfo = "Linux";
-    }
-    
-    return `${browserInfo} on ${osInfo}`;
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Heading title="Settings" description="Manage your account settings and preferences" />
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <p>Loading your settings...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  // Format date to relative time
-  const getRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.round(diffMs / 1000);
-    const diffMin = Math.round(diffSec / 60);
-    const diffHour = Math.round(diffMin / 60);
-    const diffDay = Math.round(diffHour / 24);
-    
-    if (diffSec < 60) {
-      return 'just now';
-    } else if (diffMin < 60) {
-      return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
-    } else if (diffHour < 24) {
-      return `${diffHour} hour${diffHour === 1 ? '' : 's'} ago`;
-    } else {
-      return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
-    }
-  };
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <Heading title="Settings" description="Manage your account settings and preferences" />
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <p className="text-red-500">Error loading settings. Please try again later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <Heading 
-        title="Account Settings" 
-        description="Manage your account preferences and security settings"
-        className="mb-6"
-      />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User size={16} /> Profile
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield size={16} /> Security
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="flex items-center gap-2">
-            <LogOut size={16} /> Sessions
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Profile Tab */}
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your profile information and email address
-              </CardDescription>
-            </CardHeader>
-            <Form {...profileForm}>
-              <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)}>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-center mb-4">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="text-xl">
-                        {fullName?.split(' ').map(n => n[0]).join('') || user?.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  
-                  {profileError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{profileError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {user?.email_confirmed_at ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-2">
-                      <Check size={12} className="mr-1" /> Email verified
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mb-2">
-                      Email not verified
-                    </Badge>
-                  )}
-                  
-                  <FormField
-                    control={profileForm.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="John Doe"
-                            {...field}
-                            disabled={isUpdatingProfile}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={profileForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="name@example.com"
-                            {...field}
-                            disabled={isUpdatingProfile}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        {field.value !== user?.email && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            Changing your email will require verification of the new address.
-                          </p>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    className="ml-auto"
-                    disabled={isUpdatingProfile || !profileForm.formState.isDirty || !profileForm.formState.isValid}
-                  >
-                    {isUpdatingProfile ? (
-                      <>
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-        </TabsContent>
-        
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>
-                Update your password to maintain account security
-              </CardDescription>
-            </CardHeader>
-            <Form {...passwordForm}>
-              <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)}>
-                <CardContent className="space-y-4">
-                  {passwordError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{passwordError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <Heading title="Settings" description="Manage your account settings and preferences" />
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="password">Password</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            </TabsList>
+            
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="space-y-4">
+              <div className="space-y-4">
+                <Form {...profileForm}>
+                  <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="full_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            This is your public display name.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="john@example.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            We'll send account notifications to this email.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="avatar_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Avatar URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com/avatar.png" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Enter a URL for your profile picture.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit">Update Profile</Button>
+                  </form>
+                </Form>
+              </div>
+            </TabsContent>
+            
+            {/* Password Tab */}
+            <TabsContent value="password" className="space-y-4">
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                   <FormField
                     control={passwordForm.control}
                     name="currentPassword"
@@ -452,19 +291,12 @@ const AccountSettings = () => {
                       <FormItem>
                         <FormLabel>Current Password</FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            {...field}
-                            disabled={isChangingPassword}
-                            autoComplete="current-password"
-                          />
+                          <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
                   <FormField
                     control={passwordForm.control}
                     name="newPassword"
@@ -472,19 +304,12 @@ const AccountSettings = () => {
                       <FormItem>
                         <FormLabel>New Password</FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            {...field}
-                            disabled={isChangingPassword}
-                            autoComplete="new-password"
-                          />
+                          <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
                   <FormField
                     control={passwordForm.control}
                     name="confirmPassword"
@@ -492,173 +317,88 @@ const AccountSettings = () => {
                       <FormItem>
                         <FormLabel>Confirm New Password</FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            {...field}
-                            disabled={isChangingPassword}
-                            autoComplete="new-password"
-                          />
+                          <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
-                    <h4 className="text-sm font-medium text-amber-800">Password Requirements</h4>
-                    <ul className="text-xs text-amber-700 mt-1 ml-4 list-disc">
-                      <li>At least 8 characters</li>
-                      <li>Include at least one uppercase letter</li>
-                      <li>Include at least one lowercase letter</li>
-                      <li>Include at least one number</li>
-                      <li>Include at least one special character</li>
-                    </ul>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    variant="default"
-                    className="ml-auto"
-                    disabled={isChangingPassword || !passwordForm.formState.isDirty || !passwordForm.formState.isValid}
-                  >
-                    {isChangingPassword ? (
-                      <>
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                        Updating Password...
-                      </>
-                    ) : (
-                      "Update Password"
-                    )}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
+                  <Button type="submit">Update Password</Button>
+                </form>
+              </Form>
+            </TabsContent>
             
-            <div className="px-6 pb-6">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Account Security</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-sm font-medium">Log out from all devices</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        This will terminate all your active sessions across all devices
-                      </p>
-                    </div>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => setShowLogoutAllDialog(true)}
-                    >
-                      Log out all
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </Card>
-        </TabsContent>
-        
-        {/* Sessions Tab */}
-        <TabsContent value="sessions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Sessions</CardTitle>
-              <CardDescription>
-                Manage your active login sessions across devices
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {sessions.map((session) => (
-                    <div 
-                      key={session.id} 
-                      className={`p-4 rounded-lg border ${session.current ? 'border-primary/20 bg-primary/5' : 'border-border'}`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium">{getBrowserInfo(session.user_agent)}</h3>
-                            {session.current && (
-                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                                Current session
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            IP: {session.ip_address} • Last active: {getRelativeTime(session.created_at)}
-                          </div>
+            {/* Notifications Tab */}
+            <TabsContent value="notifications" className="space-y-4">
+              <Form {...notificationForm}>
+                <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-4">
+                  <FormField
+                    control={notificationForm.control}
+                    name="emailNotifications"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Email Notifications</FormLabel>
+                          <FormDescription>
+                            Receive emails about account activity.
+                          </FormDescription>
                         </div>
-                        {!session.current && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            Revoke
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <div className="flex justify-end mt-4">
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => setShowLogoutAllDialog(true)}
-                      className="mt-4"
-                    >
-                      Log out from all devices
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Logout All Alert Dialog */}
-      <AlertDialog open={showLogoutAllDialog} onOpenChange={setShowLogoutAllDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Log out from all devices?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will terminate all your active sessions across all devices.
-              You'll need to log in again on each device.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoggingOutAll}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleLogoutAll();
-              }}
-              disabled={isLoggingOutAll}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isLoggingOutAll ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Logging out...
-                </>
-              ) : (
-                "Log out all"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={notificationForm.control}
+                    name="orderUpdates"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Order Updates</FormLabel>
+                          <FormDescription>
+                            Receive emails when your orders are processed or updated.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={notificationForm.control}
+                    name="promotionalEmails"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Promotional Emails</FormLabel>
+                          <FormDescription>
+                            Receive emails about new products, offers and deals.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit">Save Preferences</Button>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

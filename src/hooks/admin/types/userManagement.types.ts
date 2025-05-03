@@ -10,8 +10,8 @@ export interface UserProfile {
   avatar_url: string | null;
   role: UserRoleType;
   balance: number;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
   discount_percentage: number;
   discount_note?: string;
   discount_updated_at?: string;
