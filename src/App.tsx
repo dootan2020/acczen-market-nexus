@@ -15,7 +15,7 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import { ThemeVariablesProvider } from './components/ui/css-variables';
 import { Toaster } from "sonner";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Initialize next-themes globally
 if (typeof window !== 'undefined') {
@@ -38,12 +38,12 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <ThemeVariablesProvider>
           <ReactQueryProvider>
-            <CurrencyProvider>
-              <CartProvider>
-                <AuthProvider>
-                  <PaymentProvider>
-                    <ProductProvider>
-                      <TooltipProvider>
+            <TooltipProvider>
+              <CurrencyProvider>
+                <CartProvider>
+                  <AuthProvider>
+                    <PaymentProvider>
+                      <ProductProvider>
                         <div className="min-h-screen flex flex-col">
                           <ProductInfoModal />
                           <Routes>
@@ -80,12 +80,12 @@ function App() {
                           </Routes>
                           <Toaster />
                         </div>
-                      </TooltipProvider>
-                    </ProductProvider>
-                  </PaymentProvider>
-                </AuthProvider>
-              </CartProvider>
-            </CurrencyProvider>
+                      </ProductProvider>
+                    </PaymentProvider>
+                  </AuthProvider>
+                </CartProvider>
+              </CurrencyProvider>
+            </TooltipProvider>
           </ReactQueryProvider>
         </ThemeVariablesProvider>
       </ThemeProvider>
