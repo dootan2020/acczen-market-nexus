@@ -1,9 +1,9 @@
 
 import React from 'react';
-import Layout from './components/Layout';
+import Index from './pages/Index';
+import NotFound from './pages/NotFound';
 
 // Create stub components for missing pages
-const HomePage = () => <div>Home Page</div>;
 const ProductsPage = () => <div>Products Page</div>;
 const ProductPage = () => <div>Product Page</div>;
 const CategoryPage = () => <div>Category Page</div>;
@@ -27,7 +27,6 @@ const AdminSettings = () => <div>Admin Settings</div>;
 const AdminCategories = () => <div>Admin Categories</div>;
 const AdminCategoryEdit = () => <div>Admin Category Edit</div>;
 const AdminDeposits = () => <div>Admin Deposits</div>;
-const NotFoundPage = () => <div>Not Found Page</div>;
 const TransactionsPage = () => <div>Transactions Page</div>;
 const DepositPage = () => <div>Deposit Page</div>;
 const DepositPending = () => <div>Deposit Pending</div>;
@@ -37,7 +36,7 @@ const DepositSuccess = () => <div>Deposit Success</div>;
 const mainRoutes = [
   {
     path: '/',
-    element: <HomePage />,
+    element: <Index />,
   },
   {
     path: '/products',
@@ -89,7 +88,7 @@ const mainRoutes = [
   },
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: <NotFound />,
   },
 ];
 
