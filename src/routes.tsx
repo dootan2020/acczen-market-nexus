@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Import your pages
@@ -109,9 +110,9 @@ const routes = {
     { path: '/admin/reports', element: <AdminProtectedRoute element={<AdminReports />} /> },
     { path: '/admin/exchange-rates', element: <AdminProtectedRoute element={<AdminExchangeRates />} /> },
     { path: '/admin/settings', element: <AdminProtectedRoute element={<AdminSettings />} /> },
-    { path: '/admin/inventory', element: <AdminProtectedRoute element={<InventoryManagement />} },
-    { path: '/admin/discount-analytics', element: <AdminProtectedRoute element={<DiscountAnalyticsPage />} },
-    { path: '/admin/api-monitoring', element: <AdminProtectedRoute element={<ApiMonitoring />} },
+    { path: '/admin/inventory', element: <AdminProtectedRoute element={<InventoryManagement />} /> },
+    { path: '/admin/discount-analytics', element: <AdminProtectedRoute element={<DiscountAnalyticsPage />} /> },
+    { path: '/admin/api-monitoring', element: <AdminProtectedRoute element={<ApiMonitoring />} /> },
   ],
 };
 
