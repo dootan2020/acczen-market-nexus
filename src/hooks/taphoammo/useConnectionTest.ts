@@ -1,42 +1,53 @@
 
-import { useApiCommon } from './useApiCommon';
+import { useState } from 'react';
 import { taphoammoApi } from '@/utils/api/taphoammoApi';
-import type { ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/utils/corsProxy';
+
+interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  responseTime?: number;
+}
 
 export const useConnectionTest = () => {
-  const { loading, setLoading, error, setError, retry, withRetry } = useApiCommon();
-
-  const testConnection = async (
-    kioskToken: string, 
-    proxyType: ProxyType
-  ): Promise<{ success: boolean; message: string }> => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const testConnection = async (kioskToken: string, proxyType: ProxyType = 'direct'): Promise<ConnectionTestResult> => {
     setLoading(true);
     setError(null);
-
+    
+    const startTime = Date.now();
     try {
-      const result = await withRetry(async () => {
-        return await taphoammoApi.testConnection(kioskToken, proxyType);
-      });
-
-      return result;
-    } catch (err: any) {
+      // Call the testConnection method from TaphoammoApi
+      const result = await taphoammoApi.testConnection(kioskToken, proxyType);
+      
+      const responseTime = Date.now() - startTime;
+      
+      return {
+        success: result.success,
+        message: result.message,
+        responseTime
+      };
+    } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error in testConnection:', errorMsg);
       setError(errorMsg);
+      
+      const responseTime = Date.now() - startTime;
       
       return {
         success: false,
-        message: errorMsg
+        message: errorMsg,
+        responseTime
       };
     } finally {
       setLoading(false);
     }
   };
-
+  
   return {
     testConnection,
     loading,
-    error,
-    retry
+    error
   };
 };

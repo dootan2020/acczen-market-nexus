@@ -1,99 +1,73 @@
 
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
-import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
 
-// Maximum number of retries and corresponding delays with exponential backoff
-export const MAX_RETRIES = 3;
-export const RETRY_DELAYS = [300, 1000, 3000]; // Starting with smaller delay
+interface ApiCommonHook {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+  error: string | null;
+  setError: (error: string | null) => void;
+  retry: () => Promise<void>;
+  withRetry: <T>(fn: () => Promise<T>, maxRetries?: number) => Promise<T>;
+}
 
-// Create a singleton instance of ApiErrorHandler for Taphoammo API
-const taphoammoErrorHandler = new ApiErrorHandler({
-  serviceName: 'taphoammo',
-  maxRetries: MAX_RETRIES,
-  retryDelays: RETRY_DELAYS,
-  showToasts: true
-});
-
-export const useApiCommon = () => {
+export const useApiCommon = (): ApiCommonHook => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retry, setRetry] = useState(0);
-  const [responseTime, setResponseTime] = useState(0);
-  const [usingCache, setUsingCache] = useState(false);
-
-  // Improved retry mechanism with automatic proxy switching
-  const withRetry = async <T,>(
-    fn: () => Promise<T>,
-    endpoint: string = 'unknown',
-    cacheFn?: () => Promise<T>
-  ): Promise<T> => {
-    setUsingCache(false);
+  const [retryFn, setRetryFn] = useState<() => Promise<void>>(() => async () => {});
+  
+  const retry = async () => {
+    setError(null);
+    await retryFn();
+  };
+  
+  const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+    let retries = 0;
     
-    try {
-      // Use our enhanced ApiErrorHandler for consistent retry and error handling
-      const result = await taphoammoErrorHandler.executeRequest<T>(
-        fn,
-        { 
-          endpoint, 
-          operation: 'API Call', 
-          params: { endpoint }
-        },
-        cacheFn
-      );
-      
-      setResponseTime(Date.now() - Date.now()); // Will be updated by ApiErrorHandler
-      return result;
-      
-    } catch (err: any) {
-      // Handle specific TaphoammoError cases
-      if (err instanceof TaphoammoError) {
-        // If using cache due to circuit breaker
-        if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN && cacheFn) {
-          try {
-            console.log('API temporarily down, attempting to use cache');
-            setUsingCache(true);
-            return await cacheFn();
-          } catch (cacheErr) {
-            console.error('Cache fallback failed:', cacheErr);
-          }
+    const executeWithRetry = async (): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        retries++;
+        
+        if (retries >= maxRetries) {
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+          console.error(`Max retries reached (${retries}/${maxRetries}):`, errorMsg);
+          setError(errorMsg);
+          throw err;
         }
         
-        // If API is reporting CORS issues, try switching the proxy
-        if (err.message?.includes('CORS') || err.message?.includes('network')) {
-          const currentProxy = getStoredProxy();
-          
-          // Try to switch to next proxy option
-          if (currentProxy === 'allorigins') {
-            setStoredProxy('corsproxy');
-            toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');
-          } else if (currentProxy === 'corsproxy') {
-            setStoredProxy('cors-anywhere');
-            toast.info('Đang thử proxy khác để khắc phục lỗi kết nối');
-          } else {
-            setStoredProxy('allorigins');
-            toast.info('Đang quay lại proxy mặc định');
-          }
-        }
+        console.log(`Retry ${retries}/${maxRetries}...`);
+        
+        // Exponential backoff
+        const delay = Math.min(1000 * Math.pow(2, retries), 8000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        return executeWithRetry();
       }
-      
-      // Re-throw the error for the caller to handle
-      throw err;
-    }
+    };
+    
+    // Store the retry function to allow manual retry later
+    setRetryFn(() => async () => {
+      setLoading(true);
+      try {
+        await executeWithRetry();
+        setError(null);
+      } catch (err) {
+        // Error is already set in executeWithRetry
+      } finally {
+        setLoading(false);
+      }
+    });
+    
+    return executeWithRetry();
   };
-
+  
   return {
     loading,
     setLoading,
     error,
     setError,
     retry,
-    setRetry,
-    responseTime,
-    withRetry,
-    usingCache,
-    maxRetries: MAX_RETRIES
+    withRetry
   };
 };
