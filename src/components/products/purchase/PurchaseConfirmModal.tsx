@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { PurchaseModalInfo } from "./PurchaseModalInfo";
 import { PurchaseModalActions } from "./PurchaseModalActions";
 import { PurchaseResultCard } from "./PurchaseResultCard";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseConfirmModalProps {
   open: boolean;

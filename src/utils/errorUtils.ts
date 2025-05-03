@@ -5,6 +5,9 @@ interface ParsedError {
   action?: string;
 }
 
+// Export the interface so we can use it in other files
+export type ErrorDetails = ParsedError;
+
 /**
  * Parses various error formats into a consistent, user-friendly structure
  */

@@ -1,93 +1,39 @@
 
-import React, { useEffect } from 'react';
-import { Routes, Route, BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from "@/components/ui/theme-provider"
-import { TooltipProvider } from "@/components/ui/tooltip";
-import ReactQueryProvider from './ReactQueryProvider';
-import { AuthProvider } from './contexts/AuthContext';
-import { CurrencyProvider } from './contexts/CurrencyContext';
-import { CartProvider } from './contexts/CartContext';
-import routes from './routes';
-import { checkEnvironment } from './utils/checkEnvironment';
-import { ProductProvider } from "./contexts/ProductContext";
-import { ProductInfoModal } from "./components/products/ProductInfoModal";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import AdminLayout from './components/AdminLayout';
-import { Toaster } from "sonner";
+import routes from './routes';
+import './App.css';
+import { ThemeProvider } from './components/ui/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/react-query';
 
-// Initialize next-themes globally
-if (typeof window !== 'undefined') {
-  // @ts-ignore - Setting up global theme context for next-themes
-  window.__NEXT_THEMES__ = window.__NEXT_THEMES__ || { 
-    theme: 'light', 
-    setTheme: (t: string) => {
-      // @ts-ignore
-      window.__NEXT_THEMES__.theme = t;
-      document.documentElement.classList.remove('light', 'dark', 'system');
-      document.documentElement.classList.add(t);
-    }
-  };
-}
+// Remove the duplicate ReactQueryProvider import and use the one from tanstack directly
 
-function App() {
-  useEffect(() => {
-    checkEnvironment();
-  }, []);
-
+const App = () => {
   return (
-    <BrowserRouter>
-      <ReactQueryProvider>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <TooltipProvider>
-            <AuthProvider>
-              <CurrencyProvider>
-                <CartProvider>
-                  <ProductProvider>
-                    <div className="min-h-screen flex flex-col">
-                      <ProductInfoModal />
-                      <Routes>
-                        {/* Main routes with standard layout */}
-                        <Route element={<Layout />}>
-                          {routes.mainRoutes.map((route, index) => (
-                            <Route
-                              key={index}
-                              path={route.path}
-                              element={route.element}
-                            />
-                          ))}
-                        </Route>
-                        
-                        {/* Dashboard routes */}
-                        {routes.dashboardRoutes.map((route, index) => (
-                          <Route
-                            key={`dashboard-${index}`}
-                            path={route.path}
-                            element={route.element}
-                          />
-                        ))}
-                        
-                        {/* Admin routes with AdminLayout */}
-                        <Route element={<AdminLayout />}>
-                          {routes.adminRoutes.map((route, index) => (
-                            <Route
-                              key={`admin-${index}`}
-                              path={route.path}
-                              element={route.element}
-                            />
-                          ))}
-                        </Route>
-                      </Routes>
-                      <Toaster />
-                    </div>
-                  </ProductProvider>
-                </CartProvider>
-              </CurrencyProvider>
-            </AuthProvider>
-          </TooltipProvider>
-        </ThemeProvider>
-      </ReactQueryProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="digital-deals-hub-theme">
+        <BrowserRouter>
+          <Toaster closeButton />
+          <Routes>
+            <Route element={<Layout />}>
+              {routes.mainRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+              {routes.dashboardRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+            </Route>
+            {routes.adminRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;

@@ -1,30 +1,31 @@
 
-import { Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface AdminProtectedRouteProps {
-  children: React.ReactNode;
+export interface AdminProtectedRouteProps {
+  element: React.ReactElement;
+  redirectTo?: string;
 }
 
-export default function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
-  const { user, isAdmin, isLoading } = useAuth();
-  const location = useLocation();
-
+const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ 
+  element, 
+  redirectTo = '/login' 
+}) => {
+  const { user, isLoading } = useAuth();
+  
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    // Show loading spinner while checking auth status
+    return <div>Loading...</div>;
   }
-
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  
+  if (!user || user.role !== 'admin') {
+    // Redirect if not authenticated or not an admin
+    return <Navigate to={redirectTo} replace />;
   }
+  
+  // Render the protected component if authenticated and admin
+  return element;
+};
 
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
+export default AdminProtectedRoute;
