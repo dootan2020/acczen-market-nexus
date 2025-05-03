@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from "@/components/ui/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip";
 import ReactQueryProvider from './ReactQueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -33,56 +34,58 @@ function App() {
 
   return (
     <BrowserRouter>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <ThemeVariablesProvider>
-          <ReactQueryProvider>
-            <CurrencyProvider>
-              <CartProvider>
-                <AuthProvider>
-                  <ProductProvider>
-                    <div className="min-h-screen flex flex-col">
-                      <ProductInfoModal />
-                      <Routes>
-                        {/* Main routes with standard layout */}
-                        <Route element={<Layout />}>
-                          {routes.mainRoutes.map((route, index) => (
+      <ReactQueryProvider>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+          <ThemeVariablesProvider>
+            <TooltipProvider>
+              <CurrencyProvider>
+                <CartProvider>
+                  <AuthProvider>
+                    <ProductProvider>
+                      <div className="min-h-screen flex flex-col">
+                        <ProductInfoModal />
+                        <Routes>
+                          {/* Main routes with standard layout */}
+                          <Route element={<Layout />}>
+                            {routes.mainRoutes.map((route, index) => (
+                              <Route
+                                key={index}
+                                path={route.path}
+                                element={route.element}
+                              />
+                            ))}
+                          </Route>
+                          
+                          {/* Dashboard routes */}
+                          {routes.dashboardRoutes.map((route, index) => (
                             <Route
-                              key={index}
+                              key={`dashboard-${index}`}
                               path={route.path}
                               element={route.element}
                             />
                           ))}
-                        </Route>
-                        
-                        {/* Dashboard routes */}
-                        {routes.dashboardRoutes.map((route, index) => (
-                          <Route
-                            key={`dashboard-${index}`}
-                            path={route.path}
-                            element={route.element}
-                          />
-                        ))}
-                        
-                        {/* Admin routes with AdminLayout */}
-                        <Route element={<AdminLayout />}>
-                          {routes.adminRoutes.map((route, index) => (
-                            <Route
-                              key={`admin-${index}`}
-                              path={route.path}
-                              element={route.element}
-                            />
-                          ))}
-                        </Route>
-                      </Routes>
-                      <Toaster />
-                    </div>
-                  </ProductProvider>
-                </AuthProvider>
-              </CartProvider>
-            </CurrencyProvider>
-          </ReactQueryProvider>
-        </ThemeVariablesProvider>
-      </ThemeProvider>
+                          
+                          {/* Admin routes with AdminLayout */}
+                          <Route element={<AdminLayout />}>
+                            {routes.adminRoutes.map((route, index) => (
+                              <Route
+                                key={`admin-${index}`}
+                                path={route.path}
+                                element={route.element}
+                              />
+                            ))}
+                          </Route>
+                        </Routes>
+                        <Toaster />
+                      </div>
+                    </ProductProvider>
+                  </AuthProvider>
+                </CartProvider>
+              </CurrencyProvider>
+            </TooltipProvider>
+          </ThemeVariablesProvider>
+        </ThemeProvider>
+      </ReactQueryProvider>
     </BrowserRouter>
   );
 }
