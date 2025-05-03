@@ -1,90 +1,51 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useInventorySync } from '@/hooks/useInventorySync';
-import { toast } from 'sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface SyncInventoryButtonProps {
-  kioskToken: string;
-  productName: string;
-  onSuccess?: (data: any) => void;
-  variant?: "default" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg" | "icon"; // Removed "xs" as it's not a valid size
+  onSync: () => Promise<void>;
 }
 
-const SyncInventoryButton: React.FC<SyncInventoryButtonProps> = ({
-  kioskToken,
-  productName,
-  onSuccess,
-  variant = "outline",
-  size = "icon"
-}) => {
-  const { syncProductStock, loading } = useInventorySync();
-  const [lastSyncResult, setLastSyncResult] = useState<'success' | 'error' | null>(null);
-  
+const SyncInventoryButton: React.FC<SyncInventoryButtonProps> = ({ onSync }) => {
+  const [isPending, setIsPending] = useState(false);
+
   const handleSyncClick = async () => {
-    if (!kioskToken) {
-      toast.error('Không có mã kiosk để đồng bộ');
-      return;
-    }
-    
+    setIsPending(true);
     try {
-      const result = await syncProductStock(kioskToken);
-      
-      if (result.success) {
-        setLastSyncResult('success');
-        toast.success(result.message || 'Đồng bộ thành công');
-        if (onSuccess && result.stockData) {
-          onSuccess(result.stockData);
-        }
-      } else {
-        setLastSyncResult('error');
-        toast.error(result.message || 'Đồng bộ thất bại');
-      }
-      
-      // Reset status after 3 seconds
-      setTimeout(() => setLastSyncResult(null), 3000);
-    } catch (err) {
-      setLastSyncResult('error');
-      console.error('Error syncing inventory:', err);
-      toast.error('Lỗi đồng bộ kho hàng');
-      
-      // Reset status after 3 seconds
-      setTimeout(() => setLastSyncResult(null), 3000);
+      await onSync();
+      toast.success("Inventory sync started", {
+        description: "The inventory is being synced in the background.",
+      });
+    } catch (error: any) {
+      toast.error("Failed to sync inventory", {
+        description: error.message || "Please try again later.",
+      });
+    } finally {
+      setIsPending(false);
     }
   };
-  
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={size}
-          onClick={handleSyncClick}
-          disabled={loading}
-          className={lastSyncResult === 'success' ? 'text-green-500' : lastSyncResult === 'error' ? 'text-red-500' : ''}
-        >
-          {loading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : lastSyncResult === 'success' ? (
-            <CheckCircle2 className="h-4 w-4" />
-          ) : lastSyncResult === 'error' ? (
-            <AlertCircle className="h-4 w-4" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Đồng bộ kho hàng cho {productName}</p>
-      </TooltipContent>
-    </Tooltip>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleSyncClick}
+      disabled={isPending}
+      className="ml-2"
+    >
+      {isPending ? (
+        <>
+          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+          Syncing...
+        </>
+      ) : (
+        <>
+          <RefreshCw className="mr-2 h-3 w-3" />
+          Sync now
+        </>
+      )}
+    </Button>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -28,7 +27,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ProxySelector } from '@/components/products/inventory/ProxySelector';
+import ProxySelector from '@/components/products/inventory/ProxySelector';
 import { ProxyType, getProxyOptions, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 
 const apiSettingsSchema = z.object({
