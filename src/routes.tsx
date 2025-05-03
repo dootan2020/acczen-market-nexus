@@ -1,167 +1,88 @@
 
 import React from 'react';
+import Layout from './components/Layout';
 import Index from './pages/Index';
-import NotFound from './pages/NotFound';
+import Products from './pages/Products';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/Dashboard';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import UpdatePasswordPage from './pages/UpdatePasswordPage';
+import Help from './pages/Help';
 
-// Create stub components for missing pages
-const ProductsPage = () => <div>Products Page</div>;
-const ProductPage = () => <div>Product Page</div>;
-const CategoryPage = () => <div>Category Page</div>;
-const LoginPage = () => <div>Login Page</div>;
-const RegisterPage = () => <div>Register Page</div>;
-const ResetPasswordPage = () => <div>Reset Password Page</div>;
-const CheckoutPage = () => <div>Checkout Page</div>;
-const CartPage = () => <div>Cart Page</div>;
-const AccountPage = () => <div>Account Page</div>;
-const OrdersPage = () => <div>Orders Page</div>;
-const OrderDetailPage = () => <div>Order Detail Page</div>;
-const Dashboard = () => <div>Dashboard</div>;
-const AdminDashboard = () => <div>Admin Dashboard</div>;
-const AdminProducts = () => <div>Admin Products</div>;
-const AdminOrders = () => <div>Admin Orders</div>;
-const AdminOrderDetail = () => <div>Admin Order Detail</div>;
-const AdminUsers = () => <div>Admin Users</div>;
-const AdminUserDetail = () => <div>Admin User Detail</div>;
-const AdminProductEdit = () => <div>Admin Product Edit</div>;
-const AdminSettings = () => <div>Admin Settings</div>;
-const AdminCategories = () => <div>Admin Categories</div>;
-const AdminCategoryEdit = () => <div>Admin Category Edit</div>;
-const AdminDeposits = () => <div>Admin Deposits</div>;
-const TransactionsPage = () => <div>Transactions Page</div>;
-const DepositPage = () => <div>Deposit Page</div>;
-const DepositPending = () => <div>Deposit Pending</div>;
-const DepositSuccess = () => <div>Deposit Success</div>;
+// Import admin pages
+import AdminHome from './pages/admin/AdminHome';
+import ProductsPage from './pages/admin/ProductsPage';
+import APIMonitoringPage from './pages/admin/APIMonitoringPage';
+import ProductsImport from './pages/admin/ProductsImport';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminOrders from './pages/admin/AdminOrders';
+import UsersPage from './pages/admin/UsersPage';
+import DepositsPage from './pages/admin/DepositsPage';
+import ReportsPage from './pages/admin/ReportsPage';
+import AdminExchangeRates from './pages/admin/AdminExchangeRates';
+import AdminTransactions from './pages/admin/AdminTransactions';
+import AdminSettings from './pages/admin/AdminSettings';
+import DiscountAnalyticsPage from './pages/admin/DiscountAnalyticsPage';
 
-// Main routes accessible to everyone
+// Create placeholder components for routes that are missing
+const CategoriesPage = () => <div>Categories Page</div>;
+const ProfilePage = () => <div>Profile Page</div>;
+const AdminIntegrationsPage = () => <div>Admin Integrations Page</div>;
+const CategoryEditPage = () => <div>Category Edit Page</div>;
+const AdminOrderDetailsPage = () => <div>Admin Order Details Page</div>;
+const DepositDetailsPage = () => <div>Deposit Details Page</div>;
+const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
+const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
+const CategoryCreatePage = () => <div>Category Create Page</div>;
+
+// Define routes that should use the main Layout (with Header and Footer)
 const mainRoutes = [
-  {
-    path: '/',
-    element: <Index />,
-  },
-  {
-    path: '/products',
-    element: <ProductsPage />,
-  },
-  {
-    path: '/product/:slug',
-    element: <ProductPage />,
-  },
-  {
-    path: '/category/:slug',
-    element: <CategoryPage />,
-  },
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
-  {
-    path: '/reset-password',
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: '/cart',
-    element: <CartPage />,
-  },
-  {
-    path: '/checkout',
-    element: <CheckoutPage />,
-  },
-  {
-    path: '/account',
-    element: <AccountPage />,
-  },
-  {
-    path: '/deposit',
-    element: <DepositPage />,
-  },
-  {
-    path: '/deposit/pending',
-    element: <DepositPending />,
-  },
-  {
-    path: '/deposit/success',
-    element: <DepositSuccess />,
-  },
-  {
-    path: '*',
-    element: <NotFound />,
-  },
+  { path: '/', element: <Index /> },
+  { path: '/products', element: <Products /> },
+  { path: '/categories', element: <CategoriesPage /> },
+  { path: '/profile', element: <ProfilePage /> },
+  { path: '/help', element: <Help /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/update-password', element: <UpdatePasswordPage /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
 ];
 
-// Dashboard routes (for authenticated users)
+// Define routes for dashboard that might have their own layout
 const dashboardRoutes = [
-  {
-    path: '/dashboard',
-    element: <Dashboard />,
-  },
-  {
-    path: '/dashboard/orders',
-    element: <OrdersPage />,
-  },
-  {
-    path: '/dashboard/orders/:id',
-    element: <OrderDetailPage />,
-  },
-  {
-    path: '/dashboard/transactions',
-    element: <TransactionsPage />,
-  },
+  { path: '/dashboard', element: <DashboardPage /> },
 ];
 
-// Admin routes (for admin users only)
+// Define routes for admin section that might have their own layout
 const adminRoutes = [
-  {
-    path: '/admin',
-    element: <AdminDashboard />,
-  },
-  {
-    path: '/admin/products',
-    element: <AdminProducts />,
-  },
-  {
-    path: '/admin/products/edit/:id',
-    element: <AdminProductEdit />,
-  },
-  {
-    path: '/admin/categories',
-    element: <AdminCategories />,
-  },
-  {
-    path: '/admin/categories/edit/:id',
-    element: <AdminCategoryEdit />,
-  },
-  {
-    path: '/admin/orders',
-    element: <AdminOrders />,
-  },
-  {
-    path: '/admin/deposits',
-    element: <AdminDeposits />,
-  },
-  {
-    path: '/admin/orders/:id',
-    element: <AdminOrderDetail />,
-  },
-  {
-    path: '/admin/users',
-    element: <AdminUsers />,
-  },
-  {
-    path: '/admin/users/:id',
-    element: <AdminUserDetail />,
-  },
-  {
-    path: '/admin/settings',
-    element: <AdminSettings />,
-  },
+  { path: '/admin', element: <AdminHome /> },
+  { path: '/admin/products', element: <ProductsPage /> },
+  { path: '/admin/products/edit/:id', element: <AdminProductEditPage /> },
+  { path: '/admin/products/create', element: <AdminProductCreatePage /> },
+  { path: '/admin/products-import', element: <ProductsImport /> },
+  { path: '/admin/categories', element: <AdminCategories /> },
+  { path: '/admin/categories/edit/:id', element: <CategoryEditPage /> },
+  { path: '/admin/categories/create', element: <CategoryCreatePage /> },
+  { path: '/admin/orders', element: <AdminOrders /> },
+  { path: '/admin/orders/:id', element: <AdminOrderDetailsPage /> },
+  { path: '/admin/users', element: <UsersPage /> },
+  { path: '/admin/deposits', element: <DepositsPage /> },
+  { path: '/admin/deposits/:id', element: <DepositDetailsPage /> },
+  { path: '/admin/reports', element: <ReportsPage /> },
+  { path: '/admin/integrations', element: <AdminIntegrationsPage /> },
+  { path: '/admin/api-monitoring', element: <APIMonitoringPage /> },
+  { path: '/admin/exchange-rates', element: <AdminExchangeRates /> },
+  { path: '/admin/discount-analytics', element: <DiscountAnalyticsPage /> },
+  { path: '/admin/transactions', element: <AdminTransactions /> },
+  { path: '/admin/settings', element: <AdminSettings /> },
 ];
 
-export default {
+// Combine all routes for export
+const routes = {
   mainRoutes,
   dashboardRoutes,
-  adminRoutes,
+  adminRoutes
 };
+
+export default routes;

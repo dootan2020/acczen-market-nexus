@@ -250,8 +250,8 @@ const OrdersPage: React.FC = () => {
             </Select>
             
             <DateRangePicker 
-              value={dateRange} 
-              onChange={setDateRange}
+              date={dateRange}
+              onDateChange={setDateRange}
               align="start"
               className="w-full"
             />

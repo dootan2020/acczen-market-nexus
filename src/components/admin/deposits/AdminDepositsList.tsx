@@ -1,36 +1,25 @@
 
-import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React from 'react';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Deposit } from "@/types/deposits";
-import { format, formatDistanceToNow } from "date-fns";
-import { CheckCircle, XCircle, ExternalLink, RefreshCw, Eye, Loader2, MoreHorizontal } from "lucide-react";
-import { StatusBadge } from "@/components/dashboard/purchases/StatusBadge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CheckCircle, XCircle, Eye, Loader2, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Deposit } from '@/types/deposits';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { AdminDepositViewDialog } from './AdminDepositViewDialog';
+
+// Helper function for getting status badge variant
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'completed': return 'success';
+    case 'pending': return 'default';
+    case 'rejected': return 'destructive';
+    default: return 'secondary';
+  }
+};
 
 interface AdminDepositsListProps {
   deposits: Deposit[];
@@ -47,235 +36,222 @@ export function AdminDepositsList({
   onReject,
   isMutating
 }: AdminDepositsListProps) {
-  const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
-
+  const isMobile = useIsMobile();
+  const [selectedDeposit, setSelectedDeposit] = React.useState<Deposit | null>(null);
+  
   if (isLoading) {
     return (
-      <div className="flex justify-center py-10">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-4">
+        {Array(5).fill(0).map((_, i) => (
+          <div key={i} className="flex flex-col space-y-3">
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
       </div>
     );
   }
-
-  if (!deposits.length) {
+  
+  if (!deposits?.length) {
     return (
-      <div className="text-center py-10">
-        <p className="text-muted-foreground">No deposits found matching your search criteria.</p>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No deposits found matching your criteria</p>
       </div>
     );
   }
-
-  const handleViewDetails = (deposit: Deposit) => {
-    setSelectedDeposit(deposit);
+  
+  const getStatusBadge = (status: string) => {
+    const variant = getStatusBadgeVariant(status);
+    
+    let icon;
+    switch (status) {
+      case 'completed':
+        icon = <CheckCircle2 className="h-3 w-3" />;
+        break;
+      case 'pending':
+        icon = <Clock className="h-3 w-3" />;
+        break;
+      case 'rejected':
+        icon = <AlertTriangle className="h-3 w-3" />;
+        break;
+      default:
+        icon = null;
+    }
+    
+    return (
+      <Badge variant={variant as any} className="flex items-center gap-1">
+        {icon}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
-
-  const closeDialog = () => {
-    setSelectedDeposit(null);
-  };
-
+  
+  if (isMobile) {
+    return (
+      <>
+        <div className="space-y-4">
+          {deposits.map(deposit => (
+            <Card key={deposit.id}>
+              <CardContent className="p-4">
+                <div className="flex justify-between mb-2">
+                  <div className="font-medium">${deposit.amount}</div>
+                  {getStatusBadge(deposit.status)}
+                </div>
+                
+                <div className="text-sm text-muted-foreground mb-2">
+                  {format(new Date(deposit.created_at), 'MMM d, yyyy h:mm a')}
+                </div>
+                
+                <div className="text-sm mb-2">
+                  <span className="font-medium">User: </span>
+                  <span>{deposit.profiles?.email || deposit.user_id.substring(0, 8)}</span>
+                </div>
+                
+                <div className="text-sm mb-3">
+                  <span className="font-medium">Method: </span>
+                  <span>{deposit.payment_method}</span>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setSelectedDeposit(deposit)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  
+                  {deposit.status === 'pending' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="default" 
+                        onClick={() => onApprove(deposit.id)}
+                        disabled={isMutating}>
+                        {isMutating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                        Approve
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => onReject(deposit.id)}
+                        disabled={isMutating}>
+                        {isMutating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {selectedDeposit && (
+          <AdminDepositViewDialog
+            deposit={selectedDeposit}
+            open={!!selectedDeposit}
+            onClose={() => setSelectedDeposit(null)}
+          />
+        )}
+      </>
+    );
+  }
+  
   return (
     <>
-      <div className="mt-6 rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {deposits.map((deposit) => (
-              <TableRow key={deposit.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={``} alt="" />
-                      <AvatarFallback>
-                        {(deposit.profiles?.email?.charAt(0) || deposit.profiles?.username?.charAt(0) || "U").toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {deposit.profiles?.email || deposit.profiles?.username || deposit.user_id}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ID: {deposit.id.slice(0, 8)}...
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">${deposit.amount.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{deposit.payment_method}</Badge>
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={deposit.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span>{format(new Date(deposit.created_at), 'MMM d, yyyy')}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(deposit.created_at), { addSuffix: true })}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(deposit)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View details
-                      </DropdownMenuItem>
-                      {deposit.status === 'pending' && (
-                        <>
-                          <DropdownMenuItem onClick={() => onApprove(deposit.id)}>
-                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                            Approve
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onReject(deposit.id)}>
-                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                            Reject
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Deposit details dialog */}
-      <Dialog open={!!selectedDeposit} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Deposit Details</DialogTitle>
-            <DialogDescription>
-              Transaction details for deposit #{selectedDeposit?.id.slice(0, 8)}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedDeposit && (
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-4">
-                <Card className="p-4 bg-muted/40">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-sm font-medium">ID:</div>
-                    <div className="text-sm truncate font-mono">{selectedDeposit.id}</div>
-                    
-                    <div className="text-sm font-medium">User ID:</div>
-                    <div className="text-sm truncate font-mono">{selectedDeposit.user_id}</div>
-                    
-                    <div className="text-sm font-medium">Amount:</div>
-                    <div className="text-sm">${selectedDeposit.amount.toFixed(2)}</div>
-                    
-                    <div className="text-sm font-medium">Payment Method:</div>
-                    <div className="text-sm">{selectedDeposit.payment_method}</div>
-                    
-                    <div className="text-sm font-medium">Status:</div>
-                    <div className="text-sm">
-                      <StatusBadge status={selectedDeposit.status} />
-                    </div>
-                    
-                    <div className="text-sm font-medium">Created At:</div>
-                    <div className="text-sm">{format(new Date(selectedDeposit.created_at), 'PPpp')}</div>
-                    
-                    <div className="text-sm font-medium">Updated At:</div>
-                    <div className="text-sm">{format(new Date(selectedDeposit.updated_at), 'PPpp')}</div>
-                    
-                    {selectedDeposit.transaction_hash && (
-                      <>
-                        <div className="text-sm font-medium">Transaction Hash:</div>
-                        <div className="text-sm truncate font-mono">{selectedDeposit.transaction_hash}</div>
-                      </>
-                    )}
-                    
-                    {selectedDeposit.paypal_order_id && (
-                      <>
-                        <div className="text-sm font-medium">PayPal Order ID:</div>
-                        <div className="text-sm truncate font-mono">{selectedDeposit.paypal_order_id}</div>
-                      </>
-                    )}
-                    
-                    {selectedDeposit.paypal_payer_id && (
-                      <>
-                        <div className="text-sm font-medium">PayPal Payer ID:</div>
-                        <div className="text-sm truncate font-mono">{selectedDeposit.paypal_payer_id}</div>
-                      </>
-                    )}
-                    
-                    {selectedDeposit.paypal_payer_email && (
-                      <>
-                        <div className="text-sm font-medium">PayPal Email:</div>
-                        <div className="text-sm truncate">{selectedDeposit.paypal_payer_email}</div>
-                      </>
-                    )}
-                  </div>
-                </Card>
-                
-                {selectedDeposit.metadata && Object.keys(selectedDeposit.metadata).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Additional Data:</h4>
-                    <pre className="bg-muted p-2 rounded text-xs font-mono overflow-auto">
-                      {JSON.stringify(selectedDeposit.metadata, null, 2)}
-                    </pre>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Method</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {deposits.map(deposit => (
+            <TableRow key={deposit.id}>
+              <TableCell>
+                {format(new Date(deposit.created_at), 'MMM d, yyyy')}
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(deposit.created_at), 'h:mm a')}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="font-medium">
+                  {deposit.profiles?.email || 'Unknown User'}
+                </div>
+                {deposit.profiles?.username && (
+                  <div className="text-xs text-muted-foreground">
+                    @{deposit.profiles.username}
                   </div>
                 )}
-              </div>
-            </ScrollArea>
-          )}
-
-          <DialogFooter className="flex justify-between">
-            {selectedDeposit?.status === 'pending' && (
-              <div className="flex gap-2">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    onReject(selectedDeposit.id);
-                    closeDialog();
-                  }}
-                  disabled={isMutating}
-                >
-                  {isMutating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
-                  Reject
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => {
-                    onApprove(selectedDeposit.id);
-                    closeDialog();
-                  }}
-                  disabled={isMutating}
-                >
-                  {isMutating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                  Approve
-                </Button>
-              </div>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={closeDialog}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </TableCell>
+              <TableCell>
+                {deposit.payment_method}
+                {deposit.payment_method === 'PayPal' && deposit.paypal_payer_email && (
+                  <div className="text-xs text-muted-foreground">
+                    {deposit.paypal_payer_email}
+                  </div>
+                )}
+                {deposit.payment_method === 'USDT' && deposit.transaction_hash && (
+                  <div className="text-xs text-muted-foreground max-w-[120px] truncate">
+                    {deposit.transaction_hash.substring(0, 16)}...
+                  </div>
+                )}
+              </TableCell>
+              <TableCell className="text-right font-medium">
+                ${deposit.amount}
+              </TableCell>
+              <TableCell>
+                {getStatusBadge(deposit.status)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setSelectedDeposit(deposit)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  
+                  {deposit.status === 'pending' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="default" 
+                        onClick={() => onApprove(deposit.id)}
+                        disabled={isMutating}>
+                        {isMutating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                        Approve
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => onReject(deposit.id)}
+                        disabled={isMutating}>
+                        {isMutating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {selectedDeposit && (
+        <AdminDepositViewDialog
+          deposit={selectedDeposit}
+          open={!!selectedDeposit}
+          onClose={() => setSelectedDeposit(null)}
+        />
+      )}
     </>
   );
-};
+}

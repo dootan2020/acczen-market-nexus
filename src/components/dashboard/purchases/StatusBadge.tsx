@@ -1,51 +1,27 @@
 
+import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle2, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { OrderStatus } from '@/types/orders';
 
 interface StatusBadgeProps {
-  status: string;
-  className?: string;
+  status: OrderStatus | string;
 }
 
-export const StatusBadge = ({ status, className }: StatusBadgeProps) => {
-  let badgeVariant:
-    | "default"
-    | "secondary"
-    | "destructive"
-    | "outline" = "outline";
-  let badgeIcon = null;
-  let badgeText = status;
-  
-  // Normalize status
-  const normalizedStatus = status.toLowerCase();
-  
-  if (["pending", "awaiting", "waiting"].includes(normalizedStatus)) {
-    badgeVariant = "outline";
-    badgeText = "Pending";
-    badgeIcon = <Clock className="h-3 w-3 mr-1" />;
-  } else if (["completed", "success", "successful", "fulfilled", "approved"].includes(normalizedStatus)) {
-    badgeVariant = "default";
-    badgeText = "Completed";
-    badgeIcon = <CheckCircle2 className="h-3 w-3 mr-1" />;
-  } else if (["failed", "error", "rejected", "cancelled", "canceled"].includes(normalizedStatus)) {
-    badgeVariant = "destructive";
-    badgeText = normalizedStatus === "rejected" ? "Rejected" : "Failed";
-    badgeIcon = <XCircle className="h-3 w-3 mr-1" />;
-  } else if (["processing", "in_progress", "in-progress"].includes(normalizedStatus)) {
-    badgeVariant = "secondary";
-    badgeText = "Processing";
-    badgeIcon = <RefreshCw className="h-3 w-3 mr-1 animate-spin" />;
-  } else if (["warning", "partial"].includes(normalizedStatus)) {
-    badgeVariant = "outline";
-    badgeText = normalizedStatus === "partial" ? "Partial" : "Warning";
-    badgeIcon = <AlertTriangle className="h-3 w-3 mr-1" />;
-  }
-  
+export const StatusBadge = ({ status }: StatusBadgeProps) => {
+  const formatStatus = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   return (
-    <Badge variant={badgeVariant} className={cn("capitalize flex w-fit items-center", className)}>
-      {badgeIcon}
-      {badgeText}
+    <Badge 
+      className={`${
+        status === 'completed' ? 'bg-green-600 text-white dark:bg-green-500 dark:text-white' : 
+        status === 'pending' ? 'bg-amber-500 text-white dark:bg-amber-500 dark:text-white' : 
+        status === 'featured' ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white' : 
+        'bg-gray-600 text-white dark:bg-gray-500 dark:text-white'
+      }`}
+    >
+      {formatStatus(status)}
     </Badge>
   );
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,71 +10,72 @@ const PAGE_SIZE = 10;
 export const useDepositsHistory = () => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
 
-  const fetchDeposits = async () => {
-    if (!user) return [];
-    
-    try {
-      // Build the query
+  // Fetch deposits with pagination
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['deposits-history', page, search],
+    queryFn: async () => {
       let query = supabase
         .from('deposits')
-        .select('*, profiles:profiles(email, username)', { count: 'exact' })
-        .eq('user_id', user.id)
+        .select(`
+          id,
+          user_id,
+          amount,
+          payment_method,
+          status,
+          created_at,
+          updated_at,
+          paypal_payer_email,
+          transaction_hash
+        `)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-        
-      // Apply search filter if provided
+
       if (search) {
-        query = query.or(`payment_method.ilike.%${search}%,status.ilike.%${search}%`);
+        query = query.or(`payment_method.ilike.%${search}%,paypal_payer_email.ilike.%${search}%,transaction_hash.ilike.%${search}%`);
       }
-      
-      // Apply pagination
+
+      // Add pagination
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
-      query = query.range(from, to);
       
-      const { data, error, count } = await query;
+      // First get the count
+      const countQuery = supabase
+        .from('deposits')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+        
+      if (search) {
+        countQuery.or(`payment_method.ilike.%${search}%,paypal_payer_email.ilike.%${search}%,transaction_hash.ilike.%${search}%`);
+      }
+      
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) throw countError;
+      
+      // Then fetch the paginated data
+      const { data: deposits, error } = await query.range(from, to);
       
       if (error) throw error;
       
-      // Calculate total pages
-      if (count !== null) {
-        setTotalPages(Math.ceil(count / PAGE_SIZE));
-      }
-      
-      return data as Deposit[];
-    } catch (error) {
-      console.error('Error fetching deposits history:', error);
-      throw error;
-    }
-  };
-
-  const { 
-    data: deposits = [], 
-    isLoading, 
-    error, 
-    refetch 
-  } = useQuery({
-    queryKey: ['deposits', user?.id, page, search],
-    queryFn: fetchDeposits,
-    enabled: !!user
+      return { deposits: deposits as Deposit[], count: count ?? 0 };
+    },
+    enabled: !!user,
   });
 
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
+  const totalPages = data?.count ? Math.ceil(data.count / PAGE_SIZE) : 0;
 
   return {
-    deposits,
+    deposits: data?.deposits ?? [],
+    count: data?.count ?? 0,
     page,
     setPage,
-    search,
+    search, 
     setSearch,
     isLoading,
     error,
     totalPages,
-    refetch
+    PAGE_SIZE,
   };
 };

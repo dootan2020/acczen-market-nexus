@@ -50,8 +50,8 @@ export function ReportFilters({
       
       {dateRangeType === DATE_RANGES.CUSTOM && (
         <DateRangePicker
-          value={dateRange}
-          onChange={onDateRangePickerChange}
+          date={dateRange}
+          onDateChange={onDateRangePickerChange}
         />
       )}
       
