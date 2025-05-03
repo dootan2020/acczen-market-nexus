@@ -10,6 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './providers/CartProvider';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 const App = () => {
   return (
@@ -17,22 +18,24 @@ const App = () => {
       <ThemeProvider defaultTheme="light" storageKey="digital-deals-hub-theme">
         <BrowserRouter>
           <AuthProvider>
-            <CartProvider>
-              <Toaster closeButton />
-              <Routes>
-                <Route element={<Layout />}>
-                  {routes.mainRoutes.map((route) => (
+            <CurrencyProvider>
+              <CartProvider>
+                <Toaster closeButton />
+                <Routes>
+                  <Route element={<Layout />}>
+                    {routes.mainRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {routes.dashboardRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                  </Route>
+                  {routes.adminRoutes.map((route) => (
                     <Route key={route.path} path={route.path} element={route.element} />
                   ))}
-                  {routes.dashboardRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                </Route>
-                {routes.adminRoutes.map((route) => (
-                  <Route key={route.path} path={route.path} element={route.element} />
-                ))}
-              </Routes>
-            </CartProvider>
+                </Routes>
+              </CartProvider>
+            </CurrencyProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

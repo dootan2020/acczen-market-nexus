@@ -108,7 +108,7 @@ export const PurchaseConfirmModal = ({
       
       // If we have product keys immediately, show them
       if (result.product_keys && Array.isArray(result.product_keys)) {
-        setProductKeys(result.product_keys);
+        setProductKeys(result.product_keys as string[]);
       }
       
       setOrderCompleted(true);
@@ -135,7 +135,7 @@ export const PurchaseConfirmModal = ({
       if (data && data.data) {
         const orderData = data.data;
         if (typeof orderData === 'object' && orderData !== null && 'product_keys' in orderData && Array.isArray(orderData.product_keys)) {
-          setProductKeys(orderData.product_keys);
+          setProductKeys(orderData.product_keys as string[]);
         }
       }
     } catch (err) {
