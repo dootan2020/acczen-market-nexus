@@ -1,8 +1,7 @@
 
 import * as React from "react"
-import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { DateRange } from "react-day-picker"
+import { format } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -14,55 +13,85 @@ import {
 } from "@/components/ui/popover"
 
 interface DateRangePickerProps {
-  date: DateRange | undefined
-  onDateChange: (date: DateRange | undefined) => void
-  align?: "start" | "center" | "end"
   className?: string
+  value: {
+    from: Date | null
+    to: Date | null
+  }
+  onChange: (value: { from: Date | null; to: Date | null }) => void
+  align?: "start" | "center" | "end"
 }
 
 export function DateRangePicker({
-  date,
-  onDateChange,
-  align = "start",
   className,
+  value,
+  onChange,
+  align = "end",
 }: DateRangePickerProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const handleSelect = (ranges: { from: Date | null; to: Date | null }) => {
+    onChange(ranges)
+    if (ranges.from && ranges.to) {
+      setIsOpen(false)
+    }
+  }
+  
+  const handleClear = () => {
+    onChange({ from: null, to: null })
+    setIsOpen(false)
+  }
+
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
             variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              !value.from && !value.to && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(date.from, "LLL dd, y")
-              )
+            {value.from && value.to ? (
+              <>
+                {format(value.from, "LLL dd, y")} -{" "}
+                {format(value.to, "LLL dd, y")}
+              </>
             ) : (
-              <span>Pick a date range</span>
+              <span>Select date range</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align={align}>
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={onDateChange}
-            numberOfMonths={2}
-            className="pointer-events-auto"
-          />
+          <div className="space-y-2 p-2">
+            <Calendar
+              mode="range"
+              selected={{
+                from: value.from || undefined,
+                to: value.to || undefined,
+              }}
+              onSelect={(range) => 
+                handleSelect({ 
+                  from: range?.from || null, 
+                  to: range?.to || null 
+                })
+              }
+              numberOfMonths={2}
+              initialFocus
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={handleClear}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

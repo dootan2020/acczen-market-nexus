@@ -1,271 +1,178 @@
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { format, subDays, isAfter } from "date-fns";
-import * as XLSX from 'xlsx';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Deposit } from '@/types/deposits';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
-interface UseDepositsOptions {
-  initialStatusFilter?: string;
-  initialMethodFilter?: string;
-  initialDateFilter?: string;
-}
-
-export function useDeposits(options: UseDepositsOptions = {}) {
+export const useDeposits = () => {
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [methodFilter, setMethodFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<[Date | null, Date | null]>([null, null]);
+  const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>(options.initialStatusFilter || "all");
-  const [methodFilter, setMethodFilter] = useState<string>(options.initialMethodFilter || "all");
-  const [dateFilter, setDateFilter] = useState<string>(options.initialDateFilter || "all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  
+
   // Fetch all deposits
-  const { data: deposits, isLoading, error, refetch } = useQuery({
+  const { data: deposits = [], isLoading, error, refetch } = useQuery({
     queryKey: ['admin-deposits'],
     queryFn: async () => {
-      // First, let's get all deposits
-      const { data: depositsData, error: depositsError } = await supabase
-        .from('deposits')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('deposits')
+          .select('*, profiles:profiles(email, username)')
+          .order('created_at', { ascending: false });
 
-      if (depositsError) throw depositsError;
-      
-      // Then fetch profiles data separately
-      const userIds = [...new Set(depositsData.map((d: any) => d.user_id))];
-      
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, username')
-        .in('id', userIds);
-        
-      if (profilesError) throw profilesError;
-      
-      // Create a map of profiles by id for quick lookup
-      const profilesMap = profilesData?.reduce((acc: any, profile: any) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {});
-      
-      // Combine the data
-      const combinedData = depositsData.map((deposit: any) => ({
-        ...deposit,
-        profiles: profilesMap[deposit.user_id] || null
-      }));
-      
-      return combinedData as Deposit[];
+        if (error) throw error;
+        return data as Deposit[];
+      } catch (error) {
+        console.error('Error fetching deposits:', error);
+        throw error;
+      }
     }
   });
 
-  // Filter deposits based on filters
-  const filteredDeposits = useCallback(() => {
-    if (!deposits) return [] as Deposit[];
-    
-    return deposits.filter((deposit: Deposit) => {
-      // Status filter
-      if (statusFilter !== "all" && deposit.status !== statusFilter) {
-        return false;
-      }
-      
-      // Payment method filter
-      if (methodFilter !== "all" && deposit.payment_method !== methodFilter) {
-        return false;
-      }
-      
-      // Date filter
-      if (dateFilter !== "all") {
-        const depositDate = new Date(deposit.created_at);
-        let comparisonDate;
-        
-        switch (dateFilter) {
-          case "today":
-            comparisonDate = new Date();
-            comparisonDate.setHours(0, 0, 0, 0);
-            break;
-          case "week":
-            comparisonDate = subDays(new Date(), 7);
-            break;
-          case "month":
-            comparisonDate = subDays(new Date(), 30);
-            break;
-          default:
-            comparisonDate = new Date(0); // beginning of time
-        }
-        
-        if (!isAfter(depositDate, comparisonDate)) {
-          return false;
-        }
-      }
-      
-      // Search filter - search in transaction ID, user email, or payment ID
-      if (searchQuery) {
-        const searchLower = searchQuery.toLowerCase();
-        const userEmail = deposit.profiles?.email?.toLowerCase() || '';
-        const username = deposit.profiles?.username?.toLowerCase() || '';
-        
-        return (
-          deposit.id.toLowerCase().includes(searchLower) ||
-          userEmail.includes(searchLower) ||
-          username.includes(searchLower) ||
-          (deposit.transaction_hash || '').toLowerCase().includes(searchLower) ||
-          (deposit.paypal_order_id || '').toLowerCase().includes(searchLower)
-        );
-      }
-      
-      return true;
-    });
-  }, [deposits, statusFilter, methodFilter, dateFilter, searchQuery]);
+  // Filter deposits based on current filters
+  const filteredDeposits = deposits.filter(deposit => {
+    // Status filter
+    if (statusFilter && deposit.status !== statusFilter) {
+      return false;
+    }
 
-  // Mutation for approving deposits
+    // Method filter
+    if (methodFilter && deposit.payment_method !== methodFilter) {
+      return false;
+    }
+
+    // Date range filter
+    if (dateFilter[0] && dateFilter[1]) {
+      const depositDate = new Date(deposit.created_at);
+      const startDate = dateFilter[0];
+      const endDate = dateFilter[1];
+      
+      // Set end date to end of day
+      endDate.setHours(23, 59, 59, 999);
+      
+      if (depositDate < startDate || depositDate > endDate) {
+        return false;
+      }
+    }
+
+    // Search query
+    if (searchQuery) {
+      const lowerSearch = searchQuery.toLowerCase();
+      const emailMatch = deposit.profiles?.email?.toLowerCase().includes(lowerSearch);
+      const usernameMatch = deposit.profiles?.username?.toLowerCase().includes(lowerSearch);
+      const idMatch = deposit.id.toLowerCase().includes(lowerSearch);
+      const transactionMatch = deposit.transaction_hash?.toLowerCase().includes(lowerSearch) || false;
+      
+      if (!emailMatch && !usernameMatch && !idMatch && !transactionMatch) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Export to CSV/Excel
+  const exportToCSV = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredDeposits.map(d => ({
+        ID: d.id,
+        User: d.profiles?.email || d.profiles?.username || d.user_id,
+        Amount: d.amount,
+        Method: d.payment_method,
+        Status: d.status,
+        'Transaction Hash': d.transaction_hash || '',
+        'PayPal Order ID': d.paypal_order_id || '',
+        'Created At': new Date(d.created_at).toLocaleString(),
+        'Updated At': new Date(d.updated_at).toLocaleString(),
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Deposits');
+      
+      // Generate buffer
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Save file
+      saveAs(data, `deposits-export-${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Export successful');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast.error('Failed to export data');
+    }
+  };
+
+  // Approve/reject deposit mutations
   const approveMutation = useMutation({
     mutationFn: async (depositId: string) => {
-      const { data: deposit, error: depositError } = await supabase
-        .from('deposits')
-        .select('*')
-        .eq('id', depositId)
-        .single();
-
-      if (depositError) throw depositError;
-
-      // Update deposit status
       const { data, error } = await supabase
         .from('deposits')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .update({ status: 'completed' })
         .eq('id', depositId)
         .select()
         .single();
-
+        
       if (error) throw error;
-
-      // Create transaction record
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: deposit.user_id,
-          amount: deposit.amount,
-          type: 'deposit',
-          reference_id: depositId,
-          description: `${deposit.payment_method} deposit (Admin approved)`
-        });
-
-      if (transactionError) throw transactionError;
-
-      // Update user balance
-      const { error: balanceError } = await supabase.rpc(
-        'update_user_balance',
-        {
-          user_id: deposit.user_id,
-          amount: deposit.amount
-        }
-      );
-
-      if (balanceError) throw balanceError;
-
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-deposits'] });
-      toast({
-        title: 'Deposit Approved',
-        description: 'The deposit has been approved and user balance updated',
-      });
+      toast.success('Deposit approved successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error Approving Deposit',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive'
-      });
+      console.error('Error approving deposit:', error);
+      toast.error('Failed to approve deposit');
     }
   });
 
-  // Mutation for rejecting deposits
   const rejectMutation = useMutation({
     mutationFn: async (depositId: string) => {
       const { data, error } = await supabase
         .from('deposits')
-        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .update({ status: 'rejected' })
         .eq('id', depositId)
-        .select();
-
+        .select()
+        .single();
+        
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-deposits'] });
-      toast({
-        title: 'Deposit Rejected',
-        description: 'The deposit has been rejected',
-      });
+      toast.success('Deposit rejected');
     },
     onError: (error) => {
-      toast({
-        title: 'Error Rejecting Deposit',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive'
-      });
+      console.error('Error rejecting deposit:', error);
+      toast.error('Failed to reject deposit');
     }
   });
 
-  const exportToCSV = useCallback(() => {
-    const filtered = filteredDeposits();
-    if (!filtered?.length) return;
-    
-    // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(filtered.map(deposit => ({
-      ID: deposit.id,
-      User: deposit.profiles?.email || 'Unknown user',
-      Amount: deposit.amount,
-      Status: deposit.status,
-      Method: deposit.payment_method,
-      Date: format(new Date(deposit.created_at), "yyyy-MM-dd HH:mm:ss"),
-      TransactionHash: deposit.transaction_hash || 'N/A'
-    })));
-    
-    // Create workbook
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Deposits");
-    
-    // Create file and trigger download
-    XLSX.writeFile(workbook, `deposits_export_${format(new Date(), "yyyyMMdd")}.xlsx`);
-    
-    toast({
-      title: "Excel Export",
-      description: `Exported ${filtered.length} deposit records`
-    });
-  }, [filteredDeposits]);
-
   return {
-    deposits,
-    filteredDeposits: filteredDeposits(),
+    filteredDeposits,
     isLoading,
     error,
     refetch,
     filters: {
       statusFilter,
-      methodFilter,
-      dateFilter,
-      searchQuery,
       setStatusFilter,
+      methodFilter,
       setMethodFilter,
+      dateFilter,
       setDateFilter,
+      searchQuery,
       setSearchQuery
     },
     actions: {
-      approve: approveMutation.mutate,
-      reject: rejectMutation.mutate,
+      approve: (id: string) => approveMutation.mutate(id),
+      reject: (id: string) => rejectMutation.mutate(id),
       exportToCSV
     },
     isMutating: approveMutation.isPending || rejectMutation.isPending
   };
-}
-
-// Helper function for getting status badge variant
-export const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case 'completed': return 'success';
-    case 'pending': return 'default';
-    case 'rejected': return 'destructive';
-    default: return 'secondary';
-  }
 };

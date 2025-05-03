@@ -1,84 +1,60 @@
 
-import React, { useState } from 'react';
-import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
-import { toast } from "sonner";
-import { Loader2, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React from 'react';
+import { PayPalButtons } from '@paypal/react-paypal-js';
+import { toast } from 'sonner';
 
 interface PayPalButtonWrapperProps {
   amount: number;
-  onSuccess: (orderDetails: any, amount: number) => Promise<void>;
+  onSuccess: (details: any, amount: number) => Promise<void>;
 }
 
 export const PayPalButtonWrapper: React.FC<PayPalButtonWrapperProps> = ({ amount, onSuccess }) => {
-  const [{ isPending, isRejected }] = usePayPalScriptReducer();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorDetails, setErrorDetails] = useState("");
-  
-  if (isPending) return (
-    <div className="w-full h-12 bg-gray-100 animate-pulse rounded-md flex items-center justify-center">
-      <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-    </div>
-  );
-  
-  if (isRejected) return (
-    <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>PayPal Error</AlertTitle>
-      <AlertDescription>
-        Could not load PayPal. Please check your internet connection or try again later.
-        {errorDetails && <div className="mt-2 text-xs overflow-auto max-h-20">{errorDetails}</div>}
-      </AlertDescription>
-    </Alert>
-  );
-  
-  const handleApprove = async (data: any, actions: any) => {
-    setIsProcessing(true);
-    try {
-      const orderDetails = await actions?.order?.capture();
-      if (orderDetails) {
-        await onSuccess(orderDetails, amount);
+  // Create order function
+  const createOrder = (data: any, actions: any) => {
+    return actions.order.create({
+      purchase_units: [
+        {
+          amount: {
+            value: amount.toFixed(2),
+            currency_code: "USD"
+          },
+          description: "Deposit to account balance"
+        },
+      ],
+      application_context: {
+        shipping_preference: "NO_SHIPPING"
       }
+    });
+  };
+
+  // Order approval handler
+  const onApprove = async (data: any, actions: any) => {
+    try {
+      const orderDetails = await actions.order.capture();
+      await onSuccess(orderDetails, amount);
     } catch (error) {
-      console.error("PayPal Capture Error:", error);
-      setErrorDetails(error instanceof Error ? error.message : JSON.stringify(error));
-      toast.error('Payment Processing Error', {
-        description: 'There was an error capturing your payment'
-      });
-    } finally {
-      setIsProcessing(false);
+      console.error("PayPal capture error:", error);
+      toast.error("Payment processing error", { description: "There was a problem processing your payment. Please try again." });
     }
   };
-  
+
+  // Error handler
+  const onError = (err: any) => {
+    console.error("PayPal error:", err);
+    toast.error("Payment Error", { description: "There was a problem with PayPal. Please try a different payment method." });
+  };
+
   return (
     <PayPalButtons 
-      style={{ layout: 'vertical', color: 'blue', shape: 'rect', height: 45 }}
-      createOrder={(data, actions) => {
-        return actions.order.create({
-          intent: "CAPTURE",
-          purchase_units: [{
-            amount: {
-              currency_code: "USD",
-              value: amount.toString()
-            },
-            description: `Deposit funds - $${amount}`
-          }]
-        });
+      style={{ 
+        layout: 'vertical',
+        color: 'blue',
+        shape: 'rect',
+        label: 'pay'
       }}
-      onApprove={handleApprove}
-      onCancel={() => {
-        toast.info('Payment Cancelled', {
-          description: 'You cancelled the PayPal payment'
-        });
-      }}
-      onError={(err) => {
-        console.error("PayPal Button Error:", err);
-        setErrorDetails(err instanceof Error ? err.message : JSON.stringify(err));
-        toast.error('PayPal Error', {
-          description: 'An error occurred with PayPal payment. Please try again later.'
-        });
-      }}
-      disabled={isProcessing}
+      createOrder={createOrder}
+      onApprove={onApprove}
+      onError={onError}
     />
   );
 };

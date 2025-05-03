@@ -1,58 +1,43 @@
 
-import React, { Component, ErrorInfo } from 'react';
+import React from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FallbackPayPalButton } from './FallbackPayPalButton';
 
-interface Props {
+interface PayPalErrorBoundaryProps {
   children: React.ReactNode;
-  amount?: number; 
-  onSuccess?: (orderDetails: any, amount: number) => Promise<void>;
+  amount: number;
+  onSuccess: (details: any, amount: number) => Promise<void>;
 }
 
-interface State {
+interface PayPalErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
 }
 
-export class PayPalErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+export class PayPalErrorBoundary extends React.Component<PayPalErrorBoundaryProps, PayPalErrorBoundaryState> {
+  constructor(props: PayPalErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('PayPal Error Boundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('PayPal component error:', error, errorInfo);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="space-y-4">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Payment Error</AlertTitle>
-            <AlertDescription>
-              There was a problem loading the PayPal payment system. You can try our fallback payment option below.
-            </AlertDescription>
-          </Alert>
-          {this.props.amount && this.props.onSuccess ? (
-            <FallbackPayPalButton 
-              amount={this.props.amount} 
-              onSuccess={this.props.onSuccess} 
-            />
-          ) : (
-            <Alert>
-              <AlertDescription>
-                Unable to load fallback payment option. Please try again later.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+        <Alert variant="destructive" className="mt-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>PayPal Integration Error</AlertTitle>
+          <AlertDescription>
+            There was a problem loading the PayPal button. Please refresh the page or try again later.
+          </AlertDescription>
+        </Alert>
       );
     }
 
