@@ -11,18 +11,27 @@ export const useCurrency = () => {
   const { data: exchangeRates, isLoading, error } = useQuery({
     queryKey: ['exchange-rates'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .select('*')
-        .or('from_currency.eq.VND,from_currency.eq.USD');
+      try {
+        const { data, error } = await supabase
+          .from('exchange_rates')
+          .select('*')
+          .or('from_currency.eq.VND,from_currency.eq.USD');
 
-      if (error) throw error;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Exchange rates fetched successfully");
+        if (error) throw error;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Exchange rates fetched successfully:", data);
+        }
+        
+        return data as ExchangeRate[];
+      } catch (err) {
+        console.error("Error fetching exchange rates:", err);
+        // Return fallback values to prevent app from crashing
+        return [
+          { id: "fallback1", from_currency: "VND", to_currency: "USD", rate: 0.000041, updated_at: new Date().toISOString() },
+          { id: "fallback2", from_currency: "USD", to_currency: "VND", rate: 24400, updated_at: new Date().toISOString() }
+        ] as ExchangeRate[];
       }
-      
-      return data as ExchangeRate[];
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     // Add auto-refresh every hour without user intervention

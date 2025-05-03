@@ -4,9 +4,10 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { CurrencyContextType } from "@/types/currency";
 import { formatCurrency } from "@/utils/formatters";
 
+// Create a context with a default undefined value
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const currency = useCurrency();
   
   if (process.env.NODE_ENV === 'development') {
