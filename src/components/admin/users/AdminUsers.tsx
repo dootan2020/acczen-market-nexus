@@ -78,7 +78,7 @@ const AdminUsers = () => {
     
     // Now we pass the values to handleUpdateDiscount, not the user object
     handleUpdateDiscount({
-      userId: currentUser.id,
+      userId: currentUser.id,  // Use the id property from currentUser
       discountPercentage: values.discountPercentage,
       discountNote: values.discountNote,
       expiryDate: values.expiryDate
