@@ -122,7 +122,7 @@ const AdminProducts = () => {
           nextPage={nextPage}
           hasNextPage={hasNextPage}
           hasPrevPage={hasPrevPage}
-          goToPage={() => {}} // Replaced with empty function as it takes an argument but expects none
+          goToPage={() => {}} // Empty function that takes no arguments
         />
       </div>
       
@@ -162,7 +162,7 @@ const AdminProducts = () => {
         isOpen={isBulkDeleteDialogOpen}
         onOpenChange={setIsBulkDeleteDialogOpen}
         count={selectedProducts.length}
-        onConfirmDelete={() => handleConfirmBulkDelete()} // Fixed: Call without arguments
+        onConfirmDelete={() => handleConfirmBulkDelete()} // Call without arguments
         isPending={bulkDeleteMutation.isPending}
       />
     </div>

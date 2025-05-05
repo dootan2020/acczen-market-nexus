@@ -10,7 +10,7 @@ export interface ProductsPaginationProps {
   nextPage: () => void;
   hasNextPage: boolean;
   hasPrevPage: boolean;
-  goToPage?: (page: number) => void;
+  goToPage?: () => void; // Changed to accept no arguments
 }
 
 export function ProductsPagination({
@@ -60,9 +60,10 @@ export function ProductsPagination({
   
   const pageNumbers = getPageNumbers();
   
-  const handleGoToPage = (page: number) => {
+  // Simplified handleGoToPage function that doesn't use page parameter
+  const handleGoToPage = () => {
     if (goToPage) {
-      goToPage(page);
+      goToPage();
     }
   };
   
@@ -107,7 +108,7 @@ export function ProductsPagination({
                 key={`page-${page}`}
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleGoToPage(page as number)}
+                onClick={handleGoToPage}
               >
                 {page}
               </Button>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useCategories } from '@/hooks/useProducts';
 import { Plus, Import, RefreshCcw } from 'lucide-react';
@@ -253,7 +252,7 @@ const AdminProducts = () => {
             nextPage={nextPage}
             hasNextPage={hasNextPage}
             hasPrevPage={hasPrevPage}
-            goToPage={() => {}} // Fixed: Changed to empty function since it should take no arguments
+            goToPage={() => {}} // Changed to empty function with no arguments
           />
         </div>
       )}
@@ -294,7 +293,7 @@ const AdminProducts = () => {
         isOpen={isBulkDeleteDialogOpen}
         onOpenChange={setIsBulkDeleteDialogOpen}
         count={selectedProducts.length}
-        onConfirmDelete={() => handleConfirmBulkDelete()} // Fixed: Call without arguments
+        onConfirmDelete={() => handleConfirmBulkDelete()} // Call without arguments
         isPending={bulkDeleteMutation.isPending}
       />
       
