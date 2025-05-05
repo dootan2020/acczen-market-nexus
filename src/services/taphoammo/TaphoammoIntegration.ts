@@ -7,7 +7,7 @@ import { TaphoammoApiClient, TaphoammoApiOptions } from './TaphoammoApiClient';
 import { TaphoammoProductService } from './TaphoammoProductService';
 import { TaphoammoOrderService } from './TaphoammoOrderService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export class TaphoammoIntegration {
   private apiClient: TaphoammoApiClient;
@@ -81,7 +81,7 @@ export class TaphoammoIntegration {
     quantity: number = 1,
     userToken?: string,
     promotion?: string,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     return await this.orderService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType);
   };
@@ -92,7 +92,7 @@ export class TaphoammoIntegration {
   public getProducts = async (
     orderId: string,
     userToken?: string,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     return await this.orderService.getProducts(orderId, userToken, proxyType);
   };
@@ -102,7 +102,7 @@ export class TaphoammoIntegration {
    */
   public checkKioskActive = async (
     kioskToken: string,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     try {
       const stockInfo = await this.productService.getStock(kioskToken, { proxyType });
@@ -154,7 +154,7 @@ export class TaphoammoIntegration {
   public checkStockAvailability = async (
     kioskToken: string,
     quantity: number = 1,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     return await this.orderService.checkStockAvailability(kioskToken, quantity, proxyType);
   };
@@ -167,7 +167,7 @@ export class TaphoammoIntegration {
     userToken?: string,
     maxRetries: number = 5,
     delayMs: number = 2000,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     return await this.orderService.checkOrderUntilComplete(
       orderId, userToken, maxRetries, delayMs, proxyType

@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType, getProxyUrl } from '@/utils/corsProxy';
+import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 import { TaphoammoApiCache } from './TaphoammoApiCache';
 import { TaphoammoResponseValidator } from './TaphoammoResponseValidator';
 import { TaphoammoProduct } from './TaphoammoProductService';

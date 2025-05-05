@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration';
-import type { ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 // Create a singleton instance of TaphoammoIntegration
 const taphoammoIntegration = new TaphoammoIntegration();
@@ -22,7 +22,7 @@ export const useConnectionTest = () => {
     setError(null);
     setResults([]);
     
-    const proxyTypes: ProxyType[] = ['allorigins', 'corsproxy', 'cors-anywhere'];
+    const proxyTypes: ProxyType[] = [ProxyType.ALLORIGINS, ProxyType.CORSPROXY, ProxyType.CORS_ANYWHERE];
     const testResults = [];
     
     try {

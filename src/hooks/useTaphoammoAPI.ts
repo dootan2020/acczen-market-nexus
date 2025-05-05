@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { taphoammoApiService } from '@/services/TaphoammoApiService';
 import { TaphoammoProduct, TaphoammoApiOptions } from '@/services/TaphoammoApiService';
 import { toast } from 'sonner';
-import { ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export interface UseTaphoammoOptions {
   autoRetry?: boolean;
@@ -30,7 +30,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   const getStock = async (
     kioskToken: string, 
     forceFresh: boolean = false, 
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ): Promise<TaphoammoProduct> => {
     setLoading(true);
     setError(null);
@@ -59,7 +59,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   const checkStockAvailability = async (
     kioskToken: string, 
     quantity: number = 1, 
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     setLoading(true);
     setError(null);
@@ -87,7 +87,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     quantity: number = 1,
     userToken: string = 'system',
     promotion?: string,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     setLoading(true);
     setError(null);
@@ -117,7 +117,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
   const getProducts = async (
     orderId: string, 
     userToken: string = 'system',
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ) => {
     setLoading(true);
     setError(null);
@@ -138,7 +138,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
    */
   const testConnection = async (
     kioskToken: string, 
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ): Promise<{
     success: boolean;
     message: string;
