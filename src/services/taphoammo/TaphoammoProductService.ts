@@ -120,4 +120,27 @@ export class TaphoammoProductService {
       };
     }
   }
+
+  /**
+   * Check if a kiosk is active
+   */
+  public async checkKioskActive(
+    kioskToken: string,
+    proxyType: ProxyType = 'allorigins'
+  ): Promise<boolean> {
+    try {
+      const stockInfo = await this.getStock(kioskToken, { proxyType });
+      return stockInfo && stockInfo.stock_quantity > 0;
+    } catch (error) {
+      if (error instanceof TaphoammoError) {
+        if (error.code === TaphoammoErrorCodes.KIOSK_PENDING ||
+            error.code === TaphoammoErrorCodes.API_TEMP_DOWN ||
+            error.code === TaphoammoErrorCodes.STOCK_UNAVAILABLE) {
+          return false;
+        }
+      }
+      
+      throw error;
+    }
+  }
 }

@@ -12,6 +12,24 @@ export interface StockCacheInfo {
   emergency?: boolean;
 }
 
+// Define the database inventory cache type to match what's in the database
+interface InventoryCacheEntry {
+  id: string;
+  kiosk_token: string;
+  stock_quantity: number;
+  price: number;
+  name?: string;
+  created_at: string;
+  updated_at: string;
+  cached_until: string;
+  last_checked_at: string;
+  last_sync_status: string;
+  product_id: string;
+  retry_count: number;
+  source: string;
+  sync_message: string;
+}
+
 export const useStockCache = () => {
   const [cacheInfo, setCacheInfo] = useState<StockCacheInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,15 +63,16 @@ export const useStockCache = () => {
         return { cached: false };
       }
       
-      // Create cache info
+      // Create cache info from database data (type-safe)
+      const entry = data as InventoryCacheEntry;
       const cacheInfo: StockCacheInfo = {
-        kiosk_token: data.kiosk_token,
-        // For now we will assume default name if not present
-        name: data.name || 'Unknown Product',
-        stock_quantity: data.stock_quantity,
-        price: data.price,
+        kiosk_token: entry.kiosk_token,
+        // Use optional chaining to safely access name
+        name: entry.name || 'Unknown Product',
+        stock_quantity: entry.stock_quantity,
+        price: entry.price,
         cached: true,
-        cacheId: data.id,
+        cacheId: entry.id,
         emergency: false
       };
       

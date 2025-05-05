@@ -1,4 +1,5 @@
 
+import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoProductService } from './TaphoammoProductService';
 import { TaphoammoOrderService } from './TaphoammoOrderService';
 import { toast } from 'sonner';
@@ -6,21 +7,22 @@ import { toast } from 'sonner';
 /**
  * Main service facade for Taphoammo API integration
  * Provides a simple interface for all Taphoammo operations
- * // TODO: Implement new API logic
  */
 export class TaphoammoApiService {
   private static instance: TaphoammoApiService;
   
   // Service instances
-  private apiClient: any;
+  private apiClient: TaphoammoApiClient;
   private productService: TaphoammoProductService;
   private orderService: TaphoammoOrderService;
   
   private constructor() {
-    this.apiClient = {};
-    // Initialize services first before using them in method bindings
-    this.productService = new TaphoammoProductService();
-    this.orderService = new TaphoammoOrderService();
+    // Initialize API client first
+    this.apiClient = new TaphoammoApiClient();
+    
+    // Initialize services with the API client
+    this.productService = new TaphoammoProductService(this.apiClient);
+    this.orderService = new TaphoammoOrderService(this.apiClient);
   }
   
   /**
@@ -57,6 +59,7 @@ export class TaphoammoApiService {
    * Clear API cache across all services
    */
   public clearCache(): void {
+    this.apiClient.clearCache();
     toast.success('Đã xóa cache API thành công');
   }
 }

@@ -85,6 +85,7 @@ export const useApiCommon = () => {
       if (isCircuitOpen) {
         try {
           // Create a custom RPC function to handle circuit resetting
+          // Using a function that exists in the database
           await supabase.rpc('increment_success_count', { api_name_param: 'taphoammo' });
         } catch (err) {
           console.error('Error resetting circuit breaker:', err);

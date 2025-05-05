@@ -21,6 +21,24 @@ export interface StockCacheInfo {
   emergency?: boolean;
 }
 
+// Define the database inventory cache type to match what's in the database
+interface InventoryCacheEntry {
+  id: string;
+  kiosk_token: string;
+  stock_quantity: number;
+  price: number;
+  name?: string;
+  created_at: string;
+  updated_at: string;
+  cached_until: string;
+  last_checked_at: string;
+  last_sync_status: string;
+  product_id: string;
+  retry_count: number;
+  source: string;
+  sync_message: string;
+}
+
 export const useStockOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry, usingCache } = useApiCommon();
 
@@ -50,15 +68,16 @@ export const useStockOperations = () => {
       }
       
       // Return cached data
+      const entry = data as InventoryCacheEntry;
       return {
         cached: true,
         data: {
-          kiosk_token: data.kiosk_token,
-          name: data.name || 'Unknown Product',
-          stock_quantity: data.stock_quantity,
-          price: data.price,
+          kiosk_token: entry.kiosk_token,
+          name: entry.name || 'Unknown Product',
+          stock_quantity: entry.stock_quantity,
+          price: entry.price,
           cached: true,
-          cacheId: data.id,
+          cacheId: entry.id,
           emergency: false
         }
       };
@@ -137,11 +156,12 @@ export const useStockOperations = () => {
               
               if (!data) throw new Error('No cache available');
               
+              const entry = data as InventoryCacheEntry;
               return {
                 kiosk_token: kioskToken,
-                name: data.name || 'Unknown Product',
-                stock_quantity: data.stock_quantity,
-                price: data.price,
+                name: entry.name || 'Unknown Product',
+                stock_quantity: entry.stock_quantity,
+                price: entry.price,
                 cached: true,
                 emergency: true
               } as TaphoammoProduct;
@@ -253,11 +273,12 @@ export const useStockOperations = () => {
           
           if (!data) throw new Error('No cache available');
           
+          const entry = data as InventoryCacheEntry;
           return {
             kiosk_token: kioskToken,
-            name: data.name || 'Unknown Product',
-            stock_quantity: data.stock_quantity,
-            price: data.price,
+            name: entry.name || 'Unknown Product',
+            stock_quantity: entry.stock_quantity,
+            price: entry.price,
             cached: true,
             emergency: true
           } as TaphoammoProduct;

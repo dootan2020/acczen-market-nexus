@@ -4,6 +4,7 @@ import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ProxyType, getProxyUrl } from '@/utils/corsProxy';
 import { TaphoammoApiCache } from './TaphoammoApiCache';
 import { TaphoammoResponseValidator } from './TaphoammoResponseValidator';
+import { TaphoammoProduct } from './TaphoammoProductService';
 
 export interface TaphoammoApiOptions {
   proxyType?: ProxyType;
@@ -29,6 +30,7 @@ export class TaphoammoApiClient {
   private apiCache: TaphoammoApiCache;
   private validator: TaphoammoResponseValidator;
   private defaultTimeout: number = 10000; // 10 seconds default timeout
+  private productCache: Map<string, TaphoammoProduct> = new Map();
   
   constructor() {
     this.apiCache = new TaphoammoApiCache();
@@ -129,6 +131,33 @@ export class TaphoammoApiClient {
   }
   
   /**
+   * Call TaphoaMMO API with the provided parameters
+   * This method is used by TaphoammoProductService
+   */
+  public async callTaphoaMMO(
+    method: string,
+    params: Record<string, any>,
+    proxyType: ProxyType = 'allorigins'
+  ): Promise<any> {
+    const response = await this.executeApiCall(method, params, { proxyType });
+    return response.data;
+  }
+  
+  /**
+   * Cache a product for later retrieval
+   */
+  public cacheProduct(kioskToken: string, product: TaphoammoProduct): void {
+    this.productCache.set(kioskToken, product);
+  }
+  
+  /**
+   * Get a cached product by kiosk token
+   */
+  public getCachedProduct(kioskToken: string): TaphoammoProduct | null {
+    return this.productCache.get(kioskToken) || null;
+  }
+  
+  /**
    * Generate cache key from method and params
    */
   private generateCacheKey(method: string, params: Record<string, any>): string {
@@ -170,6 +199,7 @@ export class TaphoammoApiClient {
    */
   public clearCache(): void {
     this.apiCache.clear();
+    this.productCache.clear();
   }
   
   /**
@@ -182,4 +212,3 @@ export class TaphoammoApiClient {
     return this.validator;
   }
 }
-
