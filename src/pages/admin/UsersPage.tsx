@@ -25,6 +25,7 @@ const UsersPage: React.FC = () => {
     roleFilter,
     setRoleFilter,
     currentUser,
+    setCurrentUser, // Added this to destructure it from the hook
     isEditRoleDialogOpen,
     setIsEditRoleDialogOpen,
     isAdjustBalanceDialogOpen,
