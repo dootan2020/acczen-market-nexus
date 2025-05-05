@@ -1,10 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PaginationOptions {
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
   filter?: Record<string, any>;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -12,7 +13,7 @@ interface PaginationOptions {
   searchColumn?: string;
 }
 
-interface PaginationResult<T> {
+export interface PaginationResult<T> {
   data: T[];
   total: number;
   page: number;
@@ -21,26 +22,43 @@ interface PaginationResult<T> {
   isLoading: boolean;
   error: Error | null;
   isFetching: boolean;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setFilter: (filter: Record<string, any>) => void;
   setSorting: (column: string, order: 'asc' | 'desc') => void;
   setSearchTerm: (term: string) => void;
   refetch: () => void;
+  goToPage: (page: number) => void;
+  prevPage: () => void;
+  nextPage: () => void;
 }
 
 // Type safety for table names
 type TableNames = 'products' | 'orders' | 'deposits' | 'profiles' | 'categories' | 'subcategories';
 
+/**
+ * Hook for admin pagination with TanStack Query v5
+ * @param tableName The Supabase table name to query
+ * @param queryKey The query key for caching
+ * @param options Pagination options
+ * @param initialFilter Initial filter to apply
+ * @param customSelect Custom select query string
+ */
 export function useAdminPagination<T>(
-  tableName: TableNames, 
-  options: PaginationOptions, 
+  tableName: TableNames,
+  queryKey: string | string[],
+  options: PaginationOptions = {},
+  initialFilter: Record<string, any> = {},
   customSelect?: string
 ): PaginationResult<T> {
   // State
   const [page, setPage] = useState(options.page || 1);
   const [pageSize, setPageSize] = useState(options.pageSize || 10);
-  const [filter, setFilter] = useState<Record<string, any>>(options.filter || {});
+  const [filter, setFilter] = useState<Record<string, any>>(initialFilter || {});
   const [sortBy, setSortBy] = useState<string>(options.sortBy || 'created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(options.sortOrder || 'desc');
   const [searchTerm, setSearchTerm] = useState<string>(options.searchTerm || '');
@@ -57,7 +75,7 @@ export function useAdminPagination<T>(
 
   // Fetch data with pagination
   const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
-    queryKey: ['admin', tableName, page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn],
+    queryKey: Array.isArray(queryKey) ? queryKey.concat([page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn]) : [queryKey, page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn],
     queryFn: async () => {
       // Start with the base query
       let query = supabase
@@ -101,7 +119,7 @@ export function useAdminPagination<T>(
       }
       
       // Apply pagination
-      const { data, error, count } = await query
+      const { data, count, error } = await query
         .range(from, to);
       
       if (error) throw error;
@@ -111,7 +129,6 @@ export function useAdminPagination<T>(
         count: count || 0
       };
     },
-    // Replace keepPreviousData (deprecated in v5) with keepPreviousData in the meta object
     meta: {
       keepPreviousData: true
     },
@@ -124,12 +141,37 @@ export function useAdminPagination<T>(
   
   // Calculate page count
   const pageCount = Math.ceil(count / pageSize);
+  const totalPages = pageCount;
+  const currentPage = page;
+  
+  // Calculate if there are next/previous pages
+  const hasNextPage = page < pageCount;
+  const hasPrevPage = page > 1;
   
   // Handler for sorting
   const setSorting = useCallback((column: string, order: 'asc' | 'desc') => {
     setSortBy(column);
     setSortOrder(order);
   }, []);
+
+  // Navigation functions
+  const goToPage = useCallback((newPage: number) => {
+    if (newPage >= 1 && newPage <= pageCount) {
+      setPage(newPage);
+    }
+  }, [pageCount]);
+
+  const nextPage = useCallback(() => {
+    if (hasNextPage) {
+      setPage(page + 1);
+    }
+  }, [page, hasNextPage]);
+
+  const prevPage = useCallback(() => {
+    if (hasPrevPage) {
+      setPage(page - 1);
+    }
+  }, [page, hasPrevPage]);
 
   return {
     data,
@@ -145,6 +187,13 @@ export function useAdminPagination<T>(
     setFilter,
     setSorting,
     setSearchTerm,
-    refetch
+    refetch,
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    goToPage,
+    prevPage,
+    nextPage
   };
 }

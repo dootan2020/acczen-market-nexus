@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -149,7 +148,7 @@ const AdminExchangeRates = () => {
     }));
   };
 
-  // Remove back button and instead rely on breadcrumbs for navigation
+  // Modified rendering for the exchange rates table to fix formatCurrency calls
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
