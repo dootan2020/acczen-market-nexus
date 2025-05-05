@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -184,7 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Legacy method - keep for backward compatibility
   const logout = async () => {
-    return signOut(true); // Fix: Adding the second parameter (redirect = true) that was missing
+    return signOut(true); // Sửa: Thêm tham số redirect = true
   };
 
   // New method with clearer naming
