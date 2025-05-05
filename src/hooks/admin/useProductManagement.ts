@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCategories } from '@/hooks/useProducts';
 import { useAdminPagination } from '@/hooks/useAdminPagination';
 import { useProductFilters } from './useProductFilters';
@@ -20,7 +20,9 @@ export const useProductManagement = () => {
     prevPage,
     nextPage,
     hasNextPage,
-    hasPrevPage
+    hasPrevPage,
+    setPageSize,
+    refetch
   } = useAdminPagination<Product>(
     'products',
     ['admin-products'],
@@ -29,7 +31,15 @@ export const useProductManagement = () => {
     `*, category:categories(*), subcategory:subcategories(*)`
   );
 
-  const { searchQuery, setSearchQuery, filteredProducts } = useProductFilters(products);
+  const {
+    searchQuery,
+    setSearchQuery,
+    filters,
+    applyFilter,
+    resetFilter,
+    clearFilters,
+    filteredProducts
+  } = useProductFilters(products);
   
   const {
     selectedProducts,
@@ -65,6 +75,18 @@ export const useProductManagement = () => {
   } = useProductMutationHooks();
 
   const { data: categories } = useCategories();
+
+  // Clear selection when filtered products change
+  useEffect(() => {
+    handleClearSelection();
+  }, [JSON.stringify(filteredProducts?.map(p => p.id))]);
+
+  // Refresh product list after mutations
+  useEffect(() => {
+    if (productMutation.isSuccess || deleteMutation.isSuccess || bulkDeleteMutation.isSuccess || bulkUpdateStatusMutation.isSuccess) {
+      refetch();
+    }
+  }, [productMutation.isSuccess, deleteMutation.isSuccess, bulkDeleteMutation.isSuccess, bulkUpdateStatusMutation.isSuccess]);
 
   // Handler functions
   const handleAddProduct = () => {
@@ -128,12 +150,21 @@ export const useProductManagement = () => {
     bulkUpdateStatusMutation.mutate({ ids: selectedProducts, status: 'inactive' });
   };
 
+  // Change page size
+  const handleChangePageSize = (size: number) => {
+    setPageSize(size);
+  };
+
   return {
     products,
     filteredProducts,
     selectedProducts,
     searchQuery,
     setSearchQuery,
+    filters,
+    applyFilter,
+    resetFilter,
+    clearFilters,
     isEditing,
     isProductDialogOpen,
     setIsProductDialogOpen,
@@ -164,6 +195,7 @@ export const useProductManagement = () => {
     handleBulkActivate,
     handleBulkDeactivate,
     handleClearSelection,
+    handleChangePageSize,
     productMutation,
     deleteMutation,
     bulkDeleteMutation,
