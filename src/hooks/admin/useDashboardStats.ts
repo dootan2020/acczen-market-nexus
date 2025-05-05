@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types/dashboard";
@@ -19,7 +18,7 @@ export const useDashboardStats = () => {
       // Check if last_login_at exists before using it
       const activeUsers = users.filter(user => {
         // Check if the user has logged in recently using auth-related fields
-        return user.last_signin_at != null || user.last_active_at != null;
+        return user.updated_at != null; // Use updated_at instead of non-existent fields
       }).length;
       
       // Lấy thông tin deposits
