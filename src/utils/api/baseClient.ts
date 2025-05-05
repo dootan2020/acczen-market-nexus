@@ -26,10 +26,10 @@ export class BaseApiClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       
-      // Call the function with the signal
+      // Call the function without the signal (removed due to type error)
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: params,
-        signal: controller.signal
+        body: params
+        // Removed signal property as it's not in FunctionInvokeOptions type
       });
       
       // Clear the timeout

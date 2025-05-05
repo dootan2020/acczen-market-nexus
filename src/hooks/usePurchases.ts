@@ -42,7 +42,7 @@ export const usePurchases = () => {
   const [search, setSearch] = useState("");
 
   // Fetch orders with pagination
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['purchases', page, search],
     queryFn: async () => {
       let query = supabase
@@ -136,5 +136,6 @@ export const usePurchases = () => {
     error,
     totalPages,
     PAGE_SIZE,
+    refetch, // Add the refetch function to the return object
   };
 };
