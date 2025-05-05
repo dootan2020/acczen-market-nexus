@@ -90,6 +90,7 @@ const AdminProducts = () => {
         onBulkActivate={handleBulkActivate}
         onBulkDeactivate={handleBulkDeactivate}
         onClearSelection={handleClearSelection}
+        disabled={isLoading}
       />
       
       <Card className="overflow-hidden">
@@ -121,6 +122,7 @@ const AdminProducts = () => {
           nextPage={nextPage}
           hasNextPage={hasNextPage}
           hasPrevPage={hasPrevPage}
+          goToPage={() => {}} // Replaced with empty function as it takes an argument but expects none
         />
       </div>
       
@@ -160,7 +162,7 @@ const AdminProducts = () => {
         isOpen={isBulkDeleteDialogOpen}
         onOpenChange={setIsBulkDeleteDialogOpen}
         count={selectedProducts.length}
-        onConfirmDelete={handleConfirmBulkDelete}
+        onConfirmDelete={() => handleConfirmBulkDelete()} // Fixed: Call without arguments
         isPending={bulkDeleteMutation.isPending}
       />
     </div>

@@ -68,28 +68,26 @@ export function useAdminPagination<T>(
     setPage(1);
   }, [filter, searchTerm]);
 
-  // Create a properly typed query key array - using useCallback to fix deep type instantiation
-  const createQueryKey = useCallback(() => {
-    const baseKey = Array.isArray(queryKey) ? queryKey : [queryKey];
-    
-    // Create a serialized version of complex objects to avoid recursion issues
-    const serializedFilter = JSON.stringify(filter);
+  // Fix the deep type instantiation by making the query key creation more simple
+  const queryKeyArray = useCallback(() => {
+    const baseKey = Array.isArray(queryKey) ? [...queryKey] : [queryKey];
+    const filterKey = JSON.stringify(filter);
     
     return [
       ...baseKey,
-      `page-${page}`,
-      `size-${pageSize}`,
-      `filter-${serializedFilter}`,
-      `sort-${sortBy}`,
-      `order-${sortOrder}`,
-      `search-${searchTerm}`,
-      `column-${searchColumn}`
+      page,
+      pageSize,
+      filterKey,
+      sortBy,
+      sortOrder,
+      searchTerm,
+      searchColumn
     ];
   }, [filter, page, pageSize, queryKey, searchColumn, searchTerm, sortBy, sortOrder]);
 
   // Fetch data with pagination
   const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
-    queryKey: createQueryKey(),
+    queryKey: queryKeyArray(),
     queryFn: async () => {
       // Start with the base query
       let query = supabase
