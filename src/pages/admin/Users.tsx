@@ -96,10 +96,10 @@ const Users = () => {
   const handleUpdateDiscount = () => {
     if (currentUser && discountPercentage) {
       updateDiscountMutation.mutate({ 
-        id: currentUser.id, 
+        userId: currentUser.id, 
         discount_percentage: parseFloat(discountPercentage), 
         discount_note: discountNote,
-        expiry_date: date
+        expiry_date: date ? date.toISOString() : undefined
       });
     }
   };
