@@ -41,10 +41,6 @@ const ProductInventory = ({ stockQuantity, status, onChange, onStatusChange }: P
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
             <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-            {/* 
-            Note: The database doesn't support these statuses directly,
-            they will be mapped to 'inactive' when saving to database
-            */}
             <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>

@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { parseError } from '@/utils/errorUtils';
-import { OrderData } from '@/types/orders';
 
 interface ProductPurchaseData {
   id: string;
@@ -30,9 +29,9 @@ export const usePurchaseProduct = () => {
   const [purchaseError, setPurchaseError] = useState<PurchaseError | null>(null);
   const { handleError } = useErrorHandler();
 
-  const executePurchase = async (product: ProductPurchaseData): Promise<OrderData | null> => {
+  const executePurchase = async (product: ProductPurchaseData) => {
     if (!user) {
-      toast.error('You need to be logged in to make a purchase');
+      toast.error('Bạn cần đăng nhập để mua hàng');
       navigate('/login');
       return null;
     }
@@ -54,7 +53,7 @@ export const usePurchaseProduct = () => {
       // Calculate total after discount
       const totalAmount = finalPrice * product.quantity;
       
-      // Process transaction through Edge Function
+      // Process transaction
       const { data, error } = await supabase.functions.invoke('process-transaction', {
         body: JSON.stringify({
           user_id: user.id,
@@ -70,7 +69,7 @@ export const usePurchaseProduct = () => {
 
       // Handle API-level errors (returned in the data object)
       if (data && typeof data === 'object' && data.success === false) {
-        throw new Error(data.message || 'Error processing transaction');
+        throw new Error(data.message || 'Lỗi xử lý giao dịch');
       }
 
       if (error) {
@@ -79,14 +78,14 @@ export const usePurchaseProduct = () => {
 
       // Handle unexpected response format
       if (!data || !data.success) {
-        throw new Error('Invalid response format');
+        throw new Error('Định dạng phản hồi không hợp lệ');
       }
 
-      toast.success('Purchase successful', {
-        description: `Order #${data.order_id.substring(0, 8)} has been processed`
+      toast.success('Mua hàng thành công', {
+        description: `Đơn hàng #${data.order_id} đã được xử lý`
       });
 
-      return data;
+      return data.order_id;
     } catch (error: any) {
       console.error('Purchase error:', error);
       
@@ -100,8 +99,8 @@ export const usePurchaseProduct = () => {
       });
       
       // Show toast notification
-      toast.error('Purchase error', {
-        description: errorDetails.message || 'An error occurred while processing your transaction'
+      toast.error('Lỗi mua hàng', {
+        description: errorDetails.message || 'Có lỗi xảy ra khi xử lý giao dịch'
       });
       
       // Log error with error handler
@@ -113,12 +112,10 @@ export const usePurchaseProduct = () => {
     }
   };
 
-  const clearError = () => setPurchaseError(null);
-
   return {
     isProcessing,
     purchaseError,
     executePurchase,
-    clearError
+    clearError: () => setPurchaseError(null)
   };
 };

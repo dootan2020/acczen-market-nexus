@@ -1,5 +1,53 @@
 
 project_id = "epwggtbgdtaxietedjcn"
 
-[functions.sync-inventory]
+[api]
+# disable this if you are deploying with custom domain or using any of our legacy features
+# we recommend keeping this enabled as it will help you adopt new features in production without any customer facing impact
+enabled = true
+# Generated port will be different
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+# Port to use for the local DB server
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+# Generated port will be different
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+# Generated port will be different
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[realtime]
+enabled = true
+
+[analytics]
+enabled = false
+
+# Edge Functions Configuration
+[functions]
+[functions.purchase-product]
+verify_jwt = true
+
+[functions.check-kiosk-status]
+verify_jwt = true
+
+[functions.check-order-status]
 verify_jwt = true

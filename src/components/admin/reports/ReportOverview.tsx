@@ -1,176 +1,219 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUp, ArrowDown } from 'lucide-react';
-import { StatsData, ChartData } from '@/types/reports';
-import { formatCurrency } from '@/utils/formatters';
-import { PaymentMethodsChart } from './PaymentMethodsChart';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton, SkeletonChartPie, SkeletonStats } from "@/components/ui/skeleton";
+import { DollarSign, ShoppingBag, Users, TrendingUp } from "lucide-react";
+import { StatsData, ChartData } from "@/hooks/useReportsData";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface ReportOverviewProps {
-  statsData?: StatsData;
-  paymentMethodData?: ChartData[];
+  statsData: StatsData;
+  paymentMethodData: ChartData[];
   isLoading: boolean;
 }
 
-export const ReportOverview: React.FC<ReportOverviewProps> = ({
-  statsData,
-  paymentMethodData,
-  isLoading
-}) => {
-  // Format payment method data for the chart
-  const chartData = paymentMethodData || [];
-  
+const COLORS = ['#2ECC71', '#3498DB', '#F1C40F', '#E74C3C'];
+
+export function ReportOverview({ statsData, paymentMethodData, isLoading }: ReportOverviewProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array(6).fill(0).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-4 w-24" />
+      <>
+        <SkeletonStats />
+        
+        <div className="grid gap-4 md:grid-cols-2 mt-4">
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Payment Methods</CardTitle>
+              <Skeleton className="h-4 w-48" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-32 mb-2" />
-              <Skeleton className="h-4 w-full" />
+              <div className="flex items-center justify-center h-64">
+                <SkeletonChartPie />
+              </div>
             </CardContent>
           </Card>
-        ))}
-        
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <Skeleton className="h-5 w-40" />
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <div className="h-40 w-40">
-              <Skeleton className="h-full w-full rounded-full" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Payment Statistics</CardTitle>
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i}>
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-32 mt-1" />
+                    <Skeleton className="h-2 w-full mt-2" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
-  
-  if (!statsData) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">No statistics available for the selected period.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const {
-    totalOrders,
-    totalDepositAmount,
-    totalDeposits,
-    totalUsers,
-    activeUsers,
-    conversionRate,
-    averageOrderValue
-  } = statsData;
   
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Orders Stats */}
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Key stats cards */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Average value: {formatCurrency(averageOrderValue)}
-            </p>
-          </CardContent>
-        </Card>
-        
-        {/* Deposits Stats */}
-        <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalDepositAmount)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Count: {totalDeposits} deposits
+            <div className="text-2xl font-bold">${statsData.totalDepositAmount.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              {statsData.totalDeposits} transactions
             </p>
           </CardContent>
         </Card>
         
-        {/* Users Stats */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Orders</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Active: {activeUsers} users
+            <div className="text-2xl font-bold">{statsData.totalOrders}</div>
+            <p className="text-xs text-muted-foreground">
+              Avg. ${statsData.averageOrderValue.toFixed(2)}
             </p>
           </CardContent>
         </Card>
         
-        {/* Conversion Rate */}
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsData.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              {statsData.activeUsers} active users
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
-            <div className="flex items-center mt-1">
-              {conversionRate > 5 ? (
-                <span className="flex items-center text-xs text-green-500">
-                  <ArrowUp className="w-3 h-3 mr-1" /> Good
-                </span>
-              ) : (
-                <span className="flex items-center text-xs text-amber-500">
-                  <ArrowDown className="w-3 h-3 mr-1" /> Needs improvement
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Average Order Value */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageOrderValue)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Per completed order
-            </p>
-          </CardContent>
-        </Card>
-        
-        {/* Active Users Percentage */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0}% of total users
+            <div className="text-2xl font-bold">{statsData.conversionRate}%</div>
+            <p className="text-xs text-muted-foreground">
+              Users with orders or deposits
             </p>
           </CardContent>
         </Card>
       </div>
       
-      {/* Payment Methods Chart */}
-      {chartData.length > 0 && (
-        <Card>
+      <div className="grid gap-4 md:grid-cols-2 mt-4">
+        {/* Payment Methods Chart */}
+        <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Payment Methods Distribution</CardTitle>
+            <CardTitle>Payment Methods</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Distribution of deposits by payment method
+            </p>
           </CardHeader>
           <CardContent>
-            <PaymentMethodsChart data={chartData} />
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={paymentMethodData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {paymentMethodData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
-    </div>
+        
+        {/* Payment Stats */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Payment Statistics</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Detailed breakdown of payment methods
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">PayPal</span>
+                  <span className="font-bold">${statsData.paypalAmount.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {statsData.paypalDeposits} transactions
+                </div>
+                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary" 
+                    style={{ 
+                      width: `${statsData.totalDepositAmount ? (statsData.paypalAmount / statsData.totalDepositAmount * 100) : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">USDT</span>
+                  <span className="font-bold">${statsData.usdtAmount.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {statsData.usdtDeposits} transactions
+                </div>
+                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500" 
+                    style={{ 
+                      width: `${statsData.totalDepositAmount ? (statsData.usdtAmount / statsData.totalDepositAmount * 100) : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Total</span>
+                  <span className="font-bold">${statsData.totalDepositAmount.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {statsData.totalDeposits} transactions
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
-};
+}

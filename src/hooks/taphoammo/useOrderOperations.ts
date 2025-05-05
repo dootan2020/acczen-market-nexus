@@ -1,43 +1,30 @@
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useApiCommon } from './useApiCommon';
+import { taphoammoApi } from '@/utils/api/taphoammoApi';
+import type { ProxyType } from '@/utils/corsProxy';
 
 export const useOrderOperations = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { loading, setLoading, error, setError, retry, withRetry } = useApiCommon();
 
-  const purchaseProduct = async (kioskToken: string, quantity: number) => {
-    if (!user) {
-      throw new Error('User must be logged in');
-    }
-
+  const buyProducts = async (
+    kioskToken: string,
+    userToken: string,
+    quantity: number,
+    proxyType: ProxyType,
+    promotion?: string
+  ) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Call the Edge Function for order processing
-      const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
-        body: JSON.stringify({
-          action: 'purchase',
-          kioskToken,
-          quantity,
-          userId: user.id
-        })
+      const data = await withRetry(async () => {
+        return await taphoammoApi.order.buyProducts(kioskToken, quantity, userToken, promotion);
       });
 
-      if (error) throw new Error(error.message);
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Purchase failed');
-      }
-
       return data;
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error in purchaseProduct:', errorMsg);
+      console.error('Error in buyProducts:', errorMsg);
       setError(errorMsg);
       throw err;
     } finally {
@@ -45,36 +32,18 @@ export const useOrderOperations = () => {
     }
   };
 
-  const fetchOrderKeys = async (orderId: string) => {
-    if (!user) {
-      throw new Error('User must be logged in');
-    }
-
+  const getProducts = async (orderId: string, userToken: string, proxyType: ProxyType) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Call the Edge Function to get order keys
-      const { data, error } = await supabase
-        .from('order_items')
-        .select('data')
-        .eq('order_id', orderId)
-        .single();
-      
-      if (error) throw error;
-      
-      if (!data || !data.data) {
-        throw new Error('Order keys not found');
-      }
+      const data = await withRetry(async () => {
+        return await taphoammoApi.order.getProducts(orderId, userToken);
+      });
 
-      // Fix type issue: Check if data.data is an object and has product_keys
-      const orderData = data.data as Record<string, any>;
-      const productKeys = orderData.product_keys || [];
-
-      return productKeys;
-    } catch (err) {
+      return data;
+    } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error fetching order keys:', errorMsg);
       setError(errorMsg);
       throw err;
     } finally {
@@ -83,9 +52,10 @@ export const useOrderOperations = () => {
   };
 
   return {
-    purchaseProduct,
-    fetchOrderKeys,
+    buyProducts,
+    getProducts,
     loading,
-    error
+    error,
+    retry
   };
 };

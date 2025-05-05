@@ -18,12 +18,11 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { DateRangeType } from '@/types/reports';
 
 interface TimeRangeSelectorProps {
   dateRangeType: string;
   formattedDateRange: string;
-  onDateRangeChange: (value: DateRangeType) => void;
+  onDateRangeChange: (value: string) => void;
   dateRange?: DateRange;
   onDateRangePickerChange: (range: DateRange | undefined) => void;
   className?: string;
@@ -39,7 +38,7 @@ export function TimeRangeSelector({
 }: TimeRangeSelectorProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Select value={dateRangeType} onValueChange={(value: string) => onDateRangeChange(value as DateRangeType)}>
+      <Select value={dateRangeType} onValueChange={onDateRangeChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Time Range" />
         </SelectTrigger>

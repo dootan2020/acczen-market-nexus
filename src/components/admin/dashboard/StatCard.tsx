@@ -43,7 +43,7 @@ export function StatCard({
               <div className="text-sm font-medium text-muted-foreground">
                 {title}
               </div>
-              <div className="p-2 rounded-full bg-primary/10 text-primary">
+              <div className="p-2 rounded-full bg-chatgpt-primary/10 text-chatgpt-primary">
                 {icon}
               </div>
             </div>
@@ -66,7 +66,7 @@ export function StatCard({
                     ) : trend === 'down' ? (
                       <ArrowDownIcon className="h-3 w-3 mr-1" />
                     ) : null}
-                    {Math.abs(percentChange).toFixed(1)}%
+                    {Math.abs(percentChange)}%
                   </div>
                 )}
                 {description && (

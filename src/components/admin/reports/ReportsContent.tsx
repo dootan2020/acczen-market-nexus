@@ -1,31 +1,34 @@
 
-import React, { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatsSection } from './StatsSection';
-import { StatsData, ChartData, DepositsChartData, OrdersChartData } from '@/types/reports';
-import { RevenueChart } from './RevenueChart';
-import { OrdersChart } from './OrdersChart';
-import { PaymentMethodsChart } from './PaymentMethodsChart';
-import { DepositsListSection } from './DepositsListSection';
-import { Deposit } from '@/types/deposits';
-import { DateRange } from 'react-day-picker';
-import { Loader } from 'lucide-react';
+import { ReportOverview } from "./ReportOverview";
+import { DepositsReport } from "./DepositsReport";
+import { OrdersReport } from "./OrdersReport";
+import { BestSellingProducts } from "./BestSellingProducts";
+import { DateRange } from "react-day-picker";
+import { StatsData, ChartData } from "@/types/reports";
+import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { SkeletonTable } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReportsContentProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab: (value: string) => void;
   statsData: StatsData;
   paymentMethodData: ChartData[];
-  depositsChartData: DepositsChartData[];
-  ordersChartData: OrdersChartData[];
+  depositsChartData: any[];
+  ordersChartData: any[];
   dateRange: DateRange | undefined;
   isLoading: boolean;
-  depositsData: Deposit[];
+  depositsData: any[];
 }
 
-// Use React.memo to prevent unnecessary re-renders
-export const ReportsContent = React.memo(({
+// Use lazy loading for heavy components
+const LazyBestSellingProducts = lazy(() => import("./BestSellingProducts").then(module => ({ default: module.BestSellingProducts })));
+
+export function ReportsContent({
   activeTab,
   setActiveTab,
   statsData,
@@ -34,114 +37,55 @@ export const ReportsContent = React.memo(({
   ordersChartData,
   dateRange,
   isLoading,
-  depositsData
-}: ReportsContentProps) => {
-  // Memoize empty state to avoid recreating it on each render
-  const emptyState = useMemo(() => (
-    <div className="flex flex-col items-center justify-center py-10 text-center">
-      <p className="text-muted-foreground mb-4">No data available for the selected date range.</p>
-    </div>
-  ), []);
-
-  // Determine if various sections have data to display
-  const hasRevenueData = useMemo(() => depositsChartData && depositsChartData.length > 0, [depositsChartData]);
-  const hasOrdersData = useMemo(() => ordersChartData && ordersChartData.length > 0, [ordersChartData]);
-  const hasPaymentData = useMemo(() => paymentMethodData && paymentMethodData.length > 0, [paymentMethodData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  depositsData,
+}: ReportsContentProps) {
+  const isMobile = useIsMobile();
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="mb-6">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2 mb-4' : 'md:w-auto grid-cols-4'}`}>
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="revenue">Revenue</TabsTrigger>
-        <TabsTrigger value="orders">Orders</TabsTrigger>
         <TabsTrigger value="deposits">Deposits</TabsTrigger>
+        <TabsTrigger value="orders">Orders</TabsTrigger>
+        <TabsTrigger value="products">Products</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="overview">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Revenue Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasRevenueData ? (
-                <RevenueChart data={depositsChartData} />
-              ) : emptyState}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Orders Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasOrdersData ? (
-                <OrdersChart data={ordersChartData} />
-              ) : emptyState}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Payment Methods</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasPaymentData ? (
-                <PaymentMethodsChart data={paymentMethodData} />
-              ) : emptyState}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Stats Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatsSection statsData={statsData} />
-            </CardContent>
-          </Card>
-        </div>
+      <TabsContent value="overview" className="overflow-hidden">
+        <DashboardOverview
+          statsData={statsData}
+          revenueChartData={depositsChartData}
+          ordersChartData={ordersChartData}
+          paymentMethodData={paymentMethodData}
+          isLoading={isLoading}
+        />
       </TabsContent>
       
-      <TabsContent value="revenue">
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasRevenueData ? (
-              <RevenueChart data={depositsChartData} height={400} />
-            ) : emptyState}
-          </CardContent>
-        </Card>
+      <TabsContent value="deposits" className="overflow-hidden">
+        <DepositsReport 
+          depositsChartData={depositsChartData} 
+          isLoading={isLoading}
+          depositsData={depositsData}
+        />
       </TabsContent>
       
-      <TabsContent value="orders">
-        <Card>
-          <CardHeader>
-            <CardTitle>Orders Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasOrdersData ? (
-              <OrdersChart data={ordersChartData} height={400} />
-            ) : emptyState}
-          </CardContent>
-        </Card>
+      <TabsContent value="orders" className="overflow-hidden">
+        <OrdersReport
+          ordersChartData={ordersChartData}
+          isLoading={isLoading}
+        />
       </TabsContent>
       
-      <TabsContent value="deposits">
-        <DepositsListSection deposits={depositsData} isLoading={isLoading} />
+      <TabsContent value="products" className="overflow-hidden">
+        <Suspense fallback={
+          <Card>
+            <CardContent className="py-6">
+              <SkeletonTable rows={5} columns={4} />
+            </CardContent>
+          </Card>
+        }>
+          <LazyBestSellingProducts dateRange={dateRange} />
+        </Suspense>
       </TabsContent>
     </Tabs>
   );
-});
-
-ReportsContent.displayName = 'ReportsContent';
+}

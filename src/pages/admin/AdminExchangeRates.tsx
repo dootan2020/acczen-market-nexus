@@ -149,7 +149,7 @@ const AdminExchangeRates = () => {
     }));
   };
 
-  // Modified rendering for the exchange rates table to fix formatCurrency calls
+  // Remove back button and instead rely on breadcrumbs for navigation
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -215,11 +215,11 @@ const AdminExchangeRates = () => {
                           step="0.01"
                         />
                         <span className="text-muted-foreground">
-                          1 USD = {formatCurrency(rate.rate)}
+                          1 USD = {formatCurrency(rate.rate, rate.currency_code)}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{formatCurrency(rate.previous_rate)}</TableCell>
+                    <TableCell>{formatCurrency(rate.previous_rate, rate.currency_code)}</TableCell>
                     <TableCell>{new Date(rate.updated_at).toLocaleString()}</TableCell>
                     <TableCell>{rate.updated_by.email}</TableCell>
                   </TableRow>
@@ -251,8 +251,8 @@ const AdminExchangeRates = () => {
                 {processExchangeRateHistory(history).map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.currency_code}</TableCell>
-                    <TableCell>{formatCurrency(item.rate)}</TableCell>
-                    <TableCell>{formatCurrency(item.previous_rate)}</TableCell>
+                    <TableCell>{formatCurrency(item.rate, item.currency_code)}</TableCell>
+                    <TableCell>{formatCurrency(item.previous_rate, item.currency_code)}</TableCell>
                     <TableCell>{new Date(item.updated_at).toLocaleString()}</TableCell>
                     <TableCell>{item.updated_by}</TableCell>
                   </TableRow>

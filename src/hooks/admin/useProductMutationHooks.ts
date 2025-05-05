@@ -2,18 +2,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ProductFormData, ProductStatus, DatabaseProductStatus } from '@/types/products';
+import { ProductFormData, ProductStatus } from '@/types/products';
 
 export const useProductMutationHooks = () => {
   const queryClient = useQueryClient();
-
-  // Helper function to map frontend status to database status
-  const mapToDatabaseStatus = (status: ProductStatus): DatabaseProductStatus => {
-    if (status === 'draft' || status === 'archived') {
-      return 'inactive';
-    }
-    return status as DatabaseProductStatus;
-  };
 
   // Create/update product mutation
   const productMutation = useMutation({
@@ -26,8 +18,7 @@ export const useProductMutationHooks = () => {
         price: Number(productData.price),
         sale_price: productData.sale_price ? Number(productData.sale_price) : null,
         stock_quantity: Number(productData.stock_quantity),
-        // Map frontend status to database-compatible status
-        status: mapToDatabaseStatus(productData.status),
+        status: productData.status as any, // Type assertion to handle the status
       };
       
       if (isEditing && id) {
@@ -123,11 +114,9 @@ export const useProductMutationHooks = () => {
   // Bulk update status mutation
   const bulkUpdateStatusMutation = useMutation({
     mutationFn: async ({ ids, status }: { ids: string[], status: ProductStatus }) => {
-      const databaseStatus = mapToDatabaseStatus(status);
-      
       const { error } = await supabase
         .from('products')
-        .update({ status: databaseStatus as any })
+        .update({ status: status as any })
         .in('id', ids);
         
       if (error) throw error;

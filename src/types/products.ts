@@ -10,11 +10,7 @@ export interface TaphoammoProduct {
   emergency?: boolean;
 }
 
-// Update the ProductStatus type to include all status values
 export type ProductStatus = 'active' | 'inactive' | 'out_of_stock' | 'draft' | 'archived';
-
-// The database product status enum type (used for database operations)
-export type DatabaseProductStatus = 'active' | 'inactive' | 'out_of_stock';
 
 export interface Product {
   id: string;

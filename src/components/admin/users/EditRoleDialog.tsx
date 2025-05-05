@@ -1,14 +1,14 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -16,14 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserProfile } from "@/hooks/admin/types/userManagement.types";
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 
-export interface EditRoleDialogProps {
+interface EditRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (role: "admin" | "user") => void;
-  isLoading?: boolean;
-  currentUser?: UserProfile | null;
+  onConfirm: (role: UserProfile['role']) => void;
+  isLoading: boolean;
+  currentUser: UserProfile | null;
 }
 
 export function EditRoleDialog({
@@ -31,45 +31,56 @@ export function EditRoleDialog({
   onOpenChange,
   onConfirm,
   isLoading,
-  currentUser
+  currentUser,
 }: EditRoleDialogProps) {
-  const [role, setRole] = useState<"admin" | "user">(
-    currentUser?.role || "user"
+  const [selectedRole, setSelectedRole] = useState<UserProfile['role']>(
+    currentUser?.role || 'user'
   );
 
-  const handleSubmit = () => {
-    onConfirm(role);
+  // Update selected role when currentUser changes
+  React.useEffect(() => {
+    if (currentUser) {
+      setSelectedRole(currentUser.role || 'user');
+    }
+  }, [currentUser]);
+
+  const handleConfirm = () => {
+    onConfirm(selectedRole);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change User Role</DialogTitle>
+          <DialogTitle>Edit User Role</DialogTitle>
           <DialogDescription>
-            Update the role for {currentUser?.username || currentUser?.email}
+            Change the role for user: {currentUser?.email || 'Selected user'}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+
+        <div className="py-4">
           <Select
-            value={role}
-            onValueChange={(value) => setRole(value as "admin" | "user")}
+            value={selectedRole || 'user'}
+            onValueChange={(value) => setSelectedRole(value as UserProfile['role'])}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select role" />
+              <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="user">User</SelectItem>
-              <SelectItem value="admin">Administrator</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="support">Support</SelectItem>
+              <SelectItem value="content_manager">Content Manager</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Updating..." : "Save changes"}
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? "Updating..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

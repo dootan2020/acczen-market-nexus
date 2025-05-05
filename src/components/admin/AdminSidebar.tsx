@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,11 +23,6 @@ import {
   Import,
   DollarSign,
   Puzzle,
-  LineChart,
-  Layers,
-  ClipboardList,
-  Tag,
-  Activity
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -130,17 +126,6 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
         },
       ]
     }
-  ];
-  
-  const sidebarItems = [
-    { href: "/admin", icon: <LineChart className="h-4 w-4" />, label: "Bảng điều khiển" },
-    { href: "/admin/products", icon: <ShoppingBag className="h-4 w-4" />, label: "Sản phẩm" },
-    { href: "/admin/inventory", icon: <Package className="h-4 w-4" />, label: "Kho hàng" },
-    { href: "/admin/categories", icon: <Layers className="h-4 w-4" />, label: "Danh mục" },
-    { href: "/admin/orders", icon: <ClipboardList className="h-4 w-4" />, label: "Đơn hàng" },
-    { href: "/admin/users", icon: <Users className="h-4 w-4" />, label: "Người dùng" },
-    { href: "/admin/discounts", icon: <Tag className="h-4 w-4" />, label: "Giảm giá" },
-    { href: "/admin/monitoring", icon: <Activity className="h-4 w-4" />, label: "Giám sát" }
   ];
   
   return (

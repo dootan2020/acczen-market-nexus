@@ -1,155 +1,378 @@
 
-import React from 'react';
-import { DepositsChartData, StatsData } from '@/types/reports';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AreaChart, BarChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { formatCurrency } from '@/utils/formatters';
-import { DepositsListSection } from './DepositsListSection';
-import { Deposit } from '@/types/deposits';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { 
+  Skeleton, 
+  SkeletonChartLine, 
+  SkeletonChartBar,
+  SkeletonTable 
+} from "@/components/ui/skeleton";
+import { format, isValid } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DepositsReportProps {
-  depositsChartData: DepositsChartData[];
-  statsData?: StatsData;
+  depositsChartData: any[];
   isLoading: boolean;
-  depositsData: Deposit[];
+  depositsData: any[];
 }
 
-export const DepositsReport: React.FC<DepositsReportProps> = ({
-  depositsChartData,
-  statsData,
-  isLoading,
-  depositsData
-}) => {
-  const [viewType, setViewType] = React.useState<'chart' | 'list'>('chart');
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string, formatString: string, fallback: string = 'Invalid date') => {
+  try {
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, formatString) : fallback;
+  } catch (e) {
+    console.error("Error formatting date:", dateString, e);
+    return fallback;
+  }
+};
+
+// Helper function to check if a date is valid
+const isValidDate = (dateString: string): boolean => {
+  try {
+    const date = new Date(dateString);
+    return isValid(date);
+  } catch (e) {
+    return false;
+  }
+};
+
+export function DepositsReport({ depositsChartData, isLoading, depositsData }: DepositsReportProps) {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
+  // Add fallback for empty data to prevent chart errors
+  const hasData = depositsChartData && depositsChartData.length > 0;
+  const hasDepositsData = depositsData && depositsData.length > 0;
+
+  // Calculate total pages
+  const totalPages = Math.ceil(depositsData.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const paginatedDeposits = depositsData.slice(startIndex, startIndex + pageSize);
+  
+  // Handlers for pagination
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
+  };
+  
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+  
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Deposit Trends</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Daily deposit amounts over selected period
+          </p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <SkeletonChartLine />
+          ) : !hasData ? (
+            <div className="flex items-center justify-center h-80 text-muted-foreground">
+              No deposit data available for the selected period
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={depositsChartData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => {
+                    if (!date) return '';
+                    return safeFormatDate(date, 'MMM dd');
+                  }}
+                />
+                <YAxis 
+                  yAxisId="left"
+                  orientation="left"
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                  labelFormatter={(date) => {
+                    if (!date) return 'Unknown date';
+                    return safeFormatDate(date, 'MMMM d, yyyy');
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#2ECC71" 
+                  name="Deposit Amount" 
+                  strokeWidth={2}
+                  yAxisId="left"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#3498DB" 
+                  name="Deposit Count"
+                  strokeWidth={2}
+                  yAxisId="right"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+      
+      <div className="grid md:grid-cols-2 gap-4 mt-4">
         <Card>
           <CardHeader>
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-60" />
+            <CardTitle>PayPal Deposits</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Transaction history and amounts
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <Skeleton className="h-full w-full" />
-            </div>
+            {isLoading ? (
+              <SkeletonChartBar />
+            ) : !hasData || !hasDepositsData ? (
+              <div className="flex items-center justify-center h-60 text-muted-foreground">
+                No PayPal deposit data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={depositsChartData.map(d => ({
+                    ...d,
+                    paypalAmount: (depositsData || [])
+                      .filter(deposit => 
+                        deposit.payment_method === 'PayPal' && 
+                        deposit.status === 'completed' &&
+                        deposit.created_at && 
+                        isValidDate(deposit.created_at) && 
+                        safeFormatDate(deposit.created_at, 'yyyy-MM-dd') === d.date
+                      )
+                      .reduce((sum, d) => sum + (d.amount || 0), 0)
+                  }))}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => {
+                      if (!date) return '';
+                      return safeFormatDate(date, 'MMM dd');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                    labelFormatter={(date) => {
+                      if (!date) return 'Unknown date';
+                      return safeFormatDate(date, 'MMMM d, yyyy');
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="paypalAmount" 
+                    fill="#2ECC71" 
+                    name="PayPal Deposits"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <Skeleton className="h-5 w-40" />
+            <CardTitle>USDT Deposits</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Transaction history and amounts
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {Array(5).fill(0).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ))}
-            </div>
+            {isLoading ? (
+              <SkeletonChartBar />
+            ) : !hasData || !hasDepositsData ? (
+              <div className="flex items-center justify-center h-60 text-muted-foreground">
+                No USDT deposit data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={depositsChartData.map(d => ({
+                    ...d,
+                    usdtAmount: (depositsData || [])
+                      .filter(deposit => 
+                        deposit.payment_method === 'USDT' && 
+                        deposit.status === 'completed' &&
+                        deposit.created_at && 
+                        isValidDate(deposit.created_at) && 
+                        safeFormatDate(deposit.created_at, 'yyyy-MM-dd') === d.date
+                      )
+                      .reduce((sum, d) => sum + (d.amount || 0), 0)
+                  }))}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => {
+                      if (!date) return '';
+                      return safeFormatDate(date, 'MMM dd');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                    labelFormatter={(date) => {
+                      if (!date) return 'Unknown date';
+                      return safeFormatDate(date, 'MMMM d, yyyy');
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="usdtAmount" 
+                    fill="#3498DB" 
+                    name="USDT Deposits"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
-    );
-  }
-  
-  const totalDepositAmount = statsData?.totalDepositAmount || 0;
-  const totalDeposits = statsData?.totalDeposits || 0;
-  const paypalAmount = statsData?.paypalAmount || 0;
-  const usdtAmount = statsData?.usdtAmount || 0;
-  const paypalPercentage = totalDepositAmount > 0 ? (paypalAmount / totalDepositAmount) * 100 : 0;
-  const usdtPercentage = totalDepositAmount > 0 ? (usdtAmount / totalDepositAmount) * 100 : 0;
-  
-  return (
-    <div className="space-y-4">
-      <Card>
+      
+      {/* Recent Deposits Table with Pagination */}
+      <Card className="mt-4">
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Deposits Overview</CardTitle>
-              <CardDescription>
-                Total deposits: {totalDeposits} | Amount: {formatCurrency(totalDepositAmount)}
-              </CardDescription>
-            </div>
-            <Tabs defaultValue="bar" className="w-[200px]">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="bar">Bar</TabsTrigger>
-                <TabsTrigger value="area">Area</TabsTrigger>
-              </TabsList>
-              <TabsContent value="bar">
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={depositsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Legend />
-                      <Bar dataKey="amount" name="Deposit Amount" fill="#3498DB" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </TabsContent>
-              <TabsContent value="area">
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={depositsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Legend />
-                      <Area type="monotone" dataKey="amount" name="Deposit Amount" stroke="#3498DB" fill="#3498DB" fillOpacity={0.3} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+          <CardTitle>Recent Deposits</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2">PayPal Deposits</h4>
-              <div className="flex items-center gap-2">
-                <div className="text-xl font-semibold">{formatCurrency(paypalAmount)}</div>
-                <div className="text-sm text-muted-foreground">({paypalPercentage.toFixed(1)}%)</div>
-              </div>
-              <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 rounded-full" 
-                  style={{ width: `${paypalPercentage}%` }}
-                ></div>
-              </div>
+          {isLoading ? (
+            <SkeletonTable rows={5} columns={4} />
+          ) : !hasDepositsData ? (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              No deposit data available
             </div>
-            <div>
-              <h4 className="text-sm font-medium mb-2">USDT Deposits</h4>
-              <div className="flex items-center gap-2">
-                <div className="text-xl font-semibold">{formatCurrency(usdtAmount)}</div>
-                <div className="text-sm text-muted-foreground">({usdtPercentage.toFixed(1)}%)</div>
-              </div>
-              <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-green-500 rounded-full" 
-                  style={{ width: `${usdtPercentage}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedDeposits.map((deposit) => (
+                  <TableRow key={deposit.id}>
+                    <TableCell>
+                      {deposit.created_at && isValidDate(deposit.created_at) 
+                        ? safeFormatDate(deposit.created_at, 'yyyy-MM-dd HH:mm')
+                        : 'Invalid date'}
+                    </TableCell>
+                    <TableCell>${deposit.amount?.toFixed(2)}</TableCell>
+                    <TableCell>{deposit.payment_method}</TableCell>
+                    <TableCell>
+                      <span 
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          deposit.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : deposit.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {deposit.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
+        {depositsData.length > pageSize && (
+          <CardFooter className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1}-{Math.min(startIndex + pageSize, depositsData.length)} of {depositsData.length} deposits
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handlePrevPage} 
+                disabled={page === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm">
+                Page {page} of {totalPages}
+              </span>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleNextPage} 
+                disabled={page >= totalPages}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
-      
-      <DepositsListSection 
-        deposits={depositsData} 
-        isLoading={isLoading}
-      />
-    </div>
+    </>
   );
-};
+}

@@ -1,52 +1,81 @@
 
-import { useMemo } from 'react';
-import { format } from 'date-fns';
-import { useReportsData } from '@/hooks/admin/useReportsData';
-import { StatsData, DepositsChartData, OrdersChartData, ChartData, DateRangeType } from '@/types/reports';
-import { DateRange } from 'react-day-picker';
+import { useReportDateRange } from "./useReportDateRange";
+import { useDepositsData } from "./useDepositsData";
+import { useOrdersData } from "./useOrdersData";
+import { useUsersData } from "./useUsersData";
+import { useStatsData } from "./useStatsData";
+import { usePaymentMethodData } from "./usePaymentMethodData";
 
-export const useReports = () => {
-  // Get base reports data which handles date range state and base data fetching
-  const {
-    dateRangeType,
-    dateRange,
-    handleDateRangeChange,
+export function useReports() {
+  // Get date range
+  const { 
+    dateRange, 
+    dateRangeType, 
+    handleDateRangeChange, 
     handleDateRangePickerChange,
-    statsData,
-    depositsChartData,
-    ordersChartData,
-    paymentMethodData,
+    formattedDateRange 
+  } = useReportDateRange();
+  
+  // Fetch data based on date range
+  const { 
     deposits,
-    isLoading,
-    refetch,
-    formattedDateRange
-  } = useReportsData();
-
-  // Format date range for display
-  const formattedRange = useMemo(() => {
-    if (!dateRange) return 'Custom Range';
-    
-    const fromDate = dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : '';
-    const toDate = dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : '';
-    
-    if (fromDate && toDate) {
-      return `${fromDate} - ${toDate}`;
-    }
-    return formattedDateRange;
-  }, [dateRange, formattedDateRange]);
+    depositsChartData, 
+    isLoading: isDepositsLoading, 
+    refetch: refetchDeposits 
+  } = useDepositsData(dateRange);
+  
+  const { 
+    orders,
+    ordersChartData, 
+    isLoading: isOrdersLoading, 
+    refetch: refetchOrders 
+  } = useOrdersData(dateRange);
+  
+  const { 
+    users, 
+    isLoading: isUsersLoading, 
+    refetch: refetchUsers 
+  } = useUsersData();
+  
+  // Calculate stats
+  const statsData = useStatsData(dateRange);
+  
+  // Generate payment method charts
+  const paymentMethodData = usePaymentMethodData(statsData);
+  
+  // Combined loading state
+  const isLoading = isDepositsLoading || isOrdersLoading || isUsersLoading;
+  
+  // Combined refetch function
+  const refetch = () => {
+    refetchDeposits();
+    refetchOrders();
+    refetchUsers();
+  };
 
   return {
+    // Date range
+    dateRange,
+    dateRangeType,
+    handleDateRangeChange,
+    handleDateRangePickerChange,
+    formattedDateRange,
+    
+    // Stats
     statsData,
+    
+    // Chart data
     depositsChartData,
     ordersChartData,
     paymentMethodData,
+    
+    // Raw data
     deposits,
+    
+    // Status
     isLoading,
-    dateRangeType,
-    dateRange,
-    handleDateRangeChange,
-    handleDateRangePickerChange,
-    refetch,
-    formattedDateRange: formattedRange
+    
+    // Actions
+    refetch
   };
-};
+}

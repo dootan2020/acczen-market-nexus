@@ -1,31 +1,29 @@
 
-import React from 'react';
-import { DateRange } from 'react-day-picker';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon, RefreshCw } from 'lucide-react';
-import { TimeRangeSelector } from './TimeRangeSelector';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { StatsSection } from './StatsSection';
-import { Skeleton } from '@/components/ui/skeleton';
-import { StatsData, DepositsChartData, DateRangeType } from '@/types/reports';
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { StatsData } from "@/hooks/useReportsData";
+import { TimeRangeSelector } from "./TimeRangeSelector";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ReportsHeaderProps {
-  dateRangeType: DateRangeType;
-  onDateRangeChange: (type: DateRangeType) => void;
-  dateRange: DateRange;
-  onDateRangePickerChange: (range: DateRange) => void;
+  dateRangeType: string;
+  onDateRangeChange: (value: string) => void;
+  dateRange: DateRange | undefined;
+  onDateRangePickerChange: (range: DateRange | undefined) => void;
   onRefresh: () => void;
   isLoading: boolean;
   formattedDateRange: string;
-  statsData?: StatsData;
-  depositsChartData?: DepositsChartData[];
+  statsData: StatsData;
+  depositsChartData: any[];
 }
 
-export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
+// Helper function for dynamic class names
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+export function ReportsHeader({
   dateRangeType,
   onDateRangeChange,
   dateRange,
@@ -34,65 +32,23 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
   isLoading,
   formattedDateRange,
   statsData,
-  depositsChartData
-}) => {
-  // Calculate general stats from the data
-  const calculateTrends = () => {
-    if (!depositsChartData || depositsChartData.length < 2) return { deposits: 0, depositsPercentage: 0 };
-    
-    // Get the first and last items in the chart data
-    const firstPeriod = depositsChartData[0];
-    const lastPeriod = depositsChartData[depositsChartData.length - 1];
-    
-    // Safely extract values, defaulting to 0 if undefined
-    const firstValue = firstPeriod && typeof firstPeriod.amount !== 'undefined' ? firstPeriod.amount : 0;
-    const lastValue = lastPeriod && typeof lastPeriod.amount !== 'undefined' ? lastPeriod.amount : 0;
-    
-    // Calculate percentage change
-    const depositsPercentage = firstValue !== 0 
-      ? ((lastValue - firstValue) / firstValue) * 100 
-      : lastValue > 0 ? 100 : 0;
-    
-    return {
-      deposits: lastValue,
-      depositsPercentage: depositsPercentage
-    };
-  };
-  
-  const trends = calculateTrends();
-  
+}: ReportsHeaderProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
-        <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-auto justify-start text-left font-normal",
-                  !dateRange && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formattedDateRange}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={onDateRangePickerChange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
+    <div className="space-y-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <TimeRangeSelector
+            dateRangeType={dateRangeType}
+            formattedDateRange={formattedDateRange}
+            onDateRangeChange={onDateRangeChange}
+            dateRange={dateRange}
+            onDateRangePickerChange={onDateRangePickerChange}
+          />
           
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             size="icon"
             onClick={onRefresh}
             disabled={isLoading}
@@ -102,33 +58,31 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
         </div>
       </div>
       
-      <TimeRangeSelector
-        dateRangeType={dateRangeType}
-        onDateRangeChange={onDateRangeChange}
-        dateRange={dateRange}
-        onDateRangePickerChange={onDateRangePickerChange}
-        formattedDateRange={formattedDateRange}
-      />
-      
-      {/* Stats Section */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array(4).fill(0).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-4 w-1/3 mb-2" />
-                <Skeleton className="h-8 w-1/2 mb-1" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <StatsSection
-          statsData={statsData}
-          depositTrend={trends.depositsPercentage}
-        />
-      )}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">Total Revenue</div>
+              <div className="text-2xl font-bold mt-1">${statsData.totalDepositAmount.toFixed(2)}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">Orders</div>
+              <div className="text-2xl font-bold mt-1">{statsData.totalOrders}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">PayPal Deposits</div>
+              <div className="text-2xl font-bold mt-1">${statsData.paypalAmount.toFixed(2)}</div>
+            </div>
+            
+            <div className="bg-card p-4 rounded-lg border">
+              <div className="text-sm font-medium text-muted-foreground">USDT Deposits</div>
+              <div className="text-2xl font-bold mt-1">${statsData.usdtAmount.toFixed(2)}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}

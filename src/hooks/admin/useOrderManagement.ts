@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { OrderWithProfile, OrderStatus } from '@/types/orders';
 import { useAdminPagination } from '@/hooks/useAdminPagination';
 
@@ -66,12 +67,17 @@ export const useOrderManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
-      toast.success('Order status updated successfully');
+      toast({
+        title: 'Order status updated',
+        description: 'The order status has been updated successfully.',
+      });
       setIsUpdateStatusDialogOpen(false);
     },
     onError: (error) => {
-      toast.error('Failed to update order status', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update order status',
       });
     },
   });

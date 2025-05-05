@@ -1,55 +1,74 @@
 
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import routes from './routes';
-import './App.css';
-import { ThemeProvider } from './components/ui/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/react-query';
+import React, { useEffect } from 'react';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from "@/components/ui/theme-provider"
+import ReactQueryProvider from './ReactQueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
-import { CartProvider } from './providers/CartProvider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
-import { ProductProvider } from './contexts/ProductContext';
-import { PaymentProvider } from './contexts/PaymentContext';
+import { CartProvider } from './contexts/CartContext';
+import routes from './routes';
+import { checkEnvironment } from './utils/checkEnvironment';
+import { ProductProvider } from "./contexts/ProductContext";
+import { ProductInfoModal } from "./components/products/ProductInfoModal";
+import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 
-const App = () => {
+function App() {
+  useEffect(() => {
+    checkEnvironment();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="digital-deals-hub-theme">
-        <BrowserRouter>
-          <AuthProvider>
-            <CurrencyProvider>
-              <ProductProvider>
-                <PaymentProvider>
-                  <CartProvider>
-                    <Toaster closeButton />
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <ReactQueryProvider>
+          <CurrencyProvider>
+            <CartProvider>
+              <AuthProvider>
+                <ProductProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <ProductInfoModal />
                     <Routes>
-                      {/* Main routes under the Layout component */}
+                      {/* Main routes with standard layout */}
                       <Route element={<Layout />}>
-                        {routes.mainRoutes.map((route) => (
-                          <Route key={route.path} path={route.path} element={route.element} />
-                        ))}
-                        {routes.dashboardRoutes.map((route) => (
-                          <Route key={route.path} path={route.path} element={route.element} />
+                        {routes.mainRoutes.map((route, index) => (
+                          <Route
+                            key={index}
+                            path={route.path}
+                            element={route.element}
+                          />
                         ))}
                       </Route>
                       
-                      {/* Admin routes (not wrapped in Layout) */}
-                      {routes.adminRoutes.map((route) => (
-                        <Route key={route.path} path={route.path} element={route.element} />
+                      {/* Dashboard routes */}
+                      {routes.dashboardRoutes.map((route, index) => (
+                        <Route
+                          key={`dashboard-${index}`}
+                          path={route.path}
+                          element={route.element}
+                        />
                       ))}
+                      
+                      {/* Admin routes with AdminLayout */}
+                      <Route element={<AdminLayout />}>
+                        {routes.adminRoutes.map((route, index) => (
+                          <Route
+                            key={`admin-${index}`}
+                            path={route.path}
+                            element={route.element}
+                          />
+                        ))}
+                      </Route>
                     </Routes>
-                  </CartProvider>
-                </PaymentProvider>
-              </ProductProvider>
-            </CurrencyProvider>
-          </AuthProvider>
-        </BrowserRouter>
+                  </div>
+                </ProductProvider>
+              </AuthProvider>
+            </CartProvider>
+          </CurrencyProvider>
+        </ReactQueryProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;

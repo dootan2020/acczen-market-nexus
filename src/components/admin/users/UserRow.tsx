@@ -1,90 +1,86 @@
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
+import { useMemo } from "react";
+import { format } from "date-fns";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { 
-  MoreHorizontal, 
-  Shield, 
-  DollarSign, 
-  Percent, 
-  Eye
-} from 'lucide-react';
-import { UserProfile } from '@/hooks/admin/types/userManagement.types';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical, Shield, Wallet } from "lucide-react";
 
 interface UserRowProps {
-  user: UserProfile;
-  onEditRole: (user: UserProfile) => void;
-  onAdjustBalance: (user: UserProfile) => void;
-  onSetDiscount: (user: UserProfile) => void;
-  onViewDetails?: (user: UserProfile) => void;
+  user: any;
+  onEditRole: (user: any) => void;
+  onAdjustBalance: (user: any) => void;
 }
 
-export const UserRow: React.FC<UserRowProps> = ({
-  user,
-  onEditRole,
-  onAdjustBalance,
-  onSetDiscount,
-  onViewDetails
-}) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
+  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
+  
+  const getUserInitials = (user: any) => {
+    if (user.full_name) {
+      return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    }
+    if (user.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return user.email.substring(0, 2).toUpperCase();
   };
 
+  // Convert VND balance to USD and format - using useMemo for optimization
+  const displayBalance = useMemo(() => {
+    const usdBalance = convertVNDtoUSD(user.balance || 0);
+    return formatUSD(usdBalance);
+  }, [user.balance, convertVNDtoUSD, formatUSD]);
+
   return (
-    <tr className="border-b hover:bg-muted/50">
-      <td className="py-3 px-4 max-w-[200px] truncate">{user.email}</td>
-      <td className="py-3 px-4">{user.username || "-"}</td>
-      <td className="py-3 px-4">{user.full_name || "-"}</td>
-      <td className="py-3 px-4">
-        <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+    <TableRow>
+      <TableCell>
+        <div className="flex items-center space-x-3">
+          <Avatar>
+            <AvatarImage src={user.avatar_url} />
+            <AvatarFallback>{getUserInitials(user)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{user.username || 'No username'}</div>
+            <div className="text-xs text-muted-foreground">{user.full_name || ''}</div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell>{user.email}</TableCell>
+      <TableCell>
+        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
           {user.role}
         </Badge>
-      </td>
-      <td className="py-3 px-4">${user.balance.toFixed(2)}</td>
-      <td className="py-3 px-4">
-        {user.discount_percentage > 0 ? (
-          <Badge variant="outline" className="bg-green-50 text-green-700">
-            {user.discount_percentage}%
-          </Badge>
-        ) : "-"}
-      </td>
-      <td className="py-3 px-4">{formatDate(user.created_at)}</td>
-      <td className="py-3 px-4 text-center">
+      </TableCell>
+      <TableCell className="text-right">{displayBalance}</TableCell>
+      <TableCell>{format(new Date(user.created_at), 'MMM dd, yyyy')}</TableCell>
+      <TableCell className="text-right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {onViewDetails && (
-              <DropdownMenuItem onClick={() => onViewDetails(user)}>
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onClick={() => onEditRole(user)}>
-              <Shield className="mr-2 h-4 w-4" />
+              <Shield className="h-4 w-4 mr-2" />
               Change Role
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAdjustBalance(user)}>
-              <DollarSign className="mr-2 h-4 w-4" />
+              <Wallet className="h-4 w-4 mr-2" />
               Adjust Balance
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSetDiscount(user)}>
-              <Percent className="mr-2 h-4 w-4" />
-              Set Discount
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
-};
+}

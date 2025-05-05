@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 interface ProductContextType {
   selectedProductId: string | null;
@@ -15,29 +15,21 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = useCallback((id: string) => {
-    console.log("Opening product modal for ID:", id);
+  const openModal = (id: string) => {
     setSelectedProductId(id);
     setIsModalOpen(true);
-  }, []);
+  };
 
-  const closeModal = useCallback(() => {
-    console.log("Closing product modal");
+  const closeModal = () => {
     setIsModalOpen(false);
     // Only clear the ID after modal animation completes
     setTimeout(() => setSelectedProductId(null), 300);
-  }, []);
-
-  const value = {
-    selectedProductId,
-    setSelectedProductId,
-    isModalOpen,
-    openModal,
-    closeModal
   };
 
   return (
-    <ProductContext.Provider value={value}>
+    <ProductContext.Provider
+      value={{ selectedProductId, setSelectedProductId, isModalOpen, openModal, closeModal }}
+    >
       {children}
     </ProductContext.Provider>
   );

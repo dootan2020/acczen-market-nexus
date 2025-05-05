@@ -1,82 +1,23 @@
 
-import React, { Suspense } from 'react';
-import { ReportsContent } from "@/components/admin/reports/ReportsContent";
-import { useReports } from "@/hooks/admin/reports/useReports";
-import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
-import { Card, CardContent } from '@/components/ui/card';
-import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
-import { convertToDeposits } from '@/utils/typeGuards';
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminReports from './AdminReports';
+import ApiHealthMonitor from '@/components/admin/monitoring/ApiHealthMonitor';
 
-const ReportsPage = () => {
-  const {
-    dateRange,
-    dateRangeType,
-    handleDateRangeChange,
-    handleDateRangePickerChange,
-    statsData,
-    depositsChartData,
-    ordersChartData,
-    paymentMethodData,
-    isLoading,
-    refetch,
-    formattedDateRange,
-    deposits
-  } = useReports();
-  
-  const [activeTab, setActiveTab] = React.useState('overview');
-  
-  // Convert deposits to the proper type using our utility function
-  const typedDeposits = deposits ? convertToDeposits(deposits) : [];
-  
+const ReportsPage: React.FC = () => {
   return (
-    <div className="space-y-6 max-w-full overflow-hidden">
-      {/* Reports Header with Date Range and Summary Stats */}
-      <ReportsHeader
-        dateRangeType={dateRangeType}
-        onDateRangeChange={handleDateRangeChange}
-        dateRange={dateRange}
-        onDateRangePickerChange={handleDateRangePickerChange}
-        onRefresh={refetch}
-        isLoading={isLoading}
-        formattedDateRange={formattedDateRange}
-        statsData={statsData}
-        depositsChartData={depositsChartData}
-      />
-      
-      {isLoading ? (
-        <div className="space-y-6">
-          <SkeletonStats />
-          <Card>
-            <CardContent className="py-6">
-              <SkeletonChartLine />
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        <Suspense fallback={
-          <div className="space-y-6">
-            <SkeletonStats />
-            <Card>
-              <CardContent className="py-6">
-                <SkeletonChartLine />
-              </CardContent>
-            </Card>
-          </div>
-        }>
-          <ReportsContent
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            statsData={statsData}
-            paymentMethodData={paymentMethodData}
-            depositsChartData={depositsChartData || []}
-            ordersChartData={ordersChartData || []}
-            dateRange={dateRange}
-            isLoading={isLoading}
-            depositsData={typedDeposits || []}
-          />
-        </Suspense>
-      )}
-    </div>
+    <Tabs defaultValue="reports" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsTrigger value="api-health">API Health</TabsTrigger>
+      </TabsList>
+      <TabsContent value="reports">
+        <AdminReports />
+      </TabsContent>
+      <TabsContent value="api-health">
+        <ApiHealthMonitor />
+      </TabsContent>
+    </Tabs>
   );
 };
 

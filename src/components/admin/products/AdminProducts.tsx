@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,12 +84,10 @@ const AdminProducts = () => {
       
       <ProductBulkActions 
         selectedCount={selectedProducts.length}
-        filteredProducts={filteredProducts || []}
         onBulkDelete={handleBulkDelete}
         onBulkActivate={handleBulkActivate}
         onBulkDeactivate={handleBulkDeactivate}
         onClearSelection={handleClearSelection}
-        disabled={isLoading}
       />
       
       <Card className="overflow-hidden">
@@ -122,7 +119,6 @@ const AdminProducts = () => {
           nextPage={nextPage}
           hasNextPage={hasNextPage}
           hasPrevPage={hasPrevPage}
-          goToPage={() => {}} // Empty function that takes no arguments
         />
       </div>
       
@@ -162,7 +158,7 @@ const AdminProducts = () => {
         isOpen={isBulkDeleteDialogOpen}
         onOpenChange={setIsBulkDeleteDialogOpen}
         count={selectedProducts.length}
-        onConfirmDelete={() => handleConfirmBulkDelete()} // Call without arguments
+        onConfirmDelete={handleConfirmBulkDelete}
         isPending={bulkDeleteMutation.isPending}
       />
     </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useCategories } from '@/hooks/useProducts';
 import { useAdminPagination } from '@/hooks/useAdminPagination';
 import { useProductFilters } from './useProductFilters';
@@ -19,7 +20,7 @@ export const useProductManagement = () => {
     prevPage,
     nextPage,
     hasNextPage,
-    hasPrevPage,
+    hasPrevPage
   } = useAdminPagination<Product>(
     'products',
     ['admin-products'],
@@ -28,27 +29,7 @@ export const useProductManagement = () => {
     `*, category:categories(*), subcategory:subcategories(*)`
   );
 
-  // For manual refresh
-  const refreshData = () => {
-    // Manually refresh by changing the page and coming back
-    if (currentPage > 1) {
-      goToPage(currentPage - 1);
-      setTimeout(() => goToPage(currentPage), 100);
-    } else {
-      goToPage(2);
-      setTimeout(() => goToPage(1), 100);
-    }
-  };
-
-  const {
-    searchQuery,
-    setSearchQuery,
-    filters,
-    applyFilter,
-    resetFilter,
-    clearFilters,
-    filteredProducts
-  } = useProductFilters(products);
+  const { searchQuery, setSearchQuery, filteredProducts } = useProductFilters(products);
   
   const {
     selectedProducts,
@@ -84,18 +65,6 @@ export const useProductManagement = () => {
   } = useProductMutationHooks();
 
   const { data: categories } = useCategories();
-
-  // Clear selection when filtered products change
-  useEffect(() => {
-    handleClearSelection();
-  }, [JSON.stringify(filteredProducts?.map(p => p.id))]);
-
-  // Refresh product list after mutations
-  useEffect(() => {
-    if (productMutation.isSuccess || deleteMutation.isSuccess || bulkDeleteMutation.isSuccess || bulkUpdateStatusMutation.isSuccess) {
-      refreshData(); // Use our custom refresh function
-    }
-  }, [productMutation.isSuccess, deleteMutation.isSuccess, bulkDeleteMutation.isSuccess, bulkUpdateStatusMutation.isSuccess]);
 
   // Handler functions
   const handleAddProduct = () => {
@@ -159,31 +128,21 @@ export const useProductManagement = () => {
     bulkUpdateStatusMutation.mutate({ ids: selectedProducts, status: 'inactive' });
   };
 
-  // Change page size - we'll simulate this with our goToPage function
-  const handleChangePageSize = (size: number) => {
-    // Since we don't have setPageSize, we'll just refresh the data
-    refreshData();
-  };
-
   return {
     products,
-    filteredProducts: [],  // This will be populated from the useProductFilters hook
-    selectedProducts: [],  // This will be populated from the useProductSelection hook
-    searchQuery: '',      // This will be populated from the useProductFilters hook
-    setSearchQuery: () => {}, // This will be implemented in the useProductFilters hook
-    filters: {},          // This will be populated from the useProductFilters hook
-    applyFilter: () => {}, // This will be implemented in the useProductFilters hook
-    resetFilter: () => {}, // This will be implemented in the useProductFilters hook
-    clearFilters: () => {}, // This will be implemented in the useProductFilters hook
-    isEditing: false,     // This will be populated from the useProductDialogs hook
-    isProductDialogOpen: false, // This will be populated from the useProductDialogs hook
-    setIsProductDialogOpen: () => {}, // This will be implemented in the useProductDialogs hook
-    isDeleteDialogOpen: false, // This will be populated from the useProductDialogs hook
-    setIsDeleteDialogOpen: () => {}, // This will be implemented in the useProductDialogs hook
-    isBulkDeleteDialogOpen: false, // This will be populated from the useProductDialogs hook
-    setIsBulkDeleteDialogOpen: () => {}, // This will be implemented in the useProductDialogs hook
-    currentProduct: null, // This will be populated from the useProductDialogs hook
-    formData: {} as ProductFormData, // This will be populated from the useProductDialogs hook
+    filteredProducts,
+    selectedProducts,
+    searchQuery,
+    setSearchQuery,
+    isEditing,
+    isProductDialogOpen,
+    setIsProductDialogOpen,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isBulkDeleteDialogOpen,
+    setIsBulkDeleteDialogOpen,
+    currentProduct,
+    formData,
     isLoading,
     currentPage,
     totalPages,
@@ -192,24 +151,22 @@ export const useProductManagement = () => {
     nextPage,
     hasNextPage,
     hasPrevPage,
-    handleAddProduct: () => {}, // These will be implemented in the existing code
-    handleEditProduct: () => {},
-    handleDeleteProduct: () => {},
-    handleInputChange: () => {},
-    handleCategoryChange: () => {},
-    handleSubcategoryChange: () => {},
-    handleToggleSelect: () => {},
-    handleToggleSelectAll: () => {},
-    handleBulkDelete: () => {},
-    handleConfirmBulkDelete: () => {},
-    handleBulkActivate: () => {},
-    handleBulkDeactivate: () => {},
-    handleClearSelection: () => {},
-    handleChangePageSize: () => {},
-    refreshData: () => {},
-    productMutation: {} as any, // These will be populated from the useProductMutationHooks hook
-    deleteMutation: {} as any,
-    bulkDeleteMutation: {} as any,
-    bulkUpdateStatusMutation: {} as any
+    handleAddProduct,
+    handleEditProduct,
+    handleDeleteProduct,
+    handleInputChange,
+    handleCategoryChange,
+    handleSubcategoryChange,
+    handleToggleSelect,
+    handleToggleSelectAll,
+    handleBulkDelete,
+    handleConfirmBulkDelete,
+    handleBulkActivate,
+    handleBulkDeactivate,
+    handleClearSelection,
+    productMutation,
+    deleteMutation,
+    bulkDeleteMutation,
+    bulkUpdateStatusMutation
   };
 };

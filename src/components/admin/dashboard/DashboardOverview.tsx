@@ -5,8 +5,8 @@ import {
   ShoppingBag, 
   Wallet, 
   ArrowUpRight,
-  ArrowDownRight,
-  CreditCard
+  BarChart,
+  CurrencyIcon
 } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,14 +18,13 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip,
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   PieChart,
   Pie,
   Cell
 } from 'recharts';
-import { StatsData, ChartData } from '@/types/reports';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatsData, ChartData } from '@/hooks/useReportsData';
 
 // Format currency function
 function formatCurrency(value: number): string {
@@ -38,8 +37,8 @@ function formatCurrency(value: number): string {
 
 interface DashboardOverviewProps {
   statsData: StatsData;
-  revenueChartData: ChartData[];
-  ordersChartData: ChartData[];
+  revenueChartData: any[];
+  ordersChartData: any[];
   paymentMethodData: ChartData[];
   isLoading: boolean;
 }
@@ -77,7 +76,7 @@ export function DashboardOverview({
         <StatCard
           title="Loading..."
           value="--"
-          icon={<CreditCard className="h-4 w-4" />}
+          icon={<ArrowUpRight className="h-4 w-4" />}
           loading={true}
         />
       </div>
@@ -89,7 +88,7 @@ export function DashboardOverview({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
-          value={statsData.totalUsers.toLocaleString()}
+          value={statsData.totalUsers}
           icon={<Users className="h-4 w-4" />}
           description={`${statsData.activeUsers} active users`}
           percentChange={statsData.conversionRate}
@@ -97,7 +96,7 @@ export function DashboardOverview({
         />
         <StatCard
           title="Total Orders"
-          value={statsData.totalOrders.toLocaleString()}
+          value={statsData.totalOrders}
           icon={<ShoppingBag className="h-4 w-4" />}
           description="Processed orders"
           percentChange={10.3}
@@ -114,7 +113,7 @@ export function DashboardOverview({
         <StatCard
           title="Average Order Value"
           value={formatCurrency(statsData.averageOrderValue)}
-          icon={<CreditCard className="h-4 w-4" />}
+          icon={<CurrencyIcon className="h-4 w-4" />}
           description="Per transaction"
           percentChange={2.4}
           trend="down"
@@ -123,15 +122,8 @@ export function DashboardOverview({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="md:col-span-4">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Revenue Over Time</CardTitle>
-            <Tabs defaultValue="weekly" className="w-[200px]">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="daily">Day</TabsTrigger>
-                <TabsTrigger value="weekly">Week</TabsTrigger>
-                <TabsTrigger value="monthly">Month</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -189,7 +181,7 @@ export function DashboardOverview({
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
+                <RechartsBarChart
                   data={ordersChartData}
                   margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
                 >
@@ -215,7 +207,7 @@ export function DashboardOverview({
                     }}
                   />
                   <Bar dataKey="value" fill="#3498DB" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                </RechartsBarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
@@ -254,57 +246,25 @@ export function DashboardOverview({
 
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Payment Statistics</CardTitle>
+            <CardTitle>User Statistics</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{statsData.totalUsers}</div>
+                <div className="text-xs text-muted-foreground">Total Users</div>
+              </div>
+              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{statsData.activeUsers}</div>
+                <div className="text-xs text-muted-foreground">Active Users</div>
+              </div>
+              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{statsData.conversionRate}%</div>
+                <div className="text-xs text-muted-foreground">Conversion Rate</div>
+              </div>
+              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
                 <div className="text-2xl font-bold text-primary">{statsData.totalDeposits}</div>
                 <div className="text-xs text-muted-foreground">Total Deposits</div>
-              </div>
-              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{formatCurrency(statsData.totalDepositAmount)}</div>
-                <div className="text-xs text-muted-foreground">Total Amount</div>
-              </div>
-              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{statsData.paypalDeposits}</div>
-                <div className="text-xs text-muted-foreground">PayPal Deposits</div>
-              </div>
-              <div className="space-y-1 text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{statsData.usdtDeposits}</div>
-                <div className="text-xs text-muted-foreground">USDT Deposits</div>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">PayPal</span>
-                  <span className="text-sm">{formatCurrency(statsData.paypalAmount)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-blue-500 h-2.5 rounded-full" 
-                    style={{ 
-                      width: `${statsData.totalDepositAmount ? (statsData.paypalAmount / statsData.totalDepositAmount * 100) : 0}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">USDT</span>
-                  <span className="text-sm">{formatCurrency(statsData.usdtAmount)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-green-500 h-2.5 rounded-full" 
-                    style={{ 
-                      width: `${statsData.totalDepositAmount ? (statsData.usdtAmount / statsData.totalDepositAmount * 100) : 0}%` 
-                    }}
-                  ></div>
-                </div>
               </div>
             </div>
           </CardContent>

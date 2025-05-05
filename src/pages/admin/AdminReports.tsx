@@ -5,7 +5,6 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
-import { convertToDeposits } from '@/utils/typeGuards';
 
 const AdminReports = () => {
   const {
@@ -32,9 +31,6 @@ const AdminReports = () => {
     hasOrdersChartData: !!ordersChartData?.length,
     isLoading
   });
-  
-  // Convert deposits to the proper type using our utility function
-  const typedDeposits = convertToDeposits(deposits);
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
@@ -75,12 +71,12 @@ const AdminReports = () => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             statsData={statsData}
-            paymentMethodData={paymentMethodData}
+            paymentMethodData={paymentMethodData || []}
             depositsChartData={depositsChartData || []}
             ordersChartData={ordersChartData || []}
             dateRange={dateRange}
             isLoading={isLoading}
-            depositsData={typedDeposits}
+            depositsData={deposits || []}
           />
         </Suspense>
       )}

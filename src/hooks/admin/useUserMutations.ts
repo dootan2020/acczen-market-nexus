@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { UserProfile, DatabaseRoleType } from './types/userManagement.types';
 
 // Use the UserProfile['role'] type to ensure consistency
@@ -32,11 +32,18 @@ export const useUserMutations = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User role updated successfully');
+      toast({
+        title: 'User role updated',
+        description: 'The user role has been updated successfully.',
+      });
     },
     onError: (error) => {
-      toast.error(`Failed to update user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update user role',
+      });
+    },
   });
 
   // Adjust balance mutation
@@ -83,7 +90,7 @@ export const useUserMutations = () => {
         .insert({
           user_id: id,
           type: transactionType,
-          amount: operation === 'add' ? amount : -amount,
+          amount: amount,
           description: notes || `Manual balance ${operation === 'add' ? 'increase' : 'decrease'} by admin`
         });
       
@@ -93,51 +100,22 @@ export const useUserMutations = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success(`User balance has been ${variables.operation === 'add' ? 'increased' : 'decreased'} successfully.`);
+      toast({
+        title: 'Balance adjusted',
+        description: `User balance has been ${variables.operation === 'add' ? 'increased' : 'decreased'} successfully.`,
+      });
     },
     onError: (error) => {
-      toast.error(`Failed to adjust user balance: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Update user discount mutation
-  const updateDiscountMutation = useMutation({
-    mutationFn: async ({ 
-      userId, 
-      discount_percentage, 
-      discount_note,
-      expiry_date
-    }: { 
-      userId: string, 
-      discount_percentage: number, 
-      discount_note?: string,
-      expiry_date?: string | null
-    }) => {
-      // Call the admin_update_user_discount function
-      const { error } = await supabase
-        .rpc('admin_update_user_discount', { 
-          p_user_id: userId, 
-          p_discount_percentage: discount_percentage, 
-          p_discount_note: discount_note || null,
-          p_expires_at: expiry_date || null
-        });
-      
-      if (error) throw error;
-      
-      return { success: true };
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to adjust user balance',
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User discount updated successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to update discount: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
   });
 
   return {
     updateRoleMutation,
-    adjustBalanceMutation,
-    updateDiscountMutation
+    adjustBalanceMutation
   };
 };
