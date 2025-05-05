@@ -1,37 +1,35 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { useProducts } from './useProducts';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-export function useProductCountByCategory() {
-  const { data: products, isLoading, error } = useProducts();
-  
-  const productCountQuery = useQuery({
-    queryKey: ['product-count-by-category'],
-    queryFn: () => {
-      if (!products || products.length === 0) return {};
-      
-      // Count products per category
+export const useProductCountByCategory = () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['product-counts-by-category'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category_id')
+        .eq('active', true);
+
+      if (error) throw error;
+
+      // Count products by category
       const counts: Record<string, number> = {};
-      
-      products.forEach(product => {
-        if (product.category) {
-          const categoryId = product.category.id;
-          if (counts[categoryId]) {
-            counts[categoryId]++;
-          } else {
-            counts[categoryId] = 1;
-          }
+      data.forEach(product => {
+        const categoryId = product.category_id;
+        if (categoryId) {
+          counts[categoryId] = (counts[categoryId] || 0) + 1;
         }
       });
-      
+
       return counts;
     },
-    enabled: !!products && !isLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  
+
   return {
-    counts: productCountQuery.data || {},
-    isLoading: isLoading || productCountQuery.isLoading,
-    error: error || productCountQuery.error
+    counts: data || {},
+    isLoading,
+    error: error as Error
   };
-}
+};
