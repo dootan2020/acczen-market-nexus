@@ -1,10 +1,10 @@
-
 import { useApiCommon } from './useApiCommon';
 import { toast } from 'sonner';  
 import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration';
 import { TaphoammoProduct } from '@/services/taphoammo/TaphoammoProductService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
+import { TaphoammoApiOptions } from '@/services/taphoammo/TaphoammoApiClient';
 
 // Create a singleton instance of TaphoammoIntegration
 const taphoammoIntegration = new TaphoammoIntegration();
@@ -257,9 +257,15 @@ export const useStockOperations = () => {
     setError(null);
 
     try {
+      // Convert the options to match TaphoammoApiOptions
+      const apiOptions: TaphoammoApiOptions = {
+        forceRefresh: options.forceFresh,
+        useCache: !options.forceFresh
+      };
+
       // Use withRetry to get stock with error handling
       const data = await withRetry(
-        async () => taphoammoIntegration.getStock(kioskToken, options),
+        async () => taphoammoIntegration.getStock(kioskToken, apiOptions),
         'getStock',
         async () => {
           // Fallback to cache if available
