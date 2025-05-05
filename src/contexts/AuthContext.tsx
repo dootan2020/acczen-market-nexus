@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Legacy method - keep for backward compatibility
   const logout = async () => {
-    return signOut();
+    return signOut(true); // Fix: Adding the second parameter (redirect = true) that was missing
   };
 
   // New method with clearer naming
