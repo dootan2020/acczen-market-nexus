@@ -51,28 +51,38 @@ const AdminUsers = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleRoleChange = (userId: string, role: 'admin' | 'user') => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      setIsEditRoleDialogOpen(true);
-    }
+  // Fixing type mismatch: We need to pass the user object instead of just the ID
+  const handleRoleChange = (user: UserProfile) => {
+    setCurrentUser(user);
+    setIsEditRoleDialogOpen(true);
   };
 
-  const handleBalanceAdjust = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      setIsAdjustBalanceDialogOpen(true);
-    }
+  const handleBalanceAdjust = (user: UserProfile) => {
+    setCurrentUser(user);
+    setIsAdjustBalanceDialogOpen(true);
   };
 
-  const handleDiscountUpdate = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      setIsDiscountDialogOpen(true);
-    }
+  const handleDiscountUpdate = (user: UserProfile) => {
+    setCurrentUser(user);
+    setIsDiscountDialogOpen(true);
+  };
+
+  // Handle discount form submission - converting from UserProfile to the correct type
+  const handleDiscountFormSubmit = (values: { 
+    discountPercentage: number; 
+    discountNote?: string;
+    isTemporary?: boolean; 
+    expiryDate?: Date | null;
+  }) => {
+    if (!currentUser) return;
+    
+    // Now we pass the values to handleUpdateDiscount, not the user object
+    handleUpdateDiscount({
+      userId: currentUser.id,
+      discountPercentage: values.discountPercentage,
+      discountNote: values.discountNote,
+      expiryDate: values.expiryDate
+    });
   };
 
   // Render the users table
@@ -94,7 +104,7 @@ const AdminUsers = () => {
 
       <UsersFilter 
         roleFilter={roleFilter || "all"} 
-        onRoleFilterChange={setRoleFilter} 
+        onRoleFilterChange={setRoleFilter}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -121,6 +131,7 @@ const AdminUsers = () => {
               user={user} 
               onEditRole={handleEditRole}
               onAdjustBalance={handleAdjustBalance}
+              onSetDiscount={handleDiscountUpdate}
             />
           ))
         ) : (
@@ -161,7 +172,7 @@ const AdminUsers = () => {
           <UserDiscountForm
             open={isDiscountDialogOpen}
             onOpenChange={setIsDiscountDialogOpen}
-            onSubmit={handleUpdateDiscount}
+            onSubmit={handleDiscountFormSubmit}
             currentDiscount={currentUser.discount_percentage}
             currentNote={currentUser.discount_note || ''}
             currentExpiryDate={currentUser.discount_expires_at}
@@ -177,7 +188,7 @@ const AdminUsers = () => {
             <UserDiscountForm 
               open={showDiscountForm}
               onOpenChange={setShowDiscountForm}
-              onSubmit={handleUpdateDiscount}
+              onSubmit={handleDiscountFormSubmit}
               currentDiscount={currentUser.discount_percentage}
               currentNote={currentUser.discount_note || ''}
               currentExpiryDate={currentUser.discount_expires_at}
