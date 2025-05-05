@@ -11,7 +11,6 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useOrderOperations } from '@/hooks/taphoammo/useOrderOperations';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ProxyType, getStoredProxy } from '@/hooks/taphoammo/useApiCommon';
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -105,15 +104,11 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
     setError(null);
     
     try {
-      // Get current proxy setting
-      const proxyType = getStoredProxy();
-      
       // Call our Edge Function to handle the purchase
       const order = await buyProducts(
         kioskToken,
         user.id,
-        quantity,
-        proxyType
+        quantity
       );
       
       // Update state with order details
@@ -151,14 +146,10 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
     setCheckingOrder(true);
     
     try {
-      // Get current proxy setting
-      const proxyType = getStoredProxy();
-      
       // Check order status
       const result = await checkOrderUntilComplete(
         orderDetails.taphoammoOrderId,
-        user?.id || '',
-        proxyType
+        user?.id || ''
       );
       
       if (result.success && result.product_keys && result.product_keys.length > 0) {

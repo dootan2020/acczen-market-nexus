@@ -1,6 +1,5 @@
 import { TaphoammoApiClient, TaphoammoApiOptions } from './TaphoammoApiClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/utils/corsProxy';
 
 // Define return type for buyProducts method
 export interface OrderResponse {
@@ -38,8 +37,7 @@ export class TaphoammoOrderService {
     kioskToken: string,
     quantity: number = 1,
     userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
-    promotion?: string,
-    proxyType: ProxyType = 'allorigins'
+    promotion?: string
   ): Promise<OrderResponse> {
     try {
       const params: Record<string, any> = {
@@ -55,7 +53,7 @@ export class TaphoammoOrderService {
       const response = await this.apiClient.executeApiCall<OrderResponse>(
         'buyProducts',
         params,
-        { proxyType, useCache: false }
+        { useCache: false }
       );
       
       return response.data;
@@ -78,14 +76,13 @@ export class TaphoammoOrderService {
    */
   public async getProducts(
     orderId: string,
-    userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
-    proxyType: ProxyType = 'allorigins'
+    userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9'
   ): Promise<ProductsResponse> {
     try {
       const response = await this.apiClient.executeApiCall<ProductsResponse>(
         'getProducts',
         { orderId, userToken },
-        { proxyType, useCache: false }
+        { useCache: false }
       );
       
       return response.data;
@@ -116,8 +113,7 @@ export class TaphoammoOrderService {
     orderId: string,
     userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
     maxRetries: number = 5,
-    delayMs: number = 2000,
-    proxyType: ProxyType = 'allorigins'
+    delayMs: number = 2000
   ): Promise<{
     success: boolean;
     product_keys?: string[];
@@ -127,7 +123,7 @@ export class TaphoammoOrderService {
     
     while (attempt < maxRetries) {
       try {
-        const result = await this.getProducts(orderId, userToken, proxyType);
+        const result = await this.getProducts(orderId, userToken);
         
         // If we have product data, return success
         if (result.success === 'true' && result.data && result.data.length > 0) {
@@ -198,8 +194,7 @@ export class TaphoammoOrderService {
    */
   public async checkStockAvailability(
     kioskToken: string,
-    quantity: number = 1,
-    proxyType: ProxyType = 'allorigins'
+    quantity: number = 1
   ): Promise<{
     available: boolean;
     message?: string;
@@ -208,8 +203,7 @@ export class TaphoammoOrderService {
     try {
       const response = await this.apiClient.executeApiCall(
         'getStock',
-        { kioskToken },
-        { proxyType }
+        { kioskToken }
       );
       
       const data = response.data;

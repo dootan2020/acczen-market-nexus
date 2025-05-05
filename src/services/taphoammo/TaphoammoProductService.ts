@@ -1,7 +1,6 @@
 
 import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export interface TaphoammoProduct {
   kiosk_token: string;
@@ -27,7 +26,6 @@ export class TaphoammoProductService {
     kioskToken: string, 
     options: {
       forceRefresh?: boolean;
-      proxyType?: ProxyType;
       useMockData?: boolean;
     } = {}
   ): Promise<TaphoammoProduct> {
@@ -61,8 +59,7 @@ export class TaphoammoProductService {
         { 
           kioskToken,
           includePrice: true 
-        },
-        options.proxyType
+        }
       );
       
       if (!productData.success) {
@@ -96,8 +93,7 @@ export class TaphoammoProductService {
    * Test connection to TaphoaMMO API
    */
   public async testConnection(
-    kioskToken: string,
-    proxyType: ProxyType
+    kioskToken: string
   ): Promise<{
     success: boolean;
     message: string;
@@ -105,8 +101,7 @@ export class TaphoammoProductService {
     try {
       const response = await this.apiClient.callTaphoaMMO(
         'ping',
-        { kioskToken },
-        proxyType
+        { kioskToken }
       );
       
       return {
@@ -125,11 +120,10 @@ export class TaphoammoProductService {
    * Check if a kiosk is active
    */
   public async checkKioskActive(
-    kioskToken: string,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    kioskToken: string
   ): Promise<boolean> {
     try {
-      const stockInfo = await this.getStock(kioskToken, { proxyType });
+      const stockInfo = await this.getStock(kioskToken);
       return stockInfo && stockInfo.stock_quantity > 0;
     } catch (error) {
       if (error instanceof TaphoammoError) {

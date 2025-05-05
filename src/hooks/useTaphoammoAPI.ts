@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { taphoammoApiService } from '@/services/TaphoammoApiService';
 import { TaphoammoProduct, TaphoammoApiOptions } from '@/services/TaphoammoApiService';
 import { toast } from 'sonner';
-import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export interface UseTaphoammoOptions {
   autoRetry?: boolean;
@@ -29,8 +28,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
    */
   const getStock = async (
     kioskToken: string, 
-    forceFresh: boolean = false, 
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    forceFresh: boolean = false
   ): Promise<TaphoammoProduct> => {
     setLoading(true);
     setError(null);
@@ -58,8 +56,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
    */
   const checkStockAvailability = async (
     kioskToken: string, 
-    quantity: number = 1, 
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    quantity: number = 1
   ) => {
     setLoading(true);
     setError(null);
@@ -86,8 +83,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
     kioskToken: string,
     quantity: number = 1,
     userToken: string = 'system',
-    promotion?: string,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    promotion?: string
   ) => {
     setLoading(true);
     setError(null);
@@ -116,8 +112,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
    */
   const getProducts = async (
     orderId: string, 
-    userToken: string = 'system',
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    userToken: string = 'system'
   ) => {
     setLoading(true);
     setError(null);
@@ -137,8 +132,7 @@ export const useTaphoammoAPI = (options: UseTaphoammoOptions = {}) => {
    * Mock test connection
    */
   const testConnection = async (
-    kioskToken: string, 
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    kioskToken: string
   ): Promise<{
     success: boolean;
     message: string;

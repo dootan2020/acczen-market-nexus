@@ -1,12 +1,11 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 import { TaphoammoApiCache } from './TaphoammoApiCache';
 import { TaphoammoResponseValidator } from './TaphoammoResponseValidator';
 import { TaphoammoProduct } from './TaphoammoProductService';
 
 export interface TaphoammoApiOptions {
-  proxyType?: ProxyType;
   useMockData?: boolean;
   useCache?: boolean;
   forceRefresh?: boolean;
@@ -37,7 +36,7 @@ export class TaphoammoApiClient {
   }
   
   /**
-   * Execute API call with proper error handling and proxy support
+   * Execute API call with proper error handling
    */
   public async executeApiCall<T = any>(
     method: string, 
@@ -45,7 +44,6 @@ export class TaphoammoApiClient {
     options: TaphoammoApiOptions = {}
   ): Promise<TaphoammoResponse<T>> {
     const { 
-      proxyType = 'allorigins',
       useMockData = false,
       useCache = true,
       forceRefresh = false,
@@ -81,11 +79,10 @@ export class TaphoammoApiClient {
       });
       
       // Call edge function
-      console.log(`[TaphoammoApiClient] Calling ${method} with proxy ${proxyType}`);
+      console.log(`[TaphoammoApiClient] Calling ${method}`);
       const requestPromise = supabase.functions.invoke('taphoammo-api', {
         body: { 
           ...params,
-          proxy_type: proxyType,
           action: method,
           debug_mock: useMockData ? 'true' : 'false'
         }
@@ -135,10 +132,9 @@ export class TaphoammoApiClient {
    */
   public async callTaphoaMMO(
     method: string,
-    params: Record<string, any>,
-    proxyType: ProxyType = 'allorigins'
+    params: Record<string, any>
   ): Promise<any> {
-    const response = await this.executeApiCall(method, params, { proxyType });
+    const response = await this.executeApiCall(method, params);
     return response.data;
   }
   
@@ -160,8 +156,8 @@ export class TaphoammoApiClient {
    * Generate cache key from method and params
    */
   private generateCacheKey(method: string, params: Record<string, any>): string {
-    // Remove proxy_type and debug_mock from cache key
-    const { proxy_type, debug_mock, ...cacheParams } = params;
+    // Remove debug_mock from cache key
+    const { debug_mock, ...cacheParams } = params;
     return `${method}:${JSON.stringify(cacheParams)}`;
   }
   

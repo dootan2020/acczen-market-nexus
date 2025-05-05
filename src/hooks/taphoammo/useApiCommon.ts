@@ -5,35 +5,6 @@ import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define ProxyType enum directly in this file
-export enum ProxyType {
-  DIRECT = 'direct',
-  ALLORIGINS = 'allorigins',
-  CORSPROXY = 'corsproxy',
-  CORS_ANYWHERE = 'cors-anywhere'
-}
-
-// Local storage key for proxy settings
-const PROXY_STORAGE_KEY = 'taphoammo_proxy_type';
-
-// Get stored proxy type from localStorage with fallback to default
-export const getStoredProxy = (): ProxyType => {
-  if (typeof window === 'undefined') return ProxyType.ALLORIGINS;
-  
-  const stored = localStorage.getItem(PROXY_STORAGE_KEY);
-  if (stored && Object.values(ProxyType).includes(stored as ProxyType)) {
-    return stored as ProxyType;
-  }
-  return ProxyType.ALLORIGINS;
-};
-
-// Set proxy type in localStorage
-export const setStoredProxy = (proxyType: ProxyType): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(PROXY_STORAGE_KEY, proxyType);
-  }
-};
-
 // Maximum number of retries and corresponding delays with exponential backoff
 export const MAX_RETRIES = 3;
 export const RETRY_DELAYS = [300, 1000, 3000]; // Progressively longer delays
@@ -71,7 +42,7 @@ export const useApiCommon = () => {
     }
   };
 
-  // Improved retry mechanism with automatic proxy switching and circuit breaker
+  // Improved retry mechanism with circuit breaker
   const withRetry = async <T,>(
     fn: () => Promise<T>,
     endpoint: string = 'unknown',
@@ -134,29 +105,6 @@ export const useApiCommon = () => {
             return await cacheFn();
           } catch (cacheErr) {
             console.error('Cache fallback failed:', cacheErr);
-          }
-        }
-        
-        // If API is reporting CORS issues, try switching the proxy
-        if (err.message?.includes('CORS') || err.message?.includes('network')) {
-          const currentProxy = getStoredProxy();
-          
-          // Try to switch to next proxy option
-          if (currentProxy === ProxyType.ALLORIGINS) {
-            setStoredProxy(ProxyType.CORSPROXY);
-            toast.info('Switching to alternate proxy to improve connection', {
-              duration: 3000
-            });
-          } else if (currentProxy === ProxyType.CORSPROXY) {
-            setStoredProxy(ProxyType.CORS_ANYWHERE);
-            toast.info('Trying another proxy to resolve connection issues', {
-              duration: 3000
-            });
-          } else {
-            setStoredProxy(ProxyType.ALLORIGINS);
-            toast.info('Returning to default proxy', {
-              duration: 3000
-            });
           }
         }
         

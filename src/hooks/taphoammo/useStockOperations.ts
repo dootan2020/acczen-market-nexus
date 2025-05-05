@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration';
 import { TaphoammoProduct } from '@/services/taphoammo/TaphoammoProductService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import type { ProxyType } from '@/utils/corsProxy';
 
 // Create a singleton instance of TaphoammoIntegration
 const taphoammoIntegration = new TaphoammoIntegration();
@@ -252,7 +251,6 @@ export const useStockOperations = () => {
     kioskToken: string,
     options: {
       forceFresh?: boolean;
-      proxyType?: ProxyType;
     } = {}
   ): Promise<TaphoammoProduct> => {
     setLoading(true);

@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import type { ProxyType } from '@/utils/corsProxy';
 
 // Create a singleton instance of TaphoammoIntegration
 const taphoammoIntegration = new TaphoammoIntegration();
@@ -16,9 +15,7 @@ export const useOrderOperations = () => {
   const buyProducts = async (
     kioskToken: string,
     userToken: string,
-    quantity: number,
-    proxyType: ProxyType,
-    promotion?: string
+    quantity: number
   ) => {
     setLoading(true);
     setError(null);
@@ -28,9 +25,7 @@ export const useOrderOperations = () => {
       const { data, error: functionError } = await supabase.functions.invoke('purchase-product', {
         body: JSON.stringify({
           kioskToken,
-          quantity,
-          proxyType,
-          promotion
+          quantity
         })
       });
 
@@ -68,14 +63,14 @@ export const useOrderOperations = () => {
   };
 
   // Get products for an order
-  const getProducts = async (orderId: string, userToken: string, proxyType: ProxyType) => {
+  const getProducts = async (orderId: string, userToken: string) => {
     setLoading(true);
     setError(null);
 
     try {
       // Use withRetry to get products with error handling
       const data = await withRetry(
-        async () => taphoammoIntegration.getProducts(orderId, userToken, proxyType),
+        async () => taphoammoIntegration.getProducts(orderId, userToken),
         'getProducts'
       );
 
@@ -100,14 +95,13 @@ export const useOrderOperations = () => {
   const checkOrderUntilComplete = async (
     orderId: string,
     userToken: string,
-    proxyType: ProxyType,
     maxRetries: number = 5
   ) => {
     setLoading(true);
     
     try {
       const result = await taphoammoIntegration.checkOrderUntilComplete(
-        orderId, userToken, maxRetries, 2000, proxyType
+        orderId, userToken, maxRetries, 2000
       );
       
       return result;

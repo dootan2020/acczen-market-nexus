@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import { ProxyType, getStoredProxy } from './taphoammo/useApiCommon';
 
 export const usePurchaseTaphoammo = (kioskToken: string) => {
   const [loading, setLoading] = useState(false);
@@ -26,9 +25,6 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
     setOrderDetails(null);
     
     try {
-      // Get the proxy type
-      const proxyType = getStoredProxy();
-      
       // Step 1: Check balance
       const { data: userData, error: userError } = await supabase
         .from('profiles')
@@ -44,8 +40,7 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
       const { data, error } = await supabase.functions.invoke('purchase-product', {
         body: JSON.stringify({ 
           kioskToken,
-          quantity,
-          proxyType
+          quantity
         })
       });
       
@@ -134,14 +129,11 @@ export const usePurchaseTaphoammo = (kioskToken: string) => {
   }> => {
     try {
       // Get admin info from Edge Function
-      const proxyType = getStoredProxy();
-      
       const { data, error } = await supabase.functions.invoke('process-taphoammo-order', {
         body: JSON.stringify({ 
           action: 'check_stock',
           kioskToken,
-          quantity,
-          proxyType
+          quantity
         })
       });
       

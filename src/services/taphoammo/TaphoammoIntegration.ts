@@ -7,7 +7,6 @@ import { TaphoammoApiClient, TaphoammoApiOptions } from './TaphoammoApiClient';
 import { TaphoammoProductService } from './TaphoammoProductService';
 import { TaphoammoOrderService } from './TaphoammoOrderService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export class TaphoammoIntegration {
   private apiClient: TaphoammoApiClient;
@@ -80,10 +79,9 @@ export class TaphoammoIntegration {
     kioskToken: string,
     quantity: number = 1,
     userToken?: string,
-    promotion?: string,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    promotion?: string
   ) => {
-    return await this.orderService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType);
+    return await this.orderService.buyProducts(kioskToken, quantity, userToken, promotion);
   };
   
   /**
@@ -91,21 +89,19 @@ export class TaphoammoIntegration {
    */
   public getProducts = async (
     orderId: string,
-    userToken?: string,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    userToken?: string
   ) => {
-    return await this.orderService.getProducts(orderId, userToken, proxyType);
+    return await this.orderService.getProducts(orderId, userToken);
   };
   
   /**
    * Check if a kiosk is active
    */
   public checkKioskActive = async (
-    kioskToken: string,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    kioskToken: string
   ) => {
     try {
-      const stockInfo = await this.productService.getStock(kioskToken, { proxyType });
+      const stockInfo = await this.productService.getStock(kioskToken);
       return stockInfo && stockInfo.stock_quantity > 0;
     } catch (error) {
       if (error instanceof TaphoammoError) {
@@ -121,9 +117,9 @@ export class TaphoammoIntegration {
   };
   
   /**
-   * Test API connection with different proxy options
+   * Test API connection
    */
-  public async testProxy(kioskToken: string, proxyType: ProxyType): Promise<{
+  public async testProxy(kioskToken: string): Promise<{
     success: boolean;
     message: string;
     responseTime?: number;
@@ -131,7 +127,7 @@ export class TaphoammoIntegration {
     const startTime = Date.now();
     
     try {
-      const result = await this.productService.testConnection(kioskToken, proxyType);
+      const result = await this.productService.testConnection(kioskToken);
       const responseTime = Date.now() - startTime;
       
       return {
@@ -153,10 +149,9 @@ export class TaphoammoIntegration {
    */
   public checkStockAvailability = async (
     kioskToken: string,
-    quantity: number = 1,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    quantity: number = 1
   ) => {
-    return await this.orderService.checkStockAvailability(kioskToken, quantity, proxyType);
+    return await this.orderService.checkStockAvailability(kioskToken, quantity);
   };
   
   /**
@@ -166,11 +161,10 @@ export class TaphoammoIntegration {
     orderId: string,
     userToken?: string,
     maxRetries: number = 5,
-    delayMs: number = 2000,
-    proxyType: ProxyType = ProxyType.ALLORIGINS
+    delayMs: number = 2000
   ) => {
     return await this.orderService.checkOrderUntilComplete(
-      orderId, userToken, maxRetries, delayMs, proxyType
+      orderId, userToken, maxRetries, delayMs
     );
   };
 }

@@ -3,7 +3,6 @@ import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoProductService } from './TaphoammoProductService';
 import { TaphoammoOrderService } from './TaphoammoOrderService';
 import { toast } from 'sonner';
-import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 /**
  * Main service facade for Taphoammo API integration
@@ -40,28 +39,28 @@ export class TaphoammoApiService {
   public getStock = (kioskToken: string, options: any = {}) => 
     this.productService.getStock(kioskToken, options);
   
-  public checkKioskActive = (kioskToken: string, proxyType?: ProxyType) => 
-    this.productService.checkKioskActive(kioskToken, proxyType);
+  public checkKioskActive = (kioskToken: string) => 
+    this.productService.checkKioskActive(kioskToken);
   
-  public testConnection = (kioskToken: string, proxyType?: ProxyType) => 
-    this.productService.testConnection(kioskToken, proxyType);
+  public testConnection = (kioskToken: string) => 
+    this.productService.testConnection(kioskToken);
   
   // Forward methods from order service with proper parameters
-  public buyProducts = (kioskToken: string, quantity = 1, userToken?: string, promotion?: string, proxyType?: ProxyType) => 
-    this.orderService.buyProducts(kioskToken, quantity, userToken, promotion, proxyType);
+  public buyProducts = (kioskToken: string, quantity = 1, userToken?: string, promotion?: string) => 
+    this.orderService.buyProducts(kioskToken, quantity, userToken, promotion);
   
-  public getProducts = (orderId: string, userToken?: string, proxyType?: ProxyType) => 
-    this.orderService.getProducts(orderId, userToken, proxyType);
+  public getProducts = (orderId: string, userToken?: string) => 
+    this.orderService.getProducts(orderId, userToken);
   
-  public checkStockAvailability = (kioskToken: string, quantity = 1, proxyType?: ProxyType) => 
-    this.orderService.checkStockAvailability(kioskToken, quantity, proxyType);
+  public checkStockAvailability = (kioskToken: string, quantity = 1) => 
+    this.orderService.checkStockAvailability(kioskToken, quantity);
   
   /**
    * Clear API cache across all services
    */
   public clearCache(): void {
     this.apiClient.clearCache();
-    toast.success('Đã xóa cache API thành công');
+    toast.success('Cache cleared successfully');
   }
 }
 
