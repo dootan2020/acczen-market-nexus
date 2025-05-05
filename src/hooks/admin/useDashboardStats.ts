@@ -2,12 +2,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types/dashboard";
-import { ChartData, RevenueData, PaymentMethodData } from "@/types/reports";
+import { ChartData, RevenueData, PaymentMethodData, StatsData } from "@/types/reports";
 
 export const useDashboardStats = () => {
   return useQuery({
     queryKey: ["admin-dashboard-stats"],
-    queryFn: async (): Promise<DashboardStats> => {
+    queryFn: async (): Promise<DashboardStats & StatsData> => {
       // Lấy thông tin users
       const { data: users, error: usersError } = await supabase
         .from("profiles")
@@ -18,8 +18,8 @@ export const useDashboardStats = () => {
       const totalUsers = users.length;
       // Check if last_login_at exists before using it
       const activeUsers = users.filter(user => {
-        // @ts-ignore - Some profiles might have last_login_at and some might not
-        return user.last_login_at != null;
+        // Check if the user has logged in recently using auth-related fields
+        return user.last_signin_at != null || user.last_active_at != null;
       }).length;
       
       // Lấy thông tin deposits

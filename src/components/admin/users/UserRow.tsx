@@ -11,16 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Shield, Wallet } from "lucide-react";
+import { MoreVertical, Shield, Wallet, Percent } from "lucide-react";
 import { UserProfile } from "@/hooks/admin/types/userManagement.types";
 
 interface UserRowProps {
   user: UserProfile;
   onEditRole: (user: UserProfile) => void;
   onAdjustBalance: (user: UserProfile) => void;
+  onSetDiscount: (user: UserProfile) => void;
 }
 
-export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
+export function UserRow({ user, onEditRole, onAdjustBalance, onSetDiscount }: UserRowProps) {
   const getUserInitials = (user: UserProfile) => {
     if (user.full_name) {
       return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
@@ -77,6 +78,10 @@ export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
             <DropdownMenuItem onClick={() => onAdjustBalance(user)}>
               <Wallet className="h-4 w-4 mr-2" />
               Adjust Balance
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSetDiscount(user)}>
+              <Percent className="h-4 w-4 mr-2" />
+              Set Discount
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

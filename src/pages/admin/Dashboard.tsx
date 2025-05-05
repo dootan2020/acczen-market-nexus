@@ -30,7 +30,7 @@ const Dashboard = () => {
   })) || [];
 
   return (
-    <AdminLayout title="Dashboard">
+    <AdminLayout>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
       
       <DashboardOverview
