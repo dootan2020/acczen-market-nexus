@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 import { format } from 'date-fns';
-import { DiscountBadge } from './DiscountBadge';
 import { 
   DollarSign, 
   Percent, 
@@ -22,9 +21,16 @@ interface UserDetailsProps {
   onEdit?: () => void;
   onAdjustBalance?: () => void;
   onSetDiscount?: () => void;
+  onClose?: () => void;
 }
 
-export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: UserDetailsProps) {
+export function UserDetails({ 
+  user, 
+  onEdit, 
+  onAdjustBalance, 
+  onSetDiscount,
+  onClose 
+}: UserDetailsProps) {
   if (!user) return null;
   
   const formatDate = (date: string | undefined) => {
@@ -37,7 +43,7 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
         <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-white z-10 pb-2 border-b">
           <CardTitle>User Details</CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </Button>
         </CardHeader>
@@ -125,10 +131,9 @@ export function UserDetails({ user, onEdit, onAdjustBalance, onSetDiscount }: Us
                 <Percent className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Discount Rate:</span>
                 {user.discount_percentage > 0 ? (
-                  <DiscountBadge 
-                    percentage={user.discount_percentage} 
-                    tooltipContent={user.discount_note || "User discount"} 
-                  />
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                    {user.discount_percentage}%
+                  </span>
                 ) : (
                   <span>No discount</span>
                 )}

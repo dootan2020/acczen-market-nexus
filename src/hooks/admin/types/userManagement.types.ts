@@ -1,3 +1,4 @@
+
 export type DatabaseRoleType = 'admin' | 'user';
 export type UserRoleType = 'admin' | 'user';
 
@@ -35,4 +36,3 @@ export interface UserDiscountHistory {
     email?: string;
   };
 }
-

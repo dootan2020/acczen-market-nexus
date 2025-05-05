@@ -1,13 +1,14 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserProfile } from './types/userManagement.types';
+import { useUserMutations } from './useUserMutations';
+import { useUserFilters } from './useUserFilters';
 
 export const useUserManagement = () => {
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -23,19 +24,12 @@ export const useUserManagement = () => {
 
   // Fetch users with pagination
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ['admin-users', currentPage, pageSize, roleFilter],
+    queryKey: ['admin-users', currentPage, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('profiles')
         .select('*', { count: 'exact' })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
-
-      if (roleFilter) {
-        // Cast roleFilter to a type that's compatible with the database column type
-        if (roleFilter === 'admin' || roleFilter === 'user') {
-          query = query.eq('role', roleFilter as 'admin' | 'user');
-        }
-      }
 
       const { data, count, error } = await query;
       
@@ -49,135 +43,17 @@ export const useUserManagement = () => {
     }
   });
 
-  // Filter users by search query
-  const filteredUsers = usersData?.users.filter(user => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      user.email?.toLowerCase().includes(query) ||
-      user.username?.toLowerCase().includes(query) ||
-      user.full_name?.toLowerCase().includes(query)
-    );
-  }) || [];
+  // Get mutations
+  const { updateRoleMutation, adjustBalanceMutation, updateDiscountMutation } = useUserMutations();
 
-  // Update user role mutation
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string, role: UserProfile['role'] }) => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User role updated successfully');
-      setIsEditDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to update user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Adjust user balance mutation
-  const adjustBalanceMutation = useMutation({
-    mutationFn: async ({ 
-      id, 
-      amount, 
-      operation, 
-      notes 
-    }: { 
-      id: string, 
-      amount: number, 
-      operation: 'add' | 'subtract',
-      notes: string
-    }) => {
-      // First, get current balance
-      const { data: userData, error: fetchError } = await supabase
-        .from('profiles')
-        .select('balance')
-        .eq('id', id)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentBalance = userData?.balance || 0;
-      const newBalance = operation === 'add' 
-        ? currentBalance + amount
-        : Math.max(0, currentBalance - amount); // Prevent negative balance
-      
-      // Update balance
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', id);
-      
-      if (updateError) throw updateError;
-      
-      // Create transaction record
-      // Use valid transaction types
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: id,
-          amount: operation === 'add' ? amount : -amount,
-          type: operation === 'add' ? 'deposit' : 'refund',
-          description: notes || `Balance ${operation === 'add' ? 'increased' : 'decreased'} by admin`
-        });
-      
-      if (transactionError) throw transactionError;
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User balance adjusted successfully');
-      setIsBalanceDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to adjust balance: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Update user discount mutation
-  const updateDiscountMutation = useMutation({
-    mutationFn: async ({ 
-      userId, 
-      discount_percentage, 
-      discount_note,
-      expiry_date
-    }: { 
-      userId: string, 
-      discount_percentage: number, 
-      discount_note?: string,
-      expiry_date?: string | null
-    }) => {
-      // Call the admin_update_user_discount function
-      const { error } = await supabase
-        .rpc('admin_update_user_discount', { 
-          p_user_id: userId, 
-          p_discount_percentage: discount_percentage, 
-          p_discount_note: discount_note || null,
-          p_expires_at: expiry_date || null
-        });
-      
-      if (error) throw error;
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User discount updated successfully');
-      setIsDiscountDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to update discount: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
+  // Use filters
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    roleFilter, 
+    setRoleFilter, 
+    filteredUsers 
+  } = useUserFilters(usersData?.users);
 
   // Navigation functions
   const nextPage = () => {
