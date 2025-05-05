@@ -81,7 +81,8 @@ const AdminUsers = () => {
       id: currentUser.id,
       discount_percentage: values.discountPercentage,  // Using snake_case to match the UserProfile type
       discount_note: values.discountNote,
-      expiry_date: values.expiryDate // This is correct as it matches what's expected by the backend
+      // We need to use discount_expires_at instead of expiry_date to match the UserProfile type
+      discount_expires_at: values.expiryDate 
     });
   };
 
