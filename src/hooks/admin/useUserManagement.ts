@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -148,22 +147,22 @@ export const useUserManagement = () => {
   const updateDiscountMutation = useMutation({
     mutationFn: async ({ 
       id, 
-      discountPercentage, 
-      discountNote,
-      expiresAt
+      discount_percentage, 
+      discount_note,
+      expiry_date
     }: { 
       id: string, 
-      discountPercentage: number, 
-      discountNote: string,
-      expiresAt?: Date
+      discount_percentage: number, 
+      discount_note?: string,
+      expiry_date?: Date | null
     }) => {
       // Call the admin_update_user_discount function
       const { error } = await supabase
         .rpc('admin_update_user_discount', { 
           p_user_id: id, 
-          p_discount_percentage: discountPercentage, 
-          p_discount_note: discountNote,
-          p_expires_at: expiresAt ? expiresAt.toISOString() : null
+          p_discount_percentage: discount_percentage, 
+          p_discount_note: discount_note || null,
+          p_expires_at: expiry_date ? expiry_date.toISOString() : null
         });
       
       if (error) throw error;

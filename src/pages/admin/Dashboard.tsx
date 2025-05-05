@@ -29,9 +29,10 @@ const Dashboard = () => {
     value: item.amount
   })) || [];
 
+  // The AdminLayout component uses Outlet from react-router-dom to render its children
   return (
     <AdminLayout>
-      <div>
+      <div className="w-full">
         <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
         
         <DashboardOverview

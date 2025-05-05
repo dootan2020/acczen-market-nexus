@@ -76,12 +76,12 @@ const AdminUsers = () => {
   }) => {
     if (!currentUser) return;
     
-    // Now we pass the values to handleUpdateDiscount, not the user object
+    // Now we pass the values to handleUpdateDiscount with the correct property names
     handleUpdateDiscount({
-      id: currentUser.id,  // Change userId to id to match expected parameters
-      discountPercentage: values.discountPercentage,
-      discountNote: values.discountNote,
-      expiryDate: values.expiryDate
+      id: currentUser.id,
+      discount_percentage: values.discountPercentage,  // Using snake_case to match the UserProfile type
+      discount_note: values.discountNote,
+      expiry_date: values.expiryDate // Using snake_case to match parameter expected by backend
     });
   };
 
