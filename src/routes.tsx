@@ -31,7 +31,7 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminHome from './pages/admin/AdminHome';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
-import AdminUsers from './pages/admin/AdminUsers';
+import UsersPage from './pages/admin/UsersPage'; // Updated import path
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -104,7 +104,7 @@ const routes = {
     { path: '/admin/categories', element: <AdminProtectedRoute element={<AdminCategories />} /> },
     { path: '/admin/categories/edit/:id', element: <AdminProtectedRoute element={<CategoryEditPage />} /> },
     { path: '/admin/orders', element: <AdminProtectedRoute element={<AdminOrders />} /> },
-    { path: '/admin/users', element: <AdminProtectedRoute element={<AdminUsers />} /> },
+    { path: '/admin/users', element: <AdminProtectedRoute element={<UsersPage />} /> }, // Updated component reference
     { path: '/admin/deposits', element: <AdminProtectedRoute element={<AdminDeposits />} /> },
     { path: '/admin/transactions', element: <AdminProtectedRoute element={<AdminTransactions />} /> },
     { path: '/admin/reports', element: <AdminProtectedRoute element={<AdminReports />} /> },
