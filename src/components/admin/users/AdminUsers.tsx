@@ -81,8 +81,8 @@ const AdminUsers = () => {
       id: currentUser.id,
       discount_percentage: values.discountPercentage,  // Using snake_case to match the UserProfile type
       discount_note: values.discountNote,
-      // We need to use discount_expires_at instead of expiry_date to match the UserProfile type
-      discount_expires_at: values.expiryDate 
+      // Convert Date to string ISO format since UserProfile.discount_expires_at is a string
+      discount_expires_at: values.expiryDate ? values.expiryDate.toISOString() : undefined
     });
   };
 
