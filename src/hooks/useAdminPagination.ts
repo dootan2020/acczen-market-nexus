@@ -82,13 +82,13 @@ export function useAdminPagination<T>(
     
     return [
       ...baseKey,
-      page.toString(),
-      pageSize.toString(),
-      serializedFilter,
-      sortBy,
-      sortOrder,
-      searchTerm,
-      searchColumn
+      `page-${page}`,
+      `size-${pageSize}`,
+      `filter-${serializedFilter}`,
+      `sort-${sortBy}`,
+      `order-${sortOrder}`,
+      `search-${searchTerm}`,
+      `column-${searchColumn}`
     ];
   };
 
@@ -149,9 +149,10 @@ export function useAdminPagination<T>(
       };
     },
     meta: {
-      keepPreviousData: true
-    },
-    staleTime: 30000 // 30 seconds
+      onError: (error: Error) => {
+        console.error("Pagination query error:", error);
+      }
+    }
   });
 
   // Extract data and count from the query result

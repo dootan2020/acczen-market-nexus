@@ -131,7 +131,7 @@ const AdminProducts = () => {
       setImportedData([]);
       setIsImportDialogOpen(false);
       toast.success(`${importedData.length} products have been imported successfully`);
-      refreshData(); // Use our custom refresh method
+      refreshData();
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to import products');
@@ -146,8 +146,8 @@ const AdminProducts = () => {
     return status as DatabaseProductStatus;
   };
   
-  const handleImportConfirm = async (products: ProductFormData[]) => {
-    await bulkImportMutation.mutateAsync(products);
+  const handleImportConfirm = (products: ProductFormData[]) => {
+    bulkImportMutation.mutateAsync(products);
   };
 
   const handleSubmit = (formData: ProductFormData) => {
