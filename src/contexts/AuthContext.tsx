@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { emailService } from '@/services/email/EmailService';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: any | null;
@@ -153,6 +155,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
       if (error) throw error;
+      
+      // Send welcome email if registration is successful
+      if (data?.user) {
+        try {
+          // Extract username from email (part before @)
+          const username = email.split('@')[0];
+          
+          await emailService.sendWelcomeEmail({
+            email,
+            username,
+            firstName: fullName
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't fail registration if email sending fails
+        }
+      }
+      
       return data;
     } catch (error: any) {
       console.error('Registration failed:', error);
