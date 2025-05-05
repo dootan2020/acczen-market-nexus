@@ -146,7 +146,10 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
         </CardContent>
       </Card>
       
-      <DepositsListSection deposits={depositsData} isLoading={isLoading} />
+      <DepositsListSection 
+        deposits={depositsData} 
+        isLoading={isLoading}
+      />
     </div>
   );
 };

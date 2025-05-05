@@ -1,10 +1,10 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfMonth, startOfYear, startOfWeek, addWeeks, addMonths, addYears, endOfDay, startOfDay } from 'date-fns';
-import { StatsData, DepositsChartData, PaymentMethodData, DateRangeType } from '@/types/reports';
+import { StatsData, DepositsChartData, PaymentMethodData, DateRangeType, ChartData } from '@/types/reports';
 
 // Helper function to get date range from type
 const getDateRangeFromType = (type: DateRangeType): DateRange => {
@@ -216,7 +216,7 @@ export const useReportsData = () => {
   });
 
   // Create deposits chart data
-  const depositsChartData: DepositsChartData[] = useMemo(() => {
+  const depositsChartData = useMemo(() => {
     if (!deposits) return [];
     
     // Group deposits by day

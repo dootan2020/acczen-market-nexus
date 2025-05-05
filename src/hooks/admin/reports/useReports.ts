@@ -2,10 +2,6 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { useReportsData } from '@/hooks/admin/useReportsData';
-import { useStatsData } from './useStatsData';
-import { useDepositsData } from './useDepositsData';
-import { useOrdersData } from './useOrdersData';
-import { usePaymentMethodData } from './usePaymentMethodData';
 import { StatsData, DepositsChartData, OrdersChartData, ChartData, DateRangeType } from '@/types/reports';
 import { DateRange } from 'react-day-picker';
 

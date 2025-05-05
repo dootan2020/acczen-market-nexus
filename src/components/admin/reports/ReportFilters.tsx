@@ -11,8 +11,15 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DATE_RANGES } from "@/hooks/useReportsData";
 import { DateRangeType } from '@/types/reports';
+
+const DATE_RANGES = {
+  TODAY: 'today',
+  LAST_7_DAYS: '7days',
+  LAST_30_DAYS: '30days',
+  THIS_MONTH: 'month',
+  CUSTOM: 'custom',
+};
 
 interface ReportFiltersProps {
   dateRangeType: string;

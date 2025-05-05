@@ -1,8 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 interface PaginationOptions {
   page: number;
@@ -58,7 +56,7 @@ export function useAdminPagination<T>(
   }, [filter, searchTerm]);
 
   // Fetch data with pagination
-  const { data, isLoading, error, isFetching, refetch } = useQuery<{data: T[], count: number }>({
+  const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['admin', tableName, page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn],
     queryFn: async () => {
       // Start with the base query
@@ -113,12 +111,19 @@ export function useAdminPagination<T>(
         count: count || 0
       };
     },
-    keepPreviousData: true,
+    // Replace keepPreviousData (deprecated in v5) with keepPreviousData in the meta object
+    meta: {
+      keepPreviousData: true
+    },
     staleTime: 30000 // 30 seconds
   });
 
+  // Extract data and count from the query result
+  const data = queryData?.data || [];
+  const count = queryData?.count || 0;
+  
   // Calculate page count
-  const pageCount = Math.ceil((data?.count || 0) / pageSize);
+  const pageCount = Math.ceil(count / pageSize);
   
   // Handler for sorting
   const setSorting = useCallback((column: string, order: 'asc' | 'desc') => {
@@ -127,8 +132,8 @@ export function useAdminPagination<T>(
   }, []);
 
   return {
-    data: data?.data || [],
-    total: data?.count || 0,
+    data,
+    total: count,
     page,
     pageSize,
     pageCount,

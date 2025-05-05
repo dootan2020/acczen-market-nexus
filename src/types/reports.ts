@@ -1,3 +1,4 @@
+
 export interface StatsData {
   totalDeposits: number;
   totalDepositAmount: number;
@@ -11,6 +12,9 @@ export interface StatsData {
   usdtAmount: number;
   conversionRate: number;
 }
+
+// Define DateRangeType
+export type DateRangeType = 'today' | '7days' | '30days' | 'month' | 'week' | 'quarter' | 'year' | 'all' | 'custom';
 
 // Basic chart data interface used for various visualizations
 export interface ChartData {
