@@ -81,7 +81,7 @@ const AdminUsers = () => {
       id: currentUser.id,
       discount_percentage: values.discountPercentage,  // Using snake_case to match the UserProfile type
       discount_note: values.discountNote,
-      expiry_date: values.expiryDate // Using snake_case to match parameter expected by backend
+      expiry_date: values.expiryDate // This is correct as it matches what's expected by the backend
     });
   };
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { Button } from '@/components/ui/button';
@@ -98,9 +97,9 @@ const Users = () => {
     if (currentUser && discountPercentage) {
       updateDiscountMutation.mutate({ 
         id: currentUser.id, 
-        discountPercentage: parseFloat(discountPercentage), 
-        discountNote: discountNote,
-        expiresAt: date
+        discount_percentage: parseFloat(discountPercentage), 
+        discount_note: discountNote,
+        expiry_date: date
       });
     }
   };
