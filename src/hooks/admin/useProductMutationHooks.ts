@@ -18,7 +18,8 @@ export const useProductMutationHooks = () => {
         price: Number(productData.price),
         sale_price: productData.sale_price ? Number(productData.sale_price) : null,
         stock_quantity: Number(productData.stock_quantity),
-        status: productData.status as any, // Type assertion to handle the status
+        // Map frontend status to database-compatible status
+        status: productData.status === 'draft' || productData.status === 'archived' ? 'inactive' : productData.status,
       };
       
       if (isEditing && id) {

@@ -105,7 +105,8 @@ const AdminProducts = () => {
         stock_quantity: Number(product.stock_quantity),
         slug: product.slug,
         sku: product.sku,
-        status: product.status,
+        // Ensure status is one of the accepted values in the database
+        status: product.status === 'draft' || product.status === 'archived' ? 'inactive' : product.status,
         category_id: product.category_id,
         subcategory_id: product.subcategory_id || null,
         image_url: product.image_url || null
