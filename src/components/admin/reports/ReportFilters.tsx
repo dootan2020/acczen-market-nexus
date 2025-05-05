@@ -12,10 +12,11 @@ import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DATE_RANGES } from "@/hooks/useReportsData";
+import { DateRangeType } from '@/hooks/admin/useReportsData';
 
 interface ReportFiltersProps {
   dateRangeType: string;
-  onDateRangeChange: (value: string) => void;
+  onDateRangeChange: (value: DateRangeType) => void;
   dateRange: DateRange | undefined;
   onDateRangePickerChange: (range: DateRange | undefined) => void;
   onRefresh: () => void;
@@ -34,7 +35,7 @@ export function ReportFilters({
     <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
       <Select
         value={dateRangeType}
-        onValueChange={onDateRangeChange}
+        onValueChange={(value: string) => onDateRangeChange(value as DateRangeType)}
       >
         <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="Select date range" />

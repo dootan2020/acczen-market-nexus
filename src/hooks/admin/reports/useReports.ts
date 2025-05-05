@@ -7,6 +7,7 @@ import { useDepositsData } from './useDepositsData';
 import { useOrdersData } from './useOrdersData';
 import { usePaymentMethodData } from './usePaymentMethodData';
 import { StatsData, DepositsChartData, OrdersChartData, ChartData } from '@/types/reports';
+import { DateRangeType } from '@/hooks/admin/useReportsData';
 
 export const useReports = () => {
   // Get base reports data which handles date range state and base data fetching
@@ -40,8 +41,8 @@ export const useReports = () => {
     return `${fromDate} - ${toDate}`;
   }, [dateRange]);
 
-  // Handle date range changes
-  const handleDateRangeChange = (type: string) => {
+  // Handle date range changes - Fix type error by explicitly typing parameter
+  const handleDateRangeChange = (type: DateRangeType) => {
     handleDateRangeTypeChange(type);
   };
 
