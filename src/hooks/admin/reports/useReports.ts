@@ -5,7 +5,6 @@ import { useReportsData, DateRangeType, DateRange } from '@/hooks/admin/useRepor
 import { useStatsData } from './useStatsData';
 import { useDepositsData } from './useDepositsData';
 import { useOrdersData } from './useOrdersData';
-import { usePaymentMethodData } from './usePaymentMethodData';
 import { StatsData, DepositsChartData, OrdersChartData, PaymentMethodData } from '@/types/reports';
 
 export const useReports = () => {
@@ -24,7 +23,11 @@ export const useReports = () => {
   const { statsData, isLoading: isStatsLoading } = useStatsData(dateRange);
   const { deposits, depositsChartData, isLoading: isDepositsLoading } = useDepositsData(dateRange);
   const { ordersChartData, isLoading: isOrdersLoading } = useOrdersData(dateRange);
-  const { paymentMethodData, isLoading: isPaymentMethodLoading } = usePaymentMethodData(dateRange);
+  const paymentMethodData: PaymentMethodData[] = [
+    { method: 'PayPal', amount: statsData?.paypalAmount || 0 },
+    { method: 'USDT', amount: statsData?.usdtAmount || 0 },
+  ];
+  const isPaymentMethodLoading = isStatsLoading;
 
   // Combine loading states
   const isLoading = isBaseLoading || isStatsLoading || isDepositsLoading || isOrdersLoading || isPaymentMethodLoading;
