@@ -18,7 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 
 const Categories = () => {
-  const { data: categories, loading: categoriesLoading, error: categoriesError } = useCategories();
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const { counts: productCounts, isLoading: countsLoading, error: countsError } = useProductCountByCategory();
   
   const isLoading = categoriesLoading || countsLoading;
