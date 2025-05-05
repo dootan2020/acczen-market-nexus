@@ -14,7 +14,7 @@ import { ImportDropzone } from './ImportDropzone';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ImportCircle, Circle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Download, Circle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ProductFormData } from '@/types/products';
 
 interface ImportDialogProps {
@@ -165,7 +165,7 @@ export function ImportDialog({
               onClick={handleImport}
               disabled={importedProducts.length === 0 || isPending}
             >
-              <ImportCircle className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4" />
               {isPending ? 'Importing...' : `Import ${importedProducts.length} Products`}
             </Button>
           )}

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,7 @@ const AdminProducts = () => {
       
       <ProductBulkActions 
         selectedCount={selectedProducts.length}
+        filteredProducts={filteredProducts || []}
         onBulkDelete={handleBulkDelete}
         onBulkActivate={handleBulkActivate}
         onBulkDeactivate={handleBulkDeactivate}

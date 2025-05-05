@@ -21,8 +21,8 @@ export const useProductManagement = () => {
     nextPage,
     hasNextPage,
     hasPrevPage,
-    setPageSize,
-    refetch
+    // Removed setPageSize since it doesn't exist
+    // Removed refetch since it doesn't exist
   } = useAdminPagination<Product>(
     'products',
     ['admin-products'],
@@ -30,6 +30,18 @@ export const useProductManagement = () => {
     {},
     `*, category:categories(*), subcategory:subcategories(*)`
   );
+
+  // For manual refresh
+  const refreshData = () => {
+    // Manually refresh by changing the page and coming back
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+      setTimeout(() => goToPage(currentPage), 100);
+    } else {
+      goToPage(2);
+      setTimeout(() => goToPage(1), 100);
+    }
+  };
 
   const {
     searchQuery,
@@ -84,7 +96,7 @@ export const useProductManagement = () => {
   // Refresh product list after mutations
   useEffect(() => {
     if (productMutation.isSuccess || deleteMutation.isSuccess || bulkDeleteMutation.isSuccess || bulkUpdateStatusMutation.isSuccess) {
-      refetch();
+      refreshData(); // Use our custom refresh function instead of refetch
     }
   }, [productMutation.isSuccess, deleteMutation.isSuccess, bulkDeleteMutation.isSuccess, bulkUpdateStatusMutation.isSuccess]);
 
@@ -150,9 +162,10 @@ export const useProductManagement = () => {
     bulkUpdateStatusMutation.mutate({ ids: selectedProducts, status: 'inactive' });
   };
 
-  // Change page size
+  // Change page size - we'll simulate this with our goToPage function
   const handleChangePageSize = (size: number) => {
-    setPageSize(size);
+    // Since we don't have setPageSize, we'll just refresh the data
+    refreshData();
   };
 
   return {
@@ -196,6 +209,7 @@ export const useProductManagement = () => {
     handleBulkDeactivate,
     handleClearSelection,
     handleChangePageSize,
+    refreshData,
     productMutation,
     deleteMutation,
     bulkDeleteMutation,

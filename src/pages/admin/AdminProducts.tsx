@@ -69,6 +69,7 @@ const AdminProducts = () => {
     handleBulkActivate,
     handleBulkDeactivate,
     handleClearSelection,
+    refreshData,
     productMutation,
     deleteMutation,
     bulkDeleteMutation
@@ -92,7 +93,7 @@ const AdminProducts = () => {
   
   const queryClient = useQueryClient();
   
-  // Bulk import mutation
+  // Bulk import mutation - fixed to handle array of products
   const bulkImportMutation = useMutation({
     mutationFn: async (products: ProductFormData[]) => {
       // Convert product data for database insertion
@@ -110,18 +111,23 @@ const AdminProducts = () => {
         image_url: product.image_url || null
       }));
       
-      const { data, error } = await supabase
-        .from('products')
-        .insert(formattedProducts);
-        
-      if (error) throw error;
-      return data;
+      // Insert products one by one to avoid type issues
+      for (const product of formattedProducts) {
+        const { error } = await supabase
+          .from('products')
+          .insert(product);
+          
+        if (error) throw error;
+      }
+      
+      return { success: true, count: formattedProducts.length };
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       setImportedData([]);
       setIsImportDialogOpen(false);
       toast.success(`${importedData.length} products have been imported successfully`);
+      refreshData(); // Use our custom refresh method
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to import products');
