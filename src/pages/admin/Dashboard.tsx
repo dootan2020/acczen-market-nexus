@@ -31,15 +31,17 @@ const Dashboard = () => {
 
   return (
     <AdminLayout>
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      
-      <DashboardOverview
-        statsData={statsData || emptyData}
-        revenueChartData={statsData?.revenueChartData || []}
-        ordersChartData={statsData?.orderChartData || []}
-        paymentMethodData={transformedPaymentData}
-        isLoading={isLoading}
-      />
+      <div>
+        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        
+        <DashboardOverview
+          statsData={statsData || emptyData}
+          revenueChartData={statsData?.revenueChartData || []}
+          ordersChartData={statsData?.orderChartData || []}
+          paymentMethodData={transformedPaymentData}
+          isLoading={isLoading}
+        />
+      </div>
     </AdminLayout>
   );
 };
