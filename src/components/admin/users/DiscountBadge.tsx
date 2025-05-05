@@ -1,61 +1,39 @@
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Percent } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Percent } from "lucide-react";
 
 interface DiscountBadgeProps {
   percentage: number;
-  showTooltip?: boolean;
-  tooltipContent?: React.ReactNode;
-  size?: 'sm' | 'default' | 'lg';
-  className?: string;
+  tooltipContent?: string;
 }
 
-export const DiscountBadge: React.FC<DiscountBadgeProps> = ({
+export function DiscountBadge({
   percentage,
-  showTooltip = true,
-  tooltipContent,
-  size = 'default',
-  className = '',
-}) => {
-  if (percentage <= 0) {
-    return null;
-  }
+  tooltipContent
+}: DiscountBadgeProps) {
+  if (percentage <= 0) return null;
 
-  const badgeContent = (
-    <Badge 
-      variant="success" 
-      className={`
-        ${size === 'sm' ? 'text-xs px-1.5 py-0' : ''}
-        ${size === 'lg' ? 'text-sm px-3 py-1' : ''}
-        ${className}
-      `}
-    >
-      <Percent className={`
-        ${size === 'sm' ? 'h-3 w-3' : ''}
-        ${size === 'default' ? 'h-3.5 w-3.5' : ''}
-        ${size === 'lg' ? 'h-4 w-4' : ''}
-        mr-0.5
-      `} />
-      {percentage.toFixed(1)}% Off
-    </Badge>
-  );
-
-  if (showTooltip) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {badgeContent}
-          </TooltipTrigger>
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge className="bg-green-500 text-white hover:bg-green-600 flex items-center gap-1">
+            <Percent className="h-3 w-3" />
+            {percentage}%
+          </Badge>
+        </TooltipTrigger>
+        {tooltipContent && (
           <TooltipContent>
-            {tooltipContent || `This user receives a ${percentage.toFixed(1)}% discount on all purchases.`}
+            <p>{tooltipContent}</p>
           </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  return badgeContent;
-};
+        )}
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

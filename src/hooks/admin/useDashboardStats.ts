@@ -16,7 +16,7 @@ export const useDashboardStats = () => {
       if (usersError) throw usersError;
       
       const totalUsers = users.length;
-      const activeUsers = users.filter(user => user.last_login_at).length;
+      const activeUsers = users.filter(user => user.last_login_at != null).length;
       
       // Lấy thông tin deposits
       const { data: deposits, error: depositsError } = await supabase
@@ -37,7 +37,7 @@ export const useDashboardStats = () => {
       
       const totalOrders = orders.length;
       const averageOrderValue = totalOrders > 0 
-        ? orders.reduce((sum, order) => sum + (order.amount || 0), 0) / totalOrders
+        ? orders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / totalOrders
         : 0;
       
       const conversionRate = totalUsers > 0 
@@ -69,17 +69,17 @@ export const useDashboardStats = () => {
         amount
       })).sort((a, b) => a.date.localeCompare(b.date));
       
-      // Revenue by day
-      const revenueByDay = Array.from(ordersByDay.entries()).map(([date, _]) => {
-        const ordersForDay = orders.filter(order => 
-          new Date(order.created_at).toISOString().split('T')[0] === date
-        );
-        const amount = ordersForDay.reduce((sum, order) => sum + (order.amount || 0), 0);
-        return {
-          date,
-          amount
-        } as RevenueData;
-      }).sort((a, b) => a.date.localeCompare(b.date));
+      // Revenue by day (using total_amount from orders)
+      const revenueMap = new Map<string, number>();
+      orders.forEach(order => {
+        const date = new Date(order.created_at).toISOString().split('T')[0];
+        revenueMap.set(date, (revenueMap.get(date) || 0) + (order.total_amount || 0));
+      });
+      
+      const revenueByDay: RevenueData[] = Array.from(revenueMap.entries()).map(([date, amount]) => ({
+        date,
+        amount
+      })).sort((a, b) => a.date.localeCompare(b.date));
       
       // Chart data transformations
       const revenueChartData: ChartData[] = revenueByDay.map(item => ({

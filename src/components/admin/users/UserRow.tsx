@@ -5,7 +5,6 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,38 +12,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Shield, Wallet } from "lucide-react";
+import { UserProfile } from "@/hooks/admin/types/userManagement.types";
 
 interface UserRowProps {
-  user: any;
-  onEditRole: (user: any) => void;
-  onAdjustBalance: (user: any) => void;
+  user: UserProfile;
+  onEditRole: (user: UserProfile) => void;
+  onAdjustBalance: (user: UserProfile) => void;
 }
 
 export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
-  const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
-  
-  const getUserInitials = (user: any) => {
+  const getUserInitials = (user: UserProfile) => {
     if (user.full_name) {
       return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
     }
     if (user.username) {
       return user.username.substring(0, 2).toUpperCase();
     }
-    return user.email.substring(0, 2).toUpperCase();
+    return user.email ? user.email.substring(0, 2).toUpperCase() : 'U';
   };
 
-  // Convert VND balance to USD and format - using useMemo for optimization
-  const displayBalance = useMemo(() => {
-    const usdBalance = convertVNDtoUSD(user.balance || 0);
-    return formatUSD(usdBalance);
-  }, [user.balance, convertVNDtoUSD, formatUSD]);
+  const formatDate = (date: string) => {
+    try {
+      return format(new Date(date), 'MMM dd, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
 
   return (
     <TableRow>
       <TableCell>
         <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={user.avatar_url} />
+            <AvatarImage src={user.avatar_url || undefined} />
             <AvatarFallback>{getUserInitials(user)}</AvatarFallback>
           </Avatar>
           <div>
@@ -59,8 +59,8 @@ export function UserRow({ user, onEditRole, onAdjustBalance }: UserRowProps) {
           {user.role}
         </Badge>
       </TableCell>
-      <TableCell className="text-right">{displayBalance}</TableCell>
-      <TableCell>{format(new Date(user.created_at), 'MMM dd, yyyy')}</TableCell>
+      <TableCell className="text-right">${user.balance.toFixed(2)}</TableCell>
+      <TableCell>{formatDate(user.created_at)}</TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

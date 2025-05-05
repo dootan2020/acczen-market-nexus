@@ -32,7 +32,10 @@ export const useUserManagement = () => {
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       if (roleFilter) {
-        query = query.eq('role', roleFilter);
+        // Cast roleFilter to a type that's compatible with the database column type
+        if (roleFilter === 'admin' || roleFilter === 'user') {
+          query = query.eq('role', roleFilter as 'admin' | 'user');
+        }
       }
 
       const { data, count, error } = await query;
@@ -117,8 +120,7 @@ export const useUserManagement = () => {
       if (updateError) throw updateError;
       
       // Create transaction record
-      // Since "admin_deposit" and "admin_withdrawal" aren't valid types,
-      // we'll use "deposit" and "refund" instead
+      // Use valid transaction types
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({

@@ -92,9 +92,20 @@ const AdminUsers = () => {
         </div>
       </div>
 
-      <UsersFilter roleFilter={roleFilter} onRoleFilterChange={setRoleFilter} />
+      <UsersFilter 
+        roleFilter={roleFilter || "all"} 
+        onRoleFilterChange={setRoleFilter} 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-      <UsersTable>
+      <UsersTable
+        users={filteredUsers}
+        onEditRole={handleEditRole}
+        onAdjustBalance={handleAdjustBalance}
+        onSetDiscount={handleDiscountUpdate}
+        onViewUser={setCurrentUser}
+      >
         {isLoading ? (
           <tr>
             <td colSpan={7} className="text-center py-10">
@@ -107,11 +118,9 @@ const AdminUsers = () => {
           filteredUsers.map((user) => (
             <UserRow 
               key={user.id} 
-              user={user as UserProfile} 
-              onRoleChange={() => handleRoleChange(user.id, user.role === 'admin' ? 'user' : 'admin')}
-              onBalanceAdjust={() => handleBalanceAdjust(user.id)}
-              onDiscountUpdate={() => handleDiscountUpdate(user.id)}
-              formatDate={formatDate}
+              user={user} 
+              onEditRole={handleEditRole}
+              onAdjustBalance={handleAdjustBalance}
             />
           ))
         ) : (
@@ -126,11 +135,11 @@ const AdminUsers = () => {
       <UsersPagination 
         currentPage={currentPage} 
         totalPages={totalPages} 
-        hasNextPage={hasNextPage}
         hasPrevPage={hasPrevPage}
-        onNextPage={nextPage} 
-        onPrevPage={prevPage} 
-        onPageChange={goToPage} 
+        hasNextPage={hasNextPage}
+        prevPage={prevPage} 
+        nextPage={nextPage} 
+        goToPage={goToPage} 
       />
 
       {/* Dialogs */}
@@ -138,24 +147,25 @@ const AdminUsers = () => {
         <>
           <EditRoleDialog
             open={isEditRoleDialogOpen}
-            onClose={() => setIsEditRoleDialogOpen(false)}
-            onUpdateRole={handleUpdateRole}
-            user={currentUser as UserProfile}
+            onOpenChange={setIsEditRoleDialogOpen}
+            onConfirm={handleUpdateRole}
+            currentUser={currentUser}
           />
           <AdjustBalanceDialog
             open={isAdjustBalanceDialogOpen}
-            onClose={() => setIsAdjustBalanceDialogOpen(false)}
-            onAdjustBalance={handleAdjustBalanceConfirm}
+            onOpenChange={setIsAdjustBalanceDialogOpen}
+            onConfirm={handleAdjustBalanceConfirm}
             currentBalance={currentUser.balance}
-            user={currentUser as UserProfile}
+            currentUser={currentUser}
           />
           <UserDiscountForm
             open={isDiscountDialogOpen}
-            onClose={() => setIsDiscountDialogOpen(false)}
-            user={currentUser as UserProfile}
-            discount={currentUser.discount_percentage}
-            discountNote={currentUser.discount_note || ''}
-            discountExpiresAt={currentUser.discount_expires_at}
+            onOpenChange={setIsDiscountDialogOpen}
+            onSubmit={handleUpdateDiscount}
+            currentDiscount={currentUser.discount_percentage}
+            currentNote={currentUser.discount_note || ''}
+            currentExpiryDate={currentUser.discount_expires_at}
+            username={currentUser.username || currentUser.email}
           />
         </>
       )}
@@ -166,11 +176,12 @@ const AdminUsers = () => {
             <h2 className="text-xl font-bold mb-4">Update User Discount</h2>
             <UserDiscountForm 
               open={showDiscountForm}
-              onClose={() => setShowDiscountForm(false)}
-              user={currentUser as UserProfile}
-              discount={currentUser.discount_percentage}
-              discountNote={currentUser.discount_note || ''}
-              discountExpiresAt={currentUser.discount_expires_at}
+              onOpenChange={setShowDiscountForm}
+              onSubmit={handleUpdateDiscount}
+              currentDiscount={currentUser.discount_percentage}
+              currentNote={currentUser.discount_note || ''}
+              currentExpiryDate={currentUser.discount_expires_at}
+              username={currentUser.username || currentUser.email}
             />
           </div>
         </div>

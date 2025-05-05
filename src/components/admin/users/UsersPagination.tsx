@@ -9,6 +9,7 @@ interface UsersPaginationProps {
   nextPage: () => void;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  goToPage?: (page: number) => void;
 }
 
 export const UsersPagination = ({
@@ -18,6 +19,7 @@ export const UsersPagination = ({
   nextPage,
   hasNextPage,
   hasPrevPage,
+  goToPage,
 }: UsersPaginationProps) => {
   if (totalPages <= 1) return null;
   

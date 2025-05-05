@@ -1,125 +1,117 @@
 
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { UserProfile } from '@/hooks/admin/types/userManagement.types';
-import { CurrencyTabs } from './balance/CurrencyTabs';
-import { BalanceSummary } from './balance/BalanceSummary';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { UserProfile } from "@/hooks/admin/types/userManagement.types";
 
-interface AdjustBalanceDialogProps {
+export interface AdjustBalanceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (amount: number, operation: 'add' | 'subtract', notes: string) => void;
-  isLoading: boolean;
-  currentUser: UserProfile | null;
+  onConfirm: (amount: number, operation: "add" | "subtract", notes: string) => void;
+  isLoading?: boolean;
+  currentBalance?: number;
+  currentUser?: UserProfile | null;
 }
 
-export const AdjustBalanceDialog = ({
+export function AdjustBalanceDialog({
   open,
   onOpenChange,
   onConfirm,
   isLoading,
+  currentBalance = 0,
   currentUser
-}: AdjustBalanceDialogProps) => {
-  const [amount, setAmount] = useState('');
-  const [operation, setOperation] = useState<'add' | 'subtract'>('add');
-  const [notes, setNotes] = useState('');
-  const [currencyTab, setCurrencyTab] = useState<'usd' | 'vnd'>('usd');
-  const { convertUSDtoVND, convertVNDtoUSD } = useCurrencyContext();
+}: AdjustBalanceDialogProps) {
+  const [amount, setAmount] = useState<number>(0);
+  const [operation, setOperation] = useState<"add" | "subtract">("add");
+  const [notes, setNotes] = useState<string>("");
 
-  const handleConfirm = () => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) return;
-    
-    // Convert to VND if the input was in USD
-    const vndAmount = currencyTab === 'usd' 
-      ? convertUSDtoVND(numAmount)
-      : numAmount;
-    
-    onConfirm(vndAmount, operation, notes);
+  const handleSubmit = () => {
+    if (amount <= 0) return;
+    onConfirm(amount, operation, notes);
   };
-  
-  // Calculate the new balance based on current inputs
-  const calculateNewBalance = () => {
-    if (!currentUser || !amount || isNaN(parseFloat(amount))) {
-      return currentUser?.balance || 0;
-    }
-    
-    const numAmount = parseFloat(amount);
-    // Convert to VND if input is in USD
-    const vndAmount = currencyTab === 'usd' 
-      ? convertUSDtoVND(numAmount)
-      : numAmount;
-    
-    return operation === 'add' 
-      ? (currentUser.balance + vndAmount)
-      : Math.max(0, currentUser.balance - vndAmount);
-  };
-  
-  // Calculate new balance
-  const newBalance = calculateNewBalance();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adjust User Balance</DialogTitle>
+          <DialogTitle>Adjust Balance</DialogTitle>
           <DialogDescription>
-            Modify the balance for {currentUser?.full_name || currentUser?.username || currentUser?.email}
+            Current balance for {currentUser?.username || currentUser?.email}: ${currentBalance.toFixed(2)}
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <CurrencyTabs 
-            amount={amount}
-            setAmount={setAmount}
-            operation={operation}
-            setOperation={setOperation}
-            currencyTab={currencyTab}
-            setCurrencyTab={setCurrencyTab}
-          />
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="operation" className="text-right">
+              Operation
+            </Label>
+            <Select
+              value={operation}
+              onValueChange={(value) => setOperation(value as "add" | "subtract")}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select operation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="add">Add funds</SelectItem>
+                <SelectItem value="subtract">Subtract funds</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="amount" className="text-right">
+              Amount
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <span className="mr-2">$</span>
+              <Input
+                id="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount || ""}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="notes" className="text-right">
+              Notes
+            </Label>
+            <Textarea
               id="notes"
+              placeholder="Reason for adjustment"
+              className="col-span-3"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Reason for adjustment"
             />
           </div>
-          
-          <BalanceSummary 
-            currentUser={currentUser}
-            newBalance={newBalance}
-          />
         </div>
-        
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button 
-            onClick={handleConfirm}
-            disabled={isLoading || !amount || parseFloat(amount) <= 0}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin mr-2 h-4 w-4 border-2 border-b-transparent rounded-full"></div>
-                Processing...
-              </>
-            ) : 'Confirm'}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={amount <= 0 || isLoading}>
+            {isLoading ? "Processing..." : "Confirm"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
