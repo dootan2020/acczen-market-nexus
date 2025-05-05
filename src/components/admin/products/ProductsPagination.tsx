@@ -9,7 +9,7 @@ interface ProductsPaginationProps {
   nextPage: () => void;
   hasNextPage: boolean;
   hasPrevPage: boolean;
-  goToPage: () => void; // Changed to match the hook signature
+  goToPage: (page: number) => void; // Sửa lại để nhận tham số page
 }
 
 export const ProductsPagination = ({
@@ -19,6 +19,7 @@ export const ProductsPagination = ({
   nextPage,
   hasNextPage,
   hasPrevPage,
+  goToPage
 }: ProductsPaginationProps) => {
   if (totalPages <= 1) return null;
   

@@ -19,7 +19,7 @@ interface PaginationHookResult<T> {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  goToPage: () => void; // Changed to take no arguments
+  goToPage: (page: number) => void; // Sửa lại để nhận tham số page
   nextPage: () => void;
   prevPage: () => void;
   hasNextPage: boolean;
@@ -155,12 +155,12 @@ export function useAdminPagination<T>(
   const totalCount = countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Updated goToPage to take no parameters
-  const goToPage = useCallback(() => {
-    // This now serves as a placeholder function that does nothing
-    // Previously it was expected to take a page number parameter
-    console.log('goToPage called but not implemented with parameters');
-  }, []);
+  // Sửa lại goToPage để nhận tham số page
+  const goToPage = useCallback((page: number) => {
+    // Kiểm tra và đảm bảo trang nằm trong khoảng hợp lệ
+    const validPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(validPage);
+  }, [totalPages]);
 
   const nextPage = useCallback(() => {
     if (currentPage < totalPages) {
