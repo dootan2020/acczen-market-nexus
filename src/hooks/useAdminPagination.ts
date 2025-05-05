@@ -73,9 +73,28 @@ export function useAdminPagination<T>(
     setPage(1);
   }, [filter, searchTerm]);
 
+  // Create a properly typed query key array
+  const createQueryKey = () => {
+    const baseKey = Array.isArray(queryKey) ? queryKey : [queryKey];
+    
+    // Create a serialized version of complex objects to avoid recursion issues
+    const serializedFilter = JSON.stringify(filter);
+    
+    return [
+      ...baseKey,
+      page.toString(),
+      pageSize.toString(),
+      serializedFilter,
+      sortBy,
+      sortOrder,
+      searchTerm,
+      searchColumn
+    ];
+  };
+
   // Fetch data with pagination
   const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
-    queryKey: Array.isArray(queryKey) ? queryKey.concat([page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn]) : [queryKey, page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn],
+    queryKey: createQueryKey(),
     queryFn: async () => {
       // Start with the base query
       let query = supabase
