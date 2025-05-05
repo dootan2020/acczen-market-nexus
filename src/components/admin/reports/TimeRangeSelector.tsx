@@ -18,7 +18,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { DateRangeType } from '@/hooks/admin/useReportsData';
+import { DateRangeType } from '@/types/reports';
 
 interface TimeRangeSelectorProps {
   dateRangeType: string;

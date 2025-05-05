@@ -7,7 +7,7 @@ import { AreaChart, BarChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { formatCurrency } from '@/utils/formatters';
 import { DepositsListSection } from './DepositsListSection';
 import { Deposit } from '@/types/deposits';
-import { Skeleton, SkeletonChartBar, SkeletonTable } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DepositsReportProps {
   depositsChartData: DepositsChartData[];
@@ -33,7 +33,9 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
             <Skeleton className="h-4 w-60" />
           </CardHeader>
           <CardContent>
-            <SkeletonChartBar />
+            <div className="h-[300px]">
+              <Skeleton className="h-full w-full" />
+            </div>
           </CardContent>
         </Card>
         
@@ -42,7 +44,16 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
             <Skeleton className="h-5 w-40" />
           </CardHeader>
           <CardContent>
-            <SkeletonTable rows={5} columns={5} />
+            <div className="space-y-2">
+              {Array(5).fill(0).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -81,7 +92,7 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
                       <YAxis />
                       <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                       <Legend />
-                      <Bar dataKey="value" name="Deposit Amount" fill="#3498DB" />
+                      <Bar dataKey="amount" name="Deposit Amount" fill="#3498DB" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -95,7 +106,7 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
                       <YAxis />
                       <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                       <Legend />
-                      <Area type="monotone" dataKey="value" name="Deposit Amount" stroke="#3498DB" fill="#3498DB" fillOpacity={0.3} />
+                      <Area type="monotone" dataKey="amount" name="Deposit Amount" stroke="#3498DB" fill="#3498DB" fillOpacity={0.3} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -135,7 +146,7 @@ export const DepositsReport: React.FC<DepositsReportProps> = ({
         </CardContent>
       </Card>
       
-      <DepositsListSection deposits={depositsData} />
+      <DepositsListSection deposits={depositsData} isLoading={isLoading} />
     </div>
   );
 };

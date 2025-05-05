@@ -45,7 +45,7 @@ function SkeletonChartBar() {
       <div className="space-y-2">
         <div className="flex items-end gap-1 h-40 w-full">
           {[0.6, 0.8, 0.4, 0.7, 0.3, 0.9, 0.5].map((height, i) => (
-            <Skeleton key={i} className={`w-full h-[${Math.floor(height * 100)}%]`} style={{ height: `${Math.floor(height * 100)}%` }} />
+            <Skeleton key={i} className="w-full" style={{ height: `${Math.floor(height * 100)}%` }} />
           ))}
         </div>
       </div>

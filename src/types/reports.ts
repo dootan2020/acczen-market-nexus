@@ -1,4 +1,3 @@
-
 export interface StatsData {
   totalDeposits: number;
   totalDepositAmount: number;
@@ -23,6 +22,7 @@ export interface DepositsChartData {
   date: string;
   amount: number;
   count: number;
+  name?: string; // Added for chart compatibility
 }
 
 export interface OrdersChartData {

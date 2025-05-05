@@ -114,16 +114,19 @@ const Dashboard = () => {
     retry: 2,
     meta: {
       errorMessage: 'Failed to fetch orders'
-    },
-    onError: (error: Error) => {
-      console.error('Failed to fetch orders:', error);
+    }
+  });
+
+  // Show toast on error
+  React.useEffect(() => {
+    if (ordersError) {
       toast({
         title: 'Error loading orders',
         description: 'Please try again later',
         variant: 'destructive'
       });
     }
-  });
+  }, [ordersError]);
 
   // Fetch user profile with explicit type annotations
   const { 
@@ -147,16 +150,19 @@ const Dashboard = () => {
     retry: 2,
     meta: {
       errorMessage: 'Failed to fetch profile'
-    },
-    onError: (error: Error) => {
-      console.error('Failed to fetch profile:', error);
+    }
+  });
+
+  // Show toast on error
+  React.useEffect(() => {
+    if (profileError) {
       toast({
         title: 'Error loading profile',
         description: 'Please try again later',
         variant: 'destructive'
       });
     }
-  });
+  }, [profileError]);
 
   // Fetch user statistics with explicit type annotations
   const { 
@@ -188,16 +194,19 @@ const Dashboard = () => {
     retry: 2,
     meta: {
       errorMessage: 'Failed to fetch stats'
-    },
-    onError: (error: Error) => {
-      console.error('Failed to fetch stats:', error);
+    }
+  });
+
+  // Show toast on error
+  React.useEffect(() => {
+    if (statsError) {
       toast({
         title: 'Error loading statistics',
         description: 'Please try again later',
         variant: 'destructive'
       });
     }
-  });
+  }, [statsError]);
   
   // Check for any loading states
   const isLoading = profileLoading || statsLoading || ordersLoading;

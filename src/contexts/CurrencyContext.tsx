@@ -1,50 +1,50 @@
 
-import { createContext, useContext, ReactNode } from "react";
-import { useCurrency } from "@/hooks/useCurrency";
-import { CurrencyContextType } from "@/types/currency";
-import { formatCurrency } from "@/utils/formatters";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create a context with a default undefined value
+type CurrencyContextType = {
+  currency: string;
+  setCurrency: (currency: string) => void;
+  rate: number;
+  convert: (amount: number) => number;
+};
+
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const currency = useCurrency();
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log("CurrencyProvider - Exchange rates loaded:", {
-      VNDtoUSD: currency.getExchangeRate('VND', 'USD'),
-      USDtoVND: currency.getExchangeRate('USD', 'VND'),
-      isLoading: currency.isLoading
-    });
+export const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+  if (!context) {
+    throw new Error('useCurrency must be used within a CurrencyProvider');
   }
-  
-  // Add the formatVND function that uses our updated formatter
-  const formatVND = (amount: number): string => {
-    return formatCurrency(amount, 'VND');
+  return context;
+};
+
+export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currency, setCurrency] = useState('USD');
+  const [rate, setRate] = useState(1);
+
+  useEffect(() => {
+    // Fetch exchange rates from API
+    // This is a placeholder. In a real app, you'd call an API here
+    const fetchRates = async () => {
+      // Mock rates for demonstration
+      const rates = {
+        USD: 1,
+        EUR: 0.92,
+        GBP: 0.78,
+      };
+      setRate(rates[currency as keyof typeof rates] || 1);
+    };
+
+    fetchRates();
+  }, [currency]);
+
+  const convert = (amount: number): number => {
+    return amount * rate;
   };
-  
-  const value: CurrencyContextType = {
-    convertVNDtoUSD: currency.convertVNDtoUSD,
-    convertUSDtoVND: currency.convertUSDtoVND,
-    formatVND,
-    formatUSD: currency.formatUSD,
-    isLoading: currency.isLoading,
-    error: currency.error,
-    getExchangeRate: currency.getExchangeRate,
-    convertCurrency: currency.convertCurrency
-  };
-  
+
   return (
-    <CurrencyContext.Provider value={value}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, rate, convert }}>
       {children}
     </CurrencyContext.Provider>
   );
-};
-
-export const useCurrencyContext = () => {
-  const context = useContext(CurrencyContext);
-  if (context === undefined) {
-    throw new Error("useCurrencyContext must be used within a CurrencyProvider");
-  }
-  return context;
 };

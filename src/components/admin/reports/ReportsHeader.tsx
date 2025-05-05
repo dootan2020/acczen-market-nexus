@@ -1,7 +1,5 @@
 
-// Assuming this is the file that contains the issue with value property
 import React from 'react';
-import { DateRangeType, StatsData, DepositsChartData } from '@/types/reports';
 import { DateRange } from 'react-day-picker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { StatsSection } from './StatsSection';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatsData, DepositsChartData, DateRangeType } from '@/types/reports';
 
 interface ReportsHeaderProps {
   dateRangeType: DateRangeType;
@@ -46,8 +45,8 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
     const lastPeriod = depositsChartData[depositsChartData.length - 1];
     
     // Safely extract values, defaulting to 0 if undefined
-    const firstValue = firstPeriod && typeof firstPeriod.value !== 'undefined' ? firstPeriod.value : 0;
-    const lastValue = lastPeriod && typeof lastPeriod.value !== 'undefined' ? lastPeriod.value : 0;
+    const firstValue = firstPeriod && typeof firstPeriod.amount !== 'undefined' ? firstPeriod.amount : 0;
+    const lastValue = lastPeriod && typeof lastPeriod.amount !== 'undefined' ? lastPeriod.amount : 0;
     
     // Calculate percentage change
     const depositsPercentage = firstValue !== 0 
@@ -106,6 +105,9 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
       <TimeRangeSelector
         dateRangeType={dateRangeType}
         onDateRangeChange={onDateRangeChange}
+        dateRange={dateRange}
+        onDateRangePickerChange={onDateRangePickerChange}
+        formattedDateRange={formattedDateRange}
       />
       
       {/* Stats Section */}
@@ -123,7 +125,7 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
         </div>
       ) : (
         <StatsSection
-          data={statsData}
+          statsData={statsData}
           depositTrend={trends.depositsPercentage}
         />
       )}

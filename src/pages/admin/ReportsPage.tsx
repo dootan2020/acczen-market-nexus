@@ -26,7 +26,7 @@ const ReportsPage = () => {
   const [activeTab, setActiveTab] = React.useState('overview');
   
   // Convert deposits to the proper type using our utility function
-  const typedDeposits = convertToDeposits(deposits);
+  const typedDeposits = deposits ? convertToDeposits(deposits) : [];
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">

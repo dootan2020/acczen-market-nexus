@@ -2,14 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { StatsData } from '@/types/reports';
+import { StatsData, ChartData } from '@/types/reports';
 import { formatCurrency } from '@/utils/formatters';
 import { PaymentMethodsChart } from './PaymentMethodsChart';
-import { Skeleton, SkeletonChartPie } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ReportOverviewProps {
   statsData?: StatsData;
-  paymentMethodData?: { name: string; value: number }[];
+  paymentMethodData?: ChartData[];
   isLoading: boolean;
 }
 
@@ -19,10 +19,7 @@ export const ReportOverview: React.FC<ReportOverviewProps> = ({
   isLoading
 }) => {
   // Format payment method data for the chart
-  const chartData = paymentMethodData?.map(item => ({
-    name: item.method,
-    value: item.amount
-  })) || [];
+  const chartData = paymentMethodData || [];
   
   if (isLoading) {
     return (
@@ -44,7 +41,9 @@ export const ReportOverview: React.FC<ReportOverviewProps> = ({
             <Skeleton className="h-5 w-40" />
           </CardHeader>
           <CardContent className="flex justify-center">
-            <SkeletonChartPie />
+            <div className="h-40 w-40">
+              <Skeleton className="h-full w-full rounded-full" />
+            </div>
           </CardContent>
         </Card>
       </div>

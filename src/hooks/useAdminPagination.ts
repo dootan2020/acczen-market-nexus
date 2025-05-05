@@ -2,221 +2,144 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 interface PaginationOptions {
-  pageSize?: number;
-  initialPage?: number;
+  page: number;
+  pageSize: number;
+  filter?: Record<string, any>;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  searchTerm?: string;
+  searchColumn?: string;
 }
 
-interface FilterOptions {
-  [key: string]: any;
+interface PaginationResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  isLoading: boolean;
+  error: Error | null;
+  isFetching: boolean;
+  setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
+  setFilter: (filter: Record<string, any>) => void;
+  setSorting: (column: string, order: 'asc' | 'desc') => void;
+  setSearchTerm: (term: string) => void;
+  refetch: () => void;
 }
 
-/**
- * Custom hook for pagination in admin panels
- * @param tableName Supabase table name
- * @param queryKey React Query key
- * @param options Pagination options (pageSize, initialPage)
- * @param filterOptions Filter options for the query
- * @param selectQuery Select query for the table
- * @returns Pagination state and handlers
- */
+// Type safety for table names
+type TableNames = 'products' | 'orders' | 'deposits' | 'profiles' | 'categories' | 'subcategories';
+
 export function useAdminPagination<T>(
-  tableName: string,
-  queryKey: (string | number)[],
-  options: PaginationOptions = {},
-  filterOptions: FilterOptions = {},
-  selectQuery: string = '*'
-) {
-  const { pageSize = 10, initialPage = 1 } = options;
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isInitialized, setIsInitialized] = useState(false);
+  tableName: TableNames, 
+  options: PaginationOptions, 
+  customSelect?: string
+): PaginationResult<T> {
+  // State
+  const [page, setPage] = useState(options.page || 1);
+  const [pageSize, setPageSize] = useState(options.pageSize || 10);
+  const [filter, setFilter] = useState<Record<string, any>>(options.filter || {});
+  const [sortBy, setSortBy] = useState<string>(options.sortBy || 'created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(options.sortOrder || 'desc');
+  const [searchTerm, setSearchTerm] = useState<string>(options.searchTerm || '');
+  const [searchColumn, setSearchColumn] = useState<string>(options.searchColumn || '');
+  
+  // Derived state
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  
+  // Reset to page 1 when filters or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [filter, searchTerm]);
 
-  // Count total number of items for pagination
-  const fetchTotalCount = useCallback(async () => {
-    try {
-      // Initialize query with filters
-      let query = supabase.from(tableName).select('id', { count: 'exact' });
-
-      // Apply all filters
-      Object.entries(filterOptions).forEach(([key, value]) => {
+  // Fetch data with pagination
+  const { data, isLoading, error, isFetching, refetch } = useQuery<{data: T[], count: number }>({
+    queryKey: ['admin', tableName, page, pageSize, filter, sortBy, sortOrder, searchTerm, searchColumn],
+    queryFn: async () => {
+      // Start with the base query
+      let query = supabase
+        .from(tableName)
+        .select(customSelect || '*', { count: 'exact' });
+      
+      // Apply search if provided
+      if (searchTerm && searchColumn) {
+        query = query.ilike(searchColumn, `%${searchTerm}%`);
+      }
+      
+      // Apply filters
+      Object.entries(filter).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          if (typeof value === 'object' && 'operator' in value && 'value' in value) {
-            // Handle specific operators like gt, lt, etc.
-            switch (value.operator) {
-              case 'gt':
-                query = query.gt(key, value.value);
-                break;
-              case 'lt':
-                query = query.lt(key, value.value);
-                break;
-              case 'gte':
-                query = query.gte(key, value.value);
-                break;
-              case 'lte':
-                query = query.lte(key, value.value);
-                break;
-              case 'neq':
-                query = query.neq(key, value.value);
-                break;
-              case 'like':
-                query = query.like(key, `%${value.value}%`);
-                break;
-              case 'ilike':
-                query = query.ilike(key, `%${value.value}%`);
-                break;
-              default:
-                query = query.eq(key, value.value);
-            }
+          if (Array.isArray(value)) {
+            query = query.in(key, value);
+          } else if (typeof value === 'object' && value !== null) {
+            // Handle range filters with gt, lt, etc.
+            Object.entries(value).forEach(([operator, operatorValue]) => {
+              if (operatorValue !== undefined && operatorValue !== null && operatorValue !== '') {
+                switch (operator) {
+                  case 'gt': query = query.gt(key, operatorValue); break;
+                  case 'gte': query = query.gte(key, operatorValue); break;
+                  case 'lt': query = query.lt(key, operatorValue); break;
+                  case 'lte': query = query.lte(key, operatorValue); break;
+                  case 'neq': query = query.neq(key, operatorValue); break;
+                  case 'like': query = query.like(key, `%${operatorValue}%`); break;
+                  case 'ilike': query = query.ilike(key, `%${operatorValue}%`); break;
+                }
+              }
+            });
           } else {
-            // Simple equality filter
             query = query.eq(key, value);
           }
         }
       });
-
-      // Execute count query
-      const { count, error } = await query;
-
-      if (error) {
-        throw error;
+      
+      // Apply sorting
+      if (sortBy) {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
       }
-
-      return count || 0;
-    } catch (error) {
-      console.error(`Error fetching total count for ${tableName}:`, error);
-      toast.error(`Failed to load pagination data. Please try again.`);
-      return 0;
-    }
-  }, [tableName, filterOptions]);
-
-  // Calculate total pages whenever total count changes
-  useEffect(() => {
-    const calculateTotalPages = async () => {
-      const count = await fetchTotalCount();
-      setTotalCount(count);
-      setTotalPages(Math.max(1, Math.ceil(count / pageSize)));
-      setIsInitialized(true);
-    };
-
-    calculateTotalPages();
-  }, [fetchTotalCount, pageSize]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    if (isInitialized) {
-      setCurrentPage(1);
-    }
-  }, [JSON.stringify(filterOptions), isInitialized]);
-
-  // Fetch data with pagination
-  const { data, isLoading, error, refetch } = useQuery<T[]>({
-    queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filterOptions)],
-    queryFn: async () => {
-      try {
-        // Calculate pagination values
-        const from = (currentPage - 1) * pageSize;
-        const to = from + pageSize - 1;
-
-        // Initialize query with filters
-        let query = supabase
-          .from(tableName)
-          .select(selectQuery)
-          .range(from, to);
-
-        // Apply all filters
-        Object.entries(filterOptions).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            if (typeof value === 'object' && 'operator' in value && 'value' in value) {
-              // Handle specific operators like gt, lt, etc.
-              switch (value.operator) {
-                case 'gt':
-                  query = query.gt(key, value.value);
-                  break;
-                case 'lt':
-                  query = query.lt(key, value.value);
-                  break;
-                case 'gte':
-                  query = query.gte(key, value.value);
-                  break;
-                case 'lte':
-                  query = query.lte(key, value.value);
-                  break;
-                case 'neq':
-                  query = query.neq(key, value.value);
-                  break;
-                case 'like':
-                  query = query.like(key, `%${value.value}%`);
-                  break;
-                case 'ilike':
-                  query = query.ilike(key, `%${value.value}%`);
-                  break;
-                default:
-                  query = query.eq(key, value.value);
-              }
-            } else if (Array.isArray(value)) {
-              // Handle array of values for 'in' operations
-              query = query.in(key, value);
-            } else {
-              // Simple equality filter
-              query = query.eq(key, value);
-            }
-          }
-        });
-
-        // Execute the query
-        const { data, error } = await query;
-
-        if (error) {
-          throw error;
-        }
-
-        return (data as T[]) || [];
-      } catch (error) {
-        console.error(`Error fetching ${tableName}:`, error);
-        toast.error(`Failed to load data. Please try again.`);
-        return [];
-      }
+      
+      // Apply pagination
+      const { data, error, count } = await query
+        .range(from, to);
+      
+      if (error) throw error;
+      
+      return {
+        data: data as T[],
+        count: count || 0
+      };
     },
-    staleTime: 1000 * 60, // 1 minute
-    gcTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    staleTime: 30000 // 30 seconds
   });
 
-  const nextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
-    }
-  }, [currentPage, totalPages]);
-
-  const prevPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
-  }, [currentPage]);
-
-  const goToPage = useCallback((page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }, [totalPages]);
+  // Calculate page count
+  const pageCount = Math.ceil((data?.count || 0) / pageSize);
+  
+  // Handler for sorting
+  const setSorting = useCallback((column: string, order: 'asc' | 'desc') => {
+    setSortBy(column);
+    setSortOrder(order);
+  }, []);
 
   return {
-    data,
-    isLoading,
-    error,
-    refetch,
-    currentPage,
-    totalPages,
-    totalCount,
+    data: data?.data || [],
+    total: data?.count || 0,
+    page,
     pageSize,
-    nextPage,
-    prevPage,
-    goToPage,
-    hasNextPage: currentPage < totalPages,
-    hasPrevPage: currentPage > 1
+    pageCount,
+    isLoading,
+    error: error as Error | null,
+    isFetching,
+    setPage,
+    setPageSize,
+    setFilter,
+    setSorting,
+    setSearchTerm,
+    refetch
   };
 }

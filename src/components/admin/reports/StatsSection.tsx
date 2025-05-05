@@ -5,10 +5,16 @@ import { StatsData } from '@/types/reports';
 import { formatCurrency } from '@/utils/formatters';
 
 interface StatsSectionProps {
-  statsData: StatsData;
+  statsData?: StatsData;
+  depositTrend?: number;
 }
 
-export const StatsSection: React.FC<StatsSectionProps> = ({ statsData }) => {
+export const StatsSection: React.FC<StatsSectionProps> = ({ 
+  statsData, 
+  depositTrend 
+}) => {
+  if (!statsData) return null;
+  
   return (
     <div className="grid grid-cols-2 gap-4">
       <Card className="bg-white shadow-sm">

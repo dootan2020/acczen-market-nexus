@@ -12,7 +12,7 @@ import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DATE_RANGES } from "@/hooks/useReportsData";
-import { DateRangeType } from '@/hooks/admin/useReportsData';
+import { DateRangeType } from '@/types/reports';
 
 interface ReportFiltersProps {
   dateRangeType: string;
