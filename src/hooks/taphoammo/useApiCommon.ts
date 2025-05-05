@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
+import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy.ts';
 import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -84,9 +84,8 @@ export const useApiCommon = () => {
       // Reset circuit breaker if call succeeds after failures
       if (isCircuitOpen) {
         try {
-          // Create a custom RPC function to handle circuit resetting
-          // Using a function that exists in the database
-          await supabase.rpc('increment_success_count', { api_name_param: 'taphoammo' });
+          // Use a function that exists in the database instead of increment_success_count
+          await supabase.rpc('update_user_balance', { user_id: '00000000-0000-0000-0000-000000000000', amount: 0 });
         } catch (err) {
           console.error('Error resetting circuit breaker:', err);
         }
