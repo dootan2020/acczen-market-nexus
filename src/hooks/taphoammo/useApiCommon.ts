@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy.ts';
+import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
 import { supabase } from '@/integrations/supabase/client';
 
