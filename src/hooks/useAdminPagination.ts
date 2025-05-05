@@ -42,11 +42,6 @@ type TableNames = 'products' | 'orders' | 'deposits' | 'profiles' | 'categories'
 
 /**
  * Hook for admin pagination with TanStack Query v5
- * @param tableName The Supabase table name to query
- * @param queryKey The query key for caching
- * @param options Pagination options
- * @param initialFilter Initial filter to apply
- * @param customSelect Custom select query string
  */
 export function useAdminPagination<T>(
   tableName: TableNames,
@@ -74,7 +69,7 @@ export function useAdminPagination<T>(
   }, [filter, searchTerm]);
 
   // Create a properly typed query key array
-  const createQueryKey = () => {
+  const createQueryKey = useCallback(() => {
     const baseKey = Array.isArray(queryKey) ? queryKey : [queryKey];
     
     // Create a serialized version of complex objects to avoid recursion issues
@@ -90,7 +85,7 @@ export function useAdminPagination<T>(
       `search-${searchTerm}`,
       `column-${searchColumn}`
     ];
-  };
+  }, [filter, page, pageSize, queryKey, searchColumn, searchTerm, sortBy, sortOrder]);
 
   // Fetch data with pagination
   const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({

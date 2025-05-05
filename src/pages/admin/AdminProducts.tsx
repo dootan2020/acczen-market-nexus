@@ -146,8 +146,8 @@ const AdminProducts = () => {
     return status as DatabaseProductStatus;
   };
   
-  const handleImportConfirm = (products: ProductFormData[]) => {
-    bulkImportMutation.mutateAsync(products);
+  const handleImportConfirm = async (products: ProductFormData[]) => {
+    await bulkImportMutation.mutateAsync(products);
   };
 
   const handleSubmit = (formData: ProductFormData) => {
