@@ -11,6 +11,7 @@ import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import Help from './pages/Help';
 import Categories from './pages/Categories';
 import HowItWorks from './pages/HowItWorks';
+import Support from './pages/Support';
 
 // Import admin pages
 import AdminHome from './pages/admin/AdminHome';
@@ -43,6 +44,7 @@ const mainRoutes = [
   { path: '/products', element: <Products /> },
   { path: '/categories', element: <Categories /> },
   { path: '/how-it-works', element: <HowItWorks /> },
+  { path: '/support', element: <Support /> },
   { path: '/profile', element: <ProfilePage /> },
   { path: '/help', element: <Help /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
