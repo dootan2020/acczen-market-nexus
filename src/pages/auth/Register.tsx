@@ -51,11 +51,15 @@ const Register = () => {
 
       // Then handle the user profile creation separately:
       if (user) {
+        // Generate a username from the email
+        const username = formData.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 7);
+        
         // Create user profile with the name - fix the Date issue by converting to ISO string
         await supabase.from('profiles').upsert({
           id: user.id,
           full_name: formData.name,
           email: formData.email,
+          username: username, // Add required username field
           updated_at: new Date().toISOString()
         });
 

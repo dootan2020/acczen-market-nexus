@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useProduct, useRelatedProducts } from '@/hooks/useProduct';
 import { Container } from '@/components/ui/container';
@@ -23,15 +24,13 @@ const ProductDetailContent = () => {
   const { formatUSD } = useCurrencyContext();
   const { handleError, clearError } = useErrorHandler();
   
-  // Fix the useProduct hook call - remove the options object wrapping
+  // Fix the useProduct hook call to only use one argument (the slug)
   const { 
     data: product, 
     isLoading, 
     error, 
     refetch 
-  } = useProduct(slug || '', {
-    onError: handleError
-  });
+  } = useProduct(slug || '');
   
   // Also handle related products errors
   const { 
