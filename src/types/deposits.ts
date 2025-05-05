@@ -13,7 +13,8 @@ export interface Deposit {
   paypal_order_id?: string;
   paypal_payer_id?: string;
   paypal_payer_email?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | string | null;
+  payment_id?: string;
   profiles?: {
     email?: string;
     username?: string;

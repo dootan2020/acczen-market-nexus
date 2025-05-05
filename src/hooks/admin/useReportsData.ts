@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DateRange } from 'react-day-picker';
@@ -17,11 +18,7 @@ export const DATE_RANGES = {
 };
 
 export const useReportsData = () => {
-  // State for date range type and custom date range
-  const [dateRangeType, setDateRangeType] = useState<DateRangeType>('30days');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(getDateRangeFromType('30days'));
-
-  // Function to get date range from type
+  // Function to get date range from type - moved before first usage
   const getDateRangeFromType = useCallback((type: DateRangeType): DateRange => {
     const today = new Date();
     const todayEnd = endOfDay(today);
@@ -54,6 +51,10 @@ export const useReportsData = () => {
         };
     }
   }, []);
+
+  // State for date range type and custom date range
+  const [dateRangeType, setDateRangeType] = useState<DateRangeType>('30days');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(getDateRangeFromType('30days'));
 
   // Handle date range type change
   const handleDateRangeTypeChange = useCallback((type: DateRangeType) => {

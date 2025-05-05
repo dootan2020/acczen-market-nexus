@@ -5,6 +5,7 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
+import { Deposit } from '@/types/deposits';
 
 const AdminReports = () => {
   const {
@@ -31,6 +32,9 @@ const AdminReports = () => {
     hasOrdersChartData: !!ordersChartData?.length,
     isLoading
   });
+  
+  // Cast deposits to the correct type - this is safe because our Deposit interface now includes all the fields
+  const typedDeposits = deposits as unknown as Deposit[];
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
@@ -76,7 +80,7 @@ const AdminReports = () => {
             ordersChartData={ordersChartData || []}
             dateRange={dateRange}
             isLoading={isLoading}
-            depositsData={deposits || []}
+            depositsData={typedDeposits || []}
           />
         </Suspense>
       )}

@@ -190,7 +190,7 @@ export function useAdminPagination<T>(
     staleTime,
     gcTime: cacheTime,
     retry: retries,
-    keepPreviousData: true // Keep previous data while loading new data
+    placeholderData: (previousData) => previousData // Use this instead of keepPreviousData
   });
 
   const totalCount = countData || 0;

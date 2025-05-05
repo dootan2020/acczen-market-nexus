@@ -54,7 +54,7 @@ export const ReportsHeader = React.memo(({
   const isRevenueUp = useMemo(() => {
     if (!depositsChartData || depositsChartData.length < 2) return true;
     const lastIndex = depositsChartData.length - 1;
-    return depositsChartData[lastIndex].value >= depositsChartData[lastIndex - 1].value;
+    return depositsChartData[lastIndex].amount >= depositsChartData[lastIndex - 1].amount;
   }, [depositsChartData]);
 
   return (
