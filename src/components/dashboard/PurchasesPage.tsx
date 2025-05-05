@@ -11,8 +11,12 @@ import {
 import { PurchasesFilter } from "./purchases/PurchasesFilter";
 import { PurchasesTable } from "./purchases/PurchasesTable";
 import { PurchasesPagination } from "./purchases/PurchasesPagination";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import ErrorAlert from "@/components/ui/ErrorAlert";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
-const PurchasesPage = () => {
+const PurchasesPageContent = () => {
   const {
     orders,
     page,
@@ -21,7 +25,8 @@ const PurchasesPage = () => {
     setSearch,
     isLoading,
     error,
-    totalPages
+    totalPages,
+    refetch
   } = usePurchases();
 
   if (isLoading) {
@@ -32,7 +37,10 @@ const PurchasesPage = () => {
           <CardDescription>View and manage your order history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p>Loading your purchase history...</p>
+          <div className="flex flex-col items-center gap-4">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <p>Loading your purchase history...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -45,14 +53,28 @@ const PurchasesPage = () => {
           <CardTitle>Your Purchases</CardTitle>
           <CardDescription>View and manage your order history</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center p-8">
-          <p className="text-red-500">Error loading purchases. Please try again later.</p>
+        <CardContent>
+          <ErrorAlert 
+            title="Error Loading Purchases" 
+            message="We encountered a problem loading your purchase history."
+            details={error instanceof Error ? error.message : String(error)}
+            action={
+              <Button 
+                variant="outline" 
+                onClick={() => refetch()}
+                className="mt-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+            }
+          />
         </CardContent>
       </Card>
     );
   }
 
-  if (!orders.length) {
+  if (!orders || orders.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -60,7 +82,12 @@ const PurchasesPage = () => {
           <CardDescription>View and manage your order history</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
-          <p>You haven't made any purchases yet.</p>
+          <div className="text-center">
+            <p className="mb-4">You haven't made any purchases yet.</p>
+            <Button asChild>
+              <a href="/products">Browse Products</a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -86,6 +113,14 @@ const PurchasesPage = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const PurchasesPage = () => {
+  return (
+    <ErrorBoundary>
+      <PurchasesPageContent />
+    </ErrorBoundary>
   );
 };
 

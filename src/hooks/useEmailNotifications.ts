@@ -1,168 +1,188 @@
 
-import { useState, useCallback } from 'react';
-import { emailService, EmailMode } from '@/services/email/EmailService';
-import type { 
-  WelcomeEmailData, 
-  OrderConfirmationEmailData,
-  DepositConfirmationEmailData,
-  SupportResponseEmailData
-} from '@/services/email/EmailService';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { emailService } from '@/services/email/EmailService';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useToast } from '@/hooks/use-toast';
 
-export interface EmailNotificationState {
-  loading: boolean;
-  success: boolean;
-  error: string | null;
+interface EmailNotificationOptions {
+  showToast?: boolean;
+  logToConsole?: boolean;
 }
 
-export const useEmailNotifications = () => {
-  const [state, setState] = useState<EmailNotificationState>({
-    loading: false,
-    success: false,
-    error: null
-  });
+export function useEmailNotifications(options: EmailNotificationOptions = {}) {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { handleError } = useErrorHandler();
+  const { toast } = useToast();
   
-  // Set email service mode
-  const setEmailMode = useCallback((mode: EmailMode) => {
-    emailService.setMode(mode);
-  }, []);
-  
-  // Reset the state
-  const resetState = useCallback(() => {
-    setState({
-      loading: false,
-      success: false,
-      error: null
-    });
-  }, []);
-  
-  // Send welcome email
-  const sendWelcomeEmail = useCallback(async (data: WelcomeEmailData, showToast = true) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    
+  const defaultOpts = {
+    showToast: true,
+    logToConsole: true,
+    ...options
+  };
+
+  /**
+   * Send welcome email to a new user
+   */
+  const sendWelcomeEmail = async (
+    email: string, 
+    data: { username: string; firstName?: string }
+  ) => {
+    setIsLoading(true);
     try {
-      const result = await emailService.sendWelcomeEmail(data);
+      const result = await emailService.sendWelcomeEmail(email, data);
       
-      setState(prev => ({ ...prev, loading: false, success: result }));
+      if (!result.success) {
+        throw result.error || new Error('Failed to send welcome email');
+      }
       
-      if (showToast) {
-        if (result) {
-          toast.success('Welcome email sent successfully');
-        } else {
-          toast.error('Failed to send welcome email');
-        }
+      if (defaultOpts.showToast) {
+        toast({
+          title: "Email Sent",
+          description: `Welcome email sent to ${email}`,
+        });
       }
       
       return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send welcome email';
-      setState(prev => ({ ...prev, loading: false, error: errorMsg }));
+      handleError(error, {
+        showToast: defaultOpts.showToast,
+        logToConsole: defaultOpts.logToConsole
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Send order confirmation email
+   */
+  const sendOrderConfirmationEmail = async (
+    email: string,
+    data: {
+      orderId: string;
+      username: string;
+      firstName?: string;
+      date: string;
+      items: Array<{ name: string; quantity: number; price: number }>;
+      total: number;
+    }
+  ) => {
+    setIsLoading(true);
+    try {
+      const result = await emailService.sendOrderConfirmationEmail(email, data);
       
-      if (showToast) {
-        toast.error(errorMsg);
+      if (!result.success) {
+        throw result.error || new Error('Failed to send order confirmation email');
       }
       
-      return false;
-    }
-  }, []);
-  
-  // Send order confirmation email
-  const sendOrderConfirmationEmail = useCallback(async (data: OrderConfirmationEmailData, showToast = true) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const result = await emailService.sendOrderConfirmationEmail(data);
-      
-      setState(prev => ({ ...prev, loading: false, success: result }));
-      
-      if (showToast) {
-        if (result) {
-          toast.success('Order confirmation email sent successfully');
-        } else {
-          toast.error('Failed to send order confirmation email');
-        }
+      if (defaultOpts.showToast) {
+        toast({
+          title: "Order Confirmation Sent",
+          description: `Order confirmation email sent to ${email}`,
+        });
       }
       
       return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send order confirmation email';
-      setState(prev => ({ ...prev, loading: false, error: errorMsg }));
+      handleError(error, {
+        showToast: defaultOpts.showToast,
+        logToConsole: defaultOpts.logToConsole
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Send deposit confirmation email
+   */
+  const sendDepositConfirmationEmail = async (
+    email: string,
+    data: {
+      depositId: string;
+      username: string;
+      firstName?: string;
+      date: string;
+      amount: number;
+      paymentMethod: string;
+      transactionId?: string;
+    }
+  ) => {
+    setIsLoading(true);
+    try {
+      const result = await emailService.sendDepositConfirmationEmail(email, data);
       
-      if (showToast) {
-        toast.error(errorMsg);
+      if (!result.success) {
+        throw result.error || new Error('Failed to send deposit confirmation email');
       }
       
-      return false;
-    }
-  }, []);
-  
-  // Send deposit confirmation email
-  const sendDepositConfirmationEmail = useCallback(async (data: DepositConfirmationEmailData, showToast = true) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const result = await emailService.sendDepositConfirmationEmail(data);
-      
-      setState(prev => ({ ...prev, loading: false, success: result }));
-      
-      if (showToast) {
-        if (result) {
-          toast.success('Deposit confirmation email sent successfully');
-        } else {
-          toast.error('Failed to send deposit confirmation email');
-        }
+      if (defaultOpts.showToast) {
+        toast({
+          title: "Deposit Confirmation Sent",
+          description: `Deposit confirmation email sent to ${email}`,
+        });
       }
       
       return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send deposit confirmation email';
-      setState(prev => ({ ...prev, loading: false, error: errorMsg }));
+      handleError(error, {
+        showToast: defaultOpts.showToast,
+        logToConsole: defaultOpts.logToConsole
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Send support response email
+   */
+  const sendSupportResponseEmail = async (
+    email: string,
+    data: {
+      ticketId: string;
+      username: string;
+      firstName?: string;
+      subject: string;
+      message: string;
+      responseMessage: string;
+    }
+  ) => {
+    setIsLoading(true);
+    try {
+      const result = await emailService.sendSupportResponseEmail(email, data);
       
-      if (showToast) {
-        toast.error(errorMsg);
+      if (!result.success) {
+        throw result.error || new Error('Failed to send support response email');
       }
       
-      return false;
-    }
-  }, []);
-  
-  // Send support response email
-  const sendSupportResponseEmail = useCallback(async (data: SupportResponseEmailData, showToast = true) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const result = await emailService.sendSupportResponseEmail(data);
-      
-      setState(prev => ({ ...prev, loading: false, success: result }));
-      
-      if (showToast) {
-        if (result) {
-          toast.success('Support response email sent successfully');
-        } else {
-          toast.error('Failed to send support response email');
-        }
+      if (defaultOpts.showToast) {
+        toast({
+          title: "Support Response Sent",
+          description: `Support response email sent to ${email}`,
+        });
       }
       
       return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send support response email';
-      setState(prev => ({ ...prev, loading: false, error: errorMsg }));
-      
-      if (showToast) {
-        toast.error(errorMsg);
-      }
-      
-      return false;
+      handleError(error, {
+        showToast: defaultOpts.showToast,
+        logToConsole: defaultOpts.logToConsole
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-  
+  };
+
   return {
-    ...state,
-    setEmailMode,
-    resetState,
+    isLoading,
     sendWelcomeEmail,
     sendOrderConfirmationEmail,
     sendDepositConfirmationEmail,
     sendSupportResponseEmail
   };
-};
+}

@@ -99,34 +99,88 @@ export class ApiService {
       if (!response.ok) {
         const errorData = await this.parseResponseData(response);
         
+        // Enhanced error handling with more detailed error information
+        const error = new Error();
+        Object.assign(error, {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData,
+          url: url,
+          method: config.method,
+          timestamp: new Date().toISOString(),
+          isNetworkError: false,
+          isApiError: true
+        });
+
+        // Handle specific HTTP status codes
+        switch (response.status) {
+          case 401: // Unauthorized
+          case 403: // Forbidden
+            error.name = 'AuthenticationError';
+            break;
+          case 404: // Not Found
+            error.name = 'NotFoundError';
+            break;
+          case 400: // Bad Request
+            error.name = 'ValidationError';
+            break;
+          case 429: // Too Many Requests
+            error.name = 'RateLimitError';
+            break;
+          case 500: // Internal Server Error
+          case 502: // Bad Gateway
+          case 503: // Service Unavailable
+          case 504: // Gateway Timeout
+            error.name = 'ServerError';
+            break;
+          default:
+            error.name = 'ApiError';
+        }
+        
         if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
+          console.warn(`Retrying ${config.method} request to ${url} - attempt ${retryCount + 1}/${this.maxRetries}`);
           await this.delay(this.retryDelay * Math.pow(2, retryCount));
           return this.fetchWithRetry<T>(url, config, retryCount + 1);
         }
         
-        throw new Error(
-          JSON.stringify({
-            status: response.status,
-            statusText: response.statusText,
-            data: errorData,
-          })
-        );
+        throw error;
       }
       
       return this.parseResponseData(response);
-    } catch (error) {
+    } catch (error: any) {
+      // Enhance error object with additional information
+      if (error instanceof Error) {
+        Object.assign(error, {
+          isNetworkError: this.isNetworkError(error),
+          isApiError: false,
+          url: url,
+          method: config.method,
+          timestamp: new Date().toISOString(),
+          retryCount
+        });
+      }
+
       // Handle CORS errors specifically
       if (error.message && error.message.includes('CORS')) {
         console.error('CORS error detected:', error);
+        error.name = 'CORSError';
         
         // Try using a CORS proxy if this is the first attempt
         if (retryCount === 0) {
+          console.warn('Attempting to use CORS proxy for request');
           const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
           return this.fetchWithRetry<T>(corsProxyUrl, config, retryCount + 1);
         }
       }
       
+      // Handle Timeout
+      if (error.name === 'AbortError') {
+        error.name = 'TimeoutError';
+        error.message = `Request timed out after 30 seconds: ${url}`;
+      }
+      
       if (retryCount < this.maxRetries && this.isNetworkError(error)) {
+        console.warn(`Retrying request due to network error - attempt ${retryCount + 1}/${this.maxRetries}`);
         await this.delay(this.retryDelay * Math.pow(2, retryCount));
         return this.fetchWithRetry<T>(url, config, retryCount + 1);
       }
@@ -150,7 +204,8 @@ export class ApiService {
            (error.message && (
              error.message.includes('NetworkError') || 
              error.message.includes('Failed to fetch') ||
-             error.message.includes('Network request failed')
+             error.message.includes('Network request failed') ||
+             error.message.includes('timeout')
            ));
   }
 

@@ -1,221 +1,199 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { welcomeEmailTemplate, orderConfirmationEmailTemplate, depositConfirmationEmailTemplate, supportResponseEmailTemplate } from './templates';
 import { toast } from 'sonner';
+import { parseError } from '@/utils/errorUtils';
+import * as emailTemplates from './templates';
+import { withRetry } from '@/utils/errorUtils';
 
-export type EmailMode = 'production' | 'development';
+type EmailType = 'welcome' | 'order-confirmation' | 'deposit-confirmation' | 'support-response';
 
-// Types for email data
-export interface WelcomeEmailData {
-  email: string;
-  username: string;
-  firstName?: string;
-}
-
-export interface OrderConfirmationEmailData {
-  email: string;
-  username: string;
-  firstName?: string;
-  orderId: string;
-  date: string;
-  total: number;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  digitalKeys?: Array<{
-    productName: string;
-    keys: string[];
-  }>;
-}
-
-export interface DepositConfirmationEmailData {
-  email: string;
-  username: string;
-  firstName?: string;
-  depositId: string;
-  date: string;
-  amount: number;
-  paymentMethod: string;
-  transactionId?: string;
-}
-
-export interface SupportResponseEmailData {
-  email: string;
-  username: string;
-  firstName?: string;
-  ticketId?: string;
+interface EmailOptions {
+  to: string;
   subject: string;
-  message: string;
-  responseMessage?: string;
+  html: string;
+  emailType: EmailType;
+  metadata?: Record<string, any>;
+}
+
+interface SendEmailResponse {
+  success: boolean;
+  messageId?: string;
+  error?: Error;
 }
 
 class EmailService {
-  private mode: EmailMode;
+  private isDevelopment: boolean;
   
-  constructor(mode: EmailMode = 'development') {
-    this.mode = mode;
+  constructor() {
+    // Check if we're in development mode based on environment
+    this.isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
   }
   
-  // Set the service mode
-  setMode(mode: EmailMode) {
-    this.mode = mode;
-    console.log(`Email service mode set to: ${mode}`);
-    return this;
-  }
-  
-  // Get current mode
-  getMode(): EmailMode {
-    return this.mode;
-  }
-  
-  // Send welcome email
-  async sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
-    const emailContent = welcomeEmailTemplate({
-      username: data.username,
-      firstName: data.firstName,
-    });
-    
-    return this.sendEmail({
-      to: data.email,
-      subject: 'Welcome to AccZen!',
-      html: emailContent,
-      emailType: 'welcome',
-      metadata: {
-        username: data.username,
-      }
-    });
-  }
-  
-  // Send order confirmation email
-  async sendOrderConfirmationEmail(data: OrderConfirmationEmailData): Promise<boolean> {
-    const emailContent = orderConfirmationEmailTemplate({
-      orderId: data.orderId,
-      username: data.username,
-      firstName: data.firstName,
-      date: data.date,
-      total: data.total,
-      items: data.items,
-      digitalKeys: data.digitalKeys,
-    });
-    
-    return this.sendEmail({
-      to: data.email,
-      subject: `Order Confirmation #${data.orderId}`,
-      html: emailContent,
-      emailType: 'order_confirmation',
-      metadata: {
-        orderId: data.orderId,
-        total: data.total,
-      }
-    });
-  }
-  
-  // Send deposit confirmation email
-  async sendDepositConfirmationEmail(data: DepositConfirmationEmailData): Promise<boolean> {
-    const emailContent = depositConfirmationEmailTemplate({
-      depositId: data.depositId,
-      username: data.username,
-      firstName: data.firstName,
-      date: data.date,
-      amount: data.amount,
-      paymentMethod: data.paymentMethod,
-      transactionId: data.transactionId,
-    });
-    
-    return this.sendEmail({
-      to: data.email,
-      subject: 'Deposit Confirmation',
-      html: emailContent,
-      emailType: 'deposit_confirmation',
-      metadata: {
-        depositId: data.depositId,
-        amount: data.amount,
-        paymentMethod: data.paymentMethod,
-      }
-    });
-  }
-  
-  // Send support response email
-  async sendSupportResponseEmail(data: SupportResponseEmailData): Promise<boolean> {
-    const emailContent = supportResponseEmailTemplate({
-      ticketId: data.ticketId,
-      username: data.username,
-      firstName: data.firstName,
-      subject: data.subject,
-      message: data.message,
-      responseMessage: data.responseMessage,
-    });
-    
-    return this.sendEmail({
-      to: data.email,
-      subject: data.responseMessage ? 'Support Response: ' + data.subject : 'Support Request Received: ' + data.subject,
-      html: emailContent,
-      emailType: 'support_response',
-      metadata: {
-        ticketId: data.ticketId,
-        subject: data.subject,
-      }
-    });
-  }
-  
-  // Generic email sending method
-  private async sendEmail({
-    to,
-    subject,
-    html,
-    emailType,
-    metadata = {}
-  }: {
-    to: string;
-    subject: string;
-    html: string;
-    emailType: string;
-    metadata?: Record<string, any>;
-  }): Promise<boolean> {
+  /**
+   * Send an email using the appropriate method based on environment
+   */
+  public async sendEmail(options: EmailOptions): Promise<SendEmailResponse> {
     try {
-      // In development mode, just log the email
-      if (this.mode === 'development') {
-        console.log('====================================');
-        console.log(`📧 MOCK EMAIL (${emailType}):`);
-        console.log('To:', to);
-        console.log('Subject:', subject);
-        console.log('Metadata:', metadata);
-        console.log('Email Content (HTML): Available in browser console as an object');
-        console.log({emailContent: html});
-        console.log('====================================');
-        
-        // Return success for development mode
-        return true;
+      if (this.isDevelopment) {
+        return this.sendMockEmail(options);
+      } else {
+        return this.sendRealEmail(options);
       }
-      
-      // In production mode, send the email through edge function
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: {
-          to,
-          subject,
-          html,
-          emailType,
-          metadata
-        }
-      });
-      
-      if (error) {
-        console.error('Error sending email:', error);
-        return false;
-      }
-      
-      return true;
     } catch (error) {
-      console.error('Error in sendEmail:', error);
-      return false;
+      console.error('Error sending email:', error);
+      const parsedError = parseError(error);
+      
+      return {
+        success: false,
+        error: new Error(parsedError.message)
+      };
     }
+  }
+  
+  /**
+   * Send a welcome email to a new user
+   */
+  public async sendWelcomeEmail(to: string, data: { username: string; firstName?: string }): Promise<SendEmailResponse> {
+    return this.sendEmail({
+      to,
+      subject: 'Welcome to AccZen!',
+      html: emailTemplates.welcomeEmailTemplate(data),
+      emailType: 'welcome',
+      metadata: { userId: data.username }
+    });
+  }
+  
+  /**
+   * Send an order confirmation email
+   */
+  public async sendOrderConfirmationEmail(
+    to: string, 
+    data: { 
+      orderId: string; 
+      username: string; 
+      firstName?: string;
+      date: string;
+      items: Array<{ name: string; quantity: number; price: number }>;
+      total: number;
+    }
+  ): Promise<SendEmailResponse> {
+    return this.sendEmail({
+      to,
+      subject: `Order Confirmation #${data.orderId}`,
+      html: emailTemplates.orderConfirmationEmailTemplate(data),
+      emailType: 'order-confirmation',
+      metadata: { orderId: data.orderId }
+    });
+  }
+  
+  /**
+   * Send a deposit confirmation email
+   */
+  public async sendDepositConfirmationEmail(
+    to: string,
+    data: {
+      depositId: string;
+      username: string;
+      firstName?: string;
+      date: string;
+      amount: number;
+      paymentMethod: string;
+      transactionId?: string;
+    }
+  ): Promise<SendEmailResponse> {
+    return this.sendEmail({
+      to,
+      subject: 'Deposit Confirmation',
+      html: emailTemplates.depositConfirmationEmailTemplate(data),
+      emailType: 'deposit-confirmation',
+      metadata: { depositId: data.depositId }
+    });
+  }
+  
+  /**
+   * Send a support response email
+   */
+  public async sendSupportResponseEmail(
+    to: string,
+    data: {
+      ticketId: string;
+      username: string;
+      firstName?: string;
+      subject: string;
+      message: string;
+      responseMessage: string;
+    }
+  ): Promise<SendEmailResponse> {
+    return this.sendEmail({
+      to,
+      subject: `Re: ${data.subject} [Ticket #${data.ticketId}]`,
+      html: emailTemplates.supportResponseEmailTemplate(data),
+      emailType: 'support-response',
+      metadata: { ticketId: data.ticketId }
+    });
+  }
+  
+  /**
+   * Send a real email using Supabase Edge Function
+   */
+  private async sendRealEmail(options: EmailOptions): Promise<SendEmailResponse> {
+    return await withRetry(
+      async () => {
+        const { data, error } = await supabase.functions.invoke('send-email', {
+          body: options
+        });
+        
+        if (error) {
+          throw new Error(`Failed to send email: ${error.message}`);
+        }
+        
+        return {
+          success: true,
+          messageId: data?.messageId || `email-${Date.now()}`
+        };
+      },
+      {
+        maxRetries: 3,
+        delay: 1000,
+        backoffFactor: 2,
+        retryCondition: (error) => {
+          // Only retry on network or timeout errors
+          const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
+          return errorMessage.includes('network') || 
+                 errorMessage.includes('timeout') || 
+                 errorMessage.includes('connection');
+        }
+      }
+    );
+  }
+  
+  /**
+   * Send a mock email (for development)
+   */
+  private async sendMockEmail(options: EmailOptions): Promise<SendEmailResponse> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Log the email details
+    console.group('📧 MOCK EMAIL SENT');
+    console.log('To:', options.to);
+    console.log('Subject:', options.subject);
+    console.log('Type:', options.emailType);
+    console.log('Metadata:', options.metadata);
+    console.log('HTML Content:', options.html.substring(0, 500) + '...');
+    console.groupEnd();
+    
+    // Show toast notification
+    toast.success(`Mock email sent: ${options.subject}`, {
+      description: `To: ${options.to}`,
+      duration: 3000,
+    });
+    
+    return {
+      success: true,
+      messageId: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    };
   }
 }
 
-// Create a singleton instance
 export const emailService = new EmailService();
-
-// Export the class for testing or custom instances
-export default EmailService;

@@ -21,7 +21,63 @@ serve(async (req) => {
   }
   
   try {
-    const { to, subject, html, emailType, metadata = {} } = await req.json() as EmailRequest;
+    // Parse the request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid request format: Could not parse JSON body',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+    
+    // Validate request data
+    const { to, subject, html, emailType, metadata = {} } = requestBody as EmailRequest;
+    
+    if (!to || !subject || !html || !emailType) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Missing required fields: to, subject, html, or emailType',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid email format',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
     
     // Log the request for debugging
     console.log('Email request received:', {
@@ -65,10 +121,16 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in send-email function:', error);
     
+    // Create a user-friendly error message
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'An unknown error occurred while sending the email';
+    
+    // Don't expose sensitive details in the error message
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
       }),
       {
         status: 500,
