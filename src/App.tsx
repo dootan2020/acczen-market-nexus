@@ -12,6 +12,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './providers/CartProvider';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ProductProvider } from './contexts/ProductContext';
+import { PaymentProvider } from './contexts/PaymentContext';
 
 const App = () => {
   return (
@@ -21,23 +22,25 @@ const App = () => {
           <AuthProvider>
             <CurrencyProvider>
               <ProductProvider>
-                <CartProvider>
-                  <Toaster closeButton />
-                  <Routes>
-                    <Route element={<Layout />}>
-                      {routes.mainRoutes.map((route) => (
+                <PaymentProvider>
+                  <CartProvider>
+                    <Toaster closeButton />
+                    <Routes>
+                      <Route element={<Layout />}>
+                        {routes.mainRoutes.map((route) => (
+                          <Route key={route.path} path={route.path} element={route.element} />
+                        ))}
+                        {routes.dashboardRoutes.map((route) => (
+                          <Route key={route.path} path={route.path} element={route.element} />
+                        ))}
+                      </Route>
+                      {/* Admin routes wrapped with necessary providers */}
+                      {routes.adminRoutes.map((route) => (
                         <Route key={route.path} path={route.path} element={route.element} />
                       ))}
-                      {routes.dashboardRoutes.map((route) => (
-                        <Route key={route.path} path={route.path} element={route.element} />
-                      ))}
-                    </Route>
-                    {/* Admin routes wrapped with necessary providers */}
-                    {routes.adminRoutes.map((route) => (
-                      <Route key={route.path} path={route.path} element={route.element} />
-                    ))}
-                  </Routes>
-                </CartProvider>
+                    </Routes>
+                  </CartProvider>
+                </PaymentProvider>
               </ProductProvider>
             </CurrencyProvider>
           </AuthProvider>
