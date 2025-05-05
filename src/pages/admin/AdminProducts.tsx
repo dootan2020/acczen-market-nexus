@@ -146,6 +146,7 @@ const AdminProducts = () => {
     return status as DatabaseProductStatus;
   };
   
+  // Fixed to be async to match expected Promise<void> return type
   const handleImportConfirm = async (products: ProductFormData[]) => {
     await bulkImportMutation.mutateAsync(products);
   };
