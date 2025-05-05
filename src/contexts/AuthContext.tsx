@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // SignOut function (alias for logout with redirect flag)
-  // Fix: Ensure proper Promise<void> return
+  // Fix: Use Promise<void> explicitly and ensure proper return type
   const signOut = async (redirect = true): Promise<void> => {
     try {
       isLoading.set(true);
