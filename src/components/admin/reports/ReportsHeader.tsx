@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { StatsData } from "@/hooks/useReportsData";
+import { StatsData } from "@/types/reports";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { Card, CardContent } from "@/components/ui/card";
 

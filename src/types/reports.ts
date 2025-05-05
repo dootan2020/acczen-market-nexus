@@ -13,6 +13,7 @@ export interface StatsData {
   conversionRate: number;
 }
 
+// Basic chart data interface used for various visualizations
 export interface ChartData {
   name: string;
   value: number;
@@ -40,12 +41,13 @@ export interface RevenueData {
   amount: number;
 }
 
+// Payment method data with proper structure
 export interface PaymentMethodData {
   method: string;
   amount: number;
 }
 
-// Add a conversion function to transform PaymentMethodData to ChartData
+// Convert PaymentMethodData to ChartData for visualization consistency
 export function convertPaymentMethodToChartData(data: PaymentMethodData[]): ChartData[] {
   return data.map(item => ({
     name: item.method,
@@ -56,4 +58,16 @@ export function convertPaymentMethodToChartData(data: PaymentMethodData[]): Char
 export interface CategoryStockData {
   category_name: string;
   stock_count: number;
+}
+
+// Interface for stats data hook return value
+export interface StatsDataHookResult {
+  statsData: StatsData;
+  isLoading: boolean;
+}
+
+// Interface for payment method hook return value
+export interface PaymentMethodHookResult {
+  paymentMethodData: ChartData[];
+  isLoading: boolean;
 }

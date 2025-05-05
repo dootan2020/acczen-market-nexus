@@ -5,7 +5,6 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
-import { convertPaymentMethodToChartData } from '@/types/reports';
 
 const ReportsPage = () => {
   const {

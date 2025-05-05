@@ -1,12 +1,20 @@
 
-import { PaymentMethodData, ChartData } from "@/types/reports";
+import { PaymentMethodHookResult, ChartData } from "@/types/reports";
 import { DateRange } from "react-day-picker";
+import { useStatsData } from "./useStatsData";
 
-export function usePaymentMethodData(dateRange: DateRange | undefined) {
-  // This is a placeholder that can be filled with actual data fetching logic later
-  // For now, we're using the stats data directly in the useReports hook
+export function usePaymentMethodData(dateRange: DateRange | undefined): PaymentMethodHookResult {
+  // Leverage the statsData hook to get payment data
+  const { statsData, isLoading: statsLoading } = useStatsData(dateRange);
+  
+  // Create chart data directly from stats
+  const paymentMethodData: ChartData[] = !statsLoading ? [
+    { name: 'PayPal', value: statsData.paypalAmount },
+    { name: 'USDT', value: statsData.usdtAmount },
+  ] : [];
+
   return {
-    paymentMethodData: [] as ChartData[],
-    isLoading: false
+    paymentMethodData,
+    isLoading: statsLoading
   };
 }

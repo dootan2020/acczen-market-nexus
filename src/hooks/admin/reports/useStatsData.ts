@@ -1,14 +1,14 @@
 
-import { StatsData } from "@/types/reports";
+import { StatsData, StatsDataHookResult } from "@/types/reports";
 import { useDepositsData } from "./useDepositsData";
 import { useOrdersData } from "./useOrdersData";
 import { useUsersData } from "./useUsersData";
 import { DateRange } from "react-day-picker";
 
-export function useStatsData(dateRange: DateRange | undefined): StatsData {
-  const { deposits } = useDepositsData(dateRange);
-  const { orders } = useOrdersData(dateRange);
-  const { users } = useUsersData();
+export function useStatsData(dateRange: DateRange | undefined): StatsDataHookResult {
+  const { deposits, isLoading: isDepositsLoading } = useDepositsData(dateRange);
+  const { orders, isLoading: isOrdersLoading } = useOrdersData(dateRange);
+  const { users, isLoading: isUsersLoading } = useUsersData();
   
   // Process data for stats
   const statsData: StatsData = (() => {
@@ -51,5 +51,7 @@ export function useStatsData(dateRange: DateRange | undefined): StatsData {
     };
   })();
 
-  return statsData;
+  const isLoading = isDepositsLoading || isOrdersLoading || isUsersLoading;
+
+  return { statsData, isLoading };
 }

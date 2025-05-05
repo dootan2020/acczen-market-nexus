@@ -1,13 +1,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReportOverview } from "./ReportOverview";
 import { DepositsReport } from "./DepositsReport";
 import { OrdersReport } from "./OrdersReport";
-import { BestSellingProducts } from "./BestSellingProducts";
 import { DateRange } from "react-day-picker";
 import { StatsData, ChartData } from "@/types/reports";
 import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { SkeletonTable } from "@/components/ui/skeleton";

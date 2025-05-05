@@ -1,11 +1,12 @@
 
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { useReportsData, DateRangeType, DateRange } from '@/hooks/admin/useReportsData';
+import { useReportsData } from '@/hooks/admin/useReportsData';
 import { useStatsData } from './useStatsData';
 import { useDepositsData } from './useDepositsData';
 import { useOrdersData } from './useOrdersData';
-import { StatsData, DepositsChartData, OrdersChartData, PaymentMethodData, ChartData } from '@/types/reports';
+import { usePaymentMethodData } from './usePaymentMethodData';
+import { StatsData, DepositsChartData, OrdersChartData, ChartData } from '@/types/reports';
 
 export const useReports = () => {
   // Get base reports data which handles date range state and base data fetching
@@ -19,21 +20,15 @@ export const useReports = () => {
     refetch
   } = useReportsData();
 
-  // Get specific data from specialized hooks
-  const statsData = useStatsData(dateRange);
-  const isStatsLoading = false; // We'll consider this always loaded for now
+  // Get specific data from specialized hooks with proper destructuring
+  const { statsData, isLoading: isStatsLoading } = useStatsData(dateRange);
   const { deposits, depositsChartData, isLoading: isDepositsLoading } = useDepositsData(dateRange);
   const { ordersChartData, isLoading: isOrdersLoading } = useOrdersData(dateRange);
-  
-  // Create payment method data directly from statsData
-  const paymentMethodData: ChartData[] = [
-    { name: 'PayPal', value: statsData?.paypalAmount || 0 },
-    { name: 'USDT', value: statsData?.usdtAmount || 0 },
-  ];
-  const isPaymentMethodLoading = false;
+  const { paymentMethodData, isLoading: isPaymentMethodLoading } = usePaymentMethodData(dateRange);
 
   // Combine loading states
-  const isLoading = isBaseLoading || isDepositsLoading || isOrdersLoading || isPaymentMethodLoading;
+  const isLoading = isBaseLoading || isStatsLoading || isDepositsLoading || 
+                   isOrdersLoading || isPaymentMethodLoading;
 
   // Format date range for display
   const formattedDateRange = useMemo(() => {
@@ -46,11 +41,11 @@ export const useReports = () => {
   }, [dateRange]);
 
   // Handle date range changes
-  const handleDateRangeChange = (type: DateRangeType) => {
+  const handleDateRangeChange = (type: string) => {
     handleDateRangeTypeChange(type);
   };
 
-  const handleDateRangePickerChange = (range: DateRange) => {
+  const handleDateRangePickerChange = (range: any) => {
     handleCustomDateRangeChange(range);
   };
 
