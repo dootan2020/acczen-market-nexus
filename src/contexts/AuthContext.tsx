@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -208,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // SignOut function (alias for logout with redirect flag)
-  // Fix: Use Promise<void> explicitly and ensure proper return type
   const signOut = async (redirect = true): Promise<void> => {
     try {
       isLoading.set(true);
@@ -220,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (redirect && navigate) {
         navigate('/login');
       }
-      return Promise.resolve();
+      return Promise.resolve(); // Explicitly return a resolved Promise
     } catch (error) {
       console.error('Error signing out:', error);
       return Promise.resolve(); // Always return a Promise that won't throw
