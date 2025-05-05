@@ -32,7 +32,7 @@ export const useUserManagement = () => {
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       if (roleFilter) {
-        query = query.eq('role', roleFilter as 'admin' | 'user');
+        query = query.eq('role', roleFilter);
       }
 
       const { data, count, error } = await query;

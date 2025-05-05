@@ -10,11 +10,10 @@ import { DashboardSidebar } from "./DashboardSidebar";
 import Header from "@/components/Header";
 
 export function DashboardLayout({ children }: { children?: React.ReactNode }) {
-  // Fix: Ensure we render only one child element
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full">
       <Header />
-      <div className="flex-1 flex">
+      <div className="flex-1 flex w-full">
         <SidebarProvider defaultOpen>
           <div className="flex flex-1 w-full">
             <Sidebar>

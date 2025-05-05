@@ -1,285 +1,179 @@
 
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { EditRoleDialog } from '@/components/admin/users/EditRoleDialog';
-import { AdjustBalanceDialog } from '@/components/admin/users/AdjustBalanceDialog';
-import { UsersTable } from '@/components/admin/users/UsersTable';
-import { UsersFilter } from '@/components/admin/users/UsersFilter';
+import React, { useState } from 'react';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
-import { UsersPagination } from '@/components/admin/users/UsersPagination';
-import { UserDetails } from '@/components/admin/users/UserDetails';
-import { Input } from '@/components/ui/input';
+import { EditRoleDialog } from './EditRoleDialog';
+import { AdjustBalanceDialog } from './AdjustBalanceDialog';
+import { UsersTable } from './UsersTable';
+import { UserRow } from './UserRow';
+import { UsersFilter } from './UsersFilter';
+import { UsersPagination } from './UsersPagination';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Search, UserCog, Download, Filter, BarChart } from 'lucide-react';
+import { UserProfile } from '@/hooks/admin/types/userManagement.types';
 import { UserDiscountForm } from './UserDiscountForm';
-import { useUserDiscount } from '@/hooks/admin/useUserDiscount';
-import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const AdminUsers = () => {
-  const { 
-    users, 
+  const [showDiscountForm, setShowDiscountForm] = useState(false);
+  const {
+    users,
     filteredUsers,
+    totalUsers,
+    currentPage,
+    totalPages,
+    isLoading,
     searchQuery,
     setSearchQuery,
     roleFilter,
     setRoleFilter,
     currentUser,
     setCurrentUser,
-    isEditRoleDialogOpen, 
+    isEditRoleDialogOpen,
     setIsEditRoleDialogOpen,
-    isAdjustBalanceDialogOpen, 
+    isAdjustBalanceDialogOpen,
     setIsAdjustBalanceDialogOpen,
-    isLoading,
-    currentPage,
-    totalPages,
-    prevPage,
+    isDiscountDialogOpen,
+    setIsDiscountDialogOpen,
     nextPage,
+    prevPage,
+    goToPage,
     hasNextPage,
     hasPrevPage,
     handleEditRole,
     handleAdjustBalance,
     handleUpdateRole,
-    handleAdjustBalanceConfirm
+    handleAdjustBalanceConfirm,
+    handleUpdateDiscount
   } = useUserManagement();
 
-  const [discountFilter, setDiscountFilter] = useState<string | null>(null);
-  
-  // Filter users based on discount percentage
-  const applyDiscountFilter = (users: any[]) => {
-    if (!discountFilter) return users;
-    
-    return users.filter(user => {
-      const discount = user.discount_percentage || 0;
-      switch (discountFilter) {
-        case 'no-discount':
-          return discount === 0;
-        case 'with-discount':
-          return discount > 0;
-        case 'high-discount':
-          return discount >= 10;
-        case 'temporary-discount':
-          return discount > 0 && user.discount_expires_at;
-        default:
-          return true;
-      }
-    });
-  };
-  
-  const discountFilteredUsers = applyDiscountFilter(filteredUsers || []);
-  
-  // Get access to user discount functionality
-  const { 
-    setDiscountMutation, 
-    isDialogOpen: isDiscountDialogOpen,
-    setIsDialogOpen: setIsDiscountDialogOpen
-  } = useUserDiscount();
-  
-  const handleSetDiscount = (user: any) => {
-    setCurrentUser(user);
-    setIsDiscountDialogOpen(true);
-  };
-  
-  const handleDiscountSubmit = (values: { 
-    discountPercentage: number; 
-    discountNote?: string;
-    isTemporary?: boolean; 
-    expiryDate?: Date | null;
-  }) => {
-    if (!currentUser) return;
-    
-    setDiscountMutation.mutate({
-      userId: currentUser.id,
-      discountPercentage: values.discountPercentage,
-      discountNote: values.discountNote,
-      expiryDate: values.expiryDate
-    });
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const handleViewUser = (user: any) => {
-    setCurrentUser(user);
-  };
-
-  const handleExportUsers = () => {
-    // Simple CSV export of users with discounts
-    if (!users) return;
-    
-    const discountedUsers = users.filter(user => user.discount_percentage > 0);
-    if (discountedUsers.length === 0) {
-      toast.info('No users with discounts to export');
-      return;
+  const handleRoleChange = (userId: string, role: 'admin' | 'user') => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setCurrentUser(user);
+      setIsEditRoleDialogOpen(true);
     }
-    
-    const headers = [
-      'Email', 
-      'Username', 
-      'Full Name', 
-      'Discount %', 
-      'Note', 
-      'Updated At', 
-      'Expires'
-    ];
-    
-    const csvData = discountedUsers.map(user => [
-      user.email || '',
-      user.username || '',
-      user.full_name || '',
-      user.discount_percentage || 0,
-      user.discount_note || '',
-      user.discount_updated_at || '',
-      user.discount_expires_at || ''
-    ]);
-    
-    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `users_with_discounts_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success('Users with discounts exported successfully');
   };
 
+  const handleBalanceAdjust = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setCurrentUser(user);
+      setIsAdjustBalanceDialogOpen(true);
+    }
+  };
+
+  const handleDiscountUpdate = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setCurrentUser(user);
+      setIsDiscountDialogOpen(true);
+    }
+  };
+
+  // Render the users table
   return (
-    <div className="container px-4 sm:px-6 w-full max-w-full mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Users Management</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportUsers}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="default" asChild>
-            <Link to="/admin/discount-analytics">
-              <BarChart className="h-4 w-4 mr-2" />
-              Discount Analytics
-            </Link>
-          </Button>
-        </div>
-      </div>
-      
-      <div className="flex flex-col md:flex-row gap-4 items-start">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <h1 className="text-2xl font-bold">Users Management</h1>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             type="text"
-            placeholder="Search by email, username or name..."
+            placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 w-full"
           />
         </div>
-        
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={roleFilter || "all"} onValueChange={(value) => setRoleFilter(value === "all" ? null : value)}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Select value={discountFilter || "all"} onValueChange={(value) => setDiscountFilter(value === "all" ? null : value)}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by discount" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Discounts</SelectItem>
-                <SelectItem value="no-discount">No Discount (0%)</SelectItem>
-                <SelectItem value="with-discount">With Discount ({'>'}0%)</SelectItem>
-                <SelectItem value="high-discount">High Discount (≥10%)</SelectItem>
-                <SelectItem value="temporary-discount">Temporary Discounts</SelectItem>
-              </SelectContent>
-            </Select>
+      </div>
+
+      <UsersFilter roleFilter={roleFilter} onRoleFilterChange={setRoleFilter} />
+
+      <UsersTable>
+        {isLoading ? (
+          <tr>
+            <td colSpan={7} className="text-center py-10">
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            </td>
+          </tr>
+        ) : filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
+            <UserRow 
+              key={user.id} 
+              user={user as UserProfile} 
+              onRoleChange={() => handleRoleChange(user.id, user.role === 'admin' ? 'user' : 'admin')}
+              onBalanceAdjust={() => handleBalanceAdjust(user.id)}
+              onDiscountUpdate={() => handleDiscountUpdate(user.id)}
+              formatDate={formatDate}
+            />
+          ))
+        ) : (
+          <tr>
+            <td colSpan={7} className="text-center py-10">
+              No users found
+            </td>
+          </tr>
+        )}
+      </UsersTable>
+
+      <UsersPagination 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        onNextPage={nextPage} 
+        onPrevPage={prevPage} 
+        onPageChange={goToPage} 
+      />
+
+      {/* Dialogs */}
+      {currentUser && (
+        <>
+          <EditRoleDialog
+            open={isEditRoleDialogOpen}
+            onClose={() => setIsEditRoleDialogOpen(false)}
+            onUpdateRole={handleUpdateRole}
+            user={currentUser as UserProfile}
+          />
+          <AdjustBalanceDialog
+            open={isAdjustBalanceDialogOpen}
+            onClose={() => setIsAdjustBalanceDialogOpen(false)}
+            onAdjustBalance={handleAdjustBalanceConfirm}
+            currentBalance={currentUser.balance}
+            user={currentUser as UserProfile}
+          />
+          <UserDiscountForm
+            open={isDiscountDialogOpen}
+            onClose={() => setIsDiscountDialogOpen(false)}
+            user={currentUser as UserProfile}
+            discount={currentUser.discount_percentage}
+            discountNote={currentUser.discount_note || ''}
+            discountExpiresAt={currentUser.discount_expires_at}
+          />
+        </>
+      )}
+
+      {showDiscountForm && currentUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Update User Discount</h2>
+            <UserDiscountForm 
+              open={showDiscountForm}
+              onClose={() => setShowDiscountForm(false)}
+              user={currentUser as UserProfile}
+              discount={currentUser.discount_percentage}
+              discountNote={currentUser.discount_note || ''}
+              discountExpiresAt={currentUser.discount_expires_at}
+            />
           </div>
         </div>
-      </div>
-      
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <UsersTable 
-                users={discountFilteredUsers || []}
-                onEditRole={handleEditRole}
-                onAdjustBalance={handleAdjustBalance}
-                onSetDiscount={handleSetDiscount}
-                onViewUser={handleViewUser}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <div>
-        <UsersPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          prevPage={prevPage}
-          nextPage={nextPage}
-          hasNextPage={hasNextPage}
-          hasPrevPage={hasPrevPage}
-        />
-      </div>
-      
-      <EditRoleDialog
-        open={isEditRoleDialogOpen}
-        onOpenChange={setIsEditRoleDialogOpen}
-        onConfirm={handleUpdateRole}
-        isLoading={false}
-        currentUser={currentUser}
-      />
-      
-      <AdjustBalanceDialog
-        open={isAdjustBalanceDialogOpen}
-        onOpenChange={setIsAdjustBalanceDialogOpen}
-        onConfirm={handleAdjustBalanceConfirm}
-        isLoading={false}
-        currentUser={currentUser}
-      />
-      
-      <UserDiscountForm
-        open={isDiscountDialogOpen}
-        onOpenChange={setIsDiscountDialogOpen}
-        onSubmit={handleDiscountSubmit}
-        isLoading={setDiscountMutation.isPending}
-        currentDiscount={currentUser?.discount_percentage || 0}
-        currentNote={currentUser?.discount_note || ''}
-        currentExpiryDate={currentUser?.discount_expires_at || null}
-        username={currentUser?.username || currentUser?.email}
-      />
-      
-      {currentUser && (
-        <UserDetails 
-          user={currentUser} 
-          onEdit={() => setIsEditRoleDialogOpen(true)}
-          onAdjustBalance={() => setIsAdjustBalanceDialogOpen(true)}
-          onSetDiscount={() => setIsDiscountDialogOpen(true)}
-        />
       )}
     </div>
   );

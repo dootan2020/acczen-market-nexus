@@ -11,24 +11,28 @@ export const ProductInfoModal = () => {
   const { selectedProductId, isModalOpen, closeModal } = useProductContext();
   const { data, isLoading } = useProductInfo(selectedProductId);
   
+  console.log("ProductInfoModal rendered with:", { selectedProductId, isModalOpen, hasData: !!data });
+  
   // Get the product and cleanDescription from data
   const product = data ? data : null;
   const cleanDescription = data?.cleanDescription || '';
   
   // Memoize translated content to prevent unnecessary re-renders
   const translations = useMemo(() => ({
-    productInfo: translate('productInfo'),
-    productDetails: translate('productDetails'),
-    category: translate('category'),
-    stock: translate('stock'),
-    price: translate('price'),
-    close: translate('close'),
-    uncategorized: translate('uncategorized'),
-    productNotFound: translate('productNotFound')
+    productInfo: translate('productInfo', 'Product Information'),
+    productDetails: translate('productDetails', 'Product Details'),
+    category: translate('category', 'Category'),
+    stock: translate('stock', 'Stock'),
+    price: translate('price', 'Price'),
+    close: translate('close', 'Close'),
+    uncategorized: translate('uncategorized', 'Uncategorized'),
+    productNotFound: translate('productNotFound', 'Product not found')
   }), []);
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+    <Dialog open={isModalOpen} onOpenChange={(open) => {
+      if (!open) closeModal();
+    }}>
       <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-auto">
         {isLoading ? (
           <div className="p-8 flex justify-center">
