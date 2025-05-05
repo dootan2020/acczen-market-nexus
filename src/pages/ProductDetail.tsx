@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useProduct, useRelatedProducts } from '@/hooks/useProduct';
 import { Container } from '@/components/ui/container';
@@ -24,14 +23,14 @@ const ProductDetailContent = () => {
   const { formatUSD } = useCurrencyContext();
   const { handleError, clearError } = useErrorHandler();
   
-  // Use error handler with the product query - fixed by removing the options object wrapping
+  // Fix the useProduct hook call - remove the options object wrapping
   const { 
     data: product, 
     isLoading, 
     error, 
     refetch 
   } = useProduct(slug || '', {
-    onError: handleError  // Fixed: Removed extra options object wrapping
+    onError: handleError
   });
   
   // Also handle related products errors
@@ -120,9 +119,9 @@ const ProductDetailContent = () => {
               price={product.price} 
               salePrice={product.sale_price}
               stockQuantity={product.stock_quantity} 
-              currency={formatUSD}  // Fixed: passing the function directly, not the entire context
+              currency={formatUSD}  // Pass the formatting function directly
             />
-
+            
             <TrustBadges />
             
             <Separator className="my-2" />
