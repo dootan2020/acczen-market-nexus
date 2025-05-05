@@ -5,7 +5,7 @@ import { useOrdersData } from "./useOrdersData";
 import { useUsersData } from "./useUsersData";
 import { DateRange } from "react-day-picker";
 
-export function useStatsData(dateRange: DateRange | undefined) {
+export function useStatsData(dateRange: DateRange | undefined): StatsData {
   const { deposits } = useDepositsData(dateRange);
   const { orders } = useOrdersData(dateRange);
   const { users } = useUsersData();

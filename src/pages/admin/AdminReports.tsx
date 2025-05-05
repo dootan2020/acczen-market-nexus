@@ -5,6 +5,7 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
+import { convertPaymentMethodToChartData } from '@/types/reports';
 
 const AdminReports = () => {
   const {
@@ -71,7 +72,7 @@ const AdminReports = () => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             statsData={statsData}
-            paymentMethodData={paymentMethodData || []}
+            paymentMethodData={paymentMethodData}
             depositsChartData={depositsChartData || []}
             ordersChartData={ordersChartData || []}
             dateRange={dateRange}

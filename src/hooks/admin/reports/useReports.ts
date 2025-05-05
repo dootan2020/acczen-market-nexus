@@ -5,7 +5,7 @@ import { useReportsData, DateRangeType, DateRange } from '@/hooks/admin/useRepor
 import { useStatsData } from './useStatsData';
 import { useDepositsData } from './useDepositsData';
 import { useOrdersData } from './useOrdersData';
-import { StatsData, DepositsChartData, OrdersChartData, PaymentMethodData } from '@/types/reports';
+import { StatsData, DepositsChartData, OrdersChartData, PaymentMethodData, ChartData } from '@/types/reports';
 
 export const useReports = () => {
   // Get base reports data which handles date range state and base data fetching
@@ -20,17 +20,20 @@ export const useReports = () => {
   } = useReportsData();
 
   // Get specific data from specialized hooks
-  const { statsData, isLoading: isStatsLoading } = useStatsData(dateRange);
+  const statsData = useStatsData(dateRange);
+  const isStatsLoading = false; // We'll consider this always loaded for now
   const { deposits, depositsChartData, isLoading: isDepositsLoading } = useDepositsData(dateRange);
   const { ordersChartData, isLoading: isOrdersLoading } = useOrdersData(dateRange);
-  const paymentMethodData: PaymentMethodData[] = [
-    { method: 'PayPal', amount: statsData?.paypalAmount || 0 },
-    { method: 'USDT', amount: statsData?.usdtAmount || 0 },
+  
+  // Create payment method data directly from statsData
+  const paymentMethodData: ChartData[] = [
+    { name: 'PayPal', value: statsData?.paypalAmount || 0 },
+    { name: 'USDT', value: statsData?.usdtAmount || 0 },
   ];
-  const isPaymentMethodLoading = isStatsLoading;
+  const isPaymentMethodLoading = false;
 
   // Combine loading states
-  const isLoading = isBaseLoading || isStatsLoading || isDepositsLoading || isOrdersLoading || isPaymentMethodLoading;
+  const isLoading = isBaseLoading || isDepositsLoading || isOrdersLoading || isPaymentMethodLoading;
 
   // Format date range for display
   const formattedDateRange = useMemo(() => {

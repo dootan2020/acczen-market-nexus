@@ -45,6 +45,14 @@ export interface PaymentMethodData {
   amount: number;
 }
 
+// Add a conversion function to transform PaymentMethodData to ChartData
+export function convertPaymentMethodToChartData(data: PaymentMethodData[]): ChartData[] {
+  return data.map(item => ({
+    name: item.method,
+    value: item.amount
+  }));
+}
+
 export interface CategoryStockData {
   category_name: string;
   stock_count: number;

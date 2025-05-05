@@ -1,12 +1,12 @@
 
-import { PaymentMethodData, StatsData } from "@/types/reports";
+import { PaymentMethodData, ChartData } from "@/types/reports";
 import { DateRange } from "react-day-picker";
 
 export function usePaymentMethodData(dateRange: DateRange | undefined) {
-  // This is a placeholder to be filled with actual data fetching logic
-  // We'll return an empty array until integration with the useStatsData hook is completed
+  // This is a placeholder that can be filled with actual data fetching logic later
+  // For now, we're using the stats data directly in the useReports hook
   return {
-    paymentMethodData: [] as PaymentMethodData[],
+    paymentMethodData: [] as ChartData[],
     isLoading: false
   };
 }
