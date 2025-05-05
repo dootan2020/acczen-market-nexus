@@ -146,23 +146,23 @@ export const useUserManagement = () => {
   // Update user discount mutation
   const updateDiscountMutation = useMutation({
     mutationFn: async ({ 
-      id, 
+      userId, 
       discount_percentage, 
       discount_note,
       expiry_date
     }: { 
-      id: string, 
+      userId: string, 
       discount_percentage: number, 
       discount_note?: string,
-      expiry_date?: Date | null
+      expiry_date?: string | null
     }) => {
       // Call the admin_update_user_discount function
       const { error } = await supabase
         .rpc('admin_update_user_discount', { 
-          p_user_id: id, 
+          p_user_id: userId, 
           p_discount_percentage: discount_percentage, 
           p_discount_note: discount_note || null,
-          p_expires_at: expiry_date ? expiry_date.toISOString() : null
+          p_expires_at: expiry_date || null
         });
       
       if (error) throw error;
@@ -213,11 +213,25 @@ export const useUserManagement = () => {
     setIsBalanceDialogOpen(true);
   };
 
-  const handleUpdateDiscount = (user: UserProfile) => {
-    setCurrentUser(user);
-    setIsDiscountDialogOpen(true);
+  const handleUpdateDiscount = ({
+    userId,
+    discount_percentage,
+    discount_note,
+    expiry_date
+  }: {
+    userId: string,
+    discount_percentage: number,
+    discount_note?: string,
+    expiry_date?: string
+  }) => {
+    updateDiscountMutation.mutate({
+      userId,
+      discount_percentage,
+      discount_note,
+      expiry_date
+    });
   };
-  
+
   // For backwards compatibility with the AdminUsers component
   const handleUpdateRole = (role: 'admin' | 'user') => {
     if (currentUser) {

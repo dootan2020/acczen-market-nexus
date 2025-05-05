@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useUserManagement } from '@/hooks/admin/useUserManagement';
 import { EditRoleDialog } from './EditRoleDialog';
@@ -67,7 +66,7 @@ const AdminUsers = () => {
     setIsDiscountDialogOpen(true);
   };
 
-  // Handle discount form submission - fixing the property name issue
+  // Handle discount form submission - using the correct parameter structure
   const handleDiscountFormSubmit = (values: { 
     discountPercentage: number; 
     discountNote?: string;
@@ -76,13 +75,12 @@ const AdminUsers = () => {
   }) => {
     if (!currentUser) return;
     
-    // Now we pass the values to handleUpdateDiscount with the correct property names
+    // Pass only the required fields to handleUpdateDiscount
     handleUpdateDiscount({
-      id: currentUser.id,
-      discount_percentage: values.discountPercentage,  // Using snake_case to match the UserProfile type
+      userId: currentUser.id,
+      discount_percentage: values.discountPercentage,
       discount_note: values.discountNote,
-      // Convert Date to string ISO format since UserProfile.discount_expires_at is a string
-      discount_expires_at: values.expiryDate ? values.expiryDate.toISOString() : undefined
+      expiry_date: values.expiryDate ? values.expiryDate.toISOString() : undefined
     });
   };
 
