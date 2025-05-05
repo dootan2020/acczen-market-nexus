@@ -1,86 +1,48 @@
 
 import React from 'react';
-import { AlertCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-export type ErrorSeverity = 'error' | 'warning' | 'info';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ErrorAlertProps {
   title?: string;
   message: string;
   details?: string;
   action?: React.ReactNode;
-  severity?: ErrorSeverity;
-  onDismiss?: () => void;
+  className?: string;
+  variant?: 'default' | 'destructive';
 }
 
 const ErrorAlert: React.FC<ErrorAlertProps> = ({
-  title,
+  title = 'Error',
   message,
   details,
   action,
-  severity = 'error',
-  onDismiss
+  className,
+  variant = 'destructive'
 }) => {
-  const getIcon = () => {
-    switch (severity) {
-      case 'error':
-        return <XCircle className="h-4 w-4" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'info':
-        return <Info className="h-4 w-4" />;
-      default:
-        return <AlertCircle className="h-4 w-4" />;
-    }
-  };
-  
-  const getAlertVariant = () => {
-    switch (severity) {
-      case 'error':
-        return 'destructive';
-      case 'warning':
-        return 'warning';
-      case 'info':
-        return 'default';
-      default:
-        return 'destructive';
-    }
-  };
-  
   return (
-    <Alert variant={getAlertVariant() as any} className="my-4">
-      <div className="flex items-start">
-        <div className="flex-shrink-0 mt-0.5">
-          {getIcon()}
-        </div>
-        <div className="ml-3 flex-1">
-          {title && <AlertTitle>{title}</AlertTitle>}
-          <AlertDescription className="text-sm">
-            {message}
-            {details && (
-              <details className="mt-2 text-xs">
-                <summary>Chi tiết kỹ thuật</summary>
-                <p className="p-2 bg-black/5 rounded mt-1 whitespace-pre-wrap">{details}</p>
-              </details>
-            )}
-          </AlertDescription>
-          {action && (
-            <div className="mt-3">
-              {action}
+    <Alert variant={variant} className={cn('mb-4', className)}>
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription className="mt-2">
+        <p>{message}</p>
+        
+        {details && (
+          <details className="mt-2 text-sm">
+            <summary className="cursor-pointer font-medium">Technical Details</summary>
+            <div className="mt-2 p-2 bg-background/80 rounded border border-border whitespace-pre-wrap">
+              {details}
             </div>
-          )}
-        </div>
-        {onDismiss && (
-          <button 
-            onClick={onDismiss} 
-            className="flex-shrink-0 ml-2"
-            aria-label="Đóng"
-          >
-            <XCircle className="h-4 w-4" />
-          </button>
+          </details>
         )}
-      </div>
+        
+        {action && (
+          <div className="mt-3">
+            {action}
+          </div>
+        )}
+      </AlertDescription>
     </Alert>
   );
 };

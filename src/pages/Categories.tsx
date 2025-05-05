@@ -5,7 +5,7 @@ import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
 import CategoryCard from '@/components/CategoryCard';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Folder } from 'lucide-react';
+import { AlertCircle, Folder, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Breadcrumb,
@@ -16,13 +16,46 @@ import {
   BreadcrumbPage
 } from '@/components/ui/breadcrumb';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
-const Categories = () => {
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
-  const { counts: productCounts, isLoading: countsLoading, error: countsError } = useProductCountByCategory();
+const CategoriesContent = () => {
+  const { handleError, clearError } = useErrorHandler();
+  
+  const { 
+    categories, 
+    loading: categoriesLoading, 
+    error: categoriesError,
+    refetch: refetchCategories 
+  } = useCategories({
+    onError: (err) => handleError(err, { 
+      showToast: true,
+      logToConsole: true
+    })
+  });
+  
+  const { 
+    counts: productCounts, 
+    isLoading: countsLoading, 
+    error: countsError,
+    refetch: refetchCounts
+  } = useProductCountByCategory({
+    onError: (err) => handleError(err, { 
+      showToast: false, // Don't show toast for this secondary data
+      logToConsole: true
+    })
+  });
   
   const isLoading = categoriesLoading || countsLoading;
   const error = categoriesError || countsError;
+  
+  // Handle retry for both data sources
+  const handleRetry = () => {
+    clearError();
+    refetchCategories();
+    refetchCounts();
+  };
   
   // Render loading skeleton
   if (isLoading) {
@@ -58,7 +91,7 @@ const Categories = () => {
     );
   }
 
-  // Render error state
+  // Render error state with retry option
   if (error) {
     return (
       <Container className="py-8">
@@ -76,13 +109,23 @@ const Categories = () => {
           </BreadcrumbList>
         </Breadcrumb>
         
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Failed to load categories</AlertTitle>
           <AlertDescription>
-            Failed to load categories. Please try again later. {String(error)}
+            {error instanceof Error ? error.message : String(error)}
           </AlertDescription>
         </Alert>
+        
+        <div className="flex justify-center my-8">
+          <Button 
+            onClick={handleRetry} 
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
       </Container>
     );
   }
@@ -151,6 +194,15 @@ const Categories = () => {
         ))}
       </div>
     </Container>
+  );
+};
+
+// Wrapper component with ErrorBoundary
+const Categories = () => {
+  return (
+    <ErrorBoundary>
+      <CategoriesContent />
+    </ErrorBoundary>
   );
 };
 

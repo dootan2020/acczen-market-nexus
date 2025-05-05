@@ -12,29 +12,87 @@ import TrustBadges from '@/components/products/TrustBadges';
 import { Skeleton } from '@/components/ui/skeleton';
 import RelatedProducts from '@/components/products/RelatedProducts';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
-const ProductDetail = () => {
+const ProductDetailContent = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: product, isLoading, error } = useProduct(slug || '');
-  const { data: relatedProducts } = useRelatedProducts(
+  const { formatUSD } = useCurrencyContext();
+  const { handleError, clearError } = useErrorHandler();
+  
+  // Use error handler with the product query
+  const { 
+    data: product, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useProduct(slug || '', {
+    onError: (err) => handleError(err, { 
+      showToast: true,
+      logToConsole: true 
+    })
+  });
+  
+  // Also handle related products errors
+  const { 
+    data: relatedProducts,
+    error: relatedError
+  } = useRelatedProducts(
     product?.category_id || '',
-    product?.id || ''
+    product?.id || '',
+    {
+      onError: (err) => handleError(err, { 
+        showToast: false,  // Don't show toast for related products
+        logToConsole: true 
+      })
+    }
   );
-  const currency = useCurrencyContext();
+
+  // Handle retry
+  const handleRetry = () => {
+    clearError();
+    refetch();
+  };
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
   }
 
+  // Handle error state
   if (error || !product) {
     return (
       <Container className="py-12">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Product Error</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error 
+              ? error.message 
+              : "The product you're looking for doesn't exist or has been removed."}
+          </AlertDescription>
+        </Alert>
+        
         <div className="text-center py-16">
           <h2 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Product Not Found</h2>
-          <p className="text-gray-600 mb-6 font-inter">The product you're looking for doesn't exist or has been removed.</p>
-          <a href="/products" className="inline-flex items-center justify-center bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors">
-            Browse Products
-          </a>
+          <p className="text-gray-600 mb-6 font-inter">We couldn't load the product information at this time.</p>
+          
+          <div className="flex justify-center gap-4">
+            <Button 
+              variant="outline"
+              onClick={handleRetry}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </Button>
+            
+            <Button asChild>
+              <a href="/products">Browse Products</a>
+            </Button>
+          </div>
         </div>
       </Container>
     );
@@ -72,7 +130,7 @@ const ProductDetail = () => {
               price={product.price} 
               salePrice={product.sale_price}
               stockQuantity={product.stock_quantity} 
-              currency={currency}
+              currency={formatUSD}
             />
 
             <TrustBadges />
@@ -149,6 +207,15 @@ const ProductDetailSkeleton = () => {
         </div>
       </div>
     </Container>
+  );
+};
+
+// Wrap component with ErrorBoundary
+const ProductDetail = () => {
+  return (
+    <ErrorBoundary>
+      <ProductDetailContent />
+    </ErrorBoundary>
   );
 };
 
