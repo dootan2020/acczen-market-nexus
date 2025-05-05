@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, useCategories } from '@/hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCategories } from '@/hooks/useProducts';
 import { AlertCircle, ShoppingBag, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button'; // Add this import for the Button component
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Breadcrumb,
@@ -28,16 +26,18 @@ import {
 } from '@/components/ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { Container } from '@/components/ui/container';
 
 const PRODUCTS_PER_PAGE = 12;
 
 const Products = () => {
-  console.log("Products component rendering");
+  // Fetch products and categories data using existing hooks
   const { data: allProducts, isLoading, error } = useProducts();
   const { data: categories } = useCategories();
   
+  // State for filters, search, and pagination
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all'); // Changed from empty string to 'all'
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
@@ -45,11 +45,8 @@ const Products = () => {
   // Filter and sort products whenever dependencies change
   useEffect(() => {
     if (!allProducts) {
-      console.log("No products data available yet");
       return;
     }
-    
-    console.log(`Filtering products: ${allProducts.length} total, search: "${searchQuery}", category: "${selectedCategory}", sort: "${sortOrder}"`);
     
     let result = [...allProducts];
     
@@ -63,7 +60,7 @@ const Products = () => {
     }
     
     // Apply category filter
-    if (selectedCategory && selectedCategory !== 'all') { // Modified to check for 'all'
+    if (selectedCategory && selectedCategory !== 'all') {
       result = result.filter(product => 
         product.category?.id === selectedCategory || 
         product.category?.slug === selectedCategory
@@ -77,7 +74,7 @@ const Products = () => {
         break;
       case 'popular':
         result.sort((a, b) => {
-          // Fixed type issue: safely extract sold_count from metadata
+          // Safely extract sold_count from metadata or default to 0
           const aSold = typeof a.metadata === 'object' && a.metadata !== null ? 
             (typeof a.metadata === 'object' && 'sold_count' in a.metadata ? Number(a.metadata.sold_count) : 0) : 0;
           const bSold = typeof b.metadata === 'object' && b.metadata !== null ? 
@@ -103,7 +100,6 @@ const Products = () => {
         break;
     }
     
-    console.log(`Filtered products count: ${result.length}`);
     setFilteredProducts(result);
     
     // Reset to first page when filters change
@@ -162,40 +158,32 @@ const Products = () => {
     });
   };
 
-  console.log("Render state:", { 
-    isLoading, 
-    error, 
-    productsCount: allProducts?.length || 0, 
-    filteredCount: filteredProducts?.length || 0,
-    currentProducts: currentProducts?.length || 0 
-  });
-
   // Render loading skeleton
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 lg:p-8">
+      <Container className="py-8" id="products-section">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/">Trang chủ</Link>
+                <Link to="/">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Sản phẩm</BreadcrumbPage>
+              <BreadcrumbPage>Products</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       
-        <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
+        <h1 className="text-3xl font-bold mb-6">Digital Products</h1>
         
         <Card className="mb-8">
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Skeleton className="h-10 w-full bg-gray-200" />
-              <Skeleton className="h-10 w-full bg-gray-200" />
-              <Skeleton className="h-10 w-full bg-gray-200" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
           </CardContent>
         </Card>
@@ -203,118 +191,117 @@ const Products = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, index) => (
             <div key={index} className="border border-gray-200 rounded-xl p-4">
-              <Skeleton className="h-[180px] w-full rounded-xl bg-gray-200" />
-              <Skeleton className="h-6 w-3/4 mt-4 bg-gray-200" />
-              <Skeleton className="h-4 w-full mt-2 bg-gray-200" />
-              <Skeleton className="h-10 w-full mt-4 bg-gray-200" />
+              <Skeleton className="h-[180px] w-full rounded-xl" />
+              <Skeleton className="h-6 w-3/4 mt-4" />
+              <Skeleton className="h-4 w-full mt-2" />
+              <Skeleton className="h-10 w-full mt-4" />
             </div>
           ))}
         </div>
-      </div>
+      </Container>
     );
   }
 
   // Render error state
   if (error) {
-    console.error("Product list error:", error);
     return (
-      <div className="container mx-auto p-6 lg:p-8">
+      <Container className="py-8" id="products-section">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/">Trang chủ</Link>
+                <Link to="/">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Sản phẩm</BreadcrumbPage>
+              <BreadcrumbPage>Products</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       
-        <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
+        <h1 className="text-3xl font-bold mb-6">Digital Products</h1>
         
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Lỗi</AlertTitle>
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Không thể tải danh sách sản phẩm. Vui lòng thử lại sau. Lỗi: {String(error)}
+            Failed to load products. Please try again later. Error: {String(error)}
           </AlertDescription>
         </Alert>
-      </div>
+      </Container>
     );
   }
 
   // Render empty state
   if (!allProducts || allProducts.length === 0) {
     return (
-      <div className="container mx-auto p-6 lg:p-8">
+      <Container className="py-8" id="products-section">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/">Trang chủ</Link>
+                <Link to="/">Home</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Sản phẩm</BreadcrumbPage>
+              <BreadcrumbPage>Products</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       
-        <h1 className="text-3xl font-bold mb-6">Danh sách sản phẩm</h1>
+        <h1 className="text-3xl font-bold mb-6">Digital Products</h1>
         
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-medium">Không có sản phẩm nào</h2>
+          <h2 className="text-xl font-medium">No products available</h2>
           <p className="text-muted-foreground mt-2">
-            Hiện tại chúng tôi không có sản phẩm nào. Vui lòng quay lại sau.
+            We currently don't have any products available. Please check back later.
           </p>
         </div>
-      </div>
+      </Container>
     );
   }
 
-  // Render product grid with updated ChatGPT-inspired styling
+  // Render product grid
   return (
-    <div className="container mx-auto p-6 lg:p-8" id="products-section">
+    <Container className="py-8" id="products-section">
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to="/">Trang chủ</Link>
+              <Link to="/">Home</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Sản phẩm</BreadcrumbPage>
+            <BreadcrumbPage>Products</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       
-      <h1 className="text-2xl font-semibold mb-6 font-poppins text-[#343541]">Danh sách sản phẩm</h1>
+      <h1 className="text-3xl font-bold mb-6">Digital Products</h1>
       
-      <Card className="mb-8 border border-[#e5e5e5] shadow-sm">
+      <Card className="mb-8">
         <CardContent className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Tìm kiếm sản phẩm..."
-                className="pl-9 border-[#e5e5e5]"
+                placeholder="Search products..."
+                className="pl-9"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
             </div>
             
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="border-[#e5e5e5]">
-                <SelectValue placeholder="Chọn danh mục" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả danh mục</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -324,20 +311,20 @@ const Products = () => {
             </Select>
             
             <Select value={sortOrder} onValueChange={handleSortChange}>
-              <SelectTrigger className="border-[#e5e5e5]">
-                <SelectValue placeholder="Sắp xếp theo" />
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Mới nhất</SelectItem>
-                <SelectItem value="popular">Phổ biến</SelectItem>
-                <SelectItem value="price-asc">Giá thấp đến cao</SelectItem>
-                <SelectItem value="price-desc">Giá cao đến thấp</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="popular">Popular</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           <div className="mt-4 text-sm text-gray-500">
-            Hiển thị {currentProducts.length} trong {filteredProducts.length} sản phẩm
+            Showing {currentProducts.length} of {filteredProducts.length} products
           </div>
         </CardContent>
       </Card>
@@ -346,11 +333,11 @@ const Products = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {currentProducts.map((product) => {
-              // Safely extract metadata properties with improved type checking
+              // Safely extract metadata properties
               const metadata = typeof product.metadata === 'object' && product.metadata !== null ? 
                 product.metadata : {};
               
-              // Safely extract sold_count with better type checking
+              // Safely extract sold_count
               let soldCount = 0;
               if (typeof metadata === 'object' && metadata !== null && 'sold_count' in metadata) {
                 soldCount = typeof metadata.sold_count === 'number' ? 
@@ -381,15 +368,16 @@ const Products = () => {
             })}
           </div>
           
+          {/* Pagination */}
           <Pagination className="mt-8">
             <PaginationContent>
               {/* Previous page button */}
               <PaginationItem>
                 {currentPage === 1 ? (
-                  <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                  <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-1 pl-2.5" disabled>
                     <span className="sr-only">Go to previous page</span>
-                    <span className="text-sm">Previous</span>
-                  </Button>
+                    <span>Previous</span>
+                  </button>
                 ) : (
                   <PaginationPrevious onClick={() => handlePageChange(Math.max(1, currentPage - 1))} />
                 )}
@@ -442,10 +430,10 @@ const Products = () => {
               {/* Next page button */}
               <PaginationItem>
                 {currentPage === totalPages ? (
-                  <Button variant="outline" size="icon" disabled className="cursor-not-allowed">
+                  <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-1 pr-2.5" disabled>
                     <span className="sr-only">Go to next page</span>
-                    <span className="text-sm">Next</span>
-                  </Button>
+                    <span>Next</span>
+                  </button>
                 ) : (
                   <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} />
                 )}
@@ -454,15 +442,15 @@ const Products = () => {
           </Pagination>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-[#e5e5e5] rounded-lg">
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-lg">
           <ShoppingBag className="h-12 w-12 text-gray-300 mb-4" />
-          <h2 className="text-xl font-medium text-[#343541] mb-2">Không tìm thấy sản phẩm phù hợp</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-2">No products found</h2>
           <p className="text-gray-500 max-w-md">
-            Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.
+            Try changing your filters or search term.
           </p>
         </div>
       )}
-    </div>
+    </Container>
   );
 };
 
