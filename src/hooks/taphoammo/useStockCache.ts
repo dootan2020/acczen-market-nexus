@@ -1,81 +1,110 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { TaphoammoProduct } from '@/types/products';
 
-interface CacheInfo {
-  lastChecked?: Date;
-  expiresAt?: Date;
-  isCached?: boolean;
-}
-
-interface StockCacheInfo extends TaphoammoProduct {
-  cached?: boolean;
-  cacheUpdatedAt?: Date;
-  cacheExpiresAt?: Date;
-}
-
-interface InventoryCacheData {
-  id: string;
-  product_id: string;
+export interface StockCacheInfo {
   kiosk_token: string;
+  name?: string;
   stock_quantity: number;
   price: number;
-  source: string;
-  last_checked_at: string;
-  last_sync_status: string;
-  sync_message: string;
-  cached_until: string;
-  retry_count: number;
-  created_at: string;
-  updated_at: string;
-  name?: string;
-  products?: { name: string };
+  cached: boolean;
+  cacheId: string;
+  emergency?: boolean;
 }
 
 export const useStockCache = () => {
-  const [cacheInfo, setCacheInfo] = useState<CacheInfo>({});
+  const [cacheInfo, setCacheInfo] = useState<StockCacheInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Get cache info from database
   const checkStockCache = async (kioskToken: string): Promise<{
     cached: boolean;
     data?: StockCacheInfo;
   }> => {
-    const { data: cacheData } = await supabase
-      .from('inventory_cache')
-      .select('*, products(name)')
-      .eq('kiosk_token', kioskToken)
-      .single();
-
-    if (cacheData && new Date(cacheData.cached_until) > new Date()) {
-      const productName = cacheData.products?.name || 'Sản phẩm';
-      setCacheInfo({
-        lastChecked: new Date(cacheData.last_checked_at),
-        expiresAt: new Date(cacheData.cached_until),
-        isCached: true
-      });
-
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Check database for cached stock info
+      const { data, error } = await supabase
+        .from('inventory_cache')
+        .select('*')
+        .eq('kiosk_token', kioskToken)
+        .single();
+      
+      if (error || !data) {
+        return { cached: false };
+      }
+      
+      // Check if cache is still valid
+      const now = new Date();
+      const cacheUntil = new Date(data.cached_until);
+      
+      if (now > cacheUntil) {
+        return { cached: false };
+      }
+      
+      // Create cache info
+      const cacheInfo: StockCacheInfo = {
+        kiosk_token: data.kiosk_token,
+        name: data.name || 'Unknown Product',
+        stock_quantity: data.stock_quantity,
+        price: data.price,
+        cached: true,
+        cacheId: data.id,
+        emergency: false
+      };
+      
+      setCacheInfo(cacheInfo);
+      
       return {
         cached: true,
-        data: {
-          kiosk_token: kioskToken,
-          name: productName,
-          stock_quantity: cacheData.stock_quantity,
-          price: cacheData.price,
-          cached: true,
-          cacheUpdatedAt: new Date(cacheData.last_checked_at),
-          cacheExpiresAt: new Date(cacheData.cached_until)
-        }
+        data: cacheInfo
       };
+    } catch (err) {
+      console.error('Error checking stock cache:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return { cached: false };
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return { cached: false };
+  // Update cache in database
+  const updateCache = async (kioskToken: string, stockInfo: Partial<StockCacheInfo>) => {
+    try {
+      const { error } = await supabase
+        .from('inventory_cache')
+        .upsert({
+          kiosk_token: kioskToken,
+          stock_quantity: stockInfo.stock_quantity,
+          price: stockInfo.price,
+          name: stockInfo.name,
+          last_checked_at: new Date().toISOString(),
+          cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+          last_sync_status: 'success'
+        }, {
+          onConflict: 'kiosk_token'
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Error updating cache:', err);
+      return false;
+    }
   };
 
   return {
     cacheInfo,
     setCacheInfo,
-    checkStockCache
+    checkStockCache,
+    updateCache,
+    loading,
+    error
   };
 };
-
-export type { StockCacheInfo, InventoryCacheData, CacheInfo };

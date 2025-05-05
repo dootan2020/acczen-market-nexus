@@ -1,11 +1,18 @@
 
 import { useApiCommon } from './useApiCommon';
-import { taphoammoApi } from '@/utils/api/taphoammoApi';
+import { supabase } from '@/integrations/supabase/client';
+import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration';
+import { toast } from 'sonner';
+import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import type { ProxyType } from '@/utils/corsProxy';
+
+// Create a singleton instance of TaphoammoIntegration
+const taphoammoIntegration = new TaphoammoIntegration();
 
 export const useOrderOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry } = useApiCommon();
 
+  // Buy products through Edge Function
   const buyProducts = async (
     kioskToken: string,
     userToken: string,
@@ -17,14 +24,42 @@ export const useOrderOperations = () => {
     setError(null);
 
     try {
-      const data = await withRetry(async () => {
-        return await taphoammoApi.order.buyProducts(kioskToken, quantity, userToken, promotion);
+      // First call Edge Function to handle purchase
+      const { data, error: functionError } = await supabase.functions.invoke('purchase-product', {
+        body: JSON.stringify({
+          kioskToken,
+          quantity,
+          proxyType,
+          promotion
+        })
       });
+
+      if (functionError) {
+        throw new Error(functionError.message);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to purchase product');
+      }
 
       return data;
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error in buyProducts:', errorMsg);
+      
+      // Show user-friendly message for common errors
+      if (err instanceof TaphoammoError) {
+        if (err.code === TaphoammoErrorCodes.INSUFFICIENT_FUNDS) {
+          toast.error("Insufficient funds to complete purchase");
+        } else if (err.code === TaphoammoErrorCodes.STOCK_UNAVAILABLE) {
+          toast.error("Product is out of stock");
+        } else if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN) {
+          toast.error("Service is temporarily unavailable. Please try again later");
+        }
+      } else {
+        toast.error(errorMsg);
+      }
+      
       setError(errorMsg);
       throw err;
     } finally {
@@ -32,20 +67,57 @@ export const useOrderOperations = () => {
     }
   };
 
+  // Get products for an order
   const getProducts = async (orderId: string, userToken: string, proxyType: ProxyType) => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await withRetry(async () => {
-        return await taphoammoApi.order.getProducts(orderId, userToken);
-      });
+      // Use withRetry to get products with error handling
+      const data = await withRetry(
+        async () => taphoammoIntegration.getProducts(orderId, userToken, proxyType),
+        'getProducts'
+      );
 
       return data;
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMsg);
+      
+      // Don't show error for processing orders
+      if (err instanceof TaphoammoError && err.code === TaphoammoErrorCodes.ORDER_PROCESSING) {
+        console.log('Order still processing:', orderId);
+      } else {
+        setError(errorMsg);
+      }
+      
       throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Poll for order completion
+  const checkOrderUntilComplete = async (
+    orderId: string,
+    userToken: string,
+    proxyType: ProxyType,
+    maxRetries: number = 5
+  ) => {
+    setLoading(true);
+    
+    try {
+      const result = await taphoammoIntegration.checkOrderUntilComplete(
+        orderId, userToken, maxRetries, 2000, proxyType
+      );
+      
+      return result;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to check order status';
+      setError(errorMsg);
+      return {
+        success: false,
+        message: errorMsg
+      };
     } finally {
       setLoading(false);
     }
@@ -54,6 +126,7 @@ export const useOrderOperations = () => {
   return {
     buyProducts,
     getProducts,
+    checkOrderUntilComplete,
     loading,
     error,
     retry

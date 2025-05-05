@@ -1,14 +1,17 @@
 
-import React, { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePurchaseProduct } from "@/hooks/usePurchaseProduct";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import ProductQuantity from "../ProductQuantity";
-import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { PurchaseModalInfo } from './PurchaseModalInfo';
+import { PurchaseModalActions } from './PurchaseModalActions';
+import { PurchaseResultCard } from './PurchaseResultCard';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { useOrderOperations } from '@/hooks/taphoammo/useOrderOperations';
+import { getStoredProxy } from '@/utils/corsProxy';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -22,168 +25,239 @@ interface PurchaseConfirmModalProps {
   stock: number;
 }
 
-export const PurchaseConfirmModal = ({
+export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   open,
   onOpenChange,
   productId,
   productName,
   productPrice,
   productImage,
-  quantity: initialQuantity,
+  quantity,
   kioskToken,
-  stock,
-}: PurchaseConfirmModalProps) => {
+  stock
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { isProcessing, purchaseError, executePurchase } = usePurchaseProduct();
-  const [quantity, setQuantity] = useState(initialQuantity.toString());
-  const { formatUSD } = useCurrencyContext();
+  const { formatUSD, convertVNDtoUSD } = useCurrencyContext();
+  const { buyProducts, checkOrderUntilComplete, loading: processingOrder } = useOrderOperations();
   
-  // Reset quantity when modal opens with new initialQuantity
+  // State variables
+  const [userBalance, setUserBalance] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(productPrice * quantity);
+  const [loading, setLoading] = useState(false);
+  const [purchaseComplete, setPurchaseComplete] = useState(false);
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [productKeys, setProductKeys] = useState<string[] | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [checkingOrder, setCheckingOrder] = useState(false);
+  
+  // Load user balance
   useEffect(() => {
+    const loadUserBalance = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        setUserBalance(data.balance);
+        setInsufficientBalance(data.balance < totalPrice);
+      } catch (err) {
+        console.error('Error loading user balance:', err);
+      }
+    };
+    
     if (open) {
-      setQuantity(initialQuantity.toString());
+      loadUserBalance();
     }
-  }, [initialQuantity, open]);
-
-  const numericQuantity = useMemo(() => parseInt(quantity) || 1, [quantity]);
-  const maxQuantity = useMemo(() => Math.min(10, stock), [stock]);
+  }, [open, user?.id, totalPrice]);
   
-  const totalPrice = useMemo(() => 
-    productPrice * numericQuantity, 
-    [productPrice, numericQuantity]
-  );
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setPurchaseComplete(false);
+      setError(null);
+      setOrderDetails(null);
+      setProductKeys(undefined);
+    }
+  }, [open]);
   
-  const handleBuy = async () => {
-    if (!user) {
-      toast.error('You need to be logged in to make a purchase');
+  // Make purchase
+  const handlePurchase = async () => {
+    if (!user?.id) {
+      toast.error('You must be logged in to make a purchase');
       navigate('/login');
       return;
     }
     
-    if (numericQuantity <= 0) {
-      toast.error('Please select a valid quantity');
-      return;
-    }
-    
-    if (numericQuantity > stock) {
-      toast.error(`Sorry, only ${stock} items available in stock`);
-      return;
-    }
-
     if (!kioskToken) {
-      toast.error('Product is not available for purchase');
+      toast.error('This product cannot be purchased directly');
       return;
     }
-
-    const orderData = {
-      id: productId,
-      name: productName,
-      price: productPrice,
-      kioskToken: kioskToken,
-      quantity: numericQuantity
-    };
-
-    const orderId = await executePurchase(orderData);
     
-    if (orderId) {
-      onOpenChange(false);
-      navigate(`/order/${orderId}`);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get current proxy setting
+      const proxyType = getStoredProxy();
+      
+      // Call our Edge Function to handle the purchase
+      const order = await buyProducts(
+        kioskToken,
+        user.id,
+        quantity,
+        proxyType
+      );
+      
+      // Update state with order details
+      setOrderDetails(order);
+      setPurchaseComplete(true);
+      
+      // If product keys are available immediately, show them
+      if (order.productKeys && order.productKeys.length > 0) {
+        setProductKeys(order.productKeys);
+      }
+      
+      // Update user balance
+      setUserBalance(prev => prev - totalPrice);
+      
+      // Show success notification
+      toast.success('Purchase successful!');
+      
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to complete purchase');
+      toast.error('Purchase failed', {
+        description: err instanceof Error ? err.message : 'Failed to complete purchase'
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
-  const hasInsufficientFunds = user?.balance !== undefined && totalPrice > user.balance;
-
+  // Check order status and retrieve keys
+  const handleCheckOrder = async () => {
+    if (!orderDetails || !orderDetails.taphoammoOrderId) {
+      return;
+    }
+    
+    setCheckingOrder(true);
+    
+    try {
+      // Get current proxy setting
+      const proxyType = getStoredProxy();
+      
+      // Check order status
+      const result = await checkOrderUntilComplete(
+        orderDetails.taphoammoOrderId,
+        user?.id || '',
+        proxyType
+      );
+      
+      if (result.success && result.product_keys && result.product_keys.length > 0) {
+        setProductKeys(result.product_keys);
+        
+        // Update order item with the product keys
+        await supabase.functions.invoke('update-order-keys', {
+          body: {
+            orderId: orderDetails.orderId,
+            productKeys: result.product_keys
+          }
+        });
+      } else {
+        toast.info('Order is still processing. Please check again later.');
+      }
+    } catch (err) {
+      console.error('Error checking order:', err);
+      toast.error('Failed to retrieve product keys. Please try again later.');
+    } finally {
+      setCheckingOrder(false);
+    }
+  };
+  
+  // Handle reset
+  const handleReset = () => {
+    setPurchaseComplete(false);
+    setError(null);
+    setOrderDetails(null);
+    setProductKeys(undefined);
+  };
+  
+  // Deposit funds
+  const handleDeposit = () => {
+    onOpenChange(false);
+    navigate('/deposit');
+  };
+  
+  // View order
+  const handleViewOrder = () => {
+    onOpenChange(false);
+    navigate('/dashboard');
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-auto">
-        <DialogHeader className="relative border-b pb-4">
-          <DialogTitle className="text-2xl font-semibold">Purchase Confirmation</DialogTitle>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            {purchaseComplete ? 'Purchase Complete' : 'Confirm Purchase'}
+          </DialogTitle>
         </DialogHeader>
-
-        <div className="py-6 space-y-6">
-          {/* Product Information */}
-          <div>
-            <h3 className="text-xl font-medium mb-2">{productName}</h3>
-          </div>
-
-          {/* Quantity Selector */}
-          <div className="space-y-2">
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
-              Quantity
-            </label>
-            <ProductQuantity
-              value={quantity}
-              onChange={setQuantity}
-              maxQuantity={maxQuantity}
-              disabled={isProcessing || stock <= 0}
+        
+        <Separator />
+        
+        {!purchaseComplete ? (
+          <>
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-md">
+              <img 
+                src={productImage} 
+                alt={productName} 
+                className="w-16 h-16 object-cover rounded-md border" 
+              />
+              <div>
+                <h3 className="font-medium">{productName}</h3>
+                <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                  <span>Quantity: {quantity}</span>
+                  <span>•</span>
+                  <span>{formatUSD(convertVNDtoUSD(productPrice))} each</span>
+                </div>
+              </div>
+            </div>
+            
+            <PurchaseModalInfo 
+              stock={stock}
+              totalPrice={totalPrice}
+              insufficientBalance={insufficientBalance}
+              userBalance={userBalance}
             />
-          </div>
-
-          {/* Price Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Unit Price:</p>
-              <p className="font-medium">{formatUSD(productPrice)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total:</p>
-              <p className="font-semibold text-lg text-green-600">{formatUSD(totalPrice)}</p>
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="bg-gray-50 rounded-lg p-4 border">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">In stock:</p>
-                <p className="font-medium">{stock} items</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Your balance:</p>
-                <p className={`font-medium ${hasInsufficientFunds ? 'text-red-600' : 'text-green-600'}`}>
-                  {formatUSD(user?.balance || 0)}
-                </p>
-              </div>
-            </div>
-
-            {/* Insufficient Balance Warning */}
-            {hasInsufficientFunds && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
-                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                <p className="text-sm text-red-700">
-                  Your balance is insufficient. Please add funds to your account.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Error Display */}
-          {purchaseError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-700">{purchaseError.message}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button 
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleBuy}
-            disabled={isProcessing || stock <= 0 || hasInsufficientFunds}
-            className="bg-[#2ECC71] hover:bg-[#27AE60]"
-            isLoading={isProcessing}
-          >
-            Buy
-          </Button>
-        </div>
+            
+            <PurchaseModalActions 
+              isProcessing={loading}
+              onCancel={() => onOpenChange(false)}
+              onConfirm={handlePurchase}
+              onDeposit={handleDeposit}
+              disabled={!kioskToken || stock < quantity}
+              insufficientBalance={insufficientBalance}
+              hasError={!!error}
+            />
+          </>
+        ) : (
+          <PurchaseResultCard
+            orderId={orderDetails?.orderId || ''}
+            productKeys={productKeys}
+            isCheckingOrder={checkingOrder}
+            onCheckOrder={handleCheckOrder}
+            onReset={handleReset}
+            onClose={handleViewOrder}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

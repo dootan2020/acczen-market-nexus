@@ -3,15 +3,21 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders } from "../_shared/cors.ts";
 
-interface PurchaseItem {
-  id: string;
-  quantity: number;
+// TaphoaMMO Error types
+enum TaphoammoErrorCodes {
+  UNEXPECTED_RESPONSE = 'UNEXPECTED_RESPONSE',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
+  ORDER_PROCESSING = 'ORDER_PROCESSING',
+  KIOSK_PENDING = 'KIOSK_PENDING',
+  PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
+  STOCK_UNAVAILABLE = 'STOCK_UNAVAILABLE',
+  TIMEOUT = 'TIMEOUT',
+  API_TEMP_DOWN = 'API_TEMP_DOWN',
+  NETWORK_ERROR = 'NETWORK_ERROR'
 }
 
-interface PurchaseRequest {
-  items: PurchaseItem[];
-}
-
+// Response interfaces
 interface ErrorResponse {
   success: false;
   message: string;
@@ -21,18 +27,62 @@ interface ErrorResponse {
 
 interface SuccessResponse {
   success: true;
-  order: {
-    id: string;
-    total: number;
-    created_at: string;
-    items: any[];
-  };
+  orderId: string;
+  taphoammoOrderId: string;
+  message: string;
+  productKeys?: string[];
+  transactionId?: string;
 }
 
+// Supabase setup
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const SYSTEM_TOKEN = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9"; // Default system token for TaphoaMMO
 
+// TaphoaMMO API helpers
+async function callTaphoaMMO(endpoint: string, params: Record<string, any>, proxyType: string = "allorigins") {
+  // Use system token regardless of what's provided
+  if (params.userToken) {
+    params.userToken = SYSTEM_TOKEN;
+  }
+  
+  // Base URL for TaphoaMMO API
+  let apiUrl = `https://taphoammo.net/api/${endpoint}?`;
+  
+  // Convert params to query string
+  Object.keys(params).forEach((key, index) => {
+    apiUrl += `${index === 0 ? '' : '&'}${key}=${encodeURIComponent(params[key])}`;
+  });
+  
+  // Get proxy URL based on the proxy type
+  let proxyUrl;
+  switch (proxyType) {
+    case 'corsproxy':
+      proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+      break;
+    case 'cors-anywhere':
+      proxyUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+      break;
+    case 'allorigins':
+    default:
+      proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+      break;
+  }
+  
+  // Call the API
+  const response = await fetch(proxyUrl);
+  const data = await response.json();
+  
+  // Check for errors
+  if (data.success === "false") {
+    throw new Error(data.description || data.message || "API request failed");
+  }
+  
+  return data;
+}
+
+// Main handler
 serve(async (req) => {
   // Handle CORS
   if (req.method === "OPTIONS") {
@@ -62,173 +112,230 @@ serve(async (req) => {
     }
     
     // Get the request body
-    const requestData: PurchaseRequest = await req.json();
+    const requestData = await req.json();
     
-    if (!requestData.items || !Array.isArray(requestData.items) || requestData.items.length === 0) {
-      return errorResponse("Yêu cầu không hợp lệ: Thiếu thông tin sản phẩm", "INVALID_REQUEST", 400);
+    // Validate request
+    if (!requestData.kioskToken) {
+      return errorResponse("Invalid request: Missing kioskToken", "INVALID_REQUEST", 400);
     }
     
-    // Start a transaction
-    const { data: user_data, error: userError } = await supabaseAdmin
+    const kioskToken = requestData.kioskToken;
+    const quantity = requestData.quantity || 1;
+    const proxyType = requestData.proxyType || "allorigins";
+    const promotion = requestData.promotion;
+    
+    // Get product details
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("id, name, price, sale_price, stock_quantity")
+      .eq("kiosk_token", kioskToken)
+      .single();
+    
+    if (productError || !product) {
+      console.error("Error fetching product:", productError);
+      return errorResponse("Product not found", "PRODUCT_NOT_FOUND", 404);
+    }
+    
+    // Verify stock
+    if (product.stock_quantity < quantity) {
+      return errorResponse(
+        `Insufficient stock. Required: ${quantity}, Available: ${product.stock_quantity}`,
+        "INSUFFICIENT_STOCK",
+        400
+      );
+    }
+    
+    // Get user balance
+    const { data: userData, error: userError } = await supabaseAdmin
       .from("profiles")
-      .select("id, balance, discount_percentage")
+      .select("balance, discount_percentage")
       .eq("id", user.id)
       .single();
     
     if (userError) {
       console.error("Error fetching user data:", userError);
-      return errorResponse("Không thể tải thông tin người dùng", "USER_FETCH_ERROR", 500);
+      return errorResponse("Failed to retrieve user information", "USER_FETCH_ERROR", 500);
     }
     
-    // Get product details for all items
-    const productIds = requestData.items.map(item => item.id);
-    const { data: products, error: productsError } = await supabaseAdmin
-      .from("products")
-      .select("id, name, price, selling_price, kiosk_token, stock_quantity")
-      .in("id", productIds);
+    // Calculate price
+    const productPrice = product.sale_price && Number(product.sale_price) > 0 
+      ? Number(product.sale_price) 
+      : product.price;
     
-    if (productsError || !products) {
-      console.error("Error fetching products:", productsError);
-      return errorResponse("Không thể tải thông tin sản phẩm", "PRODUCTS_FETCH_ERROR", 500);
-    }
-    
-    // Build the items array with calculated prices
-    const orderItems = [];
-    let totalAmount = 0;
-    
-    for (const requestItem of requestData.items) {
-      const product = products.find(p => p.id === requestItem.id);
-      
-      if (!product) {
-        return errorResponse(`Sản phẩm không tồn tại: ${requestItem.id}`, "PRODUCT_NOT_FOUND", 400);
-      }
-      
-      if (!product.kiosk_token) {
-        return errorResponse(`Sản phẩm không có mã kiosk: ${product.name}`, "INVALID_PRODUCT_CONFIG", 400);
-      }
-      
-      if (product.stock_quantity < requestItem.quantity) {
-        return errorResponse(
-          `Số lượng tồn kho không đủ: ${product.name} (Yêu cầu: ${requestItem.quantity}, Còn lại: ${product.stock_quantity})`, 
-          "INSUFFICIENT_STOCK", 
-          400
-        );
-      }
-      
-      // Use selling_price if available, otherwise use regular price
-      const itemPrice = product.selling_price || product.price;
-      const itemTotal = itemPrice * requestItem.quantity;
-      totalAmount += itemTotal;
-      
-      orderItems.push({
-        product_id: product.id,
-        quantity: requestItem.quantity,
-        unit_price: itemPrice,
-        total_price: itemTotal,
-        kiosk_token: product.kiosk_token
-      });
-    }
-    
-    // Apply user discount if available
-    const discountPercentage = user_data.discount_percentage || 0;
-    const discountAmount = totalAmount * (discountPercentage / 100);
-    const finalAmount = totalAmount - discountAmount;
+    // Apply discount if available
+    const discountPercentage = userData.discount_percentage || 0;
+    const discountAmount = productPrice * quantity * (discountPercentage / 100);
+    const totalPrice = (productPrice * quantity) - discountAmount;
     
     // Check if user has enough balance
-    if (user_data.balance < finalAmount) {
-      const shortfall = finalAmount - user_data.balance;
+    if (userData.balance < totalPrice) {
       return errorResponse(
-        `Số dư tài khoản không đủ. Thiếu ${shortfall} để hoàn tất đơn hàng.`, 
-        "INSUFFICIENT_FUNDS", 
+        `Insufficient balance. Required: ${totalPrice}, Available: ${userData.balance}`,
+        "INSUFFICIENT_FUNDS",
         400
       );
     }
     
-    // Create order
+    // Create order in the database first
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
         user_id: user.id,
-        total_amount: finalAmount,
-        original_amount: totalAmount,
-        discount_amount: discountAmount,
-        discount_percentage: discountPercentage,
+        total_amount: totalPrice,
         status: "pending"
       })
       .select()
       .single();
     
-    if (orderError || !order) {
+    if (orderError) {
       console.error("Error creating order:", orderError);
-      return errorResponse("Không thể tạo đơn hàng", "ORDER_CREATION_ERROR", 500);
+      return errorResponse("Failed to create order", "ORDER_CREATION_ERROR", 500);
     }
     
-    // Create order items
-    const orderItemsWithOrderId = orderItems.map(item => ({
-      ...item,
-      order_id: order.id
-    }));
+    let taphoammoOrderResult;
     
-    const { error: orderItemsError } = await supabaseAdmin
+    try {
+      // Call TaphoaMMO API to purchase product
+      taphoammoOrderResult = await callTaphoaMMO("buyProducts", {
+        kioskToken,
+        userToken: SYSTEM_TOKEN,
+        quantity
+      }, proxyType);
+      
+      if (!taphoammoOrderResult || !taphoammoOrderResult.order_id) {
+        throw new Error("Invalid response from TaphoaMMO API");
+      }
+    } catch (apiError) {
+      console.error("TaphoaMMO API error:", apiError);
+      
+      // Rollback the order
+      await supabaseAdmin
+        .from("orders")
+        .update({ status: "failed" })
+        .eq("id", order.id);
+      
+      return errorResponse(
+        apiError instanceof Error ? apiError.message : "Failed to purchase from supplier",
+        "API_ERROR",
+        500
+      );
+    }
+    
+    // Create order item
+    const { error: orderItemError } = await supabaseAdmin
       .from("order_items")
-      .insert(orderItemsWithOrderId);
+      .insert({
+        order_id: order.id,
+        product_id: product.id,
+        quantity,
+        price: productPrice,
+        total: productPrice * quantity,
+        data: {
+          kiosk_token: kioskToken,
+          taphoammo_order_id: taphoammoOrderResult.order_id
+        }
+      });
     
-    if (orderItemsError) {
-      console.error("Error creating order items:", orderItemsError);
+    if (orderItemError) {
+      console.error("Error creating order item:", orderItemError);
       
-      // Rollback the order if order items couldn't be created
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      
-      return errorResponse("Không thể tạo chi tiết đơn hàng", "ORDER_ITEMS_ERROR", 500);
+      // Don't rollback here, we've already purchased from TaphoaMMO
+      // We'll need to handle this case in the admin panel
     }
+    
+    // Update product stock
+    await supabaseAdmin
+      .from("products")
+      .update({
+        stock_quantity: product.stock_quantity - quantity
+      })
+      .eq("id", product.id);
     
     // Update user balance
     const { error: balanceError } = await supabaseAdmin
       .from("profiles")
-      .update({ balance: user_data.balance - finalAmount })
+      .update({
+        balance: userData.balance - totalPrice
+      })
       .eq("id", user.id);
     
     if (balanceError) {
       console.error("Error updating balance:", balanceError);
-      
-      // Rollback the order if balance update failed
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      
-      return errorResponse("Không thể cập nhật số dư", "BALANCE_UPDATE_ERROR", 500);
+      // Don't rollback, but log the error
     }
     
-    // Create transaction record
-    const { error: transactionError } = await supabaseAdmin
+    // Record the transaction
+    const { data: transaction, error: transactionError } = await supabaseAdmin
       .from("transactions")
       .insert({
         user_id: user.id,
-        amount: finalAmount,
+        amount: totalPrice,
         type: "purchase",
-        description: `Thanh toán cho đơn hàng #${order.id}`,
+        description: `Purchase of ${quantity} x ${product.name}`,
         reference_id: order.id
-      });
+      })
+      .select()
+      .single();
     
     if (transactionError) {
-      console.error("Error creating transaction:", transactionError);
-      // We don't rollback here because the order is already created successfully
-      // Instead, we'll just log the error and continue
+      console.error("Error recording transaction:", transactionError);
+      // Don't rollback, but log the error
     }
     
-    // Queue order for processing
-    // This could be handled by another Edge Function or a webhook
+    // Update order status to completed
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "completed"
+      })
+      .eq("id", order.id);
     
-    return successResponse(order, orderItemsWithOrderId);
+    // Try to get product keys immediately (they might not be available yet)
+    let productKeys;
+    try {
+      const productsResult = await callTaphoaMMO("getProducts", {
+        orderId: taphoammoOrderResult.order_id,
+        userToken: SYSTEM_TOKEN
+      }, proxyType);
+      
+      if (productsResult.success === "true" && productsResult.data && productsResult.data.length > 0) {
+        productKeys = productsResult.data.map((item: any) => item.product);
+        
+        // Update order item with product keys
+        await supabaseAdmin
+          .from("order_items")
+          .update({
+            data: {
+              kiosk_token: kioskToken,
+              taphoammo_order_id: taphoammoOrderResult.order_id,
+              product_keys: productKeys
+            }
+          })
+          .eq("order_id", order.id);
+      }
+    } catch (getProductsError) {
+      console.log("Product keys not immediately available:", getProductsError);
+      // This is expected sometimes, keys might not be available immediately
+    }
+    
+    return successResponse(
+      order.id,
+      taphoammoOrderResult.order_id,
+      "Purchase successful",
+      productKeys,
+      transaction?.id
+    );
   } catch (error) {
     console.error("Unexpected error:", error);
     return errorResponse(
-      "Đã xảy ra lỗi không mong muốn khi xử lý đơn hàng", 
+      error instanceof Error ? error.message : "An unexpected error occurred",
       "UNEXPECTED_ERROR",
-      500,
-      error
+      500
     );
   }
 });
 
+// Helper functions
 function errorResponse(message: string, code: string, status: number = 400, details?: any): Response {
   const body: ErrorResponse = {
     success: false,
@@ -249,15 +356,20 @@ function errorResponse(message: string, code: string, status: number = 400, deta
   );
 }
 
-function successResponse(order: any, items: any[]): Response {
+function successResponse(
+  orderId: string, 
+  taphoammoOrderId: string, 
+  message: string,
+  productKeys?: string[],
+  transactionId?: string
+): Response {
   const body: SuccessResponse = {
     success: true,
-    order: {
-      id: order.id,
-      total: order.total_amount,
-      created_at: order.created_at,
-      items
-    }
+    orderId,
+    taphoammoOrderId,
+    message,
+    productKeys,
+    transactionId
   };
   
   return new Response(

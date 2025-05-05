@@ -1,4 +1,5 @@
-
+import { TaphoammoApiClient, TaphoammoApiOptions } from './TaphoammoApiClient';
+import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ProxyType } from '@/utils/corsProxy';
 
 // Define return type for buyProducts method
@@ -21,13 +22,13 @@ export interface ProductsResponse {
 
 /**
  * Order service for Taphoammo API
- * This service directly interacts with the Taphoammo API using CORS proxies
+ * Handles all order-related operations
  */
 export class TaphoammoOrderService {
-  private apiClient: any;
+  private apiClient: TaphoammoApiClient;
   
-  constructor() {
-    this.apiClient = {};
+  constructor(apiClient?: TaphoammoApiClient) {
+    this.apiClient = apiClient || new TaphoammoApiClient();
   }
   
   /**
@@ -41,28 +42,34 @@ export class TaphoammoOrderService {
     proxyType: ProxyType = 'allorigins'
   ): Promise<OrderResponse> {
     try {
-      // Create the API URL with query parameters
-      let apiUrl = `https://taphoammo.net/api/buyProducts?kioskToken=${kioskToken}&userToken=${userToken}&quantity=${quantity}`;
+      const params: Record<string, any> = {
+        kioskToken,
+        userToken,
+        quantity
+      };
+      
       if (promotion) {
-        apiUrl += `&promotion=${promotion}`;
+        params.promotion = promotion;
       }
       
-      // Get the proxy URL based on the selected proxy type
-      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
+      const response = await this.apiClient.executeApiCall<OrderResponse>(
+        'buyProducts',
+        params,
+        { proxyType, useCache: false }
+      );
       
-      // Make the request to the API
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      
-      // Check if the request was successful
-      if (data.success === "false") {
-        throw new Error(data.description || data.message || 'Failed to buy products');
-      }
-      
-      return data as OrderResponse;
+      return response.data;
     } catch (error) {
-      console.error('Error buying products:', error);
-      throw error;
+      // Re-throw TaphoammoError as-is
+      if (error instanceof TaphoammoError) {
+        throw error;
+      }
+      
+      // Wrap other errors
+      throw new TaphoammoError(
+        `Error buying products: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        TaphoammoErrorCodes.UNEXPECTED_RESPONSE
+      );
     }
   }
   
@@ -75,26 +82,115 @@ export class TaphoammoOrderService {
     proxyType: ProxyType = 'allorigins'
   ): Promise<ProductsResponse> {
     try {
-      // Create the API URL with query parameters
-      const apiUrl = `https://taphoammo.net/api/getProducts?orderId=${orderId}&userToken=${userToken}`;
+      const response = await this.apiClient.executeApiCall<ProductsResponse>(
+        'getProducts',
+        { orderId, userToken },
+        { proxyType, useCache: false }
+      );
       
-      // Get the proxy URL based on the selected proxy type
-      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
-      
-      // Make the request to the API
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      
-      // Check if the request was successful
-      if (data.success === "false") {
-        throw new Error(data.description || data.message || 'Failed to get products');
+      return response.data;
+    } catch (error) {
+      // If order is processing, throw specific error
+      if (error instanceof TaphoammoError && 
+          error.code === TaphoammoErrorCodes.ORDER_PROCESSING) {
+        throw error;
       }
       
-      return data as ProductsResponse;
-    } catch (error) {
-      console.error('Error getting products:', error);
-      throw error;
+      // Re-throw TaphoammoError as-is
+      if (error instanceof TaphoammoError) {
+        throw error;
+      }
+      
+      // Wrap other errors
+      throw new TaphoammoError(
+        `Error getting products: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        TaphoammoErrorCodes.UNEXPECTED_RESPONSE
+      );
     }
+  }
+  
+  /**
+   * Check order status and keep polling until products are available
+   */
+  public async checkOrderUntilComplete(
+    orderId: string,
+    userToken: string = '0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9',
+    maxRetries: number = 5,
+    delayMs: number = 2000,
+    proxyType: ProxyType = 'allorigins'
+  ): Promise<{
+    success: boolean;
+    product_keys?: string[];
+    message?: string;
+  }> {
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const result = await this.getProducts(orderId, userToken, proxyType);
+        
+        // If we have product data, return success
+        if (result.success === 'true' && result.data && result.data.length > 0) {
+          return {
+            success: true,
+            product_keys: result.data.map(item => item.product)
+          };
+        }
+        
+        // If we're still processing, wait and retry
+        if (result.success === 'false' && 
+            result.description?.includes('Order in processing')) {
+          attempt++;
+          
+          if (attempt >= maxRetries) {
+            return {
+              success: false,
+              message: `Order still processing after ${maxRetries} attempts. Try again later.`
+            };
+          }
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        
+        // Any other scenario is a failure
+        return {
+          success: false,
+          message: result.description || 'Failed to retrieve order products'
+        };
+        
+      } catch (error) {
+        attempt++;
+        
+        // If it's specifically an ORDER_PROCESSING error, wait and retry
+        if (error instanceof TaphoammoError && 
+            error.code === TaphoammoErrorCodes.ORDER_PROCESSING) {
+          
+          if (attempt >= maxRetries) {
+            return {
+              success: false,
+              message: `Order still processing after ${maxRetries} attempts. Try again later.`
+            };
+          }
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        
+        // Other errors are immediate failures
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error checking order'
+        };
+      }
+    }
+    
+    return {
+      success: false,
+      message: 'Maximum retries exceeded when checking order status'
+    };
   }
   
   /**
@@ -107,60 +203,48 @@ export class TaphoammoOrderService {
   ): Promise<{
     available: boolean;
     message?: string;
+    stock?: number;
   }> {
     try {
-      // Create the API URL with query parameters
-      const apiUrl = `https://taphoammo.net/api/getStock?kioskToken=${kioskToken}`;
+      const response = await this.apiClient.executeApiCall(
+        'getStock',
+        { kioskToken },
+        { proxyType }
+      );
       
-      // Get the proxy URL based on the selected proxy type
-      const proxyUrl = this.getProxyUrl(apiUrl, proxyType);
+      const data = response.data;
       
-      // Make the request to the API
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      
-      // Check if the request was successful
-      if (data.success === "false") {
-        return {
-          available: false,
-          message: data.description || data.message || 'Failed to check stock availability'
-        };
-      }
+      // Parse stock quantity
+      const stockAvailable = parseInt(data.stock || '0');
       
       // Check if there is enough stock
-      const stockAvailable = parseInt(data.stock || '0');
       if (stockAvailable < quantity) {
         return {
           available: false,
-          message: `Insufficient stock. Requested: ${quantity}, Available: ${stockAvailable}`
+          message: `Insufficient stock. Required: ${quantity}, Available: ${stockAvailable}`,
+          stock: stockAvailable
         };
       }
       
       return {
         available: true,
-        message: `Stock available: ${stockAvailable}`
+        message: `Stock available: ${stockAvailable}`,
+        stock: stockAvailable
       };
     } catch (error) {
-      console.error('Error checking stock availability:', error);
+      if (error instanceof TaphoammoError && 
+          error.code === TaphoammoErrorCodes.STOCK_UNAVAILABLE) {
+        return {
+          available: false,
+          message: 'Product is out of stock',
+          stock: 0
+        };
+      }
+      
       return {
         available: false,
-        message: `Error checking stock: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: error instanceof Error ? error.message : 'Failed to check stock availability'
       };
-    }
-  }
-  
-  /**
-   * Get the proxy URL based on the selected proxy type
-   */
-  private getProxyUrl(apiUrl: string, proxyType: ProxyType): string {
-    switch (proxyType) {
-      case 'corsproxy':
-        return `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
-      case 'cors-anywhere':
-        return `https://cors-anywhere.herokuapp.com/${apiUrl}`;
-      case 'allorigins':
-      default:
-        return `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
     }
   }
 }

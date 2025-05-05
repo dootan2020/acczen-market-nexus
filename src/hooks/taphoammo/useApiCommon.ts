@@ -4,10 +4,11 @@ import { toast } from 'sonner';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { ProxyType, getStoredProxy, setStoredProxy } from '@/utils/corsProxy';
 import { ApiErrorHandler } from '@/services/api/ApiErrorHandler';
+import { supabase } from '@/integrations/supabase/client';
 
 // Maximum number of retries and corresponding delays with exponential backoff
 export const MAX_RETRIES = 3;
-export const RETRY_DELAYS = [300, 1000, 3000]; // Starting with smaller delay
+export const RETRY_DELAYS = [300, 1000, 3000]; // Progressively longer delays
 
 // Create a singleton instance of ApiErrorHandler for Taphoammo API
 const taphoammoErrorHandler = new ApiErrorHandler({
@@ -23,14 +24,50 @@ export const useApiCommon = () => {
   const [retry, setRetry] = useState(0);
   const [responseTime, setResponseTime] = useState(0);
   const [usingCache, setUsingCache] = useState(false);
+  const [circuitOpen, setCircuitOpen] = useState(false);
 
-  // Improved retry mechanism with automatic proxy switching
+  // Check circuit breaker status
+  const checkCircuit = async () => {
+    try {
+      const { data } = await supabase
+        .from('api_health')
+        .select('is_open')
+        .eq('api_name', 'taphoammo')
+        .single();
+      
+      setCircuitOpen(data?.is_open || false);
+      return data?.is_open || false;
+    } catch (err) {
+      console.error('Error checking circuit breaker status:', err);
+      return false;
+    }
+  };
+
+  // Improved retry mechanism with automatic proxy switching and circuit breaker
   const withRetry = async <T,>(
     fn: () => Promise<T>,
     endpoint: string = 'unknown',
     cacheFn?: () => Promise<T>
   ): Promise<T> => {
     setUsingCache(false);
+    
+    // Check if circuit is open
+    const isCircuitOpen = await checkCircuit();
+    if (isCircuitOpen && cacheFn) {
+      setUsingCache(true);
+      toast.warning('API connection is down. Using cached data.', {
+        duration: 5000
+      });
+      try {
+        return await cacheFn();
+      } catch (cacheErr) {
+        console.error('Cache fallback failed:', cacheErr);
+        throw new TaphoammoError(
+          'API is currently unavailable and cache retrieval failed',
+          TaphoammoErrorCodes.API_TEMP_DOWN
+        );
+      }
+    }
     
     try {
       // Use our enhanced ApiErrorHandler for consistent retry and error handling
@@ -44,7 +81,17 @@ export const useApiCommon = () => {
         cacheFn
       );
       
-      setResponseTime(Date.now() - Date.now()); // Will be updated by ApiErrorHandler
+      // Reset circuit breaker if call succeeds after failures
+      if (isCircuitOpen) {
+        try {
+          await supabase.rpc('reset_circuit_half_open', { api_name_param: 'taphoammo' });
+        } catch (err) {
+          console.error('Error resetting circuit breaker:', err);
+        }
+      }
+      
+      // Get response time from handler (or set a default)
+      setResponseTime(taphoammoErrorHandler.getLastResponseTime() || 0);
       return result;
       
     } catch (err: any) {
@@ -68,14 +115,55 @@ export const useApiCommon = () => {
           // Try to switch to next proxy option
           if (currentProxy === 'allorigins') {
             setStoredProxy('corsproxy');
-            toast.info('Đang chuyển sang proxy khác để cải thiện kết nối');
+            toast.info('Switching to alternate proxy to improve connection', {
+              duration: 3000
+            });
           } else if (currentProxy === 'corsproxy') {
             setStoredProxy('cors-anywhere');
-            toast.info('Đang thử proxy khác để khắc phục lỗi kết nối');
+            toast.info('Trying another proxy to resolve connection issues', {
+              duration: 3000
+            });
           } else {
             setStoredProxy('allorigins');
-            toast.info('Đang quay lại proxy mặc định');
+            toast.info('Returning to default proxy', {
+              duration: 3000
+            });
           }
+        }
+        
+        // Increment error count in circuit breaker
+        try {
+          await supabase.rpc('increment_error_count');
+          
+          // Check if we should open the circuit
+          const { data: shouldOpen } = await supabase.rpc('check_if_should_open_circuit');
+          if (shouldOpen) {
+            // Update the circuit breaker status
+            await supabase
+              .from('api_health')
+              .update({ 
+                is_open: true,
+                opened_at: new Date().toISOString()
+              })
+              .eq('api_name', 'taphoammo');
+            
+            setCircuitOpen(true);
+            
+            // Try cache if available
+            if (cacheFn) {
+              try {
+                setUsingCache(true);
+                toast.warning('API connection is down. Using cached data.', {
+                  duration: 5000
+                });
+                return await cacheFn();
+              } catch (cacheErr) {
+                console.error('Cache fallback failed after circuit opened:', cacheErr);
+              }
+            }
+          }
+        } catch (circuitErr) {
+          console.error('Error updating circuit breaker:', circuitErr);
         }
       }
       
@@ -94,6 +182,7 @@ export const useApiCommon = () => {
     responseTime,
     withRetry,
     usingCache,
+    circuitOpen,
     maxRetries: MAX_RETRIES
   };
 };

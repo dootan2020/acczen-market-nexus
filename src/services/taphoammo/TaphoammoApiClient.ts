@@ -11,12 +11,14 @@ export interface TaphoammoApiOptions {
   useCache?: boolean;
   forceRefresh?: boolean;
   maxRetries?: number;
+  timeout?: number;
 }
 
 export interface TaphoammoResponse<T = any> {
   data: T;
   source?: 'cache' | 'api' | 'mock';
   timestamp?: number;
+  responseTime?: number;
 }
 
 /**
@@ -26,6 +28,7 @@ export interface TaphoammoResponse<T = any> {
 export class TaphoammoApiClient {
   private apiCache: TaphoammoApiCache;
   private validator: TaphoammoResponseValidator;
+  private defaultTimeout: number = 10000; // 10 seconds default timeout
   
   constructor() {
     this.apiCache = new TaphoammoApiCache();
@@ -44,7 +47,8 @@ export class TaphoammoApiClient {
       proxyType = 'allorigins',
       useMockData = false,
       useCache = true,
-      forceRefresh = false
+      forceRefresh = false,
+      timeout = this.defaultTimeout
     } = options;
     
     // Generate cache key
@@ -58,15 +62,26 @@ export class TaphoammoApiClient {
         return {
           data: cachedData.data,
           source: 'cache',
-          timestamp: cachedData.timestamp
+          timestamp: cachedData.timestamp,
+          responseTime: 0 // No response time for cached data
         };
       }
     }
     
+    const startTime = Date.now();
+    
     try {
+      // Setup timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new TaphoammoError(
+          `Request timeout after ${timeout}ms`, 
+          TaphoammoErrorCodes.TIMEOUT
+        )), timeout);
+      });
+      
       // Call edge function
       console.log(`[TaphoammoApiClient] Calling ${method} with proxy ${proxyType}`);
-      const { data, error } = await supabase.functions.invoke('taphoammo-api', {
+      const requestPromise = supabase.functions.invoke('taphoammo-api', {
         body: { 
           ...params,
           proxy_type: proxyType,
@@ -74,6 +89,11 @@ export class TaphoammoApiClient {
           debug_mock: useMockData ? 'true' : 'false'
         }
       });
+      
+      // Race the promises
+      const { data, error } = await Promise.race([requestPromise, timeoutPromise]);
+      
+      const responseTime = Date.now() - startTime;
       
       // Handle possible errors
       if (error) {
@@ -83,7 +103,7 @@ export class TaphoammoApiClient {
           error.message || 'API request failed',
           TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
           0,
-          0
+          responseTime
         );
       }
       
@@ -99,10 +119,12 @@ export class TaphoammoApiClient {
       return {
         data: data as T,
         source: data.source === 'mock' ? 'mock' : 'api',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        responseTime
       };
     } catch (error) {
-      throw this.enhanceError(error, method);
+      const responseTime = Date.now() - startTime;
+      throw this.enhanceError(error, method, responseTime);
     }
   }
   
@@ -110,22 +132,36 @@ export class TaphoammoApiClient {
    * Generate cache key from method and params
    */
   private generateCacheKey(method: string, params: Record<string, any>): string {
-    return `${method}:${JSON.stringify(params)}`;
+    // Remove proxy_type and debug_mock from cache key
+    const { proxy_type, debug_mock, ...cacheParams } = params;
+    return `${method}:${JSON.stringify(cacheParams)}`;
   }
   
   /**
    * Enhance error with additional context
    */
-  private enhanceError(error: any, method: string): Error {
+  private enhanceError(error: any, method: string, responseTime: number): Error {
     if (error instanceof TaphoammoError) {
+      error.responseTime = responseTime;
       return error;
+    }
+    
+    // Check if it's a network error
+    if (error.message?.includes('Failed to fetch') || 
+        error.message?.includes('Network request failed')) {
+      return new TaphoammoError(
+        `Network error in ${method}: ${error.message}`,
+        TaphoammoErrorCodes.NETWORK_ERROR,
+        0,
+        responseTime
+      );
     }
     
     return new TaphoammoError(
       `Error in ${method}: ${error.message || 'Unknown error'}`,
       TaphoammoErrorCodes.UNEXPECTED_RESPONSE,
       0,
-      0
+      responseTime
     );
   }
   
@@ -135,4 +171,15 @@ export class TaphoammoApiClient {
   public clearCache(): void {
     this.apiCache.clear();
   }
+  
+  /**
+   * Helper method to create validator if not available
+   */
+  public getValidator(): TaphoammoResponseValidator {
+    if (!this.validator) {
+      this.validator = new TaphoammoResponseValidator();
+    }
+    return this.validator;
+  }
 }
+

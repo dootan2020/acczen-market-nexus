@@ -1,314 +1,193 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { corsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const SYSTEM_TOKEN = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9"; // Default system token for TaphoaMMO
 
+// TaphoaMMO API helper
+async function getStock(kioskToken: string, proxyType: string = "allorigins") {
+  // Base URL for TaphoaMMO API
+  let apiUrl = `https://taphoammo.net/api/getStock?kioskToken=${kioskToken}`;
+  
+  // Get proxy URL based on the proxy type
+  let proxyUrl;
+  switch (proxyType) {
+    case 'corsproxy':
+      proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+      break;
+    case 'cors-anywhere':
+      proxyUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+      break;
+    case 'allorigins':
+    default:
+      proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+      break;
+  }
+  
+  // Call the API
+  const response = await fetch(proxyUrl);
+  const data = await response.json();
+  
+  // Check for errors
+  if (data.success === "false") {
+    throw new Error(data.description || data.message || "API request failed");
+  }
+  
+  // Parse stock quantity
+  let stockQuantity = 0;
+  let productName = "Unknown Product";
+  
+  if (data.stock) {
+    stockQuantity = parseInt(data.stock);
+  } else if (data.message && typeof data.message === 'string') {
+    // Format: "Found: Product Name (Stock: 10)"
+    const stockMatch = data.message.match(/Stock: (\d+)/);
+    if (stockMatch && stockMatch[1]) {
+      stockQuantity = parseInt(stockMatch[1]);
+    }
+    
+    const nameMatch = data.message.match(/Found: ([^(]+)/);
+    if (nameMatch && nameMatch[1]) {
+      productName = nameMatch[1].trim();
+    }
+  }
+  
+  return {
+    stock_quantity: stockQuantity,
+    name: productName
+  };
+}
+
+// Main handler
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  // Handle CORS
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
   try {
-    // Check circuit breaker state first
-    const { data: apiHealthCheck, error: healthCheckError } = await supabase
-      .from('api_health')
-      .select('is_open, opened_at, error_count')
-      .eq('api_name', 'taphoammo')
+    // Create Supabase client with service role key
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Get authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Get user
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Get request body
+    const { product_id, kiosk_token } = await req.json();
+    
+    if (!product_id || !kiosk_token) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Missing required parameters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Get current product data
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("stock_quantity, name")
+      .eq("id", product_id)
       .single();
-
-    if (healthCheckError) {
-      console.error('Error checking API health:', healthCheckError);
-      // Continue with caution
-    }
-
-    // If circuit breaker is open, use cache or return unavailable
-    if (apiHealthCheck?.is_open) {
-      console.log('Circuit breaker is open, using cached data if available');
-      
-      // Get cached products that aren't too old (within 30 minutes)
-      const thirtyMinutesAgo = new Date();
-      thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
-      
-      const { data: cachedProducts, error: cacheError } = await supabase
-        .from('product_cache')
-        .select('*')
-        .gte('updated_at', thirtyMinutesAgo.toISOString());
-
-      if (cacheError) {
-        console.error('Cache retrieval error:', cacheError);
-      }
-
-      if (cachedProducts && cachedProducts.length > 0) {
-        console.log(`Returning ${cachedProducts.length} cached products`);
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            data: cachedProducts,
-            source: 'cache',
-            cache_date: cachedProducts[0].updated_at
-          }),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json' 
-            } 
-          }
-        );
-      }
-
-      // If no valid cache, return temporary unavailable
+    
+    if (productError) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Service temporarily unavailable. We are working to restore service as soon as possible.' 
-        }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          },
-          status: 503 
-        }
+        JSON.stringify({ success: false, message: "Product not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Attempt to connect to Taphoammo API
+    
+    // Get stock from TaphoaMMO API
+    let stockInfo;
     try {
-      // Get the request body for specific product info
-      let requestData = {};
-      try {
-        requestData = await req.json();
-      } catch (e) {
-        // No body or invalid JSON, continue with default params
-      }
-      
-      const kioskToken = requestData.kioskToken || '';
-      const apiKey = Deno.env.get('TAPHOAMMO_API_KEY') || '';
-      
-      if (!apiKey) {
-        throw new Error('API key not configured');
-      }
-      
-      let url = 'https://taphoammo.net/api/getProducts';
-      if (kioskToken) {
-        url = `https://taphoammo.net/api/getStock?kioskToken=${kioskToken}`;
-      }
-
-      const apiStartTime = Date.now();
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'DigitalDealsHub/1.0'
-        },
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-
-      const apiLatency = Date.now() - apiStartTime;
-      
-      if (!response.ok) {
-        // Record the failure in api_health
-        await recordApiFailure(supabase, `HTTP error: ${response.status}`, apiLatency);
-        throw new Error(`API returned status ${response.status}`);
-      }
-      
-      const rawText = await response.text();
-      let data;
-      
-      try {
-        data = JSON.parse(rawText);
-      } catch (e) {
-        await recordApiFailure(supabase, `JSON parse error: ${e.message}`, apiLatency);
-        throw new Error(`Invalid JSON response: ${rawText.substring(0, 100)}...`);
-      }
-
-      // Check if API response indicates failure
-      if (data.success === "false") {
-        await recordApiFailure(supabase, data.message || "API returned failure", apiLatency);
-        throw new Error(data.message || "API returned failure");
-      }
-
-      // Get product data
-      let products = [];
-      if (kioskToken && data.name && data.stock) {
-        // Single product response
-        products = [{
-          kiosk_token: kioskToken,
-          name: data.name,
-          stock_quantity: parseInt(data.stock) || 0,
-          price: parseFloat(data.price) || 0
-        }];
-      } else if (data.products && Array.isArray(data.products)) {
-        // Multiple products response
-        products = data.products.map(p => ({
-          kiosk_token: p.id,
-          name: p.name,
-          stock_quantity: parseInt(p.stock_quantity) || 0,
-          price: parseFloat(p.price) || 0
-        }));
-      }
-
-      // Update cache with fresh data
-      if (products.length > 0) {
-        for (const product of products) {
-          const { error: upsertError } = await supabase
-            .from('product_cache')
-            .upsert({
-              product_id: product.kiosk_token,
-              kiosk_token: product.kiosk_token,
-              name: product.name,
-              price: product.price,
-              stock_quantity: product.stock_quantity,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'product_id' });
-          
-          if (upsertError) {
-            console.error('Error updating cache:', upsertError);
-          }
-        }
-        
-        // Reset circuit breaker on success
-        await supabase
-          .from('api_health')
-          .update({
-            is_open: false,
-            error_count: 0,
-            updated_at: new Date().toISOString()
-          })
-          .eq('api_name', 'taphoammo');
-          
-        // Log successful API call
-        await supabase.from('api_logs').insert({
-          api: 'taphoammo',
-          endpoint: kioskToken ? 'getStock' : 'getProducts',
-          status: 'success',
-          response_time: apiLatency,
-          details: {
-            products_count: products.length
-          }
-        });
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          data: products,
-          source: 'api',
-          latency: apiLatency
-        }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
+      stockInfo = await getStock(kiosk_token);
     } catch (error) {
-      console.error('API error:', error);
-      
-      // Try to get data from cache as fallback
-      const { data: cachedProducts, error: cacheError } = await supabase
-        .from('product_cache')
-        .select('*');
-
-      if (!cacheError && cachedProducts && cachedProducts.length > 0) {
-        // Mark cache as outdated by including the age in the response
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            data: cachedProducts,
-            source: 'cache_fallback',
-            message: 'API unavailable, showing cached data'
-          }),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json' 
-            } 
-          }
-        );
-      }
-      
-      // No data available at all
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Service temporarily unavailable. Please try again later.' 
+          message: error instanceof Error ? error.message : "Failed to get stock" 
         }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          },
-          status: 503 
-        }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-  } catch (error) {
-    console.error('Stock sync error:', error);
+    
+    // Record sync in history
+    await supabase
+      .from("inventory_sync_history")
+      .insert({
+        product_id,
+        kiosk_token,
+        sync_type: "manual",
+        status: "success",
+        old_quantity: product.stock_quantity,
+        new_quantity: stockInfo.stock_quantity,
+        message: `Stock synchronized from ${product.stock_quantity} to ${stockInfo.stock_quantity}`
+      });
+    
+    // Update cache
+    await supabase
+      .from("inventory_cache")
+      .upsert({
+        kiosk_token,
+        product_id,
+        stock_quantity: stockInfo.stock_quantity,
+        name: stockInfo.name,
+        last_checked_at: new Date().toISOString(),
+        cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+        last_sync_status: "success"
+      }, {
+        onConflict: "kiosk_token"
+      });
+    
+    // Update product
+    await supabase
+      .from("products")
+      .update({
+        stock_quantity: stockInfo.stock_quantity
+      })
+      .eq("id", product_id);
+    
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: error.message 
+      JSON.stringify({
+        success: true,
+        message: "Stock synchronized successfully",
+        old_quantity: product.stock_quantity,
+        new_quantity: stockInfo.stock_quantity,
+        name: stockInfo.name
       }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        },
-        status: 500 
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error syncing stock:", error);
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error instanceof Error ? error.message : "An unexpected error occurred"
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
-
-async function recordApiFailure(
-  supabase: any, 
-  errorMessage: string, 
-  responseTime: number
-) {
-  try {
-    // Log the failure
-    await supabase.from('api_logs').insert({
-      api: 'taphoammo',
-      endpoint: 'sync',
-      status: 'error',
-      response_time: responseTime,
-      details: { error: errorMessage }
-    });
-    
-    // Update the circuit breaker
-    const { data, error } = await supabase
-      .from('api_health')
-      .update({
-        error_count: supabase.rpc('increment_error_count'),
-        last_error: errorMessage,
-        is_open: supabase.rpc('check_if_should_open_circuit'),
-        opened_at: supabase.rpc('update_opened_at_if_needed'),
-        updated_at: new Date().toISOString()
-      })
-      .eq('api_name', 'taphoammo')
-      .select('is_open, error_count');
-      
-    if (error) {
-      console.error('Failed to update circuit breaker:', error);
-    } else if (data && data[0].is_open) {
-      console.log('Circuit breaker opened after', data[0].error_count, 'errors');
-      
-      // We would trigger notification here in a production system
-      // For now we'll just log it
-      console.warn('ALERT: Taphoammo API circuit breaker opened');
-    }
-  } catch (e) {
-    console.error('Failed to record API failure:', e);
-  }
-}

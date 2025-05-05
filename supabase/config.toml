@@ -1,53 +1,119 @@
 
+# A string used as a project reference
 project_id = "epwggtbgdtaxietedjcn"
 
 [api]
-# disable this if you are deploying with custom domain or using any of our legacy features
-# we recommend keeping this enabled as it will help you adopt new features in production without any customer facing impact
-enabled = true
-# Generated port will be different
+# Port to use for the API URL
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
+# Schemas to expose in your API
+schemas = ["public"]
+# Extra schemas to add to the search_path of every request
+extra_search_path = ["extensions"]
+# Maximum rows to return from a view, table, or stored procedure. Limits payload size
+# for accidental or malicious requests.
 max_rows = 1000
 
 [db]
-# Port to use for the local DB server
+# Port to use for the local database URL
 port = 54322
-shadow_port = 54320
+# The database major version to use. This has to be the same as your remote database's.
 major_version = 15
 
 [studio]
-enabled = true
-# Generated port will be different
+# Port to use for Supabase Studio
 port = 54323
+# External URL of the API server that frontend connects to
 api_url = "http://localhost"
 
+# Email testing server. Emails sent with the local dev setup are not actually sent - the
+# mail server will catch them and you can view the emails from the dashboard.
 [inbucket]
-enabled = true
-# Generated port will be different
+# Port to use for the email testing server web interface
 port = 54324
+smtp_port = 54325
+pop3_port = 54326
 
 [storage]
-enabled = true
+# The maximum file size allowed (e.g. "5MB", "500KB").
+file_size_limit = "50MiB"
 
 [auth]
-enabled = true
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
 site_url = "http://localhost:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+additional_redirect_urls = [
+  "https://localhost:3000",
+  "https://epwggtbgdtaxietedjcn.supabase.co"
+]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 seconds (1 week).
+jwt_expiry = 3600
+# Allow/disallow new user signups to your project.
+enable_signup = true
+# If enabled, a user will need to confirm any email change on both the old, and new email addresses.
+# If disabled, only the new email is necessary to confirm.
+double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
 
-[realtime]
-enabled = true
+# Uncomment to customize the email template
+# [auth.email]
+# Custom email templates
+# Enable_email_signup = true
+# Enable_email_autoconfirm = false
+# Template_create_user = """..."""
+# Template_Invite = """..."""
+
+[auth.sms]
+enable_signup = true
+enable_autoconfirm = true
+
+# Configure one of the supported SMS providers: twilio, messagebird, textlocal, vonage
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+# Find this in your twilio dashboard: https://www.twilio.com/console
+auth_token = ""
+
+# Allow/disallow new user signups to your project using the specified OAuth providers.
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
 
 [analytics]
 enabled = false
+port = 54327
+vector_port = 54328
+# Configure one of the supported backends: postgres, bigquery
+backend = "postgres"
 
-# Edge Functions Configuration
-[functions]
+# Disable all edge functions that require secrets when running `supabase start`
+# as a normal `supabase secrets` workflow is not available locally.
+[functions.update-order-keys]
+verify_jwt = true
+
 [functions.purchase-product]
 verify_jwt = true
 
-[functions.check-kiosk-status]
+[functions.sync-stock]
 verify_jwt = true
 
-[functions.check-order-status]
+[functions.taphoammo-api]
 verify_jwt = true
