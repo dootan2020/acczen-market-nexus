@@ -30,14 +30,14 @@ import DepositPending from './pages/DepositPending';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminHome from './pages/admin/AdminHome';
 import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/AdminOrders';
-import UsersPage from './pages/admin/UsersPage'; // Updated import path
+import AdminOrders from './pages/admin/OrdersPage';  // Updated import path
+import UsersPage from './pages/admin/UsersPage';  // Updated import path
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminTransactions from './pages/admin/AdminTransactions';
-import AdminReports from './pages/admin/AdminReports';
+import ReportsPage from './pages/admin/ReportsPage';  // Added import for Reports page
 import AdminExchangeRates from './pages/admin/AdminExchangeRates';
 import ProductEditPage from './pages/admin/ProductEditPage';
 import ProductsImport from './pages/admin/ProductsImport';
@@ -104,10 +104,10 @@ const routes = {
     { path: '/admin/categories', element: <AdminProtectedRoute element={<AdminCategories />} /> },
     { path: '/admin/categories/edit/:id', element: <AdminProtectedRoute element={<CategoryEditPage />} /> },
     { path: '/admin/orders', element: <AdminProtectedRoute element={<AdminOrders />} /> },
-    { path: '/admin/users', element: <AdminProtectedRoute element={<UsersPage />} /> }, // Updated component reference
+    { path: '/admin/users', element: <AdminProtectedRoute element={<UsersPage />} /> },
     { path: '/admin/deposits', element: <AdminProtectedRoute element={<AdminDeposits />} /> },
     { path: '/admin/transactions', element: <AdminProtectedRoute element={<AdminTransactions />} /> },
-    { path: '/admin/reports', element: <AdminProtectedRoute element={<AdminReports />} /> },
+    { path: '/admin/reports', element: <AdminProtectedRoute element={<ReportsPage />} /> }, // Updated to use ReportsPage
     { path: '/admin/exchange-rates', element: <AdminProtectedRoute element={<AdminExchangeRates />} /> },
     { path: '/admin/settings', element: <AdminProtectedRoute element={<AdminSettings />} /> },
     { path: '/admin/inventory', element: <AdminProtectedRoute element={<InventoryManagement />} /> },

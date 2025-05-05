@@ -1,81 +1,65 @@
 
-import { useReportDateRange } from "./useReportDateRange";
-import { useDepositsData } from "./useDepositsData";
-import { useOrdersData } from "./useOrdersData";
-import { useUsersData } from "./useUsersData";
-import { useStatsData } from "./useStatsData";
-import { usePaymentMethodData } from "./usePaymentMethodData";
+import { useMemo } from 'react';
+import { format } from 'date-fns';
+import { useReportsData, DateRangeType, DateRange } from '@/hooks/admin/useReportsData';
+import { useStatsData } from './useStatsData';
+import { useDepositsData } from './useDepositsData';
+import { useOrdersData } from './useOrdersData';
+import { usePaymentMethodData } from './usePaymentMethodData';
+import { StatsData, DepositsChartData, OrdersChartData, PaymentMethodData } from '@/types/reports';
 
-export function useReports() {
-  // Get date range
-  const { 
-    dateRange, 
-    dateRangeType, 
-    handleDateRangeChange, 
-    handleDateRangePickerChange,
-    formattedDateRange 
-  } = useReportDateRange();
-  
-  // Fetch data based on date range
-  const { 
-    deposits,
-    depositsChartData, 
-    isLoading: isDepositsLoading, 
-    refetch: refetchDeposits 
-  } = useDepositsData(dateRange);
-  
-  const { 
-    orders,
-    ordersChartData, 
-    isLoading: isOrdersLoading, 
-    refetch: refetchOrders 
-  } = useOrdersData(dateRange);
-  
-  const { 
-    users, 
-    isLoading: isUsersLoading, 
-    refetch: refetchUsers 
-  } = useUsersData();
-  
-  // Calculate stats
-  const statsData = useStatsData(dateRange);
-  
-  // Generate payment method charts
-  const paymentMethodData = usePaymentMethodData(statsData);
-  
-  // Combined loading state
-  const isLoading = isDepositsLoading || isOrdersLoading || isUsersLoading;
-  
-  // Combined refetch function
-  const refetch = () => {
-    refetchDeposits();
-    refetchOrders();
-    refetchUsers();
+export const useReports = () => {
+  // Get base reports data which handles date range state and base data fetching
+  const {
+    data,
+    isLoading: isBaseLoading,
+    dateRangeType,
+    dateRange,
+    handleDateRangeTypeChange,
+    handleCustomDateRangeChange,
+    refetch
+  } = useReportsData();
+
+  // Get specific data from specialized hooks
+  const { statsData, isLoading: isStatsLoading } = useStatsData(dateRange);
+  const { deposits, depositsChartData, isLoading: isDepositsLoading } = useDepositsData(dateRange);
+  const { ordersChartData, isLoading: isOrdersLoading } = useOrdersData(dateRange);
+  const { paymentMethodData, isLoading: isPaymentMethodLoading } = usePaymentMethodData(dateRange);
+
+  // Combine loading states
+  const isLoading = isBaseLoading || isStatsLoading || isDepositsLoading || isOrdersLoading || isPaymentMethodLoading;
+
+  // Format date range for display
+  const formattedDateRange = useMemo(() => {
+    if (!dateRange) return 'Custom Range';
+    
+    const fromDate = format(dateRange.from, 'MMM d, yyyy');
+    const toDate = format(dateRange.to, 'MMM d, yyyy');
+    
+    return `${fromDate} - ${toDate}`;
+  }, [dateRange]);
+
+  // Handle date range changes
+  const handleDateRangeChange = (type: DateRangeType) => {
+    handleDateRangeTypeChange(type);
+  };
+
+  const handleDateRangePickerChange = (range: DateRange) => {
+    handleCustomDateRangeChange(range);
   };
 
   return {
-    // Date range
-    dateRange,
-    dateRangeType,
-    handleDateRangeChange,
-    handleDateRangePickerChange,
-    formattedDateRange,
-    
-    // Stats
     statsData,
-    
-    // Chart data
     depositsChartData,
     ordersChartData,
     paymentMethodData,
-    
-    // Raw data
     deposits,
-    
-    // Status
     isLoading,
-    
-    // Actions
-    refetch
+    dateRangeType,
+    dateRange,
+    handleDateRangeChange,
+    handleDateRangePickerChange,
+    refetch,
+    formattedDateRange
   };
-}
+};
