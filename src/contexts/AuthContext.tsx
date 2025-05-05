@@ -209,15 +209,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // SignOut function (alias for logout with redirect flag)
+  // Fix: Added proper Promise return handling
   const signOut = async (redirect = true) => {
     try {
       isLoading.set(true);
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       if (redirect && navigate) {
         navigate('/login');
       }
+      return Promise.resolve();
     } catch (error) {
       console.error('Error signing out:', error);
+      return Promise.resolve(); // Always return a Promise that won't throw
     } finally {
       isLoading.set(false);
     }

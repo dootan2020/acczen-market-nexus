@@ -38,6 +38,6 @@ export const useProductCountByCategory = (): ProductCountResult => {
   return {
     counts: data || {},
     isLoading,
-    error: error as Error
+    error: error as Error | null
   };
 };
