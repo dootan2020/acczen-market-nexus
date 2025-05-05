@@ -2,7 +2,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useProductCountByCategory = () => {
+interface ProductCountResult {
+  counts: Record<string, number>;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export const useProductCountByCategory = (): ProductCountResult => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['product-counts-by-category'],
     queryFn: async () => {
