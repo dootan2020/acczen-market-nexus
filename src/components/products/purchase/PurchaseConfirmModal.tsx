@@ -9,9 +9,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useOrderOperations } from '@/hooks/taphoammo/useOrderOperations';
-import { getStoredProxy } from '@/utils/corsProxy';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ProxyType, getStoredProxy } from '@/hooks/taphoammo/useApiCommon';
 
 interface PurchaseConfirmModalProps {
   open: boolean;

@@ -1,7 +1,7 @@
 
 import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
-import type { ProxyType } from '@/utils/corsProxy';
+import { ProxyType } from '@/hooks/taphoammo/useApiCommon';
 
 export interface TaphoammoProduct {
   kiosk_token: string;
@@ -126,7 +126,7 @@ export class TaphoammoProductService {
    */
   public async checkKioskActive(
     kioskToken: string,
-    proxyType: ProxyType = 'allorigins'
+    proxyType: ProxyType = ProxyType.ALLORIGINS
   ): Promise<boolean> {
     try {
       const stockInfo = await this.getStock(kioskToken, { proxyType });

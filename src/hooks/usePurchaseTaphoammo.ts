@@ -4,17 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
-
-// ProxyType enum to match what we're using in our new implementation
-enum ProxyType {
-  DIRECT = 'direct',
-  CORSPROXY_IO = 'corsproxy.io'
-}
-
-// Helper function to get current proxy setting
-const getStoredProxy = (): ProxyType => {
-  return ProxyType.DIRECT; // Default to direct
-};
+import { ProxyType, getStoredProxy } from './taphoammo/useApiCommon';
 
 export const usePurchaseTaphoammo = (kioskToken: string) => {
   const [loading, setLoading] = useState(false);
