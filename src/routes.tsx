@@ -9,6 +9,7 @@ import DashboardPage from './pages/Dashboard';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import Help from './pages/Help';
+import Categories from './pages/Categories';
 
 // Import admin pages
 import AdminHome from './pages/admin/AdminHome';
@@ -26,7 +27,6 @@ import AdminSettings from './pages/admin/AdminSettings';
 import DiscountAnalyticsPage from './pages/admin/DiscountAnalyticsPage';
 
 // Create placeholder components for routes that are missing
-const CategoriesPage = () => <div>Categories Page</div>;
 const ProfilePage = () => <div>Profile Page</div>;
 const AdminIntegrationsPage = () => <div>Admin Integrations Page</div>;
 const CategoryEditPage = () => <div>Category Edit Page</div>;
@@ -40,7 +40,7 @@ const CategoryCreatePage = () => <div>Category Create Page</div>;
 const mainRoutes = [
   { path: '/', element: <Index /> },
   { path: '/products', element: <Products /> },
-  { path: '/categories', element: <CategoriesPage /> },
+  { path: '/categories', element: <Categories /> },
   { path: '/profile', element: <ProfilePage /> },
   { path: '/help', element: <Help /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
