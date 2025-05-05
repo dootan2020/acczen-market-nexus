@@ -32,6 +32,7 @@ const App = () => {
                         <Route key={route.path} path={route.path} element={route.element} />
                       ))}
                     </Route>
+                    {/* Wrap admin routes with the same providers as the main routes */}
                     {routes.adminRoutes.map((route) => (
                       <Route key={route.path} path={route.path} element={route.element} />
                     ))}
