@@ -5,6 +5,7 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
+import { Deposit } from '@/types/deposits';
 
 const ReportsPage = () => {
   const {
@@ -23,6 +24,13 @@ const ReportsPage = () => {
   } = useReports();
   
   const [activeTab, setActiveTab] = React.useState('overview');
+  
+  // Use a type guard to ensure deposits match the Deposit[] type
+  const typedDeposits = deposits?.map(deposit => ({
+    ...deposit,
+    // Ensure metadata is in the correct format
+    metadata: typeof deposit.metadata === 'undefined' ? null : deposit.metadata
+  })) as Deposit[];
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
@@ -68,7 +76,7 @@ const ReportsPage = () => {
             ordersChartData={ordersChartData || []}
             dateRange={dateRange}
             isLoading={isLoading}
-            depositsData={deposits || []}
+            depositsData={typedDeposits || []}
           />
         </Suspense>
       )}

@@ -33,8 +33,12 @@ const AdminReports = () => {
     isLoading
   });
   
-  // Cast deposits to the correct type - this is safe because our Deposit interface now includes all the fields
-  const typedDeposits = deposits as unknown as Deposit[];
+  // Use a type guard to ensure deposits match the Deposit[] type
+  const typedDeposits = deposits?.map(deposit => ({
+    ...deposit,
+    // Ensure metadata is in the correct format
+    metadata: typeof deposit.metadata === 'undefined' ? null : deposit.metadata
+  })) as Deposit[];
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
