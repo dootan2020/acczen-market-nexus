@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { CurrencyContextType } from '@/types/currency';
 
 interface ProductPricingProps {
   price: number;
   salePrice?: number | string | null;
   stockQuantity: number;
-  currency: CurrencyContextType;
+  currency: (amount: number) => string;
 }
 
 const ProductPricing: React.FC<ProductPricingProps> = ({
@@ -17,9 +16,9 @@ const ProductPricing: React.FC<ProductPricingProps> = ({
 }) => {
   const hasDiscount = salePrice && Number(salePrice) > 0 && Number(salePrice) < price;
   
-  // Convert prices using the currency context
-  const formattedPrice = currency.formatUSD(currency.convertVNDtoUSD(price));
-  const formattedSalePrice = hasDiscount ? currency.formatUSD(currency.convertVNDtoUSD(Number(salePrice))) : null;
+  // Format prices using the currency formatter function
+  const formattedPrice = currency(price);
+  const formattedSalePrice = hasDiscount ? currency(Number(salePrice)) : null;
   
   return (
     <div className="flex flex-col gap-2">

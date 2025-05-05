@@ -21,12 +21,14 @@ export const useProductCountByCategory = (): ProductCountResult => {
 
       // Count products by category
       const counts: Record<string, number> = {};
-      data.forEach(product => {
-        const categoryId = product.category_id;
-        if (categoryId) {
-          counts[categoryId] = (counts[categoryId] || 0) + 1;
-        }
-      });
+      if (data) {
+        data.forEach(product => {
+          const categoryId = product.category_id;
+          if (categoryId) {
+            counts[categoryId] = (counts[categoryId] || 0) + 1;
+          }
+        });
+      }
 
       return counts;
     },

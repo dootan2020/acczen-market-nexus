@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -50,12 +51,12 @@ const Register = () => {
 
       // Then handle the user profile creation separately:
       if (user) {
-        // Create user profile with the name
+        // Create user profile with the name - fix the Date issue by converting to ISO string
         await supabase.from('profiles').upsert({
           id: user.id,
           full_name: formData.name,
           email: formData.email,
-          updated_at: new Date()
+          updated_at: new Date().toISOString()
         });
 
         toast.success("Registration successful!");

@@ -198,7 +198,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       isLoading.set(true);
       await supabase.auth.signOut();
-      navigate(redirectTo);
+      if (navigate) {
+        navigate(redirectTo);
+      }
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
@@ -211,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       isLoading.set(true);
       await supabase.auth.signOut();
-      if (redirect) {
+      if (redirect && navigate) {
         navigate('/login');
       }
     } catch (error) {

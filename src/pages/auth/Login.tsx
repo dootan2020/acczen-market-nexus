@@ -95,7 +95,8 @@ const Login = () => {
     
     try {
       console.log("Attempting to sign in with:", { email: formData.email });
-      const result = await signIn(formData.email, formData.password, formData.rememberMe);
+      // Update the signIn call to use the correct number of arguments
+      const result = await signIn(formData.email, formData.password);
       
       if (result?.error) {
         console.error("Login error details:", result.error);
