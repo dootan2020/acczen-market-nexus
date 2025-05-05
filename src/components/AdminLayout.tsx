@@ -1,5 +1,5 @@
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, ReactNode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
@@ -7,7 +7,11 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-const AdminLayout = memo(() => {
+interface AdminLayoutProps {
+  children?: ReactNode;
+}
+
+const AdminLayout = memo(({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +82,7 @@ const AdminLayout = memo(() => {
         {/* Main content with improved spacing and styling */}
         <main className="flex-1 overflow-y-auto p-6">
           <div className="bg-background rounded-lg shadow-sm p-6 mt-2">
-            <Outlet />
+            {children || <Outlet />}
           </div>
         </main>
       </div>
