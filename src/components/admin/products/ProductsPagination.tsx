@@ -2,13 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 export interface ProductsPaginationProps {
   currentPage: number;
@@ -114,7 +107,7 @@ export function ProductsPagination({
                 key={`page-${page}`}
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
-                onClick={() => goToPage && handleGoToPage(page as number)}
+                onClick={() => handleGoToPage(page as number)}
               >
                 {page}
               </Button>

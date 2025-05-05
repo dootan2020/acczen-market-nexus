@@ -1,46 +1,47 @@
 
 import { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+// This hook manages the product synchronization with the external API
 export const useSyncProducts = () => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const { toast } = useToast();
-
-  const syncProducts = async () => {
-    setIsSyncing(true);
-    
+  
+  // Function to trigger the API sync process
+  const syncProducts = async (options?: { selectedProductIds?: string[] }) => {
     try {
-      // Call the edge function to sync products
-      const { data, error } = await supabase.functions.invoke('sync-taphoammo-products', {
-        method: 'POST',
-        body: { force: true }
+      setIsSyncing(true);
+      
+      // Call the edge function or backend API to perform the sync
+      const { data, error } = await supabase.functions.invoke('sync-taphoammo', {
+        body: { 
+          selectedProductIds: options?.selectedProductIds || [],
+          syncAll: !options?.selectedProductIds || options.selectedProductIds.length === 0
+        }
       });
       
       if (error) {
         throw new Error(error.message);
       }
       
-      toast({
-        title: 'Products synchronized',
-        description: data?.message || 'Products successfully synchronized with TaphoaMMO',
-      });
+      // Handle the successful response
+      toast.success(
+        data?.syncedCount 
+          ? `Successfully synced ${data.syncedCount} products` 
+          : 'Products synchronization triggered successfully'
+      );
       
-      // Return the data for further processing if needed
       return data;
     } catch (error) {
+      // Handle errors
       console.error('Error syncing products:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Sync failed',
-        description: error instanceof Error ? error.message : 'Failed to sync products',
-      });
+      toast.error(error instanceof Error ? error.message : 'Failed to sync products with API');
       throw error;
     } finally {
       setIsSyncing(false);
     }
   };
-
+  
   return {
     syncProducts,
     isSyncing

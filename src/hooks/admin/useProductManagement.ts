@@ -21,8 +21,6 @@ export const useProductManagement = () => {
     nextPage,
     hasNextPage,
     hasPrevPage,
-    // Removed setPageSize since it doesn't exist
-    // Removed refetch since it doesn't exist
   } = useAdminPagination<Product>(
     'products',
     ['admin-products'],
@@ -96,7 +94,7 @@ export const useProductManagement = () => {
   // Refresh product list after mutations
   useEffect(() => {
     if (productMutation.isSuccess || deleteMutation.isSuccess || bulkDeleteMutation.isSuccess || bulkUpdateStatusMutation.isSuccess) {
-      refreshData(); // Use our custom refresh function instead of refetch
+      refreshData(); // Use our custom refresh function
     }
   }, [productMutation.isSuccess, deleteMutation.isSuccess, bulkDeleteMutation.isSuccess, bulkUpdateStatusMutation.isSuccess]);
 

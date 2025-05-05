@@ -14,7 +14,7 @@ import { ImportDropzone } from './ImportDropzone';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Download, Circle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Download, Circle, CheckCircle, AlertTriangle, Import } from 'lucide-react';
 import { ProductFormData } from '@/types/products';
 
 interface ImportDialogProps {

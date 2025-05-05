@@ -16,7 +16,7 @@ import ProductsTable from '@/components/admin/products/ProductsTable';
 import ProductDeleteDialog from '@/components/admin/products/ProductDeleteDialog';
 import ProductBulkDeleteDialog from '@/components/admin/products/ProductBulkDeleteDialog';
 import { useProductManagement } from '@/hooks/admin/useProductManagement';
-import { ProductFormData } from '@/types/products';
+import { ProductFormData, DatabaseProductStatus } from '@/types/products';
 import { ProductFilters } from '@/components/admin/products/ProductFilters';
 import { ProductBulkActions } from '@/components/admin/products/ProductBulkActions';
 import { ProductsPagination } from '@/components/admin/products/ProductsPagination';
@@ -96,32 +96,35 @@ const AdminProducts = () => {
   // Bulk import mutation - fixed to handle array of products
   const bulkImportMutation = useMutation({
     mutationFn: async (products: ProductFormData[]) => {
-      // Convert product data for database insertion
-      const formattedProducts = products.map(product => ({
-        name: product.name,
-        description: product.description,
-        price: Number(product.price),
-        sale_price: product.sale_price ? Number(product.sale_price) : null,
-        stock_quantity: Number(product.stock_quantity),
-        slug: product.slug,
-        sku: product.sku,
-        // Ensure status is one of the accepted values in the database
-        status: product.status === 'draft' || product.status === 'archived' ? 'inactive' : product.status,
-        category_id: product.category_id,
-        subcategory_id: product.subcategory_id || null,
-        image_url: product.image_url || null
-      }));
+      // Process each product one by one to avoid type issues
+      const results = [];
       
-      // Insert products one by one to avoid type issues
-      for (const product of formattedProducts) {
-        const { error } = await supabase
+      for (const product of products) {
+        // Convert product data for database insertion
+        const formattedProduct = {
+          name: product.name,
+          description: product.description,
+          price: Number(product.price),
+          sale_price: product.sale_price ? Number(product.sale_price) : null,
+          stock_quantity: Number(product.stock_quantity),
+          slug: product.slug,
+          sku: product.sku,
+          // Map frontend status to database-compatible status
+          status: mapToDatabaseStatus(product.status),
+          category_id: product.category_id,
+          subcategory_id: product.subcategory_id || null,
+          image_url: product.image_url || null
+        };
+        
+        const { data, error } = await supabase
           .from('products')
-          .insert(product);
+          .insert(formattedProduct);
           
         if (error) throw error;
+        if (data) results.push(data);
       }
       
-      return { success: true, count: formattedProducts.length };
+      return { success: true, count: products.length };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
@@ -134,6 +137,14 @@ const AdminProducts = () => {
       toast.error(error instanceof Error ? error.message : 'Failed to import products');
     }
   });
+  
+  // Helper function to map frontend status to database status
+  const mapToDatabaseStatus = (status: string): DatabaseProductStatus => {
+    if (status === 'draft' || status === 'archived') {
+      return 'inactive';
+    }
+    return status as DatabaseProductStatus;
+  };
   
   const handleImportConfirm = async (products: ProductFormData[]) => {
     await bulkImportMutation.mutateAsync(products);
