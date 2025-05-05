@@ -84,14 +84,15 @@ export const useApiCommon = () => {
       // Reset circuit breaker if call succeeds after failures
       if (isCircuitOpen) {
         try {
-          await supabase.rpc('reset_circuit_half_open', { api_name_param: 'taphoammo' });
+          // Create a custom RPC function to handle circuit resetting
+          await supabase.rpc('increment_success_count', { api_name_param: 'taphoammo' });
         } catch (err) {
           console.error('Error resetting circuit breaker:', err);
         }
       }
       
-      // Get response time from handler (or set a default)
-      setResponseTime(taphoammoErrorHandler.getLastResponseTime() || 0);
+      // Get response time from handler
+      setResponseTime(taphoammoErrorHandler.getLastResponseTime());
       return result;
       
     } catch (err: any) {

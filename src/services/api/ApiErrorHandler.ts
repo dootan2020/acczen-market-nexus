@@ -29,6 +29,7 @@ export class ApiErrorHandler {
   private timeout: number;
   private showToasts: boolean;
   private circuitBreaker: CircuitBreaker;
+  private lastResponseTime: number = 0;
 
   constructor(options: ApiErrorHandlerOptions) {
     this.serviceName = options.serviceName;
@@ -117,6 +118,9 @@ export class ApiErrorHandler {
           }
         });
 
+        // Store the response time
+        this.lastResponseTime = Date.now() - startTime;
+
         return result;
       } catch (error) {
         lastError = error;
@@ -177,6 +181,13 @@ export class ApiErrorHandler {
       retryCount,
       Date.now() - startTime
     );
+  }
+
+  /**
+   * Get the last response time
+   */
+  public getLastResponseTime(): number {
+    return this.lastResponseTime;
   }
 
   /**

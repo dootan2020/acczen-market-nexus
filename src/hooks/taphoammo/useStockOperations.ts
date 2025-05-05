@@ -167,7 +167,7 @@ export const useStockOperations = () => {
                 kiosk_token: kioskToken,
                 stock_quantity: apiStock.stock_quantity,
                 price: apiStock.price || 0,
-                name: apiStock.name,
+                name: apiStock.name || 'Unknown Product',
                 last_checked_at: new Date().toISOString(),
                 cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
                 last_sync_status: 'success'

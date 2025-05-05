@@ -48,6 +48,7 @@ export const useStockCache = () => {
       // Create cache info
       const cacheInfo: StockCacheInfo = {
         kiosk_token: data.kiosk_token,
+        // For now we will assume default name if not present
         name: data.name || 'Unknown Product',
         stock_quantity: data.stock_quantity,
         price: data.price,
@@ -80,7 +81,7 @@ export const useStockCache = () => {
           kiosk_token: kioskToken,
           stock_quantity: stockInfo.stock_quantity,
           price: stockInfo.price,
-          name: stockInfo.name,
+          name: stockInfo.name || 'Unknown Product',
           last_checked_at: new Date().toISOString(),
           cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
           last_sync_status: 'success'
