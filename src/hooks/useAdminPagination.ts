@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,21 +68,17 @@ export function useAdminPagination<T>(
     setPage(1);
   }, [filter, searchTerm]);
 
-  // Fix the deep type instantiation by making the query key creation more simple
-  const queryKeyArray = useCallback(() => [
-    ...(Array.isArray(queryKey) ? queryKey : [queryKey]),
-    page,
-    pageSize,
-    JSON.stringify(filter),
-    sortBy,
-    sortOrder,
-    searchTerm,
-    searchColumn
-  ], [filter, page, pageSize, queryKey, searchColumn, searchTerm, sortBy, sortOrder]);
+  // Create a simple array for the query key to avoid deep instantiation
+  const createQueryKey = useCallback(() => {
+    const baseKey = Array.isArray(queryKey) ? queryKey : [queryKey];
+    const filterString = JSON.stringify(filter);
+    
+    return [...baseKey, page, pageSize, filterString, sortBy, sortOrder, searchTerm];
+  }, [filter, page, pageSize, queryKey, searchTerm, sortBy, sortOrder]);
 
   // Fetch data with pagination
   const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
-    queryKey: queryKeyArray(),
+    queryKey: createQueryKey(),
     queryFn: async () => {
       // Start with the base query
       let query = supabase
