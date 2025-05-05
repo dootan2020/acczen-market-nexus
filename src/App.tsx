@@ -20,8 +20,8 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <CurrencyProvider>
-              <CartProvider>
-                <ProductProvider>
+              <ProductProvider>
+                <CartProvider>
                   <Toaster closeButton />
                   <Routes>
                     <Route element={<Layout />}>
@@ -32,13 +32,13 @@ const App = () => {
                         <Route key={route.path} path={route.path} element={route.element} />
                       ))}
                     </Route>
-                    {/* Wrap admin routes with the same providers as the main routes */}
+                    {/* Admin routes wrapped with necessary providers */}
                     {routes.adminRoutes.map((route) => (
                       <Route key={route.path} path={route.path} element={route.element} />
                     ))}
                   </Routes>
-                </ProductProvider>
-              </CartProvider>
+                </CartProvider>
+              </ProductProvider>
             </CurrencyProvider>
           </AuthProvider>
         </BrowserRouter>
