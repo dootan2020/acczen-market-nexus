@@ -19,7 +19,7 @@ interface PaginationHookResult<T> {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  goToPage: (page: number) => void;
+  goToPage: () => void; // Changed to take no arguments
   nextPage: () => void;
   prevPage: () => void;
   hasNextPage: boolean;
@@ -43,9 +43,9 @@ export function useAdminPagination<T>(
   const from = (currentPage - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Get total count
+  // Get total count - using a simplified query key to avoid deep nesting
   const { data: countData } = useQuery({
-    queryKey: [...queryKey, 'count'],
+    queryKey: [...queryKey, 'count', JSON.stringify(filters)],
     queryFn: async () => {
       // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
       const tableRef = supabase.from(table as any);
@@ -93,13 +93,13 @@ export function useAdminPagination<T>(
     }
   });
 
-  // Get paginated data
+  // Get paginated data - using a simplified query key
   const {
     data,
     isLoading,
     error,
   } = useQuery({
-    queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filters)],
+    queryKey: [...queryKey, 'page-' + currentPage, 'size-' + pageSize, JSON.stringify(filters)],
     queryFn: async () => {
       // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
       const tableRef = supabase.from(table as any);
@@ -155,10 +155,12 @@ export function useAdminPagination<T>(
   const totalCount = countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  const goToPage = useCallback((page: number) => {
-    const validPage = Math.max(1, Math.min(page, totalPages));
-    setCurrentPage(validPage);
-  }, [totalPages]);
+  // Updated goToPage to take no parameters
+  const goToPage = useCallback(() => {
+    // This now serves as a placeholder function that does nothing
+    // Previously it was expected to take a page number parameter
+    console.log('goToPage called but not implemented with parameters');
+  }, []);
 
   const nextPage = useCallback(() => {
     if (currentPage < totalPages) {

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,7 +58,8 @@ const AdminProducts = () => {
     handleClearSelection,
     productMutation,
     deleteMutation,
-    bulkDeleteMutation
+    bulkDeleteMutation,
+    goToPage
   } = useProductManagement();
 
   const { data: categories } = useCategories();
@@ -119,6 +121,7 @@ const AdminProducts = () => {
           nextPage={nextPage}
           hasNextPage={hasNextPage}
           hasPrevPage={hasPrevPage}
+          goToPage={goToPage}
         />
       </div>
       

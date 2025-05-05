@@ -9,6 +9,7 @@ interface ProductsPaginationProps {
   nextPage: () => void;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  goToPage: () => void; // Changed to match the hook signature
 }
 
 export const ProductsPagination = ({
