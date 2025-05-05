@@ -26,6 +26,7 @@ const App = () => {
                   <CartProvider>
                     <Toaster closeButton />
                     <Routes>
+                      {/* Main routes under the Layout component */}
                       <Route element={<Layout />}>
                         {routes.mainRoutes.map((route) => (
                           <Route key={route.path} path={route.path} element={route.element} />
@@ -34,7 +35,8 @@ const App = () => {
                           <Route key={route.path} path={route.path} element={route.element} />
                         ))}
                       </Route>
-                      {/* Admin routes wrapped with necessary providers */}
+                      
+                      {/* Admin routes (not wrapped in Layout) */}
                       {routes.adminRoutes.map((route) => (
                         <Route key={route.path} path={route.path} element={route.element} />
                       ))}

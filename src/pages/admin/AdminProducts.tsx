@@ -159,165 +159,163 @@ const AdminProducts = () => {
   const activeFiltersCount = Object.keys(filters).length;
 
   return (
-    <AdminLayout>
-      <div className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold">Products</h1>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleAddProduct}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
-              <Import className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-            <Button variant="outline" onClick={() => setIsSyncDialogOpen(true)}>
-              <RefreshCcw className="h-4 w-4 mr-2" />
-              Sync API
-            </Button>
-          </div>
+    <div className="w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Products</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleAddProduct}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
+          <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+            <Import className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button variant="outline" onClick={() => setIsSyncDialogOpen(true)}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Sync API
+          </Button>
         </div>
-        
-        <ProductFilters 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          categories={categories}
-          filters={filters}
-          onFilterChange={applyFilter}
-          onFilterReset={resetFilter}
-          onFiltersClear={clearFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-        
-        <ProductBulkActions 
-          selectedCount={selectedProducts.length}
-          filteredProducts={filteredProducts || []}
-          onBulkDelete={handleBulkDelete}
-          onBulkActivate={handleBulkActivate}
-          onBulkDeactivate={handleBulkDeactivate}
-          onSyncProducts={() => setIsSyncDialogOpen(true)}
-          onClearSelection={handleClearSelection}
-          disabled={isLoading}
-        />
-        
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredProducts?.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center">
-                <div className="rounded-full bg-muted p-3 mb-3">
-                  <Import className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium">No products found</h3>
-                <p className="text-sm text-muted-foreground max-w-md mt-1 mb-4">
-                  {searchQuery || activeFiltersCount > 0
-                    ? "No products match your search criteria. Try adjusting your filters."
-                    : "Get started by adding a new product or importing from a file."}
-                </p>
-                <div className="flex gap-2 flex-wrap justify-center">
-                  <Button onClick={handleAddProduct}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
-                    <Import className="h-4 w-4 mr-2" />
-                    Import Products
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <ProductsTable 
-                  products={filteredProducts || []}
-                  selectedProducts={selectedProducts}
-                  onToggleSelect={handleToggleSelect}
-                  onToggleSelectAll={handleToggleSelectAll}
-                  onEditProduct={handleEditProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {filteredProducts?.length > 0 && (
-          <div className="mt-4">
-            <ProductsPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              prevPage={prevPage}
-              nextPage={nextPage}
-              hasNextPage={hasNextPage}
-              hasPrevPage={hasPrevPage}
-              goToPage={goToPage}
-            />
-          </div>
-        )}
-        
-        <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-          <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-              <DialogDescription>
-                {isEditing 
-                  ? 'Edit the product details below.'
-                  : 'Fill in the product details to add a new product.'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            <ProductForm
-              initialData={formData}
-              handleSubmit={handleSubmit}
-              categories={categories}
-              isEditing={isEditing}
-              isPending={productMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
-        
-        <ProductDeleteDialog
-          isOpen={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          productName={currentProduct?.name || ''}
-          onConfirmDelete={() => {
-            currentProduct && deleteMutation.mutate(currentProduct.id);
-            setIsDeleteDialogOpen(false);
-          }}
-          isPending={deleteMutation.isPending}
-        />
-        
-        <ProductBulkDeleteDialog
-          isOpen={isBulkDeleteDialogOpen}
-          onOpenChange={setIsBulkDeleteDialogOpen}
-          count={selectedProducts.length}
-          onConfirmDelete={handleConfirmBulkDelete}
-          isPending={bulkDeleteMutation.isPending}
-        />
-        
-        <ImportDialog
-          isOpen={isImportDialogOpen}
-          onOpenChange={setIsImportDialogOpen}
-          importedProducts={importedData}
-          importErrors={importErrors}
-          onImportCSV={handleImportCSV}
-          onImportExcel={handleImportExcel}
-          onImportConfirm={handleImportConfirm}
-          isLoading={isImporting}
-          isPending={bulkImportMutation.isPending}
-        />
-        
-        <SyncProductsDialog
-          isOpen={isSyncDialogOpen}
-          onOpenChange={setIsSyncDialogOpen}
-          onSync={syncProducts}
-          isPending={isSyncing}
-        />
       </div>
-    </AdminLayout>
+      
+      <ProductFilters 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        categories={categories}
+        filters={filters}
+        onFilterChange={applyFilter}
+        onFilterReset={resetFilter}
+        onFiltersClear={clearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+      
+      <ProductBulkActions 
+        selectedCount={selectedProducts.length}
+        filteredProducts={filteredProducts || []}
+        onBulkDelete={handleBulkDelete}
+        onBulkActivate={handleBulkActivate}
+        onBulkDeactivate={handleBulkDeactivate}
+        onSyncProducts={() => setIsSyncDialogOpen(true)}
+        onClearSelection={handleClearSelection}
+        disabled={isLoading}
+      />
+      
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredProducts?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <div className="rounded-full bg-muted p-3 mb-3">
+                <Import className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium">No products found</h3>
+              <p className="text-sm text-muted-foreground max-w-md mt-1 mb-4">
+                {searchQuery || activeFiltersCount > 0
+                  ? "No products match your search criteria. Try adjusting your filters."
+                  : "Get started by adding a new product or importing from a file."}
+              </p>
+              <div className="flex gap-2 flex-wrap justify-center">
+                <Button onClick={handleAddProduct}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Product
+                </Button>
+                <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+                  <Import className="h-4 w-4 mr-2" />
+                  Import Products
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <ProductsTable 
+                products={filteredProducts || []}
+                selectedProducts={selectedProducts}
+                onToggleSelect={handleToggleSelect}
+                onToggleSelectAll={handleToggleSelectAll}
+                onEditProduct={handleEditProduct}
+                onDeleteProduct={handleDeleteProduct}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {filteredProducts?.length > 0 && (
+        <div className="mt-4">
+          <ProductsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            prevPage={prevPage}
+            nextPage={nextPage}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+            goToPage={goToPage}
+          />
+        </div>
+      )}
+      
+      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogDescription>
+              {isEditing 
+                ? 'Edit the product details below.'
+                : 'Fill in the product details to add a new product.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <ProductForm
+            initialData={formData}
+            handleSubmit={handleSubmit}
+            categories={categories}
+            isEditing={isEditing}
+            isPending={productMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <ProductDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        productName={currentProduct?.name || ''}
+        onConfirmDelete={() => {
+          currentProduct && deleteMutation.mutate(currentProduct.id);
+          setIsDeleteDialogOpen(false);
+        }}
+        isPending={deleteMutation.isPending}
+      />
+      
+      <ProductBulkDeleteDialog
+        isOpen={isBulkDeleteDialogOpen}
+        onOpenChange={setIsBulkDeleteDialogOpen}
+        count={selectedProducts.length}
+        onConfirmDelete={handleConfirmBulkDelete}
+        isPending={bulkDeleteMutation.isPending}
+      />
+      
+      <ImportDialog
+        isOpen={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        importedProducts={importedData}
+        importErrors={importErrors}
+        onImportCSV={handleImportCSV}
+        onImportExcel={handleImportExcel}
+        onImportConfirm={handleImportConfirm}
+        isLoading={isImporting}
+        isPending={bulkImportMutation.isPending}
+      />
+      
+      <SyncProductsDialog
+        isOpen={isSyncDialogOpen}
+        onOpenChange={setIsSyncDialogOpen}
+        onSync={syncProducts}
+        isPending={isSyncing}
+      />
+    </div>
   );
 };
 

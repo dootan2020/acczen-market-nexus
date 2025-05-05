@@ -28,16 +28,18 @@ import DepositPending from './pages/DepositPending';
 
 // Import admin pages
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminGuard from './components/AdminGuard';
+import AdminLayout from './components/AdminLayout';
 import AdminHome from './pages/admin/AdminHome';
 import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/OrdersPage';  // Updated import path
-import UsersPage from './pages/admin/UsersPage';  // Updated import path
+import AdminOrders from './pages/admin/OrdersPage';
+import UsersPage from './pages/admin/UsersPage';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminTransactions from './pages/admin/AdminTransactions';
-import ReportsPage from './pages/admin/ReportsPage';  // Added import for Reports page
+import ReportsPage from './pages/admin/ReportsPage';
 import AdminExchangeRates from './pages/admin/AdminExchangeRates';
 import ProductEditPage from './pages/admin/ProductEditPage';
 import ProductsImport from './pages/admin/ProductsImport';
@@ -96,23 +98,142 @@ const routes = {
   ],
   
   adminRoutes: [
-    { path: '/admin', element: <AdminProtectedRoute element={<AdminHome />} /> },
-    { path: '/admin/dashboard', element: <AdminProtectedRoute element={<AdminDashboard />} /> },
-    { path: '/admin/products', element: <AdminProtectedRoute element={<AdminProducts />} /> },
-    { path: '/admin/products/edit/:id', element: <AdminProtectedRoute element={<ProductEditPage />} /> },
-    { path: '/admin/products/import', element: <AdminProtectedRoute element={<ProductsImport />} /> },
-    { path: '/admin/categories', element: <AdminProtectedRoute element={<AdminCategories />} /> },
-    { path: '/admin/categories/edit/:id', element: <AdminProtectedRoute element={<CategoryEditPage />} /> },
-    { path: '/admin/orders', element: <AdminProtectedRoute element={<AdminOrders />} /> },
-    { path: '/admin/users', element: <AdminProtectedRoute element={<UsersPage />} /> },
-    { path: '/admin/deposits', element: <AdminProtectedRoute element={<AdminDeposits />} /> },
-    { path: '/admin/transactions', element: <AdminProtectedRoute element={<AdminTransactions />} /> },
-    { path: '/admin/reports', element: <AdminProtectedRoute element={<ReportsPage />} /> }, // Updated to use ReportsPage
-    { path: '/admin/exchange-rates', element: <AdminProtectedRoute element={<AdminExchangeRates />} /> },
-    { path: '/admin/settings', element: <AdminProtectedRoute element={<AdminSettings />} /> },
-    { path: '/admin/inventory', element: <AdminProtectedRoute element={<InventoryManagement />} /> },
-    { path: '/admin/discount-analytics', element: <AdminProtectedRoute element={<DiscountAnalyticsPage />} /> },
-    { path: '/admin/api-monitoring', element: <AdminProtectedRoute element={<ApiMonitoring />} /> },
+    { 
+      path: '/admin', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminHome />
+                </AdminLayout>
+              </AdminGuard> 
+    },
+    { 
+      path: '/admin/dashboard', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/products', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminProducts />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/products/edit/:id', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <ProductEditPage />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/products/import', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <ProductsImport />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/categories', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminCategories />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/categories/edit/:id', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <CategoryEditPage />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/orders', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminOrders />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/users', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <UsersPage />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/deposits', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminDeposits />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/transactions', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminTransactions />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/reports', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <ReportsPage />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/exchange-rates', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminExchangeRates />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/settings', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <AdminSettings />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/inventory', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <InventoryManagement />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/discount-analytics', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <DiscountAnalyticsPage />
+                </AdminLayout>
+              </AdminGuard>
+    },
+    { 
+      path: '/admin/api-monitoring', 
+      element: <AdminGuard>
+                <AdminLayout>
+                  <ApiMonitoring />
+                </AdminLayout>
+              </AdminGuard>
+    },
   ],
 };
 
