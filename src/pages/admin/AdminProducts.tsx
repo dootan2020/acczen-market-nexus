@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useCategories } from '@/hooks/useProducts';
-import { Plus, Import, RefreshCcw, Download } from 'lucide-react';
+import { Plus, Import, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

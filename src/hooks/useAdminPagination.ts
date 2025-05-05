@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,7 +67,7 @@ export function useAdminPagination<T>(
     setPage(1);
   }, [filter, searchTerm]);
 
-  // Create a properly typed query key array
+  // Create a properly typed query key array - using useCallback to fix deep type instantiation
   const createQueryKey = useCallback(() => {
     const baseKey = Array.isArray(queryKey) ? queryKey : [queryKey];
     
