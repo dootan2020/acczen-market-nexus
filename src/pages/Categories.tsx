@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
@@ -28,33 +27,22 @@ const CategoriesContent = () => {
     loading: categoriesLoading, 
     error: categoriesError,
     refetch: refetchCategories 
-  } = useCategories({
-    onError: (err) => handleError(err, { 
-      showToast: true,
-      logToConsole: true
-    })
-  });
+  } = useCategories();
   
   const { 
     counts: productCounts, 
     isLoading: countsLoading, 
-    error: countsError,
-    refetch: refetchCounts
-  } = useProductCountByCategory({
-    onError: (err) => handleError(err, { 
-      showToast: false, // Don't show toast for this secondary data
-      logToConsole: true
-    })
-  });
+    error: countsError
+  } = useProductCountByCategory();
   
   const isLoading = categoriesLoading || countsLoading;
   const error = categoriesError || countsError;
   
-  // Handle retry for both data sources
+  // Handle retry for categories data source
   const handleRetry = () => {
     clearError();
     refetchCategories();
-    refetchCounts();
+    // No need to call refetch for productCounts as it's not available
   };
   
   // Render loading skeleton
@@ -184,7 +172,7 @@ const CategoriesContent = () => {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {categories.map((category, index) => (
+        {categories && categories.map((category, index) => (
           <CategoryCard 
             key={category.id} 
             category={category} 

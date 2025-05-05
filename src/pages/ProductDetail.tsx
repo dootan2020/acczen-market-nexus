@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useProduct, useRelatedProducts } from '@/hooks/useProduct';
 import { Container } from '@/components/ui/container';
@@ -17,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import ErrorAlert from '@/components/ui/ErrorAlert';
 
 const ProductDetailContent = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -30,10 +30,7 @@ const ProductDetailContent = () => {
     error, 
     refetch 
   } = useProduct(slug || '', {
-    onError: (err) => handleError(err, { 
-      showToast: true,
-      logToConsole: true 
-    })
+    onError: (err) => handleError(err)  // Remove the additional options object
   });
   
   // Also handle related products errors
@@ -42,13 +39,7 @@ const ProductDetailContent = () => {
     error: relatedError
   } = useRelatedProducts(
     product?.category_id || '',
-    product?.id || '',
-    {
-      onError: (err) => handleError(err, { 
-        showToast: false,  // Don't show toast for related products
-        logToConsole: true 
-      })
-    }
+    product?.id || ''
   );
 
   // Handle retry
@@ -65,34 +56,32 @@ const ProductDetailContent = () => {
   if (error || !product) {
     return (
       <Container className="py-12">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Product Error</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error 
-              ? error.message 
-              : "The product you're looking for doesn't exist or has been removed."}
-          </AlertDescription>
-        </Alert>
+        <ErrorAlert
+          title="Product Error"
+          message={error instanceof Error 
+            ? error.message 
+            : "The product you're looking for doesn't exist or has been removed."}
+          action={
+            <div className="flex justify-center gap-4">
+              <Button 
+                variant="outline"
+                onClick={handleRetry}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </Button>
+              
+              <Button asChild>
+                <a href="/products">Browse Products</a>
+              </Button>
+            </div>
+          }
+        />
         
         <div className="text-center py-16">
           <h2 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Product Not Found</h2>
           <p className="text-gray-600 mb-6 font-inter">We couldn't load the product information at this time.</p>
-          
-          <div className="flex justify-center gap-4">
-            <Button 
-              variant="outline"
-              onClick={handleRetry}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Try Again
-            </Button>
-            
-            <Button asChild>
-              <a href="/products">Browse Products</a>
-            </Button>
-          </div>
         </div>
       </Container>
     );
