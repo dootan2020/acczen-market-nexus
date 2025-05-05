@@ -5,7 +5,7 @@ import { useReports } from "@/hooks/admin/reports/useReports";
 import { ReportsHeader } from '@/components/admin/reports/ReportsHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { SkeletonStats, SkeletonChartLine } from '@/components/ui/skeleton';
-import { Deposit } from '@/types/deposits';
+import { convertToDeposits } from '@/utils/typeGuards';
 
 const ReportsPage = () => {
   const {
@@ -25,12 +25,8 @@ const ReportsPage = () => {
   
   const [activeTab, setActiveTab] = React.useState('overview');
   
-  // Use a type guard to ensure deposits match the Deposit[] type
-  const typedDeposits = deposits?.map(deposit => ({
-    ...deposit,
-    // Ensure metadata is in the correct format
-    metadata: typeof deposit.metadata === 'undefined' ? null : deposit.metadata
-  })) as Deposit[];
+  // Convert deposits to the proper type using our utility function
+  const typedDeposits = convertToDeposits(deposits);
   
   return (
     <div className="space-y-6 max-w-full overflow-hidden">

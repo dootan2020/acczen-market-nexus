@@ -1,205 +1,190 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-import { toast } from '@/hooks/use-toast';
-
-// Use these more specific types from the generated Database type
-type TableName = keyof Database['public']['Tables'];
+import { toast } from 'sonner';
 
 interface PaginationOptions {
   pageSize?: number;
   initialPage?: number;
-  staleTime?: number;
-  cacheTime?: number;
-  retries?: number;
 }
 
-interface PaginationHookResult<T> {
-  data: T[] | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  goToPage: (page: number) => void;
-  nextPage: () => void;
-  prevPage: () => void;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  refresh: () => void; // Added refresh function
+interface FilterOptions {
+  [key: string]: any;
 }
 
-type FilterOperator = {
-  operator: 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like' | 'ilike' | 'in';
-  value: any;
-};
-
+/**
+ * Custom hook for pagination in admin panels
+ * @param tableName Supabase table name
+ * @param queryKey React Query key
+ * @param options Pagination options (pageSize, initialPage)
+ * @param filterOptions Filter options for the query
+ * @param selectQuery Select query for the table
+ * @returns Pagination state and handlers
+ */
 export function useAdminPagination<T>(
-  table: TableName,
-  queryKey: string[],
-  options: PaginationOptions = { pageSize: 10, initialPage: 1 },
-  filters?: Record<string, any>,
-  relations?: string
-): PaginationHookResult<T> {
-  const [currentPage, setCurrentPage] = useState(options.initialPage || 1);
-  const pageSize = options.pageSize || 10;
-  const staleTime = options.staleTime || 5 * 60 * 1000; // 5 minutes default
-  const cacheTime = options.cacheTime || 10 * 60 * 1000; // 10 minutes default
-  const retries = options.retries !== undefined ? options.retries : 2;
-  
-  // Calculate pagination ranges
-  const from = useMemo(() => (currentPage - 1) * pageSize, [currentPage, pageSize]);
-  const to = useMemo(() => from + pageSize - 1, [from, pageSize]);
+  tableName: string,
+  queryKey: (string | number)[],
+  options: PaginationOptions = {},
+  filterOptions: FilterOptions = {},
+  selectQuery: string = '*'
+) {
+  const { pageSize = 10, initialPage = 1 } = options;
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get total count
-  const { 
-    data: countData,
-    refetch: refetchCount 
-  } = useQuery({
-    queryKey: [...queryKey, 'count', JSON.stringify(filters)],
-    queryFn: async () => {
-      try {
-        // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
-        const tableRef = supabase.from(table as any);
-        let query = tableRef.select('*', { count: 'exact', head: true });
-        
-        // Apply filters if provided
-        if (filters) {
-          Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-              if (Array.isArray(value)) {
-                query = query.in(key, value);
-              } else if (typeof value === 'object' && value && 'operator' in value) {
-                // Handle custom operators like gt, lt, etc.
-                const { operator, value: opValue } = value as FilterOperator;
-                if (operator === 'like') {
-                  query = query.ilike(key, `%${opValue}%`);
-                } else if (operator === 'in') {
-                  query = query.in(key, opValue);
-                } else if (operator === 'eq') {
-                  query = query.eq(key, opValue);
-                } else if (operator === 'neq') {
-                  query = query.neq(key, opValue);
-                } else if (operator === 'gt') {
-                  query = query.gt(key, opValue);
-                } else if (operator === 'lt') {
-                  query = query.lt(key, opValue);
-                } else if (operator === 'gte') {
-                  query = query.gte(key, opValue);
-                } else if (operator === 'lte') {
-                  query = query.lte(key, opValue);
-                } else if (operator === 'ilike') {
-                  query = query.ilike(key, `%${opValue}%`);
-                }
-              } else {
-                query = query.eq(key, value);
-              }
+  // Count total number of items for pagination
+  const fetchTotalCount = useCallback(async () => {
+    try {
+      // Initialize query with filters
+      let query = supabase.from(tableName).select('id', { count: 'exact' });
+
+      // Apply all filters
+      Object.entries(filterOptions).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (typeof value === 'object' && 'operator' in value && 'value' in value) {
+            // Handle specific operators like gt, lt, etc.
+            switch (value.operator) {
+              case 'gt':
+                query = query.gt(key, value.value);
+                break;
+              case 'lt':
+                query = query.lt(key, value.value);
+                break;
+              case 'gte':
+                query = query.gte(key, value.value);
+                break;
+              case 'lte':
+                query = query.lte(key, value.value);
+                break;
+              case 'neq':
+                query = query.neq(key, value.value);
+                break;
+              case 'like':
+                query = query.like(key, `%${value.value}%`);
+                break;
+              case 'ilike':
+                query = query.ilike(key, `%${value.value}%`);
+                break;
+              default:
+                query = query.eq(key, value.value);
             }
-          });
+          } else {
+            // Simple equality filter
+            query = query.eq(key, value);
+          }
         }
-        
-        const { count, error } = await query;
-        
-        if (error) throw error;
-        return count || 0;
-      } catch (error) {
-        console.error(`Error fetching count for ${table}:`, error);
-        toast({
-          title: 'Error fetching data',
-          description: 'Failed to get total count',
-          variant: 'destructive'
-        });
+      });
+
+      // Execute count query
+      const { count, error } = await query;
+
+      if (error) {
         throw error;
       }
-    },
-    staleTime,
-    gcTime: cacheTime,
-    retry: retries
-  });
 
-  // Get paginated data
-  const {
-    data,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filters)],
+      return count || 0;
+    } catch (error) {
+      console.error(`Error fetching total count for ${tableName}:`, error);
+      toast.error(`Failed to load pagination data. Please try again.`);
+      return 0;
+    }
+  }, [tableName, filterOptions]);
+
+  // Calculate total pages whenever total count changes
+  useEffect(() => {
+    const calculateTotalPages = async () => {
+      const count = await fetchTotalCount();
+      setTotalCount(count);
+      setTotalPages(Math.max(1, Math.ceil(count / pageSize)));
+      setIsInitialized(true);
+    };
+
+    calculateTotalPages();
+  }, [fetchTotalCount, pageSize]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (isInitialized) {
+      setCurrentPage(1);
+    }
+  }, [JSON.stringify(filterOptions), isInitialized]);
+
+  // Fetch data with pagination
+  const { data, isLoading, error, refetch } = useQuery<T[]>({
+    queryKey: [...queryKey, currentPage, pageSize, JSON.stringify(filterOptions)],
     queryFn: async () => {
       try {
-        // Use cast to explicitly tell TypeScript we know what we're doing with dynamic table name
-        const tableRef = supabase.from(table as any);
-        
-        // Initialize the query with the select statement
-        let query = relations ? tableRef.select(relations) : tableRef.select('*');
-        
-        // Apply filters if provided
-        if (filters) {
-          Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-              if (Array.isArray(value)) {
-                query = query.in(key, value);
-              } else if (typeof value === 'object' && value && 'operator' in value) {
-                // Handle custom operators like gt, lt, etc.
-                const { operator, value: opValue } = value as FilterOperator;
-                if (operator === 'like') {
-                  query = query.ilike(key, `%${opValue}%`);
-                } else if (operator === 'in') {
-                  query = query.in(key, opValue);
-                } else if (operator === 'eq') {
-                  query = query.eq(key, opValue);
-                } else if (operator === 'neq') {
-                  query = query.neq(key, opValue);
-                } else if (operator === 'gt') {
-                  query = query.gt(key, opValue);
-                } else if (operator === 'lt') {
-                  query = query.lt(key, opValue);
-                } else if (operator === 'gte') {
-                  query = query.gte(key, opValue);
-                } else if (operator === 'lte') {
-                  query = query.lte(key, opValue);
-                } else if (operator === 'ilike') {
-                  query = query.ilike(key, `%${opValue}%`);
-                }
-              } else {
-                query = query.eq(key, value);
+        // Calculate pagination values
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+
+        // Initialize query with filters
+        let query = supabase
+          .from(tableName)
+          .select(selectQuery)
+          .range(from, to);
+
+        // Apply all filters
+        Object.entries(filterOptions).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            if (typeof value === 'object' && 'operator' in value && 'value' in value) {
+              // Handle specific operators like gt, lt, etc.
+              switch (value.operator) {
+                case 'gt':
+                  query = query.gt(key, value.value);
+                  break;
+                case 'lt':
+                  query = query.lt(key, value.value);
+                  break;
+                case 'gte':
+                  query = query.gte(key, value.value);
+                  break;
+                case 'lte':
+                  query = query.lte(key, value.value);
+                  break;
+                case 'neq':
+                  query = query.neq(key, value.value);
+                  break;
+                case 'like':
+                  query = query.like(key, `%${value.value}%`);
+                  break;
+                case 'ilike':
+                  query = query.ilike(key, `%${value.value}%`);
+                  break;
+                default:
+                  query = query.eq(key, value.value);
               }
+            } else if (Array.isArray(value)) {
+              // Handle array of values for 'in' operations
+              query = query.in(key, value);
+            } else {
+              // Simple equality filter
+              query = query.eq(key, value);
             }
-          });
-        }
-        
-        // Apply pagination
-        query = query.range(from, to).order('created_at', { ascending: false });
-        
+          }
+        });
+
+        // Execute the query
         const { data, error } = await query;
-        
-        if (error) throw error;
-        return data as T[];
+
+        if (error) {
+          throw error;
+        }
+
+        return (data as T[]) || [];
       } catch (error) {
-        console.error(`Error fetching data for ${table}:`, error);
-        toast({
-          title: 'Error fetching data',
-          description: 'Failed to retrieve data from server',
-          variant: 'destructive'
-        });
-        throw error;
+        console.error(`Error fetching ${tableName}:`, error);
+        toast.error(`Failed to load data. Please try again.`);
+        return [];
       }
     },
-    staleTime,
-    gcTime: cacheTime,
-    retry: retries,
-    placeholderData: (previousData) => previousData // Use this instead of keepPreviousData
+    staleTime: 1000 * 60, // 1 minute
+    gcTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
   });
-
-  const totalCount = countData || 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
-  const goToPage = useCallback((page: number) => {
-    const validPage = Math.max(1, Math.min(page, totalPages || 1));
-    setCurrentPage(validPage);
-  }, [totalPages]);
 
   const nextPage = useCallback(() => {
     if (currentPage < totalPages) {
@@ -213,24 +198,25 @@ export function useAdminPagination<T>(
     }
   }, [currentPage]);
 
-  // Function to refresh data
-  const refresh = useCallback(() => {
-    refetch();
-    refetchCount();
-  }, [refetch, refetchCount]);
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
 
   return {
     data,
     isLoading,
-    error: error as Error | null,
+    error,
+    refetch,
     currentPage,
     totalPages,
     totalCount,
-    goToPage,
+    pageSize,
     nextPage,
     prevPage,
+    goToPage,
     hasNextPage: currentPage < totalPages,
-    hasPrevPage: currentPage > 1,
-    refresh
+    hasPrevPage: currentPage > 1
   };
 }

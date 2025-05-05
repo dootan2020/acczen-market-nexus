@@ -18,12 +18,18 @@ interface PaymentMethodsChartProps {
 export const PaymentMethodsChart: React.FC<PaymentMethodsChartProps> = ({ data }) => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
   
+  // Ensure all data items have a value property, defaulting to 0 if missing
+  const safeData = data.map(item => ({
+    ...item,
+    value: typeof item.value === 'undefined' ? 0 : item.value
+  }));
+  
   return (
     <div style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer>
         <PieChart>
           <Pie
-            data={data}
+            data={safeData}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -32,7 +38,7 @@ export const PaymentMethodsChart: React.FC<PaymentMethodsChartProps> = ({ data }
             dataKey="value"
             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
           >
-            {data.map((entry, index) => (
+            {safeData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

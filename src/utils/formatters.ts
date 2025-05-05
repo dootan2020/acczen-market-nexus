@@ -1,52 +1,85 @@
 
 /**
- * Format a number as currency
- * @param value The number to format
- * @param currency The currency code (default: USD)
- * @returns Formatted currency string
+ * Formats a number as currency with $ symbol
+ * @param amount The amount to format
+ * @returns A formatted currency string
  */
-export function formatCurrency(value: number, currency: string = 'USD'): string {
+export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(value);
+  }).format(amount);
 }
 
 /**
- * Format a date string to a readable format
- * @param dateString The date string to format
- * @param format The format to use (default: 'medium')
- * @returns Formatted date string
+ * Formats a date to a readable string
+ * @param date The date to format
+ * @returns A formatted date string
  */
-export function formatDate(dateString: string, format: 'short' | 'medium' | 'long' = 'medium'): string {
-  const date = new Date(dateString);
-  
-  const options: Intl.DateTimeFormatOptions = {
+export function formatDate(date: Date | string): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
-    month: format === 'short' ? '2-digit' : format === 'medium' ? 'short' : 'long',
-    day: '2-digit',
-  };
+    month: 'short',
+    day: 'numeric',
+  }).format(dateObj);
+}
+
+/**
+ * Formats a date to include time
+ * @param date The date to format
+ * @returns A formatted date string with time
+ */
+export function formatDateTime(date: Date | string): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(dateObj);
+}
+
+/**
+ * Formats a timestamp to a relative time (e.g., "2 hours ago")
+ * @param date The date to format
+ * @returns A relative time string
+ */
+export function formatRelativeTime(date: Date | string): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
   
-  return new Intl.DateTimeFormat('en-US', options).format(date);
-}
-
-/**
- * Format a number as a percentage
- * @param value The number to format (0.1 for 10%)
- * @param decimals Number of decimal places (default: 1)
- * @returns Formatted percentage string
- */
-export function formatPercent(value: number, decimals: number = 1): string {
-  return `${(value * 100).toFixed(decimals)}%`;
-}
-
-/**
- * Format a number with thousand separators
- * @param value The number to format
- * @returns Formatted number string
- */
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value);
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds} seconds ago`;
+  }
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+  }
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) {
+    return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+  }
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
+  }
+  
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
 }

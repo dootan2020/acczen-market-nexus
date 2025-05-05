@@ -1,28 +1,32 @@
 
-import React, { useMemo } from 'react';
-import { TimeRangeSelector } from './TimeRangeSelector';
-import { Card, CardContent } from "@/components/ui/card";
-import { StatsData, DepositsChartData } from '@/types/reports';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ReportFilters } from './ReportFilters';
+// Assuming this is the file that contains the issue with value property
+import React from 'react';
+import { DateRangeType, StatsData, DepositsChartData } from '@/types/reports';
 import { DateRange } from 'react-day-picker';
-import { DateRangeType } from '@/hooks/admin/useReportsData';
-import { formatCurrency } from '@/utils/formatters';
-import { Loader } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon, RefreshCw } from 'lucide-react';
+import { TimeRangeSelector } from './TimeRangeSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { StatsSection } from './StatsSection';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ReportsHeaderProps {
-  dateRangeType: string;
-  onDateRangeChange: (value: DateRangeType) => void;
-  dateRange: DateRange | undefined;
-  onDateRangePickerChange: (range: DateRange | undefined) => void;
+  dateRangeType: DateRangeType;
+  onDateRangeChange: (type: DateRangeType) => void;
+  dateRange: DateRange;
+  onDateRangePickerChange: (range: DateRange) => void;
   onRefresh: () => void;
   isLoading: boolean;
   formattedDateRange: string;
-  statsData: StatsData;
-  depositsChartData: DepositsChartData[] | undefined;
+  statsData?: StatsData;
+  depositsChartData?: DepositsChartData[];
 }
 
-export const ReportsHeader = React.memo(({
+export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
   dateRangeType,
   onDateRangeChange,
   dateRange,
@@ -32,130 +36,97 @@ export const ReportsHeader = React.memo(({
   formattedDateRange,
   statsData,
   depositsChartData
-}: ReportsHeaderProps) => {
-  // Memoize calculated values to avoid recomputation on re-renders
-  const totalRevenue = useMemo(() => {
-    return isLoading ? 0 : statsData?.totalDepositAmount || 0;
-  }, [isLoading, statsData]);
+}) => {
+  // Calculate general stats from the data
+  const calculateTrends = () => {
+    if (!depositsChartData || depositsChartData.length < 2) return { deposits: 0, depositsPercentage: 0 };
+    
+    // Get the first and last items in the chart data
+    const firstPeriod = depositsChartData[0];
+    const lastPeriod = depositsChartData[depositsChartData.length - 1];
+    
+    // Safely extract values, defaulting to 0 if undefined
+    const firstValue = firstPeriod && typeof firstPeriod.value !== 'undefined' ? firstPeriod.value : 0;
+    const lastValue = lastPeriod && typeof lastPeriod.value !== 'undefined' ? lastPeriod.value : 0;
+    
+    // Calculate percentage change
+    const depositsPercentage = firstValue !== 0 
+      ? ((lastValue - firstValue) / firstValue) * 100 
+      : lastValue > 0 ? 100 : 0;
+    
+    return {
+      deposits: lastValue,
+      depositsPercentage: depositsPercentage
+    };
+  };
   
-  const ordersCount = useMemo(() => {
-    return isLoading ? 0 : statsData?.totalOrders || 0;
-  }, [isLoading, statsData]);
+  const trends = calculateTrends();
   
-  const avgOrderValue = useMemo(() => {
-    return isLoading ? 0 : statsData?.averageOrderValue || 0;
-  }, [isLoading, statsData]);
-  
-  // Format currency amounts using memoization
-  const formattedRevenue = useMemo(() => formatCurrency(totalRevenue), [totalRevenue]);
-  const formattedAvgOrder = useMemo(() => formatCurrency(avgOrderValue), [avgOrderValue]);
-  
-  // Determine if the data is trending up or down
-  const isRevenueUp = useMemo(() => {
-    if (!depositsChartData || depositsChartData.length < 2) return true;
-    const lastIndex = depositsChartData.length - 1;
-    return depositsChartData[lastIndex].amount >= depositsChartData[lastIndex - 1].amount;
-  }, [depositsChartData]);
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Reports & Analytics</h1>
-          <p className="text-muted-foreground mt-1">
-            Track your business performance and metrics
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <TimeRangeSelector
-            dateRangeType={dateRangeType}
-            formattedDateRange={formattedDateRange}
-            onDateRangeChange={onDateRangeChange}
-            dateRange={dateRange}
-            onDateRangePickerChange={onDateRangePickerChange}
-          />
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-auto justify-start text-left font-normal",
+                  !dateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formattedDateRange}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={onDateRangePickerChange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
           
-          <ReportFilters
-            dateRangeType={dateRangeType}
-            onDateRangeChange={onDateRangeChange}
-            dateRange={dateRange}
-            onDateRangePickerChange={onDateRangePickerChange}
-            onRefresh={onRefresh}
-            isLoading={isLoading}
-          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Revenue Card */}
-        <Card>
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <div className="mt-1 space-y-1">
-                  <h2 className="text-3xl font-bold">{formattedRevenue}</h2>
-                  <p className={`text-xs flex items-center ${isRevenueUp ? 'text-green-500' : 'text-red-500'}`}>
-                    <span className={`mr-1 ${isRevenueUp ? 'rotate-0' : 'rotate-180'}`}>↑</span>
-                    {isRevenueUp ? 'Up from' : 'Down from'} previous period
-                  </p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Orders Card */}
-        <Card>
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                <div className="mt-1 space-y-1">
-                  <h2 className="text-3xl font-bold">{ordersCount}</h2>
-                  <p className="text-xs text-muted-foreground">Completed transactions</p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Average Order Value Card */}
-        <Card>
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-muted-foreground">Average Order Value</p>
-                <div className="mt-1 space-y-1">
-                  <h2 className="text-3xl font-bold">{formattedAvgOrder}</h2>
-                  <p className="text-xs text-muted-foreground">Per transaction</p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <TimeRangeSelector
+        dateRangeType={dateRangeType}
+        onDateRangeChange={onDateRangeChange}
+      />
+      
+      {/* Stats Section */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(4).fill(0).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-1/3 mb-2" />
+                <Skeleton className="h-8 w-1/2 mb-1" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <StatsSection
+          data={statsData}
+          depositTrend={trends.depositsPercentage}
+        />
+      )}
     </div>
   );
-});
-
-ReportsHeader.displayName = 'ReportsHeader';
+};

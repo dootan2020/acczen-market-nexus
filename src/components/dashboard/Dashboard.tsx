@@ -113,14 +113,15 @@ const Dashboard = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes stale time
     retry: 2,
     meta: {
-      onError: (error: Error) => {
-        console.error('Failed to fetch orders:', error);
-        toast({
-          title: 'Error loading orders',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
-      }
+      errorMessage: 'Failed to fetch orders'
+    },
+    onError: (error: Error) => {
+      console.error('Failed to fetch orders:', error);
+      toast({
+        title: 'Error loading orders',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -145,14 +146,15 @@ const Dashboard = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes stale time
     retry: 2,
     meta: {
-      onError: (error: Error) => {
-        console.error('Failed to fetch profile:', error);
-        toast({
-          title: 'Error loading profile',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
-      }
+      errorMessage: 'Failed to fetch profile'
+    },
+    onError: (error: Error) => {
+      console.error('Failed to fetch profile:', error);
+      toast({
+        title: 'Error loading profile',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -185,14 +187,15 @@ const Dashboard = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes stale time
     retry: 2,
     meta: {
-      onError: (error: Error) => {
-        console.error('Failed to fetch stats:', error);
-        toast({
-          title: 'Error loading statistics',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
-      }
+      errorMessage: 'Failed to fetch stats'
+    },
+    onError: (error: Error) => {
+      console.error('Failed to fetch stats:', error);
+      toast({
+        title: 'Error loading statistics',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     }
   });
   
