@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from "@/components/ui/theme-provider"
 import ReactQueryProvider from './ReactQueryProvider';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/auth';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { CartProvider } from './contexts/CartContext';
 import routes from './routes';
