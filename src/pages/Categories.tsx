@@ -17,7 +17,7 @@ interface Category {
 
 export default function Categories() {
   const { categories, loading: loadingCategories } = useCategories();
-  const { counts: categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
+  const { categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
   
   // State to hold the categories enriched with product counts
   const [enrichedCategories, setEnrichedCategories] = useState<Array<{
