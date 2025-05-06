@@ -1,6 +1,7 @@
 import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TaphoammoProduct {
   kiosk_token: string;

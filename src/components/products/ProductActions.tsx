@@ -144,7 +144,7 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   return (
     <div className="space-y-4">
       {stockMessage && (
-        <Alert variant={localStockQuantity <= 0 ? "destructive" : "warning"}>
+        <Alert variant={localStockQuantity <= 0 ? "destructive" : "default"} className={localStockQuantity > 0 && localStockQuantity < 10 ? "bg-amber-50 border-amber-200 text-amber-800" : ""}>
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>{stockMessage}</AlertDescription>
         </Alert>
