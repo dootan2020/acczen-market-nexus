@@ -46,8 +46,7 @@ export const PurchaseModalContent: React.FC<PurchaseModalContentProps> = ({
     isNaN(parsedQuantity) || 
     parsedQuantity <= 0 || 
     parsedQuantity > stock || 
-    kioskToken === null || 
-    kioskToken === undefined || 
+    !kioskToken || 
     kioskToken === '' || 
     (insufficientBalance && totalPrice > 0); // Only disable for insufficient balance if product isn't free
 

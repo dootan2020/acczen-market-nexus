@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import CategoryCard from '@/components/CategoryCard';
