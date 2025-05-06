@@ -30,16 +30,29 @@ export const useOrderOperations = () => {
       });
 
       if (functionError) {
-        throw new Error(functionError.message);
+        console.error('Edge function error:', functionError);
+        throw new Error(functionError.message || 'Failed to call purchase function');
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to purchase product');
+      if (!data || data.success === false) {
+        const errorMessage = data?.message || 'Failed to purchase product';
+        console.error('Purchase failed:', errorMessage);
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (err: any) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      let errorMsg = 'Unknown error during purchase';
+      
+      // Enhanced error handling
+      if (err instanceof Error) {
+        errorMsg = err.message;
+      } else if (typeof err === 'string') {
+        errorMsg = err;
+      } else if (err && typeof err === 'object') {
+        errorMsg = err.message || err.error || JSON.stringify(err);
+      }
+      
       console.error('Error in buyProducts:', errorMsg);
       
       // Show user-friendly message for common errors
@@ -50,9 +63,13 @@ export const useOrderOperations = () => {
           toast.error("Product is out of stock");
         } else if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN) {
           toast.error("Service is temporarily unavailable. Please try again later");
+        } else {
+          toast.error(`Purchase failed: ${err.message}`);
         }
+      } else if (errorMsg.includes('HTML') || errorMsg.includes('proxy')) {
+        toast.error("Our supplier API is temporarily unavailable. Please try again later.");
       } else {
-        toast.error(errorMsg);
+        toast.error(`Purchase failed: ${errorMsg}`);
       }
       
       setError(errorMsg);

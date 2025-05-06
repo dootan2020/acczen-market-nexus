@@ -14,7 +14,8 @@ enum TaphoammoErrorCodes {
   STOCK_UNAVAILABLE = 'STOCK_UNAVAILABLE',
   TIMEOUT = 'TIMEOUT',
   API_TEMP_DOWN = 'API_TEMP_DOWN',
-  NETWORK_ERROR = 'NETWORK_ERROR'
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  PROXY_ERROR = 'PROXY_ERROR'
 }
 
 // Response interfaces
@@ -42,6 +43,8 @@ const SYSTEM_TOKEN = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9"; // Default system t
 
 // TaphoaMMO API helpers
 async function callTaphoaMMO(endpoint: string, params: Record<string, any>, proxyType: string = "allorigins") {
+  console.log(`Calling TaphoaMMO API endpoint: ${endpoint} with params:`, JSON.stringify(params));
+  
   // Use system token regardless of what's provided
   if (params.userToken) {
     params.userToken = SYSTEM_TOKEN;
@@ -54,6 +57,8 @@ async function callTaphoaMMO(endpoint: string, params: Record<string, any>, prox
   Object.keys(params).forEach((key, index) => {
     apiUrl += `${index === 0 ? '' : '&'}${key}=${encodeURIComponent(params[key])}`;
   });
+  
+  console.log(`Full API URL: ${apiUrl}`);
   
   // Get proxy URL based on the proxy type
   let proxyUrl;
@@ -70,16 +75,64 @@ async function callTaphoaMMO(endpoint: string, params: Record<string, any>, prox
       break;
   }
   
-  // Call the API
-  const response = await fetch(proxyUrl);
-  const data = await response.json();
+  console.log(`Using proxy URL: ${proxyUrl}`);
   
-  // Check for errors
-  if (data.success === "false") {
-    throw new Error(data.description || data.message || "API request failed");
+  try {
+    // Call the API
+    const response = await fetch(proxyUrl);
+    
+    // Check if response is OK
+    if (!response.ok) {
+      console.error(`API returned status: ${response.status}`);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    // Try to get response as text first
+    const responseText = await response.text();
+    console.log(`Raw API response: ${responseText.substring(0, 100)}...`);
+    
+    // Check if the response starts with HTML (common proxy error)
+    if (responseText.trim().startsWith('<')) {
+      console.error("Received HTML response instead of JSON");
+      throw new Error("Proxy returned HTML instead of JSON. API might be unavailable.");
+    }
+    
+    // Parse as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse JSON response:", parseError);
+      throw new Error(`Failed to parse response as JSON: ${parseError.message}`);
+    }
+    
+    // Check for errors
+    if (data.success === "false") {
+      throw new Error(data.description || data.message || "API request failed");
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error calling TaphoaMMO API:", error);
+    throw error;
+  }
+}
+
+// Mock TaphoaMMO response for testing when real API is down
+function getMockResponse(endpoint: string, params: Record<string, any>) {
+  if (endpoint === 'buyProducts') {
+    return {
+      success: "true",
+      order_id: `mock-order-${Date.now()}`,
+      message: "Mock purchase successful"
+    };
   }
   
-  return data;
+  return {
+    success: "true",
+    message: "Mock response",
+    data: []
+  };
 }
 
 // Main handler
@@ -113,6 +166,7 @@ serve(async (req) => {
     
     // Get the request body
     const requestData = await req.json();
+    console.log("Request data:", requestData);
     
     // Validate request
     if (!requestData.kioskToken) {
@@ -196,6 +250,7 @@ serve(async (req) => {
     
     try {
       // Call TaphoaMMO API to purchase product
+      console.log("Attempting to call TaphoaMMO API");
       taphoammoOrderResult = await callTaphoaMMO("buyProducts", {
         kioskToken,
         userToken: SYSTEM_TOKEN,
@@ -205,20 +260,34 @@ serve(async (req) => {
       if (!taphoammoOrderResult || !taphoammoOrderResult.order_id) {
         throw new Error("Invalid response from TaphoaMMO API");
       }
+      
+      console.log("TaphoaMMO API response:", taphoammoOrderResult);
     } catch (apiError) {
       console.error("TaphoaMMO API error:", apiError);
       
-      // Rollback the order
-      await supabaseAdmin
-        .from("orders")
-        .update({ status: "failed" })
-        .eq("id", order.id);
+      // Check if this is a critical error or if we should use mock data
+      const useMockData = Deno.env.get("USE_MOCK_DATA") === "true";
       
-      return errorResponse(
-        apiError instanceof Error ? apiError.message : "Failed to purchase from supplier",
-        "API_ERROR",
-        500
-      );
+      if (useMockData) {
+        console.log("Using mock data due to API error");
+        taphoammoOrderResult = getMockResponse("buyProducts", {
+          kioskToken,
+          userToken: SYSTEM_TOKEN,
+          quantity
+        });
+      } else {
+        // Rollback the order
+        await supabaseAdmin
+          .from("orders")
+          .update({ status: "failed" })
+          .eq("id", order.id);
+        
+        return errorResponse(
+          apiError instanceof Error ? apiError.message : "Failed to purchase from supplier",
+          "API_ERROR",
+          500
+        );
+      }
     }
     
     // Create order item
