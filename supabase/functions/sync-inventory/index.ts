@@ -46,6 +46,7 @@ async function fetchStockData(kioskToken: string, proxyType: string = "allorigin
     
     // Parse response as text first to check for HTML
     const responseText = await response.text();
+    console.log(`Response text: ${responseText.substring(0, 200)}...`); // Log first 200 chars
     
     // Check if the response is HTML (common proxy error)
     if (responseText.trim().startsWith('<')) {
@@ -53,7 +54,14 @@ async function fetchStockData(kioskToken: string, proxyType: string = "allorigin
     }
     
     // Parse as JSON
-    const data = JSON.parse(responseText);
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log(`Parsed data: ${JSON.stringify(data)}`);
+    } catch (parseError) {
+      console.error(`JSON parse error: ${parseError}`);
+      throw new Error(`Failed to parse JSON response: ${parseError.message}`);
+    }
     
     // Check for API errors
     if (data.success === "false") {
@@ -80,6 +88,8 @@ async function fetchStockData(kioskToken: string, proxyType: string = "allorigin
     if (data.price !== undefined) {
       price = Number(data.price);
     }
+    
+    console.log(`Extracted stock: ${stockQuantity}, price: ${price}`);
     
     return {
       success: true,
@@ -109,12 +119,18 @@ async function updateProductStock(
     const newQuantity = stockData.stock_quantity;
     let oldPrice = 0;
     
+    console.log(`Stock comparison - Old: ${oldQuantity}, New: ${newQuantity}`);
+    
     // Check if we already have a cache entry for this product
-    const { data: existingCache } = await supabase
+    const { data: existingCache, error: cacheError } = await supabase
       .from('inventory_cache')
       .select('*')
       .eq('kiosk_token', product.kiosk_token)
-      .single();
+      .maybeSingle();
+      
+    if (cacheError) {
+      console.error(`Error checking cache: ${cacheError.message}`);
+    }
       
     if (existingCache) {
       oldPrice = existingCache.price;
@@ -124,8 +140,9 @@ async function updateProductStock(
     const cacheExpiry = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
     
     // Update the inventory_cache table
+    console.log(`Updating inventory cache for ${product.kiosk_token}`);
     if (existingCache) {
-      await supabase
+      const { error: updateCacheError } = await supabase
         .from('inventory_cache')
         .update({
           stock_quantity: newQuantity,
@@ -135,9 +152,15 @@ async function updateProductStock(
           last_sync_status: 'success',
           sync_message: null
         })
-        .eq('id', existingCache.id);
+        .eq('kiosk_token', product.kiosk_token);
+        
+      if (updateCacheError) {
+        console.error(`Error updating cache: ${updateCacheError.message}`);
+      } else {
+        console.log(`Cache updated successfully`);
+      }
     } else {
-      await supabase
+      const { error: insertCacheError } = await supabase
         .from('inventory_cache')
         .insert({
           product_id: product.id,
@@ -147,20 +170,35 @@ async function updateProductStock(
           last_checked_at: now,
           cached_until: cacheExpiry
         });
+        
+      if (insertCacheError) {
+        console.error(`Error creating cache: ${insertCacheError.message}`);
+      } else {
+        console.log(`Cache created successfully`);
+      }
     }
     
     // Update the product table
-    await supabase
+    console.log(`Updating product table for ${product.id}`);
+    const { error: updateProductError } = await supabase
       .from('products')
       .update({
         stock_quantity: newQuantity,
         updated_at: now
       })
       .eq('id', product.id);
+      
+    if (updateProductError) {
+      console.error(`Error updating product: ${updateProductError.message}`);
+      throw updateProductError;
+    } else {
+      console.log(`Product updated successfully`);
+    }
     
     // If there's a significant change, add to sync history
     if (newQuantity !== oldQuantity || stockData.price !== oldPrice) {
-      await supabase
+      console.log(`Recording sync history due to changes`);
+      const { error: historyError } = await supabase
         .from('inventory_sync_history')
         .insert({
           product_id: product.id,
@@ -171,6 +209,10 @@ async function updateProductStock(
           new_price: stockData.price,
           sync_type: 'scheduled'
         });
+        
+      if (historyError) {
+        console.error(`Error recording sync history: ${historyError.message}`);
+      }
     }
     
     return {
@@ -190,7 +232,7 @@ async function updateProductStock(
         .from('inventory_cache')
         .select('*')
         .eq('kiosk_token', product.kiosk_token)
-        .single();
+        .maybeSingle();
         
       if (existingCache) {
         await supabase
@@ -247,6 +289,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting sync-inventory function");
+    
     // Parse request body
     let requestBody;
     let productId = null;
@@ -258,15 +302,20 @@ serve(async (req) => {
       productId = requestBody.product_id;
       kioskToken = requestBody.kiosk_token;
       limit = requestBody.limit || 50;
+      console.log(`Request body: ${JSON.stringify(requestBody)}`);
     } catch (e) {
+      console.log("No request body or invalid JSON");
       // Default to bulk sync if no body
     }
     
     // Create Supabase client
+    console.log("Creating Supabase admin client");
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     // If we're updating a specific product
     if (productId || kioskToken) {
+      console.log(`Syncing specific product: ${productId || kioskToken}`);
+      
       let query = supabaseAdmin.from('products').select('id, name, kiosk_token, stock_quantity');
       
       if (productId) {
@@ -275,9 +324,27 @@ serve(async (req) => {
         query = query.eq('kiosk_token', kioskToken);
       }
       
-      const { data: product, error } = await query.single();
+      const { data: product, error } = await query.maybeSingle();
       
-      if (error || !product) {
+      if (error) {
+        console.error(`Error fetching product: ${error.message}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `Error fetching product: ${error.message}`
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              "Content-Type": "application/json" 
+            }
+          }
+        );
+      }
+      
+      if (!product) {
+        console.warn(`Product not found: ${productId || kioskToken}`);
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -293,6 +360,7 @@ serve(async (req) => {
         );
       }
       
+      console.log(`Found product: ${product.name} (${product.id})`);
       const result = await updateProductStock(supabaseAdmin, product);
       
       return new Response(
@@ -319,10 +387,12 @@ serve(async (req) => {
       .limit(limit);
       
     if (error) {
+      console.error(`Error fetching products: ${error.message}`);
       throw error;
     }
     
     if (!products || products.length === 0) {
+      console.log("No products found to update");
       return new Response(
         JSON.stringify({
           success: true,
@@ -350,7 +420,12 @@ serve(async (req) => {
     
     for (const product of products) {
       try {
-        if (!product.kiosk_token) continue;
+        if (!product.kiosk_token) {
+          console.log(`Skipping product ${product.id} - no kiosk token`);
+          continue;
+        }
+        
+        console.log(`Processing product ${product.name} (${product.id})`);
         const result = await updateProductStock(supabaseAdmin, product);
         
         if (result.success) {
@@ -371,13 +446,15 @@ serve(async (req) => {
       }
       
       // Small delay to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     const endTime = Date.now();
     const duration = (endTime - startTime) / 1000;
     
     // Log the results
+    console.log(`Sync completed in ${duration.toFixed(2)} seconds. Updated: ${results.updated}, Failed: ${results.failed}`);
+    
     await supabaseAdmin
       .from('api_logs')
       .insert({

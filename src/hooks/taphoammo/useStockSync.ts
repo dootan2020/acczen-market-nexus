@@ -24,8 +24,10 @@ export const useStockSync = () => {
     setError(null);
     
     try {
+      console.log(`Syncing stock for product ${productId} with token ${kioskToken}`);
+      
       // Call Edge Function to sync stock
-      const { data, error } = await supabase.functions.invoke('sync-stock', {
+      const { data, error } = await supabase.functions.invoke('sync-inventory', {
         body: {
           product_id: productId,
           kiosk_token: kioskToken
@@ -33,8 +35,11 @@ export const useStockSync = () => {
       });
       
       if (error) {
+        console.error(`Error syncing stock:`, error);
         throw new Error(error.message);
       }
+      
+      console.log(`Sync result:`, data);
       
       const result = {
         success: true,
@@ -46,6 +51,7 @@ export const useStockSync = () => {
       return result;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to synchronize stock';
+      console.error(`Stock sync error:`, errorMsg);
       setError(errorMsg);
       
       const result = {
@@ -67,6 +73,8 @@ export const useStockSync = () => {
     priority: number = 1
   ): Promise<boolean> => {
     try {
+      console.log(`Queueing stock sync for product ${productId} with token ${kioskToken}`);
+      
       const { error } = await supabase
         .from('sync_job_queue')
         .insert({
@@ -81,9 +89,11 @@ export const useStockSync = () => {
         });
       
       if (error) {
+        console.error(`Error queueing stock sync:`, error);
         throw error;
       }
       
+      console.log(`Stock sync queued successfully`);
       return true;
     } catch (err) {
       console.error('Error queueing stock sync:', err);

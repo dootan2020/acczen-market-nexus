@@ -22,6 +22,8 @@ class TaphoammoApiClient {
     proxyType?: ProxyType
   ): Promise<{ success: boolean; message: string }> {
     try {
+      console.log(`Testing connection for kiosk token: ${kioskToken}`);
+      
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           action: 'test_connection',
@@ -31,14 +33,18 @@ class TaphoammoApiClient {
       });
       
       if (error) {
+        console.error(`Connection test error:`, error);
         throw new Error(error.message);
       }
+      
+      console.log(`Connection test result:`, data);
       
       return {
         success: data.success,
         message: data.message
       };
     } catch (err: any) {
+      console.error(`Connection test exception:`, err);
       return { 
         success: false, 
         message: err instanceof Error ? err.message : 'Unknown error' 
@@ -48,6 +54,8 @@ class TaphoammoApiClient {
   
   async checkKioskActive(kioskToken: string): Promise<boolean> {
     try {
+      console.log(`Checking if kiosk is active: ${kioskToken}`);
+      
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           action: 'check_kiosk_active',
@@ -56,8 +64,11 @@ class TaphoammoApiClient {
       });
       
       if (error) {
+        console.error(`Kiosk check error:`, error);
         throw new Error(error.message);
       }
+      
+      console.log(`Kiosk check result:`, data);
       
       return data.active;
     } catch (err: any) {
@@ -70,6 +81,8 @@ class TaphoammoApiClient {
       }
 
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`Kiosk check exception:`, errorMessage);
+      
       // Additional error message checking
       if (errorMessage.includes('Kiosk is pending') || 
           errorMessage.includes('tạm thời không khả dụng') ||
@@ -89,6 +102,8 @@ class TaphoammoApiClient {
     forceFresh: boolean = false
   ): Promise<T> {
     try {
+      console.log(`Fetching from Taphoammo endpoint ${endpoint} with params`, params);
+      
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           action: endpoint,
@@ -98,8 +113,11 @@ class TaphoammoApiClient {
       });
       
       if (error) {
+        console.error(`Taphoammo API error:`, error);
         throw new Error(error.message);
       }
+      
+      console.log(`Taphoammo API result:`, data);
       
       return data as T;
     } catch (err) {
