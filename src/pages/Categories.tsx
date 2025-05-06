@@ -1,197 +1,68 @@
-import React from 'react';
+
+import { useEffect, useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
-import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
-import CategoryCard from '@/components/CategoryCard';
+import { CategoryCard } from '@/components/CategoryCard';
 import { Container } from '@/components/ui/container';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Folder, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage
-} from '@/components/ui/breadcrumb';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useErrorHandler } from '@/hooks/useErrorHandler';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
 
-const CategoriesContent = () => {
-  const { handleError, clearError } = useErrorHandler();
+export default function Categories() {
+  const { categories, isLoading: loadingCategories } = useCategories();
+  const { categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
   
-  const { 
-    categories, 
-    loading: categoriesLoading, 
-    error: categoriesError,
-    refetch: refetchCategories 
-  } = useCategories();
+  // State to hold the categories enriched with product counts
+  const [enrichedCategories, setEnrichedCategories] = useState<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    image_url: string | null;
+    productCount: number;
+  }>>([]);
   
-  const { 
-    counts: productCounts, 
-    isLoading: countsLoading, 
-    error: countsError
-  } = useProductCountByCategory();
+  // Whenever categories or counts change, update the enriched categories
+  useEffect(() => {
+    if (categories) {
+      const enriched = categories.map(category => ({
+        ...category,
+        productCount: categoryCounts[category.id] || 0
+      }));
+      setEnrichedCategories(enriched);
+    }
+  }, [categories, categoryCounts]);
   
-  const isLoading = categoriesLoading || countsLoading;
-  const error = categoriesError || countsError;
-  
-  // Handle retry for categories data source
-  const handleRetry = () => {
-    clearError();
-    refetchCategories();
-    // No need to call refetch for productCounts as it's not available
-  };
-  
-  // Render loading skeleton
-  if (isLoading) {
-    return (
-      <Container className="py-8">
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Categories</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <div className="space-y-6">
-          <div>
-            <Skeleton className="h-12 w-64 mb-3" />
-            <Skeleton className="h-6 w-full max-w-xl mb-8" />
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} className="w-full h-64" />
-            ))}
-          </div>
-        </div>
-      </Container>
-    );
-  }
-
-  // Render error state with retry option
-  if (error) {
-    return (
-      <Container className="py-8">
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Categories</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Failed to load categories</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error ? error.message : String(error)}
-          </AlertDescription>
-        </Alert>
-        
-        <div className="flex justify-center my-8">
-          <Button 
-            onClick={handleRetry} 
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      </Container>
-    );
-  }
-
-  // Render empty state
-  if (!categories || categories.length === 0) {
-    return (
-      <Container className="py-8">
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Categories</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Folder className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-medium">No categories available</h2>
-          <p className="text-muted-foreground mt-2">
-            We currently don't have any product categories. Please check back later.
-          </p>
-        </div>
-      </Container>
-    );
-  }
-
-  // Render categories grid
   return (
     <Container className="py-8">
-      <Breadcrumb className="mb-6">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Categories</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <h1 className="text-3xl font-bold mb-8 text-center">Browse Categories</h1>
       
-      <div className="mb-8 text-center md:text-left">
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">Product Categories</h1>
-        <p className="text-muted-foreground max-w-xl">
-          Browse our selection of digital products by category. We offer a wide range of digital items for all your needs.
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {categories && categories.map((category, index) => (
-          <CategoryCard 
-            key={category.id} 
-            category={category} 
-            productCount={productCounts[category.id] || 0}
-            colorIndex={index}
-          />
-        ))}
-      </div>
+      {loadingCategories || loadingCounts ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div 
+              key={i} 
+              className="h-64 bg-gray-200 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {enrichedCategories.map(category => (
+            <CategoryCard 
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              description={category.description || ''}
+              imageUrl={category.image_url || '/placeholder.svg'}
+              productCount={category.productCount}
+            />
+          ))}
+          
+          {enrichedCategories.length === 0 && (
+            <div className="col-span-3 text-center py-12">
+              <h2 className="text-xl font-medium text-gray-600">No categories found</h2>
+              <p className="text-gray-500 mt-2">Check back later for new products and categories</p>
+            </div>
+          )}
+        </div>
+      )}
     </Container>
   );
-};
-
-// Wrapper component with ErrorBoundary
-const Categories = () => {
-  return (
-    <ErrorBoundary>
-      <CategoriesContent />
-    </ErrorBoundary>
-  );
-};
-
-export default Categories;
+}
