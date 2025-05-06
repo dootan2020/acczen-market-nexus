@@ -32,14 +32,12 @@ const fetchProductCounts = async (): Promise<Record<string, number>> => {
 };
 
 export const useProductCountByCategory = (): ProductCountResult => {
-  // Using old style syntax to avoid type instantiation issues
-  const { data, isLoading, error } = useQuery(
-    ['product-counts-by-category'],
-    fetchProductCounts,
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+  // Use the updated query syntax with proper typing
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['product-counts-by-category'],
+    queryFn: fetchProductCounts,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   return {
     counts: data || {},
