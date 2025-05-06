@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -201,8 +200,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (navigate) {
         navigate(redirectTo);
       }
+      return Promise.resolve();
     } catch (error) {
       console.error('Error signing out:', error);
+      return Promise.resolve();
     } finally {
       isLoading.set(false);
     }
