@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,33 +7,38 @@ interface ProductCountResult {
   error: Error | null;
 }
 
-export const useProductCountByCategory = (): ProductCountResult => {
-  // Explicitly define the generic types for useQuery to avoid deep type instantiation
-  const { data, isLoading, error } = useQuery<Record<string, number>, Error>({
-    queryKey: ['product-counts-by-category'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('category_id')
-        .eq('active', true);
+// Tách hàm query thành một hàm riêng biệt
+const fetchProductCounts = async (): Promise<Record<string, number>> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('category_id')
+    .eq('active', true);
 
-      if (error) throw error;
+  if (error) throw error;
 
-      // Count products by category
-      const counts: Record<string, number> = {};
-      if (data) {
-        data.forEach(product => {
-          const categoryId = product.category_id;
-          if (categoryId) {
-            counts[categoryId] = (counts[categoryId] || 0) + 1;
-          }
-        });
+  // Count products by category
+  const counts: Record<string, number> = {};
+  if (data) {
+    data.forEach(product => {
+      const categoryId = product.category_id;
+      if (categoryId) {
+        counts[categoryId] = (counts[categoryId] || 0) + 1;
       }
+    });
+  }
 
-      return counts;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  return counts;
+};
+
+export const useProductCountByCategory = (): ProductCountResult => {
+  // Sử dụng useQuery với cú pháp cũ để tránh lỗi type instantiation
+  const { data, isLoading, error } = useQuery(
+    ['product-counts-by-category'],
+    fetchProductCounts,
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
 
   return {
     counts: data || {},
