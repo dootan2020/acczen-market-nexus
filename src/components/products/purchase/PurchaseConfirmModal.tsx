@@ -45,7 +45,7 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   // State variables
   const [userBalance, setUserBalance] = useState(0);
   const [quantity, setQuantity] = useState(initialQuantity.toString());
-  const [totalPrice, setTotalPrice] = useState(productPrice * initialQuantity);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
   const [insufficientBalance, setInsufficientBalance] = useState(false);
@@ -55,11 +55,30 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [checkingOrder, setCheckingOrder] = useState(false);
   
+  // Initialize correct price when modal opens
+  useEffect(() => {
+    if (open) {
+      // Important: Set the total price based on the productPrice prop
+      const newQuantity = parseInt(quantity);
+      const newTotalPrice = productPrice * (isNaN(newQuantity) ? 1 : newQuantity);
+      setTotalPrice(newTotalPrice);
+      
+      // Log for debugging
+      console.log("Modal opened with product price:", productPrice);
+      console.log("Initial total price set to:", newTotalPrice);
+    }
+  }, [open, productPrice, quantity]);
+  
   // Update total price when quantity changes
   useEffect(() => {
     const newQuantity = parseInt(quantity);
     const newTotalPrice = productPrice * (isNaN(newQuantity) ? 1 : newQuantity);
     setTotalPrice(newTotalPrice);
+    
+    // Log for debugging
+    console.log("Quantity changed to:", quantity);
+    console.log("Updated total price:", newTotalPrice);
+    console.log("Product price used:", productPrice);
   }, [quantity, productPrice]);
   
   // Load user balance
@@ -252,7 +271,11 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
             <div className="space-y-2 p-4 bg-muted/30 rounded-md">
               <h3 className="font-semibold text-base">{productName}</h3>
               <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                <span>{formatUSD(convertVNDtoUSD(productPrice))} each</span>
+                <span>
+                  {productPrice === 0 
+                    ? "Free" 
+                    : `${formatUSD(convertVNDtoUSD(productPrice))} each`}
+                </span>
               </div>
               
               {/* Quantity selector */}

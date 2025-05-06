@@ -89,7 +89,9 @@ const ProductCard = ({
     openModal(id);
   };
 
-  const effectivePrice = displaySalePrice || displayPrice;
+  // Important: Use the correct price for purchase - original price in VND
+  // This ensures we're passing the raw price to the modal, not the converted one
+  const effectivePrice = salePrice || price;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
@@ -147,7 +149,7 @@ const ProductCard = ({
         </div>
       )}
       
-      {/* Action Buttons - Improved layout with better responsiveness */}
+      {/* Action Buttons */}
       <div className="flex items-center gap-1.5 mt-auto w-full">
         <Button
           variant="outline"
@@ -166,13 +168,13 @@ const ProductCard = ({
         </Button>
       </div>
 
-      {/* Purchase Confirmation Modal */}
+      {/* Purchase Confirmation Modal - Using the original VND price */}
       <PurchaseConfirmModal
         open={isPurchaseModalOpen}
         onOpenChange={setIsPurchaseModalOpen}
         productId={id}
         productName={name}
-        productPrice={effectivePrice}
+        productPrice={effectivePrice} 
         productImage="" // We don't use images in this project
         quantity={1}
         kioskToken={kioskToken || null}
@@ -183,4 +185,3 @@ const ProductCard = ({
 };
 
 export default ProductCard;
-

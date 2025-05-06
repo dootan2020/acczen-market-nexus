@@ -37,6 +37,15 @@ export const PurchaseModalInfo = ({
     return () => clearTimeout(timer);
   }, [userBalance]);
 
+  // Calculate balance after purchase, ensuring it's not negative for display
+  const balanceAfter = Math.max(0, userBalance - totalPrice);
+  
+  // Format price displays using the currency context
+  const formattedTotalPrice = formatUSD(convertVNDtoUSD(totalPrice));
+  const formattedUserBalance = formatUSD(convertVNDtoUSD(userBalance));
+  const formattedBalanceAfter = formatUSD(convertVNDtoUSD(balanceAfter));
+  const formattedAdditionalFunds = formatUSD(convertVNDtoUSD(additionalFundsNeeded));
+
   return (
     <div className="space-y-4">
       <div className="space-y-3 p-4 bg-card rounded-md border">
@@ -57,21 +66,21 @@ export const PurchaseModalInfo = ({
         <div className="grid grid-cols-2 gap-2 pb-2">
           <span className="text-muted-foreground">Your Balance:</span>
           <span className={`font-medium ${insufficientBalance ? 'text-red-500' : 'text-green-600'} ${highlightBalance ? 'bg-yellow-100 transition-colors' : ''}`}>
-            {formatUSD(convertVNDtoUSD(userBalance))}
+            {formattedUserBalance}
           </span>
         </div>
         
         <div className="grid grid-cols-2 gap-2 border-t pt-2">
           <span className="font-medium">Total Price:</span>
           <span className={`font-semibold text-primary ${highlightTotal ? 'bg-yellow-100 transition-colors' : ''}`}>
-            {formatUSD(convertVNDtoUSD(totalPrice))}
+            {totalPrice === 0 ? 'Free' : formattedTotalPrice}
           </span>
         </div>
         
         <div className="grid grid-cols-2 gap-2 pt-1">
           <span className="text-muted-foreground">Balance After:</span>
           <span className={`font-medium ${insufficientBalance ? 'text-red-500' : 'text-green-600'}`}>
-            {totalPrice > 0 ? formatUSD(convertVNDtoUSD(userBalance - totalPrice)) : formatUSD(convertVNDtoUSD(userBalance))}
+            {totalPrice > 0 ? formattedBalanceAfter : formattedUserBalance}
           </span>
         </div>
       </div>
@@ -80,7 +89,7 @@ export const PurchaseModalInfo = ({
         <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <div>
-            Your balance is insufficient. You need an additional {formatUSD(convertVNDtoUSD(additionalFundsNeeded || 0))} to complete this purchase.
+            Your balance is insufficient. You need an additional {formattedAdditionalFunds} to complete this purchase.
           </div>
         </div>
       )}
