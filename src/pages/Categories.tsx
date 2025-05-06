@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
-import { CategoryCard } from '@/components/CategoryCard';
+import CategoryCard from '@/components/CategoryCard';
 import { Container } from '@/components/ui/container';
 import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
 
 export default function Categories() {
-  const { categories, isLoading: loadingCategories } = useCategories();
+  const { categories, loading: loadingCategories } = useCategories();
   const { categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
   
   // State to hold the categories enriched with product counts
@@ -22,7 +22,10 @@ export default function Categories() {
   useEffect(() => {
     if (categories) {
       const enriched = categories.map(category => ({
-        ...category,
+        id: category.id,
+        name: category.name,
+        description: category.description || null,
+        image_url: category.image_url || null,
         productCount: categoryCounts[category.id] || 0
       }));
       setEnrichedCategories(enriched);
@@ -44,14 +47,18 @@ export default function Categories() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {enrichedCategories.map(category => (
+          {enrichedCategories.map((category, index) => (
             <CategoryCard 
               key={category.id}
-              id={category.id}
-              name={category.name}
-              description={category.description || ''}
-              imageUrl={category.image_url || '/placeholder.svg'}
+              category={{
+                id: category.id,
+                name: category.name,
+                slug: '', // Providing default value for required property
+                description: category.description || undefined,
+                image_url: category.image_url || undefined
+              }}
               productCount={category.productCount}
+              colorIndex={index}
             />
           ))}
           
