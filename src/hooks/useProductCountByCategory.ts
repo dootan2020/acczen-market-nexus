@@ -9,7 +9,6 @@ interface ProductCountResult {
 }
 
 export const useProductCountByCategory = (): ProductCountResult => {
-  // Fix: Explicitly define the return type for the queryFn to avoid excessive type instantiation
   const { data, isLoading, error } = useQuery({
     queryKey: ['product-counts-by-category'],
     queryFn: async (): Promise<Record<string, number>> => {
