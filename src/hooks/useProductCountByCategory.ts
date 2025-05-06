@@ -9,6 +9,7 @@ interface ProductCountResult {
 }
 
 export const useProductCountByCategory = (): ProductCountResult => {
+  // Explicitly define the generic types for useQuery to avoid deep type instantiation
   const { data, isLoading, error } = useQuery<Record<string, number>, Error>({
     queryKey: ['product-counts-by-category'],
     queryFn: async () => {
