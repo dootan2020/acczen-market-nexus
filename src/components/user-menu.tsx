@@ -1,5 +1,4 @@
 
-// Assuming this file exists and needs updating
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { LogOut, User, Settings, CreditCard, Package } from "lucide-react";

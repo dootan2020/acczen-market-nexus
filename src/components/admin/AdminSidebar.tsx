@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -31,7 +31,7 @@ interface AdminSidebarProps {
 }
 
 export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps) => {
-  const { signOut } = useAuth();
+  const { logout } = useAuth();
   const location = useLocation();
   
   // Menu items grouped by category
@@ -202,7 +202,7 @@ export const AdminSidebar = ({ sidebarOpen, setSidebarOpen }: AdminSidebarProps)
           <Button
             variant="ghost"
             className="flex w-full items-center justify-start gap-2 text-sm font-medium"
-            onClick={() => signOut()}
+            onClick={() => logout()}
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
