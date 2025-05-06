@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Loader, ShoppingBag, Wallet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState } from "react";
 
 interface PurchaseModalActionsProps {
   isProcessing: boolean;
@@ -27,6 +28,22 @@ export const PurchaseModalActions = ({
   hasError = false,
   isNewDesign = false
 }: PurchaseModalActionsProps) => {
+  const [confirmClicked, setConfirmClicked] = useState(false);
+  
+  const handleConfirmClick = () => {
+    if (insufficientBalance) {
+      return;
+    }
+    
+    if (!confirmClicked && !isProcessing && !disabled) {
+      setConfirmClicked(true);
+      setTimeout(() => {
+        onConfirm();
+        setConfirmClicked(false);
+      }, 100);
+    }
+  };
+  
   return (
     <DialogFooter className="flex flex-row justify-between gap-4 sm:gap-2">
       {isNewDesign ? (
@@ -40,7 +57,7 @@ export const PurchaseModalActions = ({
             CLOSE
           </Button>
           <Button 
-            onClick={onConfirm} 
+            onClick={handleConfirmClick} 
             disabled={isProcessing || disabled}
             className="flex-1 bg-[#1EAEDB] hover:bg-[#1a9bc3]"
           >
@@ -97,7 +114,7 @@ export const PurchaseModalActions = ({
           
           {!hasError && (
             <Button 
-              onClick={onConfirm} 
+              onClick={handleConfirmClick} 
               disabled={isProcessing || disabled || insufficientBalance}
               className="bg-[#2ECC71] hover:bg-[#27AE60] min-w-[120px]"
               size="lg"

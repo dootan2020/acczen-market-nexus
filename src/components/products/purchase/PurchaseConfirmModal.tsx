@@ -12,6 +12,7 @@ import { useOrderOperations } from '@/hooks/taphoammo/useOrderOperations';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ShieldCheck } from 'lucide-react';
+import ProductQuantity from '../ProductQuantity';
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -32,7 +33,7 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   productName,
   productPrice,
   productImage, // Not used anymore
-  quantity,
+  quantity: initialQuantity,
   kioskToken,
   stock
 }) => {
@@ -43,14 +44,23 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   
   // State variables
   const [userBalance, setUserBalance] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(productPrice * quantity);
+  const [quantity, setQuantity] = useState(initialQuantity.toString());
+  const [totalPrice, setTotalPrice] = useState(productPrice * initialQuantity);
   const [loading, setLoading] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
   const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const [additionalFundsNeeded, setAdditionalFundsNeeded] = useState(0);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [productKeys, setProductKeys] = useState<string[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [checkingOrder, setCheckingOrder] = useState(false);
+  
+  // Update total price when quantity changes
+  useEffect(() => {
+    const newQuantity = parseInt(quantity);
+    const newTotalPrice = productPrice * (isNaN(newQuantity) ? 1 : newQuantity);
+    setTotalPrice(newTotalPrice);
+  }, [quantity, productPrice]);
   
   // Load user balance
   useEffect(() => {
@@ -67,7 +77,16 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
         if (error) throw error;
         
         setUserBalance(data.balance);
-        setInsufficientBalance(data.balance < totalPrice);
+        
+        // Check if balance is sufficient
+        const isInsufficient = data.balance < totalPrice;
+        setInsufficientBalance(isInsufficient);
+        
+        if (isInsufficient) {
+          setAdditionalFundsNeeded(totalPrice - data.balance);
+        } else {
+          setAdditionalFundsNeeded(0);
+        }
       } catch (err) {
         console.error('Error loading user balance:', err);
       }
@@ -85,8 +104,16 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
       setError(null);
       setOrderDetails(null);
       setProductKeys(undefined);
+      setQuantity(initialQuantity.toString());
+    } else {
+      setQuantity(initialQuantity.toString());
     }
-  }, [open]);
+  }, [open, initialQuantity]);
+  
+  // Handle quantity change
+  const handleQuantityChange = (value: string) => {
+    setQuantity(value);
+  };
   
   // Make purchase
   const handlePurchase = async () => {
@@ -101,15 +128,24 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
       return;
     }
     
+    // Final check for sufficient balance
+    if (insufficientBalance && productPrice > 0) {
+      toast.error('Insufficient balance', {
+        description: `You need ${formatUSD(convertVNDtoUSD(additionalFundsNeeded))} more to complete this purchase.`
+      });
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
       // Call our Edge Function to handle the purchase
+      const parsedQuantity = parseInt(quantity);
       const order = await buyProducts(
         kioskToken,
         user.id,
-        quantity
+        isNaN(parsedQuantity) ? 1 : parsedQuantity
       );
       
       // Update state with order details
@@ -194,6 +230,9 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
     navigate('/dashboard');
   };
   
+  // Calculate whether checkout is disabled
+  const isCheckoutDisabled = stock <= 0 || parseInt(quantity) <= 0 || parseInt(quantity) > stock || !kioskToken;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -213,9 +252,18 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
             <div className="space-y-2 p-4 bg-muted/30 rounded-md">
               <h3 className="font-semibold text-base">{productName}</h3>
               <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                <span>Quantity: {quantity}</span>
-                <span>•</span>
                 <span>{formatUSD(convertVNDtoUSD(productPrice))} each</span>
+              </div>
+              
+              {/* Quantity selector */}
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-medium">Quantity:</span>
+                <ProductQuantity
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  maxQuantity={stock}
+                  disabled={loading}
+                />
               </div>
               
               <div className="flex items-center mt-2 text-sm text-emerald-600 gap-1.5">
@@ -226,9 +274,11 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
             
             <PurchaseModalInfo 
               stock={stock}
+              soldCount={0} // Not using this currently
               totalPrice={totalPrice}
               insufficientBalance={insufficientBalance}
               userBalance={userBalance}
+              additionalFundsNeeded={additionalFundsNeeded}
             />
             
             <PurchaseModalActions 
@@ -236,8 +286,8 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
               onCancel={() => onOpenChange(false)}
               onConfirm={handlePurchase}
               onDeposit={handleDeposit}
-              disabled={!kioskToken || stock < quantity}
-              insufficientBalance={insufficientBalance}
+              disabled={isCheckoutDisabled}
+              insufficientBalance={insufficientBalance && productPrice > 0}
               hasError={!!error}
             />
           </>
