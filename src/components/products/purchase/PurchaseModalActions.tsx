@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Loader } from "lucide-react";
+import { Loader, ShoppingBag, Wallet } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PurchaseModalActionsProps {
   isProcessing: boolean;
@@ -27,7 +28,7 @@ export const PurchaseModalActions = ({
   isNewDesign = false
 }: PurchaseModalActionsProps) => {
   return (
-    <DialogFooter className="flex flex-row justify-between gap-4">
+    <DialogFooter className="flex flex-row justify-between gap-4 sm:gap-2">
       {isNewDesign ? (
         <>
           <Button
@@ -65,13 +66,23 @@ export const PurchaseModalActions = ({
           </Button>
           
           {insufficientBalance && onDeposit && (
-            <Button
-              variant="secondary"
-              onClick={onDeposit}
-              disabled={isProcessing}
-            >
-              Deposit
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    onClick={onDeposit}
+                    disabled={isProcessing}
+                  >
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Add Funds
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add funds to your account to complete this purchase</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           
           {hasError && onRetry && (
@@ -88,7 +99,8 @@ export const PurchaseModalActions = ({
             <Button 
               onClick={onConfirm} 
               disabled={isProcessing || disabled || insufficientBalance}
-              className="bg-[#2ECC71] hover:bg-[#27AE60]"
+              className="bg-[#2ECC71] hover:bg-[#27AE60] min-w-[120px]"
+              size="lg"
             >
               {isProcessing ? (
                 <>
@@ -96,7 +108,10 @@ export const PurchaseModalActions = ({
                   Processing...
                 </>
               ) : (
-                'Checkout'
+                <>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Checkout
+                </>
               )}
             </Button>
           )}

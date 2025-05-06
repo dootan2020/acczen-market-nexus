@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { PurchaseModalInfo } from './PurchaseModalInfo';
 import { PurchaseModalActions } from './PurchaseModalActions';
 import { PurchaseResultCard } from './PurchaseResultCard';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useOrderOperations } from '@/hooks/taphoammo/useOrderOperations';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ShieldCheck } from 'lucide-react';
 
 interface PurchaseConfirmModalProps {
   open: boolean;
@@ -18,7 +19,7 @@ interface PurchaseConfirmModalProps {
   productId: string;
   productName: string;
   productPrice: number;
-  productImage: string;
+  productImage: string; // Keeping prop for compatibility but not using it
   quantity: number;
   kioskToken: string | null;
   stock: number;
@@ -30,7 +31,7 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
   productId,
   productName,
   productPrice,
-  productImage,
+  productImage, // Not used anymore
   quantity,
   kioskToken,
   stock
@@ -200,25 +201,26 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
           <DialogTitle className="text-xl font-semibold">
             {purchaseComplete ? 'Purchase Complete' : 'Confirm Purchase'}
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            {purchaseComplete ? 'Your order has been processed successfully.' : 'Review your purchase details before completing the transaction.'}
+          </DialogDescription>
         </DialogHeader>
         
         <Separator />
         
         {!purchaseComplete ? (
           <>
-            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-md">
-              <img 
-                src={productImage} 
-                alt={productName} 
-                className="w-16 h-16 object-cover rounded-md border" 
-              />
-              <div>
-                <h3 className="font-medium">{productName}</h3>
-                <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                  <span>Quantity: {quantity}</span>
-                  <span>•</span>
-                  <span>{formatUSD(convertVNDtoUSD(productPrice))} each</span>
-                </div>
+            <div className="space-y-2 p-4 bg-muted/30 rounded-md">
+              <h3 className="font-semibold text-base">{productName}</h3>
+              <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                <span>Quantity: {quantity}</span>
+                <span>•</span>
+                <span>{formatUSD(convertVNDtoUSD(productPrice))} each</span>
+              </div>
+              
+              <div className="flex items-center mt-2 text-sm text-emerald-600 gap-1.5">
+                <ShieldCheck className="h-4 w-4" />
+                <span>Secure transaction</span>
               </div>
             </div>
             

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,7 +8,7 @@ interface ProductCountResult {
   error: Error | null;
 }
 
-// Tách hàm query thành một hàm riêng biệt
+// Separate the query function to avoid deep type inference issues
 const fetchProductCounts = async (): Promise<Record<string, number>> => {
   const { data, error } = await supabase
     .from('products')
@@ -31,7 +32,7 @@ const fetchProductCounts = async (): Promise<Record<string, number>> => {
 };
 
 export const useProductCountByCategory = (): ProductCountResult => {
-  // Sử dụng useQuery với cú pháp cũ để tránh lỗi type instantiation
+  // Using old style syntax to avoid type instantiation issues
   const { data, isLoading, error } = useQuery(
     ['product-counts-by-category'],
     fetchProductCounts,

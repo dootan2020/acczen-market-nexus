@@ -1,6 +1,6 @@
 
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 
 interface PurchaseModalInfoProps {
   stock: number;
@@ -21,7 +21,7 @@ export const PurchaseModalInfo = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col text-sm">
+      <div className="space-y-3 p-4 bg-card rounded-md border">
         <div className="grid grid-cols-2 gap-2 pb-2">
           <span className="text-muted-foreground">Availability:</span>
           <span className={`font-medium ${stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -44,18 +44,34 @@ export const PurchaseModalInfo = ({
         </div>
         
         <div className="grid grid-cols-2 gap-2 border-t pt-2">
-          <span className="text-muted-foreground">Total Price:</span>
-          <span className="font-medium text-primary">
+          <span className="font-medium">Total Price:</span>
+          <span className="font-semibold text-primary">
             {formatUSD(convertVNDtoUSD(totalPrice))}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <span className="text-muted-foreground">Balance After:</span>
+          <span className={`font-medium ${insufficientBalance ? 'text-red-500' : 'text-green-600'}`}>
+            {formatUSD(convertVNDtoUSD(userBalance - totalPrice))}
           </span>
         </div>
       </div>
       
       {insufficientBalance && (
-        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 text-sm">
+        <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <div>
             Insufficient balance to complete this purchase. Please add funds to your account.
+          </div>
+        </div>
+      )}
+      
+      {!insufficientBalance && (
+        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-700 text-sm">
+          <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+          <div>
+            Your balance is sufficient to complete this purchase. Click Checkout to proceed.
           </div>
         </div>
       )}
