@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LogOut, User, Settings, ShoppingBag, Shield } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "@/contexts/auth"
 import { useCurrencyContext } from "@/contexts/CurrencyContext"
 import {
   AlertDialog,
@@ -86,6 +86,8 @@ export function UserMenu() {
     }
   }, [balance, convertVNDtoUSD, formatUSD, formatVND, showVndBalance]);
 
+  console.log("UserMenu - Current auth state:", { isAdmin, user: user?.email, userDisplayName });
+  
   if (!user) {
     return (
       <div className="flex items-center gap-2">
@@ -163,6 +165,18 @@ export function UserMenu() {
               <span>Cài đặt tài khoản</span>
             </Link>
           </DropdownMenuItem>
+          
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator className="my-1" />
+              <DropdownMenuItem asChild className="cursor-pointer bg-secondary/20 flex items-center gap-2">
+                <Link to="/admin">
+                  <Shield className="h-4 w-4" />
+                  <span>Quản trị hệ thống</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
           
           <DropdownMenuSeparator className="my-1" />
           

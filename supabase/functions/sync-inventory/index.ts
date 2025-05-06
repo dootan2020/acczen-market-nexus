@@ -34,6 +34,33 @@ async function fetchStockData(kioskToken: string, proxyType: string = "allorigin
   console.log(`Using proxy URL: ${proxyUrl}`);
   
   try {
+    // Attempt direct call first for better performance and reliability
+    try {
+      const directResponse = await fetch(apiUrl, {
+        headers: { 
+          "User-Agent": "Digital-Deals-Hub/1.0"
+        }
+      });
+      
+      if (directResponse.ok) {
+        const directText = await directResponse.text();
+        try {
+          const directData = JSON.parse(directText);
+          if (directData && (directData.success === "true" || directData.stock_quantity || directData.stock)) {
+            console.log(`Direct API call successful: ${directText.substring(0, 200)}...`);
+            return processApiResponse(directText, directData);
+          }
+        } catch (parseError) {
+          console.log(`Direct API call parsing error, falling back to proxy: ${parseError.message}`);
+        }
+      } else {
+        console.log(`Direct API call failed with status ${directResponse.status}, falling back to proxy`);
+      }
+    } catch (directError) {
+      console.log(`Direct API call exception, falling back to proxy: ${directError.message}`);
+    }
+    
+    // Fall back to proxy if direct call fails
     const response = await fetch(proxyUrl, {
       headers: { 
         "User-Agent": "Digital-Deals-Hub/1.0"
@@ -53,54 +80,58 @@ async function fetchStockData(kioskToken: string, proxyType: string = "allorigin
       throw new Error("Received HTML instead of JSON. API might be unavailable.");
     }
     
-    // Parse as JSON
-    let data;
     try {
-      data = JSON.parse(responseText);
-      console.log(`Parsed data: ${JSON.stringify(data)}`);
+      const data = JSON.parse(responseText);
+      return processApiResponse(responseText, data);
     } catch (parseError) {
       console.error(`JSON parse error: ${parseError}`);
       throw new Error(`Failed to parse JSON response: ${parseError.message}`);
     }
-    
-    // Check for API errors
-    if (data.success === "false") {
-      throw new Error(data.message || data.description || "API returned error");
-    }
-    
-    // Extract stock quantity and price using reliable methods
-    let stockQuantity = 0;
-    let price = 0;
-    
-    // Try to get stock from various fields
-    if (data.stock_quantity !== undefined) {
-      stockQuantity = Number(data.stock_quantity);
-    } else if (data.stock !== undefined) {
-      stockQuantity = Number(data.stock);
-    } else if (typeof data.message === 'string' && data.message.includes('Stock:')) {
-      const match = data.message.match(/Stock:\s*(\d+)/i);
-      if (match && match[1]) {
-        stockQuantity = Number(match[1]);
-      }
-    }
-    
-    // Get price if available
-    if (data.price !== undefined) {
-      price = Number(data.price);
-    }
-    
-    console.log(`Extracted stock: ${stockQuantity}, price: ${price}`);
-    
-    return {
-      success: true,
-      stock_quantity: stockQuantity,
-      price: price || 0,
-      name: data.name || null
-    };
   } catch (error) {
     console.error(`Error fetching stock for ${kioskToken}:`, error);
     throw error;
   }
+}
+
+// Helper function to process API response and extract relevant data
+function processApiResponse(responseText: string, data: any) {
+  console.log(`Processing API response: ${JSON.stringify(data).substring(0, 200)}...`);
+  
+  // Check for API errors
+  if (data.success === "false") {
+    throw new Error(data.message || data.description || "API returned error");
+  }
+  
+  // Extract stock quantity and price using reliable methods
+  let stockQuantity = 0;
+  let price = 0;
+  let name = data.name || null;
+  
+  // Try to get stock from various fields
+  if (data.stock_quantity !== undefined) {
+    stockQuantity = Number(data.stock_quantity);
+  } else if (data.stock !== undefined) {
+    stockQuantity = Number(data.stock);
+  } else if (typeof data.message === 'string' && data.message.includes('Stock:')) {
+    const match = data.message.match(/Stock:\s*(\d+)/i);
+    if (match && match[1]) {
+      stockQuantity = Number(match[1]);
+    }
+  }
+  
+  // Get price if available
+  if (data.price !== undefined) {
+    price = Number(data.price);
+  }
+  
+  console.log(`Extracted stock: ${stockQuantity}, price: ${price}, name: ${name}`);
+  
+  return {
+    success: true,
+    stock_quantity: stockQuantity,
+    price: price || 0,
+    name: name
+  };
 }
 
 // Update a single product's stock
@@ -179,7 +210,7 @@ async function updateProductStock(
     }
     
     // Update the product table
-    console.log(`Updating product table for ${product.id}`);
+    console.log(`Updating product table for ${product.id} with stock quantity ${newQuantity}`);
     const { error: updateProductError } = await supabase
       .from('products')
       .update({
@@ -192,7 +223,7 @@ async function updateProductStock(
       console.error(`Error updating product: ${updateProductError.message}`);
       throw updateProductError;
     } else {
-      console.log(`Product updated successfully`);
+      console.log(`Product ${product.id} updated successfully with stock quantity ${newQuantity}`);
     }
     
     // If there's a significant change, add to sync history
@@ -296,12 +327,16 @@ serve(async (req) => {
     let productId = null;
     let kioskToken = null;
     let limit = 50;
+    let forceRefresh = false;
+    let triggerType = 'api';
     
     try {
       requestBody = await req.json();
       productId = requestBody.product_id;
       kioskToken = requestBody.kiosk_token;
       limit = requestBody.limit || 50;
+      forceRefresh = requestBody.force_refresh === true;
+      triggerType = requestBody.trigger_type || 'api';
       console.log(`Request body: ${JSON.stringify(requestBody)}`);
     } catch (e) {
       console.log("No request body or invalid JSON");
@@ -361,6 +396,45 @@ serve(async (req) => {
       }
       
       console.log(`Found product: ${product.name} (${product.id})`);
+      
+      // Check if we should use cache
+      if (!forceRefresh) {
+        const { data: cache } = await supabaseAdmin
+          .from('inventory_cache')
+          .select('*')
+          .eq('kiosk_token', product.kiosk_token)
+          .maybeSingle();
+          
+        if (cache && cache.cached_until) {
+          const cachedUntil = new Date(cache.cached_until);
+          const now = new Date();
+          if (cachedUntil > now) {
+            console.log(`Using cached data for ${product.name} until ${cachedUntil.toISOString()}`);
+            return new Response(
+              JSON.stringify({
+                success: true,
+                message: `Using cached data (valid until ${cachedUntil.toISOString()})`,
+                data: {
+                  product_id: product.id,
+                  kiosk_token: product.kiosk_token,
+                  stock_quantity: cache.stock_quantity,
+                  price: cache.price,
+                  cached: true,
+                  last_checked_at: cache.last_checked_at,
+                  cached_until: cache.cached_until
+                }
+              }),
+              { 
+                headers: { 
+                  ...corsHeaders,
+                  "Content-Type": "application/json" 
+                }
+              }
+            );
+          }
+        }
+      }
+      
       const result = await updateProductStock(supabaseAdmin, product);
       
       return new Response(
@@ -465,7 +539,8 @@ serve(async (req) => {
         details: {
           updated: results.updated,
           failed: results.failed,
-          total: products.length
+          total: products.length,
+          trigger_type: triggerType
         }
       });
       

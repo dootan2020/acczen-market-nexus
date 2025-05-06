@@ -5,6 +5,7 @@ import { SYSTEM_TOKEN } from './config';
 import type { ProxyType } from '@/utils/corsProxy';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Define response interface to fix TypeScript errors
 interface TaphoammoApiResponse {
@@ -59,7 +60,8 @@ class TaphoammoApiClient {
       const { data, error } = await supabase.functions.invoke('taphoammo-api', {
         body: {
           action: 'check_kiosk_active',
-          kioskToken
+          kioskToken,
+          debug: true  // Add debug flag
         }
       });
       
@@ -95,6 +97,50 @@ class TaphoammoApiClient {
     }
   }
   
+  // Direct method to sync inventory for a specific product
+  async syncProductInventory(
+    productId: string,
+    kioskToken: string,
+    forceRefresh: boolean = false
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+  }> {
+    try {
+      console.log(`Syncing inventory for product ${productId} with token ${kioskToken}`);
+      
+      const { data, error } = await supabase.functions.invoke('sync-inventory', {
+        body: {
+          product_id: productId,
+          kiosk_token: kioskToken,
+          force_refresh: forceRefresh
+        }
+      });
+      
+      if (error) {
+        console.error(`Sync inventory error:`, error);
+        throw new Error(error.message);
+      }
+      
+      console.log(`Sync inventory result:`, data);
+      
+      return {
+        success: data.success !== false,
+        message: data.message || 'Inventory synced successfully',
+        data: data
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`Sync inventory exception:`, errorMessage);
+      
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
+  
   // Method to directly call our edge function
   async fetchTaphoammo<T>(
     endpoint: string, 
@@ -108,6 +154,7 @@ class TaphoammoApiClient {
         body: {
           action: endpoint,
           force_fresh: forceFresh,
+          debug: true,  // Add debug flag
           ...params
         }
       });

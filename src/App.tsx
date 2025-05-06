@@ -12,6 +12,7 @@ import { ProductProvider } from "./contexts/ProductContext";
 import { ProductInfoModal } from "./components/products/ProductInfoModal";
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import AdminGuard from './components/AdminGuard';
 
 function App() {
   useEffect(() => {
@@ -49,8 +50,8 @@ function App() {
                         />
                       ))}
                       
-                      {/* Admin routes with AdminLayout */}
-                      <Route element={<AdminLayout />}>
+                      {/* Admin routes with AdminLayout, wrapped with AdminGuard */}
+                      <Route element={<AdminGuard><AdminLayout /></AdminGuard>}>
                         {routes.adminRoutes.map((route, index) => (
                           <Route
                             key={`admin-${index}`}

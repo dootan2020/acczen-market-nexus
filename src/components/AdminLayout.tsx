@@ -4,7 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavbar } from '@/components/admin/AdminNavbar';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { Loader2 } from 'lucide-react';
 
 const AdminLayout = memo(() => {
@@ -14,7 +14,7 @@ const AdminLayout = memo(() => {
   const { isLoading } = useAuth();
   
   // Show loading state while initializing
-  if (isLoading) {
+  if (isLoading.get()) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
