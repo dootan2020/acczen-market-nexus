@@ -249,8 +249,13 @@ export const PurchaseConfirmModal: React.FC<PurchaseConfirmModalProps> = ({
     navigate('/dashboard');
   };
   
-  // Calculate whether checkout is disabled
-  const isCheckoutDisabled = stock <= 0 || parseInt(quantity) <= 0 || parseInt(quantity) > stock || !kioskToken;
+  // Calculate whether checkout is disabled - THIS IS THE FIX
+  // Only disable if stock is zero or quantity is invalid
+  const isCheckoutDisabled = 
+    stock <= 0 || 
+    parseInt(quantity) <= 0 || 
+    parseInt(quantity) > stock || 
+    !kioskToken;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

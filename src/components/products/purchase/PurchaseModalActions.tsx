@@ -44,6 +44,9 @@ export const PurchaseModalActions = ({
     }
   };
   
+  // Calculate the final disabled state for the checkout button
+  const checkoutButtonDisabled = isProcessing || disabled || insufficientBalance;
+  
   return (
     <DialogFooter className="flex flex-row justify-between gap-4 sm:gap-2">
       {isNewDesign ? (
@@ -58,7 +61,7 @@ export const PurchaseModalActions = ({
           </Button>
           <Button 
             onClick={handleConfirmClick} 
-            disabled={isProcessing || disabled}
+            disabled={checkoutButtonDisabled}
             className="flex-1 bg-[#1EAEDB] hover:bg-[#1a9bc3]"
           >
             {isProcessing ? (
@@ -116,7 +119,7 @@ export const PurchaseModalActions = ({
           {!hasError && (
             <Button 
               onClick={handleConfirmClick} 
-              disabled={isProcessing || disabled || insufficientBalance}
+              disabled={checkoutButtonDisabled}
               className="bg-[#2ECC71] hover:bg-[#27AE60] min-w-[120px]"
               size="lg"
             >

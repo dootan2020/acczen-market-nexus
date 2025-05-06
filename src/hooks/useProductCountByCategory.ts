@@ -2,46 +2,46 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface ProductCountResult {
-  counts: Record<string, number>;
-  isLoading: boolean;
-  error: Error | null;
-}
+export const useProductCountByCategory = () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['productCountByCategory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category_id, subcategory_id')
+        .not('category_id', 'is', null);
 
-// Separate the query function to avoid deep type inference issues
-const fetchProductCounts = async (): Promise<Record<string, number>> => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('category_id')
-    .eq('active', true);
+      if (error) throw error;
 
-  if (error) throw error;
+      // Count products by category
+      const categoryCounts: Record<string, number> = {};
+      const subcategoryCounts: Record<string, number> = {};
 
-  // Count products by category
-  const counts: Record<string, number> = {};
-  if (data) {
-    data.forEach(product => {
-      const categoryId = product.category_id;
-      if (categoryId) {
-        counts[categoryId] = (counts[categoryId] || 0) + 1;
-      }
-    });
-  }
+      data.forEach((product) => {
+        const categoryId = product.category_id;
+        const subcategoryId = product.subcategory_id;
 
-  return counts;
-};
+        if (categoryId) {
+          categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + 1;
+        }
+        
+        if (subcategoryId) {
+          subcategoryCounts[subcategoryId] = (subcategoryCounts[subcategoryId] || 0) + 1;
+        }
+      });
 
-export const useProductCountByCategory = (): ProductCountResult => {
-  // Fix the type instantiation issue by explicitly defining the types
-  const { data, isLoading, error } = useQuery<Record<string, number>, Error>({
-    queryKey: ['product-counts-by-category'],
-    queryFn: fetchProductCounts,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+      return {
+        categoryCounts,
+        subcategoryCounts,
+      };
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return {
-    counts: data || {},
+    categoryCounts: data?.categoryCounts || {},
+    subcategoryCounts: data?.subcategoryCounts || {},
     isLoading,
-    error: error || null
+    error,
   };
 };
