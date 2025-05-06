@@ -1,4 +1,3 @@
-
 import { TaphoammoApiClient } from './TaphoammoApiClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { toast } from 'sonner';
@@ -100,6 +99,13 @@ export class TaphoammoProductService {
           // Update cache
           this.apiClient.cacheProduct(kioskToken, product);
           
+          // If this is fresh data, update the database cache too
+          if (!product.cached && !product.emergency) {
+            this.updateDatabaseCache(product).catch(err => 
+              console.error("Failed to update database cache:", err)
+            );
+          }
+          
           return product;
         } catch (error) {
           lastError = error as Error;
@@ -142,6 +148,53 @@ export class TaphoammoProductService {
   }
   
   /**
+   * Update the database cache with the latest product information
+   */
+  private async updateDatabaseCache(product: TaphoammoProduct): Promise<void> {
+    try {
+      // Find the product ID first by kiosk_token
+      const { data: productData } = await supabase
+        .from('products')
+        .select('id')
+        .eq('kiosk_token', product.kiosk_token)
+        .single();
+        
+      if (!productData?.id) {
+        console.warn(`Cannot update cache: No product found with kiosk_token ${product.kiosk_token}`);
+        return;
+      }
+      
+      // Update the inventory_cache table
+      await supabase
+        .from('inventory_cache')
+        .upsert({
+          kiosk_token: product.kiosk_token,
+          product_id: productData.id,
+          stock_quantity: product.stock_quantity,
+          price: product.price || 0,
+          last_checked_at: new Date().toISOString(),
+          cached_until: new Date(Date.now() + this.DEFAULT_CACHE_TTL).toISOString(),
+          last_sync_status: 'success',
+          sync_message: null
+        }, {
+          onConflict: 'kiosk_token'
+        });
+        
+      // Also update product stock in products table
+      await supabase
+        .from('products')
+        .update({
+          stock_quantity: product.stock_quantity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productData.id);
+    } catch (error) {
+      console.error("Error updating database cache:", error);
+      // Non-critical error, so we don't re-throw
+    }
+  }
+  
+  /**
    * Test connection to TaphoaMMO API
    */
   public async testConnection(
@@ -169,7 +222,7 @@ export class TaphoammoProductService {
   }
 
   /**
-   * Check if a kiosk is active
+   * Check if a kiosk is active and has stock
    */
   public async checkKioskActive(
     kioskToken: string

@@ -27,6 +27,31 @@ export const useStockOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry, usingCache } = useApiCommon();
   const [stockData, setStockData] = useState<StockInfo | null>(null);
 
+  // Get product name from database if not already in stock info
+  const enrichStockDataIfNeeded = async (stock: StockInfo): Promise<StockInfo> => {
+    if (stock.name) return stock;
+    
+    try {
+      // Try to get name from products table
+      const { data: product } = await supabase
+        .from('products')
+        .select('name')
+        .eq('kiosk_token', stock.kiosk_token)
+        .single();
+        
+      if (product?.name) {
+        return {
+          ...stock,
+          name: product.name
+        };
+      }
+    } catch (err) {
+      console.warn("Could not enrich stock data with product name", err);
+    }
+    
+    return stock;
+  };
+
   // Sync product stock with database
   const syncProductStock = async (
     productId: string,
@@ -38,10 +63,11 @@ export const useStockOperations = () => {
   }> => {
     try {
       // Call Edge Function to sync stock
-      const { data, error } = await supabase.functions.invoke('sync-stock', {
+      const { data, error } = await supabase.functions.invoke('sync-inventory', {
         body: {
           product_id: productId,
-          kiosk_token: kioskToken
+          kiosk_token: kioskToken,
+          syncType: 'manual'
         }
       });
       
@@ -81,7 +107,7 @@ export const useStockOperations = () => {
     
     try {
       // Get stock with withRetry to handle potential errors
-      const stock = await withRetry(
+      const stock = await withRetry<StockInfo>(
         async () => {
           const stock = await taphoammoIntegration.getStock(kioskToken, { 
             forceRefresh,
@@ -99,8 +125,10 @@ export const useStockOperations = () => {
             last_checked: stock.last_checked
           };
           
-          setStockData(stockInfo);
-          return stockInfo;
+          // Enrich with product name if needed
+          const enrichedStock = await enrichStockDataIfNeeded(stockInfo);
+          setStockData(enrichedStock);
+          return enrichedStock;
         },
         'getStock',
         // Fallback function in case all retries fail
@@ -115,9 +143,23 @@ export const useStockOperations = () => {
             
             if (error || !data) throw new Error('No cache available');
             
+            // Get product name from products table
+            let productName = "Unknown Product";
+            if (data.product_id) {
+              const { data: product } = await supabase
+                .from('products')
+                .select('name')
+                .eq('id', data.product_id)
+                .single();
+                
+              if (product) {
+                productName = product.name;
+              }
+            }
+            
             const stockInfo: StockInfo = {
               kiosk_token: kioskToken,
-              name: data.name || 'Unknown Product',
+              name: productName,
               stock_quantity: data.stock_quantity,
               price: data.price,
               cached: true,
@@ -224,6 +266,20 @@ export const useStockOperations = () => {
           
           if (error || !data) throw new Error('No cache available');
           
+          // Get product name from products table
+          let productName = "Unknown Product";
+          if (data.product_id) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('name')
+              .eq('id', data.product_id)
+              .single();
+              
+            if (product) {
+              productName = product.name;
+            }
+          }
+          
           if (showToasts) {
             toast.warning("Using cached product data due to API issues", {
               description: "Product information may not be up-to-date"
@@ -232,7 +288,7 @@ export const useStockOperations = () => {
           
           return {
             kiosk_token: kioskToken,
-            name: data.name || 'Unknown Product',
+            name: productName,
             stock_quantity: data.stock_quantity,
             price: data.price,
             cached: true,
@@ -245,19 +301,37 @@ export const useStockOperations = () => {
       // Update database cache if we have fresh data
       if (!product.cached && !product.emergency) {
         try {
-          await supabase
-            .from('inventory_cache')
-            .upsert({
-              kiosk_token: kioskToken,
-              stock_quantity: product.stock_quantity,
-              price: product.price || 0,
-              name: product.name || 'Unknown Product',
-              last_checked_at: new Date().toISOString(),
-              cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-              last_sync_status: 'success'
-            }, {
-              onConflict: 'kiosk_token'
-            });
+          // Find the product ID first
+          const { data: productData } = await supabase
+            .from('products')
+            .select('id')
+            .eq('kiosk_token', kioskToken)
+            .single();
+            
+          if (productData?.id) {
+            // Update both inventory_cache and products tables
+            await supabase
+              .from('inventory_cache')
+              .upsert({
+                kiosk_token: kioskToken,
+                product_id: productData.id,
+                stock_quantity: product.stock_quantity,
+                price: product.price || 0,
+                last_checked_at: new Date().toISOString(),
+                cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+                last_sync_status: 'success'
+              }, {
+                onConflict: 'kiosk_token'
+              });
+            
+            await supabase
+              .from('products')
+              .update({
+                stock_quantity: product.stock_quantity,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', productData.id);
+          }
         } catch (cacheError) {
           console.error("Failed to update database cache:", cacheError);
           // Non-critical error, continue without failing

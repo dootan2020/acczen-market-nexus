@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getProxyOptions, getStoredProxy, setStoredProxy, ProxyType } from '@/utils/corsProxy';
 import ProxySelector from './inventory/ProxySelector';
@@ -14,6 +14,8 @@ interface InventoryStatusProps {
   onRefresh?: () => Promise<void>;
   kioskToken?: string | null;
   variant?: string; // Add the variant prop
+  isCached?: boolean;
+  isEmergency?: boolean;
 }
 
 const formatTimeAgo = (date: Date | string) => {
@@ -35,13 +37,26 @@ const formatTimeAgo = (date: Date | string) => {
   return `${days} days ago`;
 };
 
+// Check if data is stale (older than 30 minutes)
+const isDataStale = (date?: Date | string | null): boolean => {
+  if (!date) return true;
+  
+  const now = new Date();
+  const past = new Date(date);
+  const minutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60));
+  
+  return minutes > 30; // Stale if older than 30 minutes
+};
+
 export default function ProductInventoryStatus({ 
   stockQuantity, 
   lastChecked, 
   isLoading = false,
   onRefresh,
   kioskToken,
-  variant = 'default' // Add default value for the variant prop
+  variant = 'default',
+  isCached = false,
+  isEmergency = false
 }: InventoryStatusProps) {
   const [currentProxy, setCurrentProxy] = useState<ProxyType>(getStoredProxy());
   const [responseTime, setResponseTime] = useState<number | null>(null);
@@ -70,6 +85,8 @@ export default function ProductInventoryStatus({
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+
+  const stale = isDataStale(lastChecked);
   
   // Render different UI based on variant
   if (variant === 'badge') {
@@ -128,6 +145,30 @@ export default function ProductInventoryStatus({
             )}
           </div>
         </div>
+
+        {/* Warning for stale data */}
+        {stale && lastChecked && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 p-1.5 rounded-sm">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Stock data may be outdated</span>
+          </div>
+        )}
+
+        {/* Warning for cached data */}
+        {isCached && isEmergency && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-amber-600 bg-amber-50 p-1.5 rounded-sm">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Using emergency cached data</span>
+          </div>
+        )}
+
+        {/* Low stock warning */}
+        {stockQuantity > 0 && stockQuantity < 10 && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-red-600 bg-red-50 p-1.5 rounded-sm">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Low stock: Only {stockQuantity} items left</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

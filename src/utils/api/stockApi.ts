@@ -2,6 +2,7 @@
 import { BaseApiClient } from './baseClient';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface StockData {
   kiosk_token: string;
@@ -10,6 +11,7 @@ export interface StockData {
   price: number;
   cached?: boolean;
   emergency?: boolean;
+  last_checked?: Date;
 }
 
 export class StockApi extends BaseApiClient {
@@ -43,7 +45,8 @@ export class StockApi extends BaseApiClient {
         stock_quantity: data.stock_quantity || 0,
         price: data.price || 0,
         cached: data.cached || false,
-        emergency: data.emergency || false
+        emergency: data.emergency || false,
+        last_checked: data.last_checked ? new Date(data.last_checked) : new Date()
       };
     } catch (error) {
       console.error("Error in getStock:", error);
@@ -89,7 +92,8 @@ export class StockApi extends BaseApiClient {
             stock_quantity: data.stock_quantity || 0,
             price: data.price || 0,
             cached: data.cached || false,
-            emergency: data.emergency || false
+            emergency: data.emergency || false,
+            last_checked: data.last_checked ? new Date(data.last_checked) : new Date()
           };
         } catch (attemptError) {
           attempts++;
@@ -113,7 +117,7 @@ export class StockApi extends BaseApiClient {
   }
   
   /**
-   * Sync inventory data with database
+   * Sync inventory data with database by calling the edge function
    */
   async syncStockWithDatabase(kioskToken: string, productId: string): Promise<{
     success: boolean;
@@ -121,10 +125,11 @@ export class StockApi extends BaseApiClient {
     data?: any;
   }> {
     try {
-      const { data, error } = await supabase.functions.invoke('sync-stock', {
+      const { data, error } = await supabase.functions.invoke('sync-inventory', {
         body: {
           kiosk_token: kioskToken,
-          product_id: productId
+          product_id: productId,
+          syncType: 'manual'
         }
       });
       
@@ -142,6 +147,58 @@ export class StockApi extends BaseApiClient {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error synchronizing stock"
       };
+    }
+  }
+
+  /**
+   * Get stock information from database cache
+   */
+  async getStockFromDatabase(productId: string, kioskToken: string): Promise<StockData | null> {
+    try {
+      let query = supabase
+        .from('inventory_cache')
+        .select('*');
+      
+      if (productId) {
+        query = query.eq('product_id', productId);
+      } else if (kioskToken) {
+        query = query.eq('kiosk_token', kioskToken);
+      } else {
+        return null;
+      }
+      
+      const { data, error } = await query.single();
+      
+      if (error || !data) {
+        return null;
+      }
+      
+      // Get product name from products table if not in cache
+      let productName = "Unknown Product";
+      if (productId) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('name')
+          .eq('id', productId)
+          .single();
+          
+        if (product) {
+          productName = product.name;
+        }
+      }
+      
+      return {
+        kiosk_token: data.kiosk_token,
+        name: productName,
+        stock_quantity: data.stock_quantity,
+        price: data.price || 0,
+        cached: true,
+        emergency: true,
+        last_checked: data.last_checked_at ? new Date(data.last_checked_at) : new Date()
+      };
+    } catch (error) {
+      console.error("Error in getStockFromDatabase:", error);
+      return null;
     }
   }
 }

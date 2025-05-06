@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useProductContext } from "@/contexts/ProductContext";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 import { PurchaseConfirmModal } from "./products/purchase/PurchaseConfirmModal";
+import { useStockOperations } from "@/hooks/taphoammo/useStockOperations";
 
 interface ProductCardProps {
   id: string;
@@ -28,6 +29,7 @@ interface ProductCardProps {
   isBestSeller?: boolean;
   description?: string;
   soldCount?: number;
+  lastChecked?: string | null;
 }
 
 const ProductCard = ({
@@ -46,11 +48,17 @@ const ProductCard = ({
   isBestSeller = false,
   description = "",
   soldCount = 0,
+  lastChecked = null,
 }: ProductCardProps) => {
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
   const { openModal } = useProductContext();
+  const { checkStockAvailability } = useStockOperations();
+  
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [localStock, setLocalStock] = useState<number>(stock);
+  const [lastStockCheck, setLastStockCheck] = useState<Date | null>(lastChecked ? new Date(lastChecked) : null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Using useMemo to optimize price conversions
   const displayPrice = useMemo(() => 
@@ -77,12 +85,60 @@ const ProductCard = ({
   // Calculate displayed sold count (actual + 10000)
   const displaySoldCount = useMemo(() => soldCount + 10000, [soldCount]);
 
-  const handleBuyNow = () => {
-    if (stock <= 0) {
+  // Check stock when component mounts
+  useEffect(() => {
+    if (kioskToken) {
+      refreshStock();
+    }
+  }, [kioskToken]);
+
+  // Function to refresh stock data
+  const refreshStock = async () => {
+    if (!kioskToken) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await checkStockAvailability(1, kioskToken, { showToasts: false });
+      if (result.stockData) {
+        setLocalStock(result.stockData.stock_quantity);
+        setLastStockCheck(result.stockData.last_checked || new Date());
+      }
+    } catch (error) {
+      console.error("Error checking stock:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!kioskToken) {
       return;
     }
     
-    setIsPurchaseModalOpen(true);
+    if (localStock <= 0) {
+      return;
+    }
+    
+    // Check real-time stock before opening the modal
+    setIsLoading(true);
+    try {
+      const result = await checkStockAvailability(1, kioskToken);
+      if (result.stockData) {
+        setLocalStock(result.stockData.stock_quantity);
+        setLastStockCheck(result.stockData.last_checked || new Date());
+      }
+      
+      if (result.available) {
+        setIsPurchaseModalOpen(true);
+      } else {
+        // Don't open modal if stock is not available
+        console.log("Stock unavailable:", result.message);
+      }
+    } catch (error) {
+      console.error("Error checking stock:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleViewDetails = () => {
@@ -125,28 +181,30 @@ const ProductCard = ({
 
       {/* Stock & Sold Information - New styled badges */}
       <div className="flex flex-wrap gap-2 mb-3">
-        <span className="inline-block text-xs px-2 py-1 rounded bg-[#F2FCE2] text-[#2ECC71] font-medium">
-          In stock: {stock}
+        <span className={`inline-block text-xs px-2 py-1 rounded ${
+          localStock > 0 
+            ? "bg-[#F2FCE2] text-[#2ECC71]" 
+            : "bg-[#FDECEA] text-[#E74C3C]"
+          } font-medium`}>
+          {localStock > 0 ? `In stock: ${localStock}` : "Out of stock"}
         </span>
         <span className="inline-block text-xs px-2 py-1 rounded bg-[#FDE1D3] text-[#E67E22] font-medium">
           Sold: {displaySoldCount.toLocaleString()}
         </span>
       </div>
       
+      {/* Low stock warning */}
+      {localStock > 0 && localStock < 10 && (
+        <div className="mb-3 text-xs text-amber-600 bg-amber-50 p-1.5 rounded-sm flex items-center">
+          <span>Low stock: Only {localStock} items left</span>
+        </div>
+      )}
+      
       {/* Product Description - with flex grow to push buttons to bottom */}
       {description && (
         <p className="text-sm text-gray-600 line-clamp-2 mb-4 font-inter flex-grow min-h-[40px]">
           {cleanDescription}
         </p>
-      )}
-
-      {/* Out of stock indicator */}
-      {stock <= 0 && (
-        <div className="mb-3">
-          <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">
-            Out of Stock
-          </Badge>
-        </div>
       )}
       
       {/* Action Buttons */}
@@ -161,10 +219,18 @@ const ProductCard = ({
         
         <Button
           className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white px-1.5 sm:px-2 py-1.5 h-auto text-[10px] xs:text-xs sm:text-sm"
-          disabled={stock === 0}
+          disabled={localStock === 0 || isLoading}
           onClick={handleBuyNow}
         >
-          <ShoppingBag className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Buy Now
+          {isLoading ? (
+            <span className="flex items-center">
+              <span className="animate-pulse">Loading</span>
+            </span>
+          ) : (
+            <>
+              <ShoppingBag className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Buy Now
+            </>
+          )}
         </Button>
       </div>
 
@@ -178,7 +244,7 @@ const ProductCard = ({
         productImage="" // We don't use images in this project
         quantity={1}
         kioskToken={kioskToken || null}
-        stock={stock}
+        stock={localStock}
       />
     </Card>
   );

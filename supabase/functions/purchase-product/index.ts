@@ -79,7 +79,12 @@ async function callTaphoaMMO(endpoint: string, params: Record<string, any>, prox
   
   try {
     // Call the API
-    const response = await fetch(proxyUrl);
+    const response = await fetch(proxyUrl, {
+      headers: {
+        "User-Agent": "Digital-Deals-Hub/1.0",
+        "Accept": "application/json"
+      }
+    });
     
     // Check if response is OK
     if (!response.ok) {
@@ -115,6 +120,76 @@ async function callTaphoaMMO(endpoint: string, params: Record<string, any>, prox
   } catch (error) {
     console.error("Error calling TaphoaMMO API:", error);
     throw error;
+  }
+}
+
+// Get current stock directly from API
+async function getStockFromAPI(kioskToken: string, proxyType: string = "allorigins") {
+  try {
+    const data = await callTaphoaMMO("getStock", { kioskToken, userToken: SYSTEM_TOKEN }, proxyType);
+    
+    // Parse stock quantity
+    let stockQuantity = 0;
+    
+    if (data.stock_quantity !== undefined) {
+      stockQuantity = Number(data.stock_quantity);
+    } else if (data.stock !== undefined) {
+      stockQuantity = Number(data.stock);
+    } else if (typeof data.message === 'string' && data.message.includes('Stock:')) {
+      const match = data.message.match(/Stock:\s*(\d+)/i);
+      if (match && match[1]) {
+        stockQuantity = Number(match[1]);
+      }
+    }
+    
+    return {
+      stock_quantity: stockQuantity,
+      success: true
+    };
+  } catch (error) {
+    console.error("Error getting stock from API:", error);
+    
+    // Return a special object to indicate API error
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to get stock from API",
+      stock_quantity: 0
+    };
+  }
+}
+
+// Get stock from database cache
+async function getStockFromCache(kioskToken: string, supabaseAdmin: any) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("inventory_cache")
+      .select("*")
+      .eq("kiosk_token", kioskToken)
+      .single();
+      
+    if (error || !data) {
+      throw error || new Error("No cache entry found");
+    }
+    
+    // Check if cache is still valid
+    const now = new Date();
+    const cachedUntil = new Date(data.cached_until);
+    const isValid = now < cachedUntil;
+    
+    return {
+      stock_quantity: data.stock_quantity,
+      success: true,
+      cached: true,
+      valid: isValid,
+      last_checked_at: data.last_checked_at
+    };
+  } catch (error) {
+    console.error("Error getting stock from cache:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to get stock from cache",
+      stock_quantity: 0
+    };
   }
 }
 
@@ -190,10 +265,72 @@ serve(async (req) => {
       return errorResponse("Product not found", "PRODUCT_NOT_FOUND", 404);
     }
     
+    // Here's where we do the additional stock verification
+    console.log("Verifying stock before purchase...");
+    
+    // Try to get real-time stock from API first
+    const apiStock = await getStockFromAPI(kioskToken, proxyType);
+    
+    let finalStockQuantity;
+    
+    if (apiStock.success) {
+      console.log(`API stock check successful. Stock: ${apiStock.stock_quantity}`);
+      finalStockQuantity = apiStock.stock_quantity;
+      
+      // Update database with the new stock value
+      try {
+        await supabaseAdmin
+          .from('inventory_cache')
+          .upsert({
+            kiosk_token: kioskToken,
+            product_id: product.id,
+            stock_quantity: apiStock.stock_quantity,
+            last_checked_at: new Date().toISOString(),
+            cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+            last_sync_status: 'success'
+          }, {
+            onConflict: 'kiosk_token'
+          });
+          
+        await supabaseAdmin
+          .from('products')
+          .update({
+            stock_quantity: apiStock.stock_quantity
+          })
+          .eq('id', product.id);
+      } catch (updateError) {
+        console.error("Failed to update stock in database:", updateError);
+        // Non-critical error, continue with purchase
+      }
+    } else {
+      // If API check fails, try to get from cache
+      console.log("API stock check failed, trying cache...");
+      const cacheStock = await getStockFromCache(kioskToken, supabaseAdmin);
+      
+      if (cacheStock.success) {
+        console.log(`Cache stock check successful. Stock: ${cacheStock.stock_quantity}`);
+        finalStockQuantity = cacheStock.stock_quantity;
+        
+        // Check if cache is too old (older than 1 hour)
+        const lastChecked = new Date(cacheStock.last_checked_at);
+        const now = new Date();
+        const diffMinutes = (now.getTime() - lastChecked.getTime()) / (1000 * 60);
+        
+        if (diffMinutes > 60) {
+          console.log(`Warning: Cache is ${diffMinutes.toFixed(0)} minutes old`);
+        }
+      } else {
+        // If both API and cache fail, use product table as last resort
+        console.log("Cache stock check failed, using product table value.");
+        finalStockQuantity = product.stock_quantity;
+      }
+    }
+    
     // Verify stock
-    if (product.stock_quantity < quantity) {
+    console.log(`Verifying stock: Required=${quantity}, Available=${finalStockQuantity}`);
+    if (finalStockQuantity < quantity) {
       return errorResponse(
-        `Insufficient stock. Required: ${quantity}, Available: ${product.stock_quantity}`,
+        `Insufficient stock. Required: ${quantity}, Available: ${finalStockQuantity}`,
         "INSUFFICIENT_STOCK",
         400
       );
@@ -312,13 +449,21 @@ serve(async (req) => {
       // We'll need to handle this case in the admin panel
     }
     
-    // Update product stock
+    // Update product stock in our database
     await supabaseAdmin
       .from("products")
       .update({
-        stock_quantity: product.stock_quantity - quantity
+        stock_quantity: Math.max(0, finalStockQuantity - quantity)
       })
       .eq("id", product.id);
+      
+    // Also update cache if it exists
+    await supabaseAdmin
+      .from('inventory_cache')
+      .update({
+        stock_quantity: Math.max(0, finalStockQuantity - quantity)
+      })
+      .eq('kiosk_token', kioskToken);
     
     // Update user balance
     const { error: balanceError } = await supabaseAdmin

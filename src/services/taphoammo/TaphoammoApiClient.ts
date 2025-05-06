@@ -167,9 +167,23 @@ export class TaphoammoApiClient {
         return null;
       }
       
+      // Get product name from products table if not in cache
+      let productName = "Unknown Product";
+      if (data.product_id) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('name')
+          .eq('id', data.product_id)
+          .single();
+          
+        if (product) {
+          productName = product.name;
+        }
+      }
+      
       return {
         kiosk_token: data.kiosk_token,
-        name: data.name || 'Unknown Product',
+        name: productName,
         stock_quantity: data.stock_quantity,
         price: data.price,
         cached: true,
