@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,11 +18,12 @@ interface PaginationHookResult<T> {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  goToPage: (page: number) => void; // Sửa lại để nhận tham số page
+  goToPage: (page: number) => void;
   nextPage: () => void;
   prevPage: () => void;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  refetch: () => Promise<any>; // Added refetch method to the return type
 }
 
 type FilterOperator = {
@@ -98,6 +98,7 @@ export function useAdminPagination<T>(
     data,
     isLoading,
     error,
+    refetch, // Extract refetch from useQuery
   } = useQuery({
     queryKey: [...queryKey, 'page-' + currentPage, 'size-' + pageSize, JSON.stringify(filters)],
     queryFn: async () => {
@@ -185,6 +186,7 @@ export function useAdminPagination<T>(
     nextPage,
     prevPage,
     hasNextPage: currentPage < totalPages,
-    hasPrevPage: currentPage > 1
+    hasPrevPage: currentPage > 1,
+    refetch // Include refetch in the return object
   };
 }
