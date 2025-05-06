@@ -1,13 +1,23 @@
-
 import { useEffect, useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import CategoryCard from '@/components/CategoryCard';
 import { Container } from '@/components/ui/container';
 import { useProductCountByCategory } from '@/hooks/useProductCountByCategory';
 
+// Định nghĩa rõ kiểu dữ liệu cho category từ useCategories
+interface Category {
+  created_at: string;
+  id: string;
+  name: string;
+  slug: string;
+  // Thêm các trường tùy chọn nếu có thể
+  description?: string;
+  image_url?: string;
+}
+
 export default function Categories() {
   const { categories, loading: loadingCategories } = useCategories();
-  const { categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
+  const { counts: categoryCounts, isLoading: loadingCounts } = useProductCountByCategory();
   
   // State to hold the categories enriched with product counts
   const [enrichedCategories, setEnrichedCategories] = useState<Array<{
@@ -21,7 +31,7 @@ export default function Categories() {
   // Whenever categories or counts change, update the enriched categories
   useEffect(() => {
     if (categories) {
-      const enriched = categories.map(category => ({
+      const enriched = categories.map((category: Category) => ({
         id: category.id,
         name: category.name,
         description: category.description || null,
