@@ -90,6 +90,7 @@ export const PurchaseModalActions = ({
                     variant="secondary"
                     onClick={onDeposit}
                     disabled={isProcessing}
+                    className="bg-blue-500 hover:bg-blue-600 text-white"
                   >
                     <Wallet className="mr-2 h-4 w-4" />
                     Add Funds
