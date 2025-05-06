@@ -9,9 +9,9 @@ interface ProductCountResult {
 }
 
 export const useProductCountByCategory = (): ProductCountResult => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<Record<string, number>, Error>({
     queryKey: ['product-counts-by-category'],
-    queryFn: async (): Promise<Record<string, number>> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
         .select('category_id')
