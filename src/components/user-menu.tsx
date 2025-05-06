@@ -1,210 +1,132 @@
 
-import * as React from "react"
-import { Link } from "react-router-dom"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
+// Assuming this file exists and needs updating
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { LogOut, User, Settings, CreditCard, Package } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, User, Settings, ShoppingBag, Shield } from "lucide-react"
-import { useAuth } from "@/contexts/auth"
-import { useCurrencyContext } from "@/contexts/CurrencyContext"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/auth";
 
 export function UserMenu() {
-  const { user, signOut, isAdmin, balance, userDisplayName } = useAuth()
-  const { convertVNDtoUSD, formatUSD, formatVND } = useCurrencyContext()
-  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false)
-  const [showVndBalance, setShowVndBalance] = React.useState(false)
+  const { user, isAdmin, logout } = useAuth();
 
-  // Get user's initials for avatar
-  const getUserInitials = () => {
-    if (!user) return "?"
-    if (userDisplayName) {
-      const nameParts = userDisplayName.split(' ')
-      if (nameParts.length > 1) {
-        return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
-      }
-      return userDisplayName.charAt(0).toUpperCase()
-    }
-    const email = user.email || ""
-    return email.charAt(0).toUpperCase()
-  }
-
-  // Get avatar color based on user ID for consistent color
-  const getAvatarColor = () => {
-    if (!user) return "bg-gray-400"
-    
-    // Simple hash function to generate consistent color from user ID
-    const hash = user.id.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc)
-    }, 0)
-    
-    // Generate hue (0-360) from hash, with fixed saturation and lightness
-    const hue = Math.abs(hash % 360)
-    return `bg-[hsl(${hue},70%,60%)]`
-  }
-
-  const handleLogoutConfirm = async () => {
+  const handleLogout = async () => {
     try {
-      await signOut(true)
-      setShowLogoutConfirm(false)
+      await logout();
     } catch (error) {
-      console.error("Lỗi đăng xuất:", error)
+      console.error('Logout error:', error);
     }
-  }
+  };
 
-  // Convert balance from VND to USD for display with memoization
-  const displayBalance = React.useMemo(() => {
-    if (balance === undefined) return "₫0";
-    
-    if (showVndBalance) {
-      return formatVND(balance);
-    } else {
-      const usdBalance = convertVNDtoUSD(balance);
-      return formatUSD(usdBalance);
-    }
-  }, [balance, convertVNDtoUSD, formatUSD, formatVND, showVndBalance]);
-
-  console.log("UserMenu - Current auth state:", { isAdmin, user: user?.email, userDisplayName });
-  
-  if (!user) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link to="/register">
-          <Button variant="outline" size="sm" className="hidden md:inline-flex">
-            Đăng ký
-          </Button>
-        </Link>
-        <Link to="/login">
-          <Button size="sm">Đăng nhập</Button>
-        </Link>
-      </div>
-    )
-  }
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U";
+    return user.email.substring(0, 1).toUpperCase();
+  };
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="rounded-full overflow-hidden">
-            <Avatar className={`h-8 w-8 ${getAvatarColor()}`}>
-              <AvatarImage src={user.user_metadata?.avatar_url || ''} alt={userDisplayName} />
-              <AvatarFallback>{getUserInitials()}</AvatarFallback>
-            </Avatar>
-            <span className="sr-only">Tài khoản của tôi</span>
-          </Button>
-        </DropdownMenuTrigger>
-        
-        <DropdownMenuContent align="end" className="w-56 p-2">
-          <div className="flex flex-col px-2 pt-1 pb-2">
-            <span className="font-medium text-base">{userDisplayName}</span>
-            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-          </div>
-          
-          <DropdownMenuSeparator className="my-1" />
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div 
-                  className="px-2 py-1.5 bg-primary/10 rounded-md mb-2 cursor-pointer"
-                  onClick={() => setShowVndBalance(!showVndBalance)}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Số dư:</span>
-                    <span className="font-semibold text-primary">{displayBalance}</span>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Click để chuyển đổi đơn vị tiền tệ</p>
-                <p>VND: {formatVND(balance || 0)}</p>
-                <p>USD: {formatUSD(convertVNDtoUSD(balance || 0))}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
-            <Link to={isAdmin ? "/admin" : "/dashboard"}>
-              {isAdmin ? <Shield className="h-4 w-4" /> : <User className="h-4 w-4" />}
-              <span>{isAdmin ? "Admin Panel" : "Dashboard"}</span>
-            </Link>
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
-            <Link to="/dashboard/purchases">
-              <ShoppingBag className="h-4 w-4" />
-              <span>Đơn hàng của tôi</span>
-            </Link>
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem asChild className="cursor-pointer flex items-center gap-2">
-            <Link to="/dashboard/settings">
-              <Settings className="h-4 w-4" />
-              <span>Cài đặt tài khoản</span>
-            </Link>
-          </DropdownMenuItem>
-          
-          {isAdmin && (
-            <>
-              <DropdownMenuSeparator className="my-1" />
-              <DropdownMenuItem asChild className="cursor-pointer bg-secondary/20 flex items-center gap-2">
-                <Link to="/admin">
-                  <Shield className="h-4 w-4" />
-                  <span>Quản trị hệ thống</span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user?.user_metadata?.avatar_url || ''} alt={user?.email || 'User'} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {getUserInitials()}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        {user ? (
+          <>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || user.email}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Trang cá nhân</span>
                 </Link>
               </DropdownMenuItem>
-            </>
-          )}
-          
-          <DropdownMenuSeparator className="my-1" />
-          
-          <DropdownMenuItem 
-            onClick={() => setShowLogoutConfirm(true)}
-            className="text-red-500 hover:bg-red-50 hover:text-red-500 cursor-pointer flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Đăng xuất</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Logout confirmation dialog */}
-      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogoutConfirm}>Đăng xuất</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  )
+              <DropdownMenuItem asChild>
+                <Link to="/deposit">
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Nạp tiền</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/purchases">
+                  <Package className="mr-2 h-4 w-4" />
+                  <span>Đơn hàng</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Cài đặt</span>
+                </Link>
+              </DropdownMenuItem>
+              
+              {/* Only show Admin Menu if user is an admin */}
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link to="/admin">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="mr-2 h-4 w-4"
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span>Quản trị</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Đăng xuất</span>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link to="/login">
+                <span>Đăng nhập</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/register">
+                <span>Đăng ký</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

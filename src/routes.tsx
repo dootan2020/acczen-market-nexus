@@ -1,6 +1,5 @@
 
 import React from 'react';
-import Layout from './components/Layout';
 import Index from './pages/Index';
 import Products from './pages/Products';
 import LoginPage from './pages/LoginPage';
@@ -12,6 +11,11 @@ import Help from './pages/Help';
 import Categories from './pages/Categories';
 import HowItWorks from './pages/HowItWorks';
 import Support from './pages/Support';
+import DepositPage from './pages/Deposit';
+import TransactionsPage from './pages/TransactionsPage';
+import PurchasesPage from './pages/PurchasesPage';
+import OrderDetail from './pages/OrderDetail';
+import NotFound from './pages/NotFound';
 
 // Import admin pages
 import AdminHome from './pages/admin/AdminHome';
@@ -28,15 +32,18 @@ import AdminTransactions from './pages/admin/AdminTransactions';
 import AdminSettings from './pages/admin/AdminSettings';
 import DiscountAnalyticsPage from './pages/admin/DiscountAnalyticsPage';
 
-// Create placeholder components for routes that are missing
-const ProfilePage = () => <div>Profile Page</div>;
-const AdminIntegrationsPage = () => <div>Admin Integrations Page</div>;
-const CategoryEditPage = () => <div>Category Edit Page</div>;
-const AdminOrderDetailsPage = () => <div>Admin Order Details Page</div>;
-const DepositDetailsPage = () => <div>Deposit Details Page</div>;
-const AdminProductEditPage = () => <div>Admin Product Edit Page</div>;
-const AdminProductCreatePage = () => <div>Admin Product Create Page</div>;
-const CategoryCreatePage = () => <div>Category Create Page</div>;
+// Define placeholders for routes that are missing actual components
+const ProfilePage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Trang Cá Nhân</h1><p>Trang đang được xây dựng.</p></div>;
+const ContactPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Liên Hệ</h1><p>Trang đang được xây dựng.</p></div>;
+const AdminIntegrationsPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Admin Integrations</h1><p>Trang đang được xây dựng.</p></div>;
+const CategoryEditPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Category Edit</h1><p>Trang đang được xây dựng.</p></div>;
+const AdminOrderDetailsPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Admin Order Details</h1><p>Trang đang được xây dựng.</p></div>;
+const DepositDetailsPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Deposit Details</h1><p>Trang đang được xây dựng.</p></div>;
+const AdminProductEditPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Admin Product Edit</h1><p>Trang đang được xây dựng.</p></div>;
+const AdminProductCreatePage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Admin Product Create</h1><p>Trang đang được xây dựng.</p></div>;
+const CategoryCreatePage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Category Create</h1><p>Trang đang được xây dựng.</p></div>;
+const CartPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Giỏ Hàng</h1><p>Trang đang được xây dựng.</p></div>;
+const CheckoutPage = () => <div className="container mx-auto p-8"><h1 className="text-3xl font-bold mb-6">Thanh Toán</h1><p>Trang đang được xây dựng.</p></div>;
 
 // Define routes that should use the main Layout (with Header and Footer)
 const mainRoutes = [
@@ -45,7 +52,7 @@ const mainRoutes = [
   { path: '/categories', element: <Categories /> },
   { path: '/how-it-works', element: <HowItWorks /> },
   { path: '/support', element: <Support /> },
-  { path: '/profile', element: <ProfilePage /> },
+  { path: '/contact', element: <ContactPage /> },
   { path: '/help', element: <Help /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/update-password', element: <UpdatePasswordPage /> },
@@ -53,9 +60,16 @@ const mainRoutes = [
   { path: '/register', element: <RegisterPage /> },
 ];
 
-// Define routes for dashboard that might have their own layout
+// Define routes for dashboard that require authentication
 const dashboardRoutes = [
   { path: '/dashboard', element: <DashboardPage /> },
+  { path: '/profile', element: <ProfilePage /> },
+  { path: '/deposit', element: <DepositPage /> },
+  { path: '/transactions', element: <TransactionsPage /> },
+  { path: '/purchases', element: <PurchasesPage /> },
+  { path: '/order/:id', element: <OrderDetail /> },
+  { path: '/cart', element: <CartPage /> },
+  { path: '/checkout', element: <CheckoutPage /> },
 ];
 
 // Define routes for admin section that might have their own layout

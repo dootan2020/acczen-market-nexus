@@ -13,6 +13,8 @@ import { ProductInfoModal } from "./components/products/ProductInfoModal";
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import AdminGuard from './components/AdminGuard';
+import NotFound from './pages/NotFound';
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
   useEffect(() => {
@@ -41,12 +43,16 @@ function App() {
                         ))}
                       </Route>
                       
-                      {/* Dashboard routes */}
+                      {/* Dashboard routes with authentication */}
                       {routes.dashboardRoutes.map((route, index) => (
                         <Route
                           key={`dashboard-${index}`}
                           path={route.path}
-                          element={route.element}
+                          element={
+                            <PrivateRoute>
+                              {route.element}
+                            </PrivateRoute>
+                          }
                         />
                       ))}
                       
@@ -60,6 +66,9 @@ function App() {
                           />
                         ))}
                       </Route>
+
+                      {/* 404 Not Found route */}
+                      <Route path="*" element={<NotFound />} />
                     </Routes>
                   </div>
                 </ProductProvider>
