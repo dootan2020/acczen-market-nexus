@@ -4,26 +4,28 @@ import { Badge } from '@/components/ui/badge';
 
 interface StockBadgeProps {
   stock: number;
+  className?: string;
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
 }
 
-const StockBadge = ({ stock }: StockBadgeProps) => {
+const StockBadge = ({ stock, className = '', variant }: StockBadgeProps) => {
   if (stock <= 0) {
     return (
-      <Badge variant="destructive" className="mb-2">
-        <AlertCircle className="w-3 h-3 mr-1" /> Hết hàng
+      <Badge variant="destructive" className={`mb-2 ${className}`}>
+        <AlertCircle className="w-3 h-3 mr-1" /> Out of Stock
       </Badge>
     );
   } else if (stock < 5) {
     return (
-      <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 mb-2">
-        <AlertCircle className="w-3 h-3 mr-1" /> Sắp hết hàng (còn {stock})
+      <Badge variant={variant || "secondary"} className={`bg-yellow-500 hover:bg-yellow-600 mb-2 ${className}`}>
+        <AlertCircle className="w-3 h-3 mr-1" /> Low Stock ({stock})
       </Badge>
     );
   }
   
   return (
-    <Badge variant="secondary" className="bg-green-500 hover:bg-green-600 text-white mb-2">
-      <CheckCircle2 className="w-3 h-3 mr-1" /> Còn hàng ({stock > 99 ? '99+' : stock})
+    <Badge variant={variant || "secondary"} className={`bg-green-500 hover:bg-green-600 text-white mb-2 ${className}`}>
+      <CheckCircle2 className="w-3 h-3 mr-1" /> In Stock ({stock > 99 ? '99+' : stock})
     </Badge>
   );
 };

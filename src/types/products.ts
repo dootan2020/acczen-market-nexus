@@ -41,7 +41,8 @@ export interface Product {
   usage_instructions?: string | null;
   technical_details?: string | null;
   warranty_info?: string | null;
-  sold_count?: number; // Added this property
+  sold_count?: number;
+  is_visible?: boolean;
 }
 
 export interface ProductFormData {
@@ -58,4 +59,5 @@ export interface ProductFormData {
   status: ProductStatus;
   sku: string;
   kiosk_token?: string;
+  is_visible?: boolean;
 }

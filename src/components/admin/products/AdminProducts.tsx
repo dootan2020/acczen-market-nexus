@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Eye, EyeOff, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -20,6 +20,7 @@ import ProductBulkDeleteDialog from '@/components/admin/products/ProductBulkDele
 import { ProductsPagination } from '@/components/admin/products/ProductsPagination';
 import { useProductManagement } from '@/hooks/admin/useProductManagement';
 import { ProductFormData } from '@/types/products';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AdminProducts = () => {
   const {
@@ -43,6 +44,10 @@ const AdminProducts = () => {
     nextPage,
     hasNextPage,
     hasPrevPage,
+    showOutOfStock,
+    showHidden,
+    outOfStockCount,
+    hiddenProductsCount,
     handleAddProduct,
     handleEditProduct,
     handleDeleteProduct,
@@ -56,6 +61,12 @@ const AdminProducts = () => {
     handleBulkActivate,
     handleBulkDeactivate,
     handleClearSelection,
+    handleToggleVisibility,
+    handleBulkShow,
+    handleBulkHide,
+    handleHideOutOfStockProducts,
+    handleToggleShowOutOfStock,
+    handleToggleShowHidden,
     productMutation,
     deleteMutation,
     bulkDeleteMutation,
@@ -79,16 +90,52 @@ const AdminProducts = () => {
         </Button>
       </div>
       
-      <ProductSearch 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+        <ProductSearch 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+        
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleToggleShowOutOfStock}
+            className={!showOutOfStock ? "bg-slate-100" : ""}
+          >
+            <Package className="h-4 w-4 mr-1" />
+            {showOutOfStock ? "Hide" : "Show"} Out of Stock ({outOfStockCount})
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleToggleShowHidden}
+            className={!showHidden ? "bg-slate-100" : ""}
+          >
+            {showHidden ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+            {showHidden ? "Hide" : "Show"} Hidden Products ({hiddenProductsCount})
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleHideOutOfStockProducts}
+            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+          >
+            <EyeOff className="h-4 w-4 mr-1" />
+            Hide All Out of Stock
+          </Button>
+        </div>
+      </div>
       
       <ProductBulkActions 
         selectedCount={selectedProducts.length}
         onBulkDelete={handleBulkDelete}
         onBulkActivate={handleBulkActivate}
         onBulkDeactivate={handleBulkDeactivate}
+        onBulkShow={handleBulkShow}
+        onBulkHide={handleBulkHide}
         onClearSelection={handleClearSelection}
       />
       
@@ -107,6 +154,7 @@ const AdminProducts = () => {
                 onToggleSelectAll={handleToggleSelectAll}
                 onEditProduct={handleEditProduct}
                 onDeleteProduct={handleDeleteProduct}
+                onToggleVisibility={handleToggleVisibility}
               />
             </div>
           )}

@@ -1,247 +1,218 @@
 
-import React from 'react';
-import { DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ProductFormData, ProductStatus } from '@/types/products';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { ProductFormData } from '@/types/products';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-import SubcategorySelector from '@/components/SubcategorySelector';
-
-// Define the product form schema
-const productFormSchema = z.object({
-  name: z
-    .string()
-    .min(3, { message: 'Tên sản phẩm phải có ít nhất 3 ký tự' })
-    .max(100, { message: 'Tên sản phẩm không được vượt quá 100 ký tự' }),
-  slug: z
-    .string()
-    .min(3, { message: 'Slug phải có ít nhất 3 ký tự' })
-    .max(100, { message: 'Slug không được vượt quá 100 ký tự' })
-    .regex(/^[a-z0-9-]+$/, { message: 'Slug chỉ được chứa chữ thường, số và dấu gạch ngang' }),
-  description: z
-    .string()
-    .min(10, { message: 'Mô tả phải có ít nhất 10 ký tự' })
-    .max(2000, { message: 'Mô tả không được vượt quá 2000 ký tự' }),
-  price: z
-    .string()
-    .refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, { 
-      message: 'Giá phải là số không âm' 
-    }),
-  sale_price: z
-    .string()
-    .refine(val => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
-      message: 'Giá khuyến mãi phải là số không âm'
-    })
-    .optional(),
-  stock_quantity: z
-    .string()
-    .refine(val => !isNaN(parseInt(val)) && parseInt(val) >= 0, {
-      message: 'Số lượng phải là số nguyên không âm'
-    }),
-  status: z.enum(['active', 'draft', 'archived']),
-  category_id: z.string().min(1, { message: 'Vui lòng chọn danh mục' }),
-  subcategory_id: z.string().optional(),
-  image_url: z.string().url({ message: 'URL hình ảnh không hợp lệ' }).optional().or(z.literal('')),
-  sku: z.string().optional(),
-  kiosk_token: z.string().optional(),
-});
-
-type ProductFormValues = z.infer<typeof productFormSchema>;
 
 interface ProductFormProps {
   initialData: ProductFormData;
-  handleSubmit: (formData: ProductFormData) => void;
-  categories?: any[];
+  handleSubmit: (data: ProductFormData) => void;
+  categories: any[] | undefined;
   isEditing: boolean;
-  isPending: boolean;
+  isPending?: boolean;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({
-  initialData,
-  handleSubmit,
-  categories,
+// Need to match these types with the Product type in your schema
+const productSchema = z.object({
+  name: z.string().min(1, { message: 'Product name is required' }),
+  description: z.string().min(1, { message: 'Description is required' }),
+  price: z.string().min(1, { message: 'Price is required' }).refine(
+    (val) => !isNaN(Number(val)) && Number(val) >= 0,
+    { message: 'Price must be a positive number' }
+  ),
+  sale_price: z.string().refine(
+    (val) => val === '' || (!isNaN(Number(val)) && Number(val) >= 0),
+    { message: 'Sale price must be a positive number or empty' }
+  ),
+  stock_quantity: z.string().refine(
+    (val) => !isNaN(Number(val)) && Number(val) >= 0,
+    { message: 'Stock quantity must be a positive number' }
+  ),
+  image_url: z.string().optional(),
+  slug: z.string().min(1, { message: 'Slug is required' })
+    .regex(/^[a-z0-9-]+$/, { 
+      message: 'Slug can only contain lowercase letters, numbers, and hyphens' 
+    }),
+  category_id: z.string().min(1, { message: 'Category is required' }),
+  subcategory_id: z.string().optional(),
+  status: z.string().min(1, { message: 'Status is required' }),
+  sku: z.string().min(1, { message: 'SKU is required' }),
+  kiosk_token: z.string().optional(),
+  is_visible: z.boolean().optional().default(true),
+});
+
+const ProductForm = ({ 
+  initialData, 
+  handleSubmit, 
+  categories, 
   isEditing,
-  isPending,
-}) => {
-  // Initialize form with existing data
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormSchema),
-    defaultValues: {
-      name: initialData.name || '',
-      slug: initialData.slug || '',
-      description: initialData.description || '',
-      price: initialData.price?.toString() || '0',
-      sale_price: initialData.sale_price?.toString() || '',
-      stock_quantity: initialData.stock_quantity?.toString() || '0',
-      status: (initialData.status as 'active' | 'draft' | 'archived') || 'draft',
-      category_id: initialData.category_id || '',
-      subcategory_id: initialData.subcategory_id || '',
-      image_url: initialData.image_url || '',
-      sku: initialData.sku || '',
-      kiosk_token: initialData.kiosk_token || '',
-    },
-    mode: 'onChange',
+  isPending = false,
+}: ProductFormProps) => {
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: initialData,
   });
 
-  const onSubmit = (values: ProductFormValues) => {
-    // Convert string values to their appropriate types
-    const formattedValues: ProductFormData = {
-      ...values,
-      name: values.name.trim(),
-      description: values.description.trim(),
-      slug: values.slug.trim(),
-      category_id: values.category_id,
-      subcategory_id: values.subcategory_id || '',
-      status: values.status as ProductStatus,
-      price: values.price,
-      sale_price: values.sale_price || '',
-      stock_quantity: values.stock_quantity,
-      image_url: values.image_url?.trim() || '',
-      sku: values.sku?.trim() || '',
-      kiosk_token: values.kiosk_token?.trim() || '',
-    };
-    
-    handleSubmit(formattedValues);
+  // Update form values when initialData changes (e.g. when editing a different product)
+  useEffect(() => {
+    if (initialData) {
+      Object.entries(initialData).forEach(([key, value]) => {
+        form.setValue(key as keyof ProductFormData, value);
+      });
+    }
+  }, [initialData, form]);
+
+  // Fetch subcategories when category changes
+  const handleCategoryChange = async (categoryId: string) => {
+    if (!categoryId) {
+      setSubcategories([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select('*')
+        .eq('category_id', categoryId);
+
+      if (error) throw error;
+      setSubcategories(data || []);
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      setSubcategories([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Watch category_id to reset subcategory when it changes
-  const watchCategoryId = form.watch('category_id');
-  
-  // Reset subcategory when category changes
-  React.useEffect(() => {
-    form.setValue('subcategory_id', '');
-  }, [watchCategoryId, form]);
-
-  // Generate slug from name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')  // Remove non-word chars
-      .replace(/\s+/g, '-')      // Replace spaces with -
-      .replace(/-+/g, '-');      // Replace multiple - with single -
-  };
-
-  // Watch name to generate slug
-  const watchName = form.watch('name');
-  
-  // Generate slug when name changes if slug is empty
-  React.useEffect(() => {
-    const currentSlug = form.getValues('slug');
-    if (!currentSlug && watchName) {
-      const newSlug = generateSlug(watchName);
-      form.setValue('slug', newSlug, { shouldValidate: true });
+  // Load subcategories when component mounts if a category is selected
+  useEffect(() => {
+    if (initialData.category_id) {
+      handleCategoryChange(initialData.category_id);
     }
-  }, [watchName, form]);
+  }, [initialData.category_id]);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue('name', name, { shouldValidate: true });
-    
-    // Only auto-generate slug if we're creating a new product and slug is empty
-    if (!isEditing && !form.getValues('slug')) {
-      const newSlug = generateSlug(name);
-      form.setValue('slug', newSlug, { shouldValidate: true });
-    }
+  // Handle form submission
+  const onSubmit = (data: ProductFormData) => {
+    handleSubmit(data);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tên sản phẩm</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="Nhập tên sản phẩm" 
-                    onChange={handleNameChange}
-                    className={form.formState.errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Slug</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="product-slug"
-                    onChange={(e) => {
-                      // Automatically convert to lowercase and replace spaces with hyphens
-                      const value = e.target.value
-                        .toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^a-z0-9-]/g, '');
-                      field.onChange(value);
-                    }}
-                    className={form.formState.errors.slug ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                </FormControl>
-                <FormDescription>
-                  URL thân thiện cho sản phẩm, tự động tạo từ tên
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mô tả sản phẩm</FormLabel>
-                <FormControl>
-                  <textarea 
-                    className={`flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px] resize-y ${
-                      form.formState.errors.description ? "border-red-500 focus-visible:ring-red-500" : ""
-                    }`}
-                    {...field} 
-                    placeholder="Nhập mô tả sản phẩm chi tiết"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Basic Info */}
+          <div className="space-y-4 col-span-1 md:col-span-2">
+            <h3 className="text-lg font-medium">Basic Information</h3>
+            
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter product name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="is_visible"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Product Visibility
+                    </FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Show this product on the website
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug</FormLabel>
+                  <FormControl>
+                    <Input placeholder="product-slug" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter product description"
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Pricing */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Pricing & Inventory</h3>
+            
             <FormField
               control={form.control}
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Giá</FormLabel>
+                  <FormLabel>Price (VND)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="text"
-                      inputMode="decimal"
-                      {...field} 
-                      onChange={(e) => {
-                        // Allow only numbers and decimal points
-                        const value = e.target.value.replace(/[^\d.]/g, '');
-                        field.onChange(value);
-                      }}
-                      className={form.formState.errors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    />
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -253,224 +224,193 @@ const ProductForm: React.FC<ProductFormProps> = ({
               name="sale_price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Giá khuyến mãi</FormLabel>
+                  <FormLabel>Sale Price (VND) (Optional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="text"
-                      inputMode="decimal" 
-                      {...field} 
-                      onChange={(e) => {
-                        // Allow only numbers and decimal points
-                        const value = e.target.value.replace(/[^\d.]/g, '');
-                        field.onChange(value);
-                      }}
-                      className={form.formState.errors.sale_price ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    />
+                    <Input type="number" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Để trống nếu không có giá khuyến mãi
-                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="stock_quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stock Quantity</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-          
-          <FormField
-            control={form.control}
-            name="stock_quantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Số lượng trong kho</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="text"
-                    inputMode="numeric"
-                    {...field} 
-                    onChange={(e) => {
-                      // Allow only numbers
-                      const value = e.target.value.replace(/\D/g, '');
-                      field.onChange(value);
-                    }}
-                    className={form.formState.errors.stock_quantity ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trạng thái</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className={form.formState.errors.status ? "border-red-500 focus-visible:ring-red-500" : ""}>
-                      <SelectValue placeholder="Chọn trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
-          <FormField
-            control={form.control}
-            name="category_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Danh mục</FormLabel>
-                <FormControl>
-                  <Select
+          {/* Categories and Status */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Categories & Status</h3>
+            
+            <FormField
+              control={form.control}
+              name="category_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleCategoryChange(value);
+                      form.setValue('subcategory_id', '');
+                    }} 
                     value={field.value}
-                    onValueChange={field.onChange}
                   >
-                    <SelectTrigger className={form.formState.errors.category_id ? "border-red-500 focus-visible:ring-red-500" : ""}>
-                      <SelectValue placeholder="Chọn danh mục" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                      {categories?.map(category => (
+                      {categories?.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="subcategory_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Danh mục con</FormLabel>
-                <FormControl>
-                  <SubcategorySelector 
-                    categoryId={form.getValues('category_id')}
-                    value={field.value} 
-                    onValueChange={field.onChange}
-                  />
-                </FormControl>
-                {!form.getValues('category_id') && (
-                  <p className="text-sm text-muted-foreground">Select a category first</p>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="image_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL hình ảnh</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="https://example.com/image.jpg" 
-                    className={form.formState.errors.image_url ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                </FormControl>
-                <FormDescription>
-                  URL hình ảnh sản phẩm (để trống nếu không có)
-                </FormDescription>
-                <FormMessage />
-                {field.value && (
-                  <div className="mt-2 relative w-20 h-20">
-                    <img 
-                      src={field.value} 
-                      alt="Product preview" 
-                      className="rounded object-cover w-full h-full"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Invalid+Image';
-                      }}
-                    />
-                  </div>
-                )}
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="subcategory_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategory (Optional)</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger disabled={loading || subcategories.length === 0}>
+                        {loading ? (
+                          <div className="flex items-center">
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Select a subcategory" />
+                        )}
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {subcategories.map((subcategory) => (
+                        <SelectItem key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="sku"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SKU</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="SKU-123456" 
-                    className={form.formState.errors.sku ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Mã SKU để quản lý sản phẩm (để trống nếu không cần)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {isEditing && (
+          {/* Additional Info */}
+          <div className="space-y-4 col-span-1 md:col-span-2">
+            <h3 className="text-lg font-medium">Additional Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="sku"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>SKU</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Stock Keeping Unit" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="image_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/image.jpg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="kiosk_token"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kiosk Token</FormLabel>
+                  <FormLabel>TaphoaMMO Kiosk Token (Optional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="Token for Kiosk integration" 
-                      className={form.formState.errors.kiosk_token ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    />
+                    <Input placeholder="Enter kiosk token for automatic stock updates" {...field} value={field.value || ''} />
                   </FormControl>
-                  <FormDescription>
-                    Token tích hợp với hệ thống Kiosk (để trống nếu không cần)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
+          </div>
         </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Hủy</Button>
-          </DialogClose>
-          <Button 
-            type="submit"
-            disabled={isPending || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
-          >
+        <div className="flex justify-end gap-4">
+          <Button type="button" variant="outline" onClick={() => form.reset(initialData)}>
+            Reset
+          </Button>
+          <Button type="submit" disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang lưu...
+                {isEditing ? 'Saving...' : 'Creating...'}
               </>
             ) : (
-              isEditing ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm'
+              <>{isEditing ? 'Save Changes' : 'Create Product'}</>
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </Form>
   );

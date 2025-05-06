@@ -1,21 +1,30 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useProducts() {
+  const { isAdmin } = useAuth();
+  
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       console.log("Fetching products data...");
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(`
           *,
           category:categories(*),
           subcategory:subcategories(*)
         `)
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .eq("status", "active");
+      
+      // Only filter by visibility for non-admin users
+      if (!isAdmin) {
+        query = query.eq("is_visible", true);
+      }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching products:", error);
@@ -55,6 +64,8 @@ export function useCategories() {
 }
 
 export function useProductsByCategory(categorySlug?: string, subcategorySlug?: string) {
+  const { isAdmin } = useAuth();
+  
   return useQuery({
     queryKey: ["products", "category", categorySlug, "subcategory", subcategorySlug],
     queryFn: async () => {
@@ -68,6 +79,11 @@ export function useProductsByCategory(categorySlug?: string, subcategorySlug?: s
         `)
         .eq("status", "active");
 
+      // Only filter by visibility for non-admin users
+      if (!isAdmin) {
+        query = query.eq("is_visible", true);
+      }
+      
       if (categorySlug) {
         query = query.eq("category.slug", categorySlug);
       }
@@ -94,20 +110,31 @@ export function useProductsByCategory(categorySlug?: string, subcategorySlug?: s
 }
 
 export function useProductsBySubcategory(subcategorySlug?: string) {
+  const { isAdmin } = useAuth();
+  
   return useQuery({
     queryKey: ["products", "subcategory", subcategorySlug],
     queryFn: async () => {
       console.log(`Fetching products by subcategory: ${subcategorySlug}`);
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(`
           *,
           category:categories(*),
           subcategory:subcategories(*)
         `)
-        .eq("status", "active")
-        .eq("subcategory.slug", subcategorySlug)
-        .order("created_at", { ascending: false });
+        .eq("status", "active");
+        
+      // Only filter by visibility for non-admin users
+      if (!isAdmin) {
+        query = query.eq("is_visible", true);
+      }
+      
+      if (subcategorySlug) {
+        query = query.eq("subcategory.slug", subcategorySlug);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching products by subcategory:", error);

@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Eye, ShoppingBag } from "lucide-react";
+import { Eye, ShoppingBag, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { stripHtmlTags, truncateText } from "@/utils/htmlUtils";
 import { PurchaseConfirmModal } from "./products/purchase/PurchaseConfirmModal";
 import { useStockOperations } from "@/hooks/taphoammo/useStockOperations";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProductCardProps {
   id: string;
@@ -30,6 +31,7 @@ interface ProductCardProps {
   description?: string;
   soldCount?: number;
   lastChecked?: string | null;
+  isVisible?: boolean;
 }
 
 const ProductCard = ({
@@ -49,6 +51,7 @@ const ProductCard = ({
   description = "",
   soldCount = 0,
   lastChecked = null,
+  isVisible = true,
 }: ProductCardProps) => {
   const { convertVNDtoUSD, formatUSD } = useCurrencyContext();
   const navigate = useNavigate();
@@ -85,6 +88,8 @@ const ProductCard = ({
   // Calculate displayed sold count (actual + 10000)
   const displaySoldCount = useMemo(() => soldCount + 10000, [soldCount]);
 
+  const isOutOfStock = useMemo(() => localStock <= 0, [localStock]);
+
   // Check stock when component mounts
   useEffect(() => {
     if (kioskToken) {
@@ -111,11 +116,7 @@ const ProductCard = ({
   };
 
   const handleBuyNow = async () => {
-    if (!kioskToken) {
-      return;
-    }
-    
-    if (localStock <= 0) {
+    if (!kioskToken || isOutOfStock) {
       return;
     }
     
@@ -150,7 +151,14 @@ const ProductCard = ({
   const effectivePrice = salePrice || price;
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4">
+    <Card className={`h-full flex flex-col overflow-hidden border border-[#e5e5e5] rounded-lg transition-all duration-300 hover:shadow-md bg-white p-4 relative ${isOutOfStock ? 'bg-opacity-90' : ''}`}>
+      {/* Out of Stock Overlay */}
+      {isOutOfStock && (
+        <div className="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 rounded-bl-lg z-10 text-xs font-bold">
+          Out of Stock
+        </div>
+      )}
+      
       {/* Category Badge */}
       <div className="mb-3">
         <Badge 
@@ -196,13 +204,14 @@ const ProductCard = ({
       {/* Low stock warning */}
       {localStock > 0 && localStock < 10 && (
         <div className="mb-3 text-xs text-amber-600 bg-amber-50 p-1.5 rounded-sm flex items-center">
+          <AlertCircle className="h-3 w-3 mr-1" />
           <span>Low stock: Only {localStock} items left</span>
         </div>
       )}
       
       {/* Product Description - with flex grow to push buttons to bottom */}
       {description && (
-        <p className="text-sm text-gray-600 line-clamp-2 mb-4 font-inter flex-grow min-h-[40px]">
+        <p className={`text-sm text-gray-600 line-clamp-2 mb-4 font-inter flex-grow min-h-[40px] ${isOutOfStock ? 'opacity-70' : ''}`}>
           {cleanDescription}
         </p>
       )}
@@ -217,21 +226,36 @@ const ProductCard = ({
           <Eye className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Details
         </Button>
         
-        <Button
-          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60] text-white px-1.5 sm:px-2 py-1.5 h-auto text-[10px] xs:text-xs sm:text-sm"
-          disabled={localStock === 0 || isLoading}
-          onClick={handleBuyNow}
-        >
-          {isLoading ? (
-            <span className="flex items-center">
-              <span className="animate-pulse">Loading</span>
-            </span>
-          ) : (
-            <>
-              <ShoppingBag className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Buy Now
-            </>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex-1">
+              <Button
+                className={`w-full bg-[#2ECC71] hover:bg-[#27AE60] text-white px-1.5 sm:px-2 py-1.5 h-auto text-[10px] xs:text-xs sm:text-sm ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400' : ''}`}
+                disabled={isOutOfStock || isLoading}
+                onClick={handleBuyNow}
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <span className="animate-pulse">Loading</span>
+                  </span>
+                ) : isOutOfStock ? (
+                  <>
+                    <AlertCircle className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Out of Stock
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="mr-0.5 h-3 w-3 sm:h-4 sm:w-4" /> Buy Now
+                  </>
+                )}
+              </Button>
+            </div>
+          </TooltipTrigger>
+          {isOutOfStock && (
+            <TooltipContent>
+              <p>This product is currently out of stock.</p>
+            </TooltipContent>
           )}
-        </Button>
+        </Tooltip>
       </div>
 
       {/* Purchase Confirmation Modal - Using the original VND price */}

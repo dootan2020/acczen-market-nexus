@@ -111,6 +111,60 @@ export const useProductMutationHooks = () => {
     },
   });
 
+  // Update product visibility mutation
+  const updateProductVisibilityMutation = useMutation({
+    mutationFn: async ({ id, isVisible }: { id: string, isVisible: boolean }) => {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_visible: isVisible })
+        .eq('id', id);
+        
+      if (error) throw error;
+      return { id, isVisible };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      toast({
+        title: `Product ${data.isVisible ? 'Visible' : 'Hidden'}`,
+        description: `The product is now ${data.isVisible ? 'visible' : 'hidden'} on the website.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update product visibility',
+      });
+    },
+  });
+
+  // Bulk visibility update mutation
+  const bulkUpdateVisibilityMutation = useMutation({
+    mutationFn: async ({ ids, isVisible }: { ids: string[], isVisible: boolean }) => {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_visible: isVisible })
+        .in('id', ids);
+        
+      if (error) throw error;
+      return { count: ids.length, isVisible };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      toast({
+        title: `Products ${data.isVisible ? 'Visible' : 'Hidden'}`,
+        description: `${data.count} products are now ${data.isVisible ? 'visible' : 'hidden'} on the website.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update products visibility',
+      });
+    },
+  });
+
   // Bulk update status mutation
   const bulkUpdateStatusMutation = useMutation({
     mutationFn: async ({ ids, status }: { ids: string[], status: ProductStatus }) => {
@@ -138,10 +192,46 @@ export const useProductMutationHooks = () => {
     },
   });
 
+  // Hide all out of stock products
+  const hideOutOfStockProductsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_visible: false })
+        .eq('stock_quantity', 0);
+        
+      if (error) throw error;
+      
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('stock_quantity', 0);
+        
+      return { count: count || 0 };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      toast({
+        title: 'Out of Stock Products Hidden',
+        description: `${data.count} out of stock products have been hidden from the website.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to hide out of stock products',
+      });
+    },
+  });
+
   return {
     productMutation,
     deleteMutation,
     bulkDeleteMutation,
-    bulkUpdateStatusMutation
+    bulkUpdateStatusMutation,
+    updateProductVisibilityMutation,
+    bulkUpdateVisibilityMutation,
+    hideOutOfStockProductsMutation
   };
 };

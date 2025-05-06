@@ -1,67 +1,105 @@
 
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+  TrashIcon,
+  CheckCircle,
+  XCircle,
+  EyeOff,
+  Eye,
+  Eraser
+} from 'lucide-react';
 
 interface ProductBulkActionsProps {
   selectedCount: number;
   onBulkDelete: () => void;
   onBulkActivate: () => void;
   onBulkDeactivate: () => void;
+  onBulkShow?: () => void;
+  onBulkHide?: () => void;
   onClearSelection: () => void;
 }
 
-export const ProductBulkActions = ({
-  selectedCount,
-  onBulkDelete,
-  onBulkActivate,
+export function ProductBulkActions({ 
+  selectedCount, 
+  onBulkDelete, 
+  onBulkActivate, 
   onBulkDeactivate,
-  onClearSelection,
-}: ProductBulkActionsProps) => {
-  if (selectedCount === 0) return null;
+  onBulkShow,
+  onBulkHide,
+  onClearSelection 
+}: ProductBulkActionsProps) {
+  if (selectedCount === 0) {
+    return null;
+  }
 
   return (
-    <div className="bg-muted p-2 rounded-md mb-4 flex items-center justify-between">
-      <span className="text-sm ml-2">
-        {selectedCount} {selectedCount === 1 ? 'product' : 'products'} selected
-      </span>
-      <div className="flex gap-2">
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={onClearSelection}
-        >
-          Clear Selection
-        </Button>
+    <div className="bg-muted/50 border rounded-lg p-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium ml-2">
+          {selectedCount} item{selectedCount !== 1 && 's'} selected
+        </span>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline">
-              Bulk Actions <ChevronDown className="h-4 w-4 ml-1" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onBulkActivate}>
-              Set Active
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onBulkDeactivate}>
-              Set Inactive
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-red-600" 
-              onClick={onBulkDelete}
+        <div className="flex flex-wrap gap-2 ml-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onBulkActivate}
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Activate
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onBulkDeactivate}
+          >
+            <XCircle className="h-4 w-4 mr-1" />
+            Deactivate
+          </Button>
+          
+          {onBulkShow && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onBulkShow}
             >
-              Delete Selected
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <Eye className="h-4 w-4 mr-1" />
+              Show
+            </Button>
+          )}
+          
+          {onBulkHide && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onBulkHide}
+            >
+              <EyeOff className="h-4 w-4 mr-1" />
+              Hide
+            </Button>
+          )}
+          
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={onBulkDelete}
+          >
+            <TrashIcon className="h-4 w-4 mr-1" />
+            Delete
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClearSelection}
+          >
+            <Eraser className="h-4 w-4 mr-1" />
+            Clear selection
+          </Button>
+        </div>
       </div>
     </div>
   );
-};
+}

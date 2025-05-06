@@ -7,6 +7,7 @@ import ProductQuantity from './ProductQuantity';
 import { PurchaseConfirmModal } from './purchase/PurchaseConfirmModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useStockOperations } from '@/hooks/taphoammo/useStockOperations';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProductActionsProps {
   product: {
@@ -18,6 +19,7 @@ interface ProductActionsProps {
     stock_quantity: number;
     kiosk_token?: string;
     description?: string;
+    is_visible?: boolean;
   };
 }
 
@@ -41,6 +43,8 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   const effectivePrice = product.sale_price && Number(product.sale_price) > 0 && Number(product.sale_price) < product.price
     ? Number(product.sale_price)
     : product.price;
+  
+  const isOutOfStock = localStockQuantity <= 0;
   
   // Check stock on component mount
   useEffect(() => {
@@ -68,8 +72,10 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
         setIsCached(stockResult.stockData.cached || false);
         setIsEmergency(stockResult.stockData.emergency || false);
         
-        // Update stock message for low stock
-        if (stockResult.stockData.stock_quantity > 0 && stockResult.stockData.stock_quantity < 10) {
+        // Update stock message based on quantity
+        if (stockResult.stockData.stock_quantity <= 0) {
+          setStockMessage("This product is currently out of stock");
+        } else if (stockResult.stockData.stock_quantity < 10) {
           setStockMessage(`Low stock: Only ${stockResult.stockData.stock_quantity} items left`);
         } else {
           setStockMessage(null);
@@ -141,13 +147,57 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
     setIsPurchaseModalOpen(true);
   };
   
+  // Format time ago for last checked time
+  const getTimeAgo = (date: Date | null) => {
+    if (!date) return '';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins === 1) return '1 minute ago';
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours === 1) return '1 hour ago';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+  };
+  
+  const isStockDataStale = () => {
+    if (!lastChecked) return true;
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastChecked.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    return diffMins > 30; // Data is stale if older than 30 minutes
+  };
+  
   return (
     <div className="space-y-4">
       {stockMessage && (
-        <Alert variant={localStockQuantity <= 0 ? "destructive" : "default"} className={localStockQuantity > 0 && localStockQuantity < 10 ? "bg-amber-50 border-amber-200 text-amber-800" : ""}>
+        <Alert 
+          variant={localStockQuantity <= 0 ? "destructive" : "default"} 
+          className={localStockQuantity > 0 && localStockQuantity < 10 ? "bg-amber-50 border-amber-200 text-amber-800" : ""}
+        >
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>{stockMessage}</AlertDescription>
         </Alert>
+      )}
+      
+      {/* Stock update time information */}
+      {lastChecked && (
+        <div className="flex justify-between items-center text-xs text-gray-500">
+          <span>Stock updated: {getTimeAgo(lastChecked)}</span>
+          {isStockDataStale() && (
+            <span className="text-amber-600">Data may be outdated</span>
+          )}
+        </div>
       )}
       
       <div className="space-y-2">
@@ -155,25 +205,34 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
           <label htmlFor="quantity" className="block text-sm font-medium font-poppins text-gray-700">
             Quantity
           </label>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 px-2 text-xs"
-            onClick={refreshStockInfo}
-            disabled={stockLoading}
-          >
-            {stockLoading ? (
-              <span className="flex items-center">
-                <span className="mr-1">Updating</span>
-                <RefreshCw className="h-3 w-3 animate-spin" />
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <span className="mr-1">Refresh Stock</span>
-                <RefreshCw className="h-3 w-3" />
-              </span>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-xs"
+                  onClick={refreshStockInfo}
+                  disabled={stockLoading || !product.kiosk_token}
+                >
+                  {stockLoading ? (
+                    <span className="flex items-center">
+                      <span className="mr-1">Updating</span>
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <span className="mr-1">Refresh Stock</span>
+                      <RefreshCw className="h-3 w-3" />
+                    </span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Check latest stock information</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <ProductQuantity
           value={quantity}
@@ -184,15 +243,37 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
       </div>
       
       <div className="flex gap-3">
-        <Button 
-          size="lg" 
-          className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60]"
-          onClick={handleBuyNow}
-          disabled={localStockQuantity <= 0 || stockLoading}
-        >
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Buy Now
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <Button 
+                  size="lg" 
+                  className={`w-full flex ${isOutOfStock ? 'bg-gray-400 hover:bg-gray-400' : 'bg-[#2ECC71] hover:bg-[#27AE60]'}`}
+                  onClick={handleBuyNow}
+                  disabled={localStockQuantity <= 0 || stockLoading}
+                >
+                  {isOutOfStock ? (
+                    <>
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Out of Stock
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Buy Now
+                    </>
+                  )}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {isOutOfStock && (
+              <TooltipContent>
+                <p>This product is currently out of stock</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <PurchaseConfirmModal

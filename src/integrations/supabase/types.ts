@@ -709,6 +709,7 @@ export type Database = {
           features: Json | null
           id: string
           image_url: string | null
+          is_visible: boolean
           kiosk_token: string | null
           metadata: Json | null
           name: string
@@ -729,6 +730,7 @@ export type Database = {
           features?: Json | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean
           kiosk_token?: string | null
           metadata?: Json | null
           name: string
@@ -749,6 +751,7 @@ export type Database = {
           features?: Json | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean
           kiosk_token?: string | null
           metadata?: Json | null
           name?: string
