@@ -32,8 +32,8 @@ const fetchProductCounts = async (): Promise<Record<string, number>> => {
 };
 
 export const useProductCountByCategory = (): ProductCountResult => {
-  // Use the updated query syntax with proper typing
-  const { data, isLoading, error } = useQuery({
+  // Explicitly define the types to avoid excessive type inference
+  const { data, isLoading, error } = useQuery<Record<string, number>, Error>({
     queryKey: ['product-counts-by-category'],
     queryFn: fetchProductCounts,
     staleTime: 5 * 60 * 1000, // 5 minutes
