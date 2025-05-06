@@ -39,12 +39,17 @@ export const PurchaseModalContent: React.FC<PurchaseModalContentProps> = ({
     totalPrice
   } = usePurchaseModal();
 
-  // Calculate whether checkout is disabled
+  // Calculate whether checkout is disabled - FIX: Ensure numeric comparison and check token properly
+  const parsedQuantity = parseInt(quantity);
   const isCheckoutDisabled = 
     stock <= 0 || 
-    parseInt(quantity) <= 0 || 
-    parseInt(quantity) > stock || 
-    !kioskToken;
+    isNaN(parsedQuantity) || 
+    parsedQuantity <= 0 || 
+    parsedQuantity > stock || 
+    kioskToken === null || 
+    kioskToken === undefined || 
+    kioskToken === '' || 
+    (insufficientBalance && totalPrice > 0); // Only disable for insufficient balance if product isn't free
 
   if (purchaseComplete) {
     return (
@@ -67,7 +72,7 @@ export const PurchaseModalContent: React.FC<PurchaseModalContentProps> = ({
           <span>
             {totalPrice === 0 
               ? "Free" 
-              : `$${(totalPrice / parseInt(quantity || '1')).toFixed(2)} each`}
+              : `$${(totalPrice / parsedQuantity).toFixed(2)} each`}
           </span>
         </div>
         

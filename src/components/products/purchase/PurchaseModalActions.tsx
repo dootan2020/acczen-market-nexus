@@ -44,8 +44,8 @@ export const PurchaseModalActions = ({
     }
   };
   
-  // Calculate the final disabled state for the checkout button
-  const checkoutButtonDisabled = isProcessing || disabled || insufficientBalance;
+  // Fix: Ensure the checkout button is properly enabled/disabled
+  const checkoutButtonDisabled = isProcessing || disabled;
   
   return (
     <DialogFooter className="flex flex-row justify-between gap-4 sm:gap-2">
