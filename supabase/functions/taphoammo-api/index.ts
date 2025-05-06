@@ -10,6 +10,8 @@ const SYSTEM_TOKEN = "0LP8RN0I7TNX6ROUD3DUS1I3LUJTQUJ4IFK9"; // Default system t
 
 // TaphoaMMO API helpers
 async function callTaphoaMMO(endpoint: string, params: Record<string, any>, proxyType: string = "allorigins") {
+  console.log(`[TaphoaMMO API] Calling ${endpoint} with params:`, JSON.stringify({ ...params, userToken: undefined }));
+  
   // Use system token regardless of what's provided
   if (params.userToken) {
     params.userToken = SYSTEM_TOKEN;
@@ -38,11 +40,44 @@ async function callTaphoaMMO(endpoint: string, params: Record<string, any>, prox
       break;
   }
   
-  // Call the API
-  const response = await fetch(proxyUrl);
-  const data = await response.json();
-  
-  return data;
+  try {
+    // Call the API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(proxyUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    // Check if response is OK
+    if (!response.ok) {
+      console.error(`API returned status: ${response.status}`);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    // Try to get response as text first
+    const responseText = await response.text();
+    console.log(`Raw API response (first 200 chars): ${responseText.substring(0, 200)}...`);
+    
+    // Check if the response starts with HTML (common proxy error)
+    if (responseText.trim().startsWith('<')) {
+      console.error("Received HTML response instead of JSON");
+      throw new Error("Proxy returned HTML instead of JSON. API might be unavailable.");
+    }
+    
+    // Parse as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse JSON response:", parseError);
+      throw new Error(`Failed to parse response as JSON: ${parseError.message}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error calling TaphoaMMO API:", error);
+    throw error;
+  }
 }
 
 // Main handler
@@ -96,7 +131,34 @@ serve(async (req) => {
         await supabase.rpc("set_circuit_half_open", { api_name_param: "taphoammo" });
         console.log("Setting circuit to half-open state");
       } else {
-        // If the circuit is still fully open, return error
+        // If the circuit is still fully open, use database cache if available
+        if (requestData.action === "getStockWithCache" || requestData.action === "getStock") {
+          const { data: cacheData } = await supabase
+            .from("inventory_cache")
+            .select("*")
+            .eq("kiosk_token", requestData.kioskToken)
+            .single();
+          
+          if (cacheData) {
+            console.log("Circuit is open, using cached data for:", requestData.kioskToken);
+            return new Response(
+              JSON.stringify({
+                success: true,
+                kiosk_token: requestData.kioskToken,
+                name: cacheData.name || "Unknown Product",
+                stock_quantity: cacheData.stock_quantity,
+                price: cacheData.price,
+                cached: true,
+                emergency: true,
+                source: "emergency_cache",
+                message: "Circuit breaker is open, using cached data"
+              }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+        
+        // If no cache available, return error
         return new Response(
           JSON.stringify({
             success: false,
@@ -251,10 +313,15 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error handling request:", error);
     
+    // Provide more detailed error info
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    const errorDetails = error instanceof Error && error.stack ? error.stack : "No stack trace available";
+    
     return new Response(
       JSON.stringify({
         success: false,
-        message: error instanceof Error ? error.message : "An unexpected error occurred"
+        message: errorMessage,
+        details: errorDetails
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -268,6 +335,8 @@ async function handleGetStock(requestData: any, supabase: any, proxyType: string
   if (!kioskToken) {
     throw new Error("Missing kioskToken");
   }
+  
+  console.log(`[GetStock] Getting stock info for ${kioskToken}`);
   
   // Check for mock mode
   if (requestData.debug_mock === "true") {
@@ -292,23 +361,55 @@ async function handleGetStock(requestData: any, supabase: any, proxyType: string
   // Call TaphoaMMO API
   const apiResponse = await callTaphoaMMO("getStock", { kioskToken }, proxyType);
   
-  // Parse response
+  // Parse response with more reliable methods
   let stockQuantity = 0;
   let productName = "Unknown Product";
+  let productPrice = 0;
   
-  if (apiResponse.stock) {
-    stockQuantity = parseInt(apiResponse.stock);
+  // Enhanced parsing logic to extract stock information
+  if (apiResponse.stock !== undefined) {
+    // Direct stock field
+    stockQuantity = parseInt(String(apiResponse.stock), 10);
+  } else if (apiResponse.stock_quantity !== undefined) {
+    // Alternative stock field
+    stockQuantity = parseInt(String(apiResponse.stock_quantity), 10);
   } else if (apiResponse.message && typeof apiResponse.message === 'string') {
-    // Format: "Found: Product Name (Stock: 10)"
-    const stockMatch = apiResponse.message.match(/Stock: (\d+)/);
+    // Format: "Found: Product Name (Stock: 10)" or similar
+    const stockMatch = apiResponse.message.match(/Stock:?\s*(\d+)/i);
     if (stockMatch && stockMatch[1]) {
-      stockQuantity = parseInt(stockMatch[1]);
+      stockQuantity = parseInt(stockMatch[1], 10);
     }
     
-    const nameMatch = apiResponse.message.match(/Found: ([^(]+)/);
+    // Try to extract product name
+    const namePattern = /Found:?\s*([^(]+)/i;
+    const nameMatch = apiResponse.message.match(namePattern);
     if (nameMatch && nameMatch[1]) {
       productName = nameMatch[1].trim();
     }
+  }
+  
+  // Extract price if available
+  if (apiResponse.price !== undefined) {
+    productPrice = parseFloat(String(apiResponse.price));
+  }
+  
+  // Update cache in database
+  try {
+    await supabase
+      .from("inventory_cache")
+      .upsert({
+        kiosk_token: kioskToken,
+        stock_quantity: stockQuantity,
+        price: productPrice,
+        name: productName,
+        last_checked_at: new Date().toISOString(),
+        cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+        last_sync_status: "success"
+      }, {
+        onConflict: "kiosk_token"
+      });
+  } catch (cacheError) {
+    console.error("Failed to update inventory cache:", cacheError);
   }
   
   return {
@@ -316,20 +417,20 @@ async function handleGetStock(requestData: any, supabase: any, proxyType: string
     kiosk_token: kioskToken,
     name: productName,
     stock_quantity: stockQuantity,
-    price: 0, // Stock API doesn't return price
+    price: productPrice,
     source: "api"
   };
 }
 
 async function handleGetStockWithCache(requestData: any, supabase: any, proxyType: string) {
-  const { kioskToken, forceFresh } = requestData;
+  const { kioskToken, forceRefresh } = requestData;
   
   if (!kioskToken) {
     throw new Error("Missing kioskToken");
   }
   
   // Check cache first (unless forceFresh is true)
-  if (!forceFresh) {
+  if (!forceRefresh) {
     const { data: cachedStock } = await supabase
       .from("inventory_cache")
       .select("*")
@@ -342,6 +443,7 @@ async function handleGetStockWithCache(requestData: any, supabase: any, proxyTyp
       
       // If cache is still valid, return it
       if (now < cacheUntil) {
+        console.log(`[GetStockWithCache] Using valid cache for ${kioskToken}`);
         return {
           success: true,
           kiosk_token: kioskToken,
@@ -358,28 +460,16 @@ async function handleGetStockWithCache(requestData: any, supabase: any, proxyTyp
   
   try {
     // Get fresh data
+    console.log(`[GetStockWithCache] Getting fresh data for ${kioskToken}`);
     const freshData = await handleGetStock(requestData, supabase, proxyType);
-    
-    // Update cache
-    await supabase
-      .from("inventory_cache")
-      .upsert({
-        kiosk_token: kioskToken,
-        stock_quantity: freshData.stock_quantity,
-        price: freshData.price || 0,
-        name: freshData.name,
-        last_checked_at: new Date().toISOString(),
-        cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-        last_sync_status: "success"
-      }, {
-        onConflict: "kiosk_token"
-      });
     
     return {
       ...freshData,
       cached: false
     };
   } catch (error) {
+    console.error(`[GetStockWithCache] Error getting fresh data:`, error);
+    
     // If we can't get fresh data, try to use expired cache as fallback
     const { data: expiredCache } = await supabase
       .from("inventory_cache")
@@ -388,6 +478,7 @@ async function handleGetStockWithCache(requestData: any, supabase: any, proxyTyp
       .single();
     
     if (expiredCache) {
+      console.log(`[GetStockWithCache] Using expired cache for ${kioskToken}`);
       return {
         success: true,
         kiosk_token: kioskToken,

@@ -1,3 +1,4 @@
+
 import { useApiCommon } from './useApiCommon';
 import { toast } from 'sonner';  
 import { supabase } from '@/integrations/supabase/client';
@@ -5,86 +6,26 @@ import { TaphoammoIntegration } from '@/services/taphoammo/TaphoammoIntegration'
 import { TaphoammoProduct } from '@/services/taphoammo/TaphoammoProductService';
 import { TaphoammoError, TaphoammoErrorCodes } from '@/types/taphoammo-errors';
 import { TaphoammoApiOptions } from '@/services/taphoammo/TaphoammoApiClient';
+import { useState } from 'react';
 
 // Create a singleton instance of TaphoammoIntegration
 const taphoammoIntegration = new TaphoammoIntegration();
 
-// Interface for cached stock information
-export interface StockCacheInfo {
+// Interface for stock information
+export interface StockInfo {
   kiosk_token: string;
   name?: string;
   stock_quantity: number;
   price: number;
   cached: boolean;
-  cacheId: string;
   emergency?: boolean;
-}
-
-// Define the database inventory cache type to match what's in the database
-interface InventoryCacheEntry {
-  id: string;
-  kiosk_token: string;
-  stock_quantity: number;
-  price: number;
-  name?: string;
-  created_at: string;
-  updated_at: string;
-  cached_until: string;
-  last_checked_at: string;
-  last_sync_status: string;
-  product_id: string;
-  retry_count: number;
-  source: string;
-  sync_message: string;
+  cacheId?: string;
+  last_checked?: Date;
 }
 
 export const useStockOperations = () => {
   const { loading, setLoading, error, setError, retry, withRetry, usingCache } = useApiCommon();
-
-  // Get stock cache from database or memory
-  const checkStockCache = async (kioskToken: string): Promise<{
-    cached: boolean;
-    data?: StockCacheInfo;
-  }> => {
-    try {
-      // Check database for cached stock info
-      const { data, error } = await supabase
-        .from('inventory_cache')
-        .select('*')
-        .eq('kiosk_token', kioskToken)
-        .single();
-      
-      if (error || !data) {
-        return { cached: false };
-      }
-      
-      // Check if cache is still valid
-      const now = new Date();
-      const cacheUntil = new Date(data.cached_until);
-      
-      if (now > cacheUntil) {
-        return { cached: false };
-      }
-      
-      // Return cached data
-      const entry = data as InventoryCacheEntry;
-      return {
-        cached: true,
-        data: {
-          kiosk_token: entry.kiosk_token,
-          name: entry.name || 'Unknown Product',
-          stock_quantity: entry.stock_quantity,
-          price: entry.price,
-          cached: true,
-          cacheId: entry.id,
-          emergency: false
-        }
-      };
-    } catch (err) {
-      console.error('Error checking stock cache:', err);
-      return { cached: false };
-    }
-  };
+  const [stockData, setStockData] = useState<StockInfo | null>(null);
 
   // Sync product stock with database
   const syncProductStock = async (
@@ -121,117 +62,116 @@ export const useStockOperations = () => {
     }
   };
 
-  // Check if stock is available for purchase
+  // Check if stock is available for purchase with improved error handling
   const checkStockAvailability = async (
     quantity = 1, 
-    kioskToken: string
+    kioskToken: string,
+    options: {
+      forceRefresh?: boolean;
+      showToasts?: boolean;
+    } = {}
   ): Promise<{
     available: boolean;
     message?: string;
-    stockData?: StockCacheInfo;
+    stockData?: StockInfo;
     cached?: boolean;
   }> => {
+    const { forceRefresh = false, showToasts = true } = options;
+    setLoading(true);
+    
     try {
-      // First check cache
-      const { cached, data: cachedData } = await checkStockCache(kioskToken);
-      
-      let stockInfo: StockCacheInfo;
-      
-      if (cached && cachedData) {
-        stockInfo = cachedData;
-      } else {
-        try {
-          // Use withRetry to get stock with error handling
-          const apiStock = await withRetry(
-            async () => taphoammoIntegration.getStock(kioskToken, { forceRefresh: true }),
-            'getStock',
-            async () => {
-              // Fallback to old cache if available
-              const { data } = await supabase
-                .from('inventory_cache')
-                .select('*')
-                .eq('kiosk_token', kioskToken)
-                .single();
-              
-              if (!data) throw new Error('No cache available');
-              
-              const entry = data as InventoryCacheEntry;
-              return {
-                kiosk_token: kioskToken,
-                name: entry.name || 'Unknown Product',
-                stock_quantity: entry.stock_quantity,
-                price: entry.price,
-                cached: true,
-                emergency: true
-              } as TaphoammoProduct;
-            }
-          );
+      // Get stock with withRetry to handle potential errors
+      const stock = await withRetry(
+        async () => {
+          const stock = await taphoammoIntegration.getStock(kioskToken, { 
+            forceRefresh,
+            maxRetries: 2 // Allow 2 retries for better reliability
+          });
           
-          // Convert TaphoammoProduct to StockCacheInfo
-          stockInfo = {
+          // Update the state with fetched stock data
+          const stockInfo: StockInfo = {
             kiosk_token: kioskToken,
-            name: apiStock.name,
-            stock_quantity: apiStock.stock_quantity,
-            price: apiStock.price || 0,
-            cached: apiStock.cached || false,
-            cacheId: '',
-            emergency: apiStock.emergency || false
+            name: stock.name,
+            stock_quantity: stock.stock_quantity,
+            price: stock.price || 0,
+            cached: !!stock.cached,
+            emergency: !!stock.emergency,
+            last_checked: stock.last_checked
           };
           
-          // Update cache in database
-          if (!apiStock.cached && !apiStock.emergency) {
-            await supabase
+          setStockData(stockInfo);
+          return stockInfo;
+        },
+        'getStock',
+        // Fallback function in case all retries fail
+        async () => {
+          try {
+            // Try to get from database cache as last resort
+            const { data, error } = await supabase
               .from('inventory_cache')
-              .upsert({
-                kiosk_token: kioskToken,
-                stock_quantity: apiStock.stock_quantity,
-                price: apiStock.price || 0,
-                name: apiStock.name || 'Unknown Product',
-                last_checked_at: new Date().toISOString(),
-                cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-                last_sync_status: 'success'
-              }, {
-                onConflict: 'kiosk_token'
-              });
-          }
-          
-        } catch (apiError) {
-          if (cachedData) {
-            console.warn('Using expired cache due to API error:', apiError);
-            stockInfo = {
-              ...cachedData,
-              emergency: true
+              .select('*')
+              .eq('kiosk_token', kioskToken)
+              .single();
+            
+            if (error || !data) throw new Error('No cache available');
+            
+            const stockInfo: StockInfo = {
+              kiosk_token: kioskToken,
+              name: data.name || 'Unknown Product',
+              stock_quantity: data.stock_quantity,
+              price: data.price,
+              cached: true,
+              emergency: true,
+              cacheId: data.id,
+              last_checked: data.last_checked_at ? new Date(data.last_checked_at) : undefined
             };
-            toast.warning("Using cached data due to API connectivity issues", {
-              duration: 5000
-            });
-          } else {
-            throw apiError;
+            
+            if (showToasts) {
+              toast.warning("Using cached product data due to API issues", {
+                description: "Product information may not be up-to-date"
+              });
+            }
+            
+            setStockData(stockInfo);
+            return stockInfo;
+          } catch (cacheError) {
+            throw new Error('Failed to retrieve stock information');
           }
         }
-      }
+      );
       
-      if (!stockInfo || stockInfo.stock_quantity < quantity) {
+      // Check if stock is sufficient
+      if (!stock || stock.stock_quantity < quantity) {
         return {
           available: false,
-          message: "Insufficient stock for requested quantity",
-          stockData: stockInfo,
-          cached: stockInfo?.cached
+          message: stock ? "Insufficient stock for requested quantity" : "Product information not available",
+          stockData: stock,
+          cached: stock?.cached
         };
+      }
+      
+      // If using emergency cache, show a toast
+      if (stock.emergency && showToasts) {
+        toast.warning("Using cached product data", {
+          description: "Product information may not be up-to-date"
+        });
       }
       
       return {
         available: true,
-        stockData: stockInfo,
-        cached: stockInfo.cached
+        stockData: stock,
+        cached: stock.cached || false
       };
       
     } catch (err) {
       console.error("Stock check error:", err);
+      
+      // Format error message
       const errorMessage = err instanceof Error ? err.message : "Failed to check stock";
+      setError(errorMessage);
       
       // Show user-friendly message for common errors
-      if (err instanceof TaphoammoError) {
+      if (err instanceof TaphoammoError && showToasts) {
         if (err.code === TaphoammoErrorCodes.API_TEMP_DOWN) {
           toast.error("API service is temporarily unavailable. Please try again later.");
         } else if (err.code === TaphoammoErrorCodes.KIOSK_PENDING) {
@@ -243,53 +183,88 @@ export const useStockOperations = () => {
         available: false,
         message: errorMessage
       };
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Get stock information
+  // Get stock information with improved caching
   const getStock = async (
     kioskToken: string,
     options: {
       forceFresh?: boolean;
+      showToasts?: boolean;
     } = {}
   ): Promise<TaphoammoProduct> => {
+    const { forceFresh = false, showToasts = true } = options;
     setLoading(true);
     setError(null);
 
     try {
       // Convert the options to match TaphoammoApiOptions
       const apiOptions: TaphoammoApiOptions = {
-        forceRefresh: options.forceFresh,
-        useCache: !options.forceFresh
+        forceRefresh: forceFresh,
+        useCache: !forceFresh,
+        maxRetries: 2
       };
 
-      // Use withRetry to get stock with error handling
-      const data = await withRetry(
-        async () => taphoammoIntegration.getStock(kioskToken, apiOptions),
+      // Use withRetry for better reliability
+      const product = await withRetry(
+        async () => {
+          return await taphoammoIntegration.getStock(kioskToken, apiOptions);
+        },
         'getStock',
         async () => {
-          // Fallback to cache if available
-          const { data } = await supabase
+          // Fallback to database cache
+          const { data, error } = await supabase
             .from('inventory_cache')
             .select('*')
             .eq('kiosk_token', kioskToken)
             .single();
           
-          if (!data) throw new Error('No cache available');
+          if (error || !data) throw new Error('No cache available');
           
-          const entry = data as InventoryCacheEntry;
+          if (showToasts) {
+            toast.warning("Using cached product data due to API issues", {
+              description: "Product information may not be up-to-date"
+            });
+          }
+          
           return {
             kiosk_token: kioskToken,
-            name: entry.name || 'Unknown Product',
-            stock_quantity: entry.stock_quantity,
-            price: entry.price,
+            name: data.name || 'Unknown Product',
+            stock_quantity: data.stock_quantity,
+            price: data.price,
             cached: true,
-            emergency: true
+            emergency: true,
+            last_checked: data.last_checked_at ? new Date(data.last_checked_at) : new Date()
           } as TaphoammoProduct;
         }
       );
 
-      return data;
+      // Update database cache if we have fresh data
+      if (!product.cached && !product.emergency) {
+        try {
+          await supabase
+            .from('inventory_cache')
+            .upsert({
+              kiosk_token: kioskToken,
+              stock_quantity: product.stock_quantity,
+              price: product.price || 0,
+              name: product.name || 'Unknown Product',
+              last_checked_at: new Date().toISOString(),
+              cached_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+              last_sync_status: 'success'
+            }, {
+              onConflict: 'kiosk_token'
+            });
+        } catch (cacheError) {
+          console.error("Failed to update database cache:", cacheError);
+          // Non-critical error, continue without failing
+        }
+      }
+
+      return product;
     } catch (err: any) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error in getStock:', errorMsg);
@@ -304,6 +279,7 @@ export const useStockOperations = () => {
     getStock,
     checkStockAvailability,
     syncProductStock,
+    stockData,
     loading,
     error,
     retry,

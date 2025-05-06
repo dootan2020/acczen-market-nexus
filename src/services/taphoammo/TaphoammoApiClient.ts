@@ -15,7 +15,7 @@ export interface TaphoammoApiOptions {
 
 export interface TaphoammoResponse<T = any> {
   data: T;
-  source?: 'cache' | 'api' | 'mock';
+  source?: 'cache' | 'api' | 'mock' | 'database';
   timestamp?: number;
   responseTime?: number;
 }
@@ -150,6 +150,36 @@ export class TaphoammoApiClient {
    */
   public getCachedProduct(kioskToken: string): TaphoammoProduct | null {
     return this.productCache.get(kioskToken) || null;
+  }
+
+  /**
+   * Get product from database cache
+   */
+  public async getProductFromDatabaseCache(kioskToken: string): Promise<TaphoammoProduct | null> {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_cache')
+        .select('*')
+        .eq('kiosk_token', kioskToken)
+        .single();
+      
+      if (error || !data) {
+        return null;
+      }
+      
+      return {
+        kiosk_token: data.kiosk_token,
+        name: data.name || 'Unknown Product',
+        stock_quantity: data.stock_quantity,
+        price: data.price,
+        cached: true,
+        last_checked: new Date(data.last_checked_at),
+        emergency: true
+      };
+    } catch (error) {
+      console.error(`[TaphoammoApiClient] Error getting product from database cache:`, error);
+      return null;
+    }
   }
   
   /**
